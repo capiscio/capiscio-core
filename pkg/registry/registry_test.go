@@ -34,7 +34,7 @@ func TestLocalRegistry(t *testing.T) {
 
 	// 2. Test Registry
 	reg := registry.NewLocalRegistry(tmpFile.Name())
-	
+
 	fetchedKey, err := reg.GetPublicKey(context.Background(), "any-issuer")
 	require.NoError(t, err)
 	assert.Equal(t, pub, fetchedKey)
@@ -59,9 +59,9 @@ func TestCloudRegistry(t *testing.T) {
 	assert.Equal(t, pub, fetchedKey)
 
 	// 3. Test Cache (Stop Server and fetch again)
-	server.Close() 
-	// Note: In a real test we might want to verify no network call is made, 
-	// but here we rely on the fact that if cache failed, this would error out 
+	server.Close()
+	// Note: In a real test we might want to verify no network call is made,
+	// but here we rely on the fact that if cache failed, this would error out
 	// because the server is closed.
 	cachedKey, err := reg.GetPublicKey(context.Background(), "any-issuer")
 	require.NoError(t, err)

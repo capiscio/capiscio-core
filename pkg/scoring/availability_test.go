@@ -16,7 +16,7 @@ func TestAvailabilityScorer_Score_JSONRPC_Success(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Simulate processing time
 		time.Sleep(10 * time.Millisecond)
-		
+
 		// Simple valid response
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"jsonrpc": "2.0", "result": ["skill1"], "id": 1}`))

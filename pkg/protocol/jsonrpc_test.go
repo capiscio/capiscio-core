@@ -20,7 +20,7 @@ func TestJSONRPCClient_Ping_Success(t *testing.T) {
 		}
 		assert.Equal(t, "2.0", req.JSONRPC)
 		assert.Equal(t, "tasks/list", req.Method)
-		
+
 		// Verify params
 		params, ok := req.Params.(map[string]interface{})
 		assert.True(t, ok)

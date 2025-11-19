@@ -32,10 +32,10 @@ var keyGenCmd = &cobra.Command{
 		}
 
 		// 2. Create JWKs
-		// We use a consistent Key ID (kid) for simplicity in this MVP, 
+		// We use a consistent Key ID (kid) for simplicity in this MVP,
 		// or generate a random one. Let's generate a simple one or use a timestamp.
 		// For a real system, this might be a hash of the key.
-		kid := fmt.Sprintf("key-%d", 1) 
+		kid := fmt.Sprintf("key-%d", 1)
 
 		privJwk := jose.JSONWebKey{
 			Key:       priv,

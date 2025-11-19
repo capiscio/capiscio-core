@@ -65,7 +65,7 @@ var validateCmd = &cobra.Command{
 		// Use default config for CLI for now
 		engine := scoring.NewEngine(nil)
 		// TODO: Pass insecure flag to verifier if needed (requires engine update)
-		
+
 		ctx := context.Background()
 		result, err := engine.Validate(ctx, &card, flagLive)
 		if err != nil {
@@ -85,7 +85,7 @@ var validateCmd = &cobra.Command{
 		fmt.Printf("Success:          %v\n", result.Success)
 		fmt.Printf("Compliance Score: %.1f/100\n", result.ComplianceScore)
 		fmt.Printf("Trust Score:      %.1f/100\n", result.TrustScore)
-		
+
 		if result.Availability.Tested {
 			fmt.Printf("Availability:     %.1f/100 (Latency: %dms)\n", result.Availability.Score, result.Availability.LatencyMS)
 		}

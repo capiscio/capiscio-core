@@ -36,21 +36,21 @@ func TestCreateCanonicalJSON(t *testing.T) {
 
 	// 2. Check string output is sorted (encoding/json does this, but let's verify the string)
 	expected := `{"name":"Test Agent","protocolVersion":"0.3.0","version":"1.0.0"}`
-	// Note: This simple string check works because we only have 3 fields. 
+	// Note: This simple string check works because we only have 3 fields.
 	// In a real scenario with nested objects, we rely on encoding/json's deterministic sorting.
-	
+
 	// We need to be careful about default values (empty strings/bools) that might be omitted or included
 	// based on struct tags. Our struct tags use omitempty for optional fields.
 	// Required fields like DefaultInputModes are slices, so they might be null or [] depending on init.
 	// In the test struct above, slices are nil.
-	
+
 	// Let's just check that the string contains the keys in alphabetical order
 	jsonStr := string(canonical)
-	
+
 	// Simple check: name comes before protocolVersion? No, n comes before p.
 	// name, protocolVersion, version.
 	// n, p, v.
-	
+
 	if jsonStr != expected {
 		// It might differ due to other fields being present as zero values if not omitempty
 		// Let's check if it contains the keys we expect

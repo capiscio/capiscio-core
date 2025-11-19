@@ -6,11 +6,11 @@ import (
 
 // ValidationResult contains the complete results of an Agent Card validation.
 type ValidationResult struct {
-	Success         bool                           `json:"success"`
-	ComplianceScore float64                        `json:"complianceScore"`
-	TrustScore      float64                        `json:"trustScore"`
-	Availability    AvailabilityResult             `json:"availability"`
-	Issues          []ValidationIssue              `json:"issues"`
+	Success         bool                                `json:"success"`
+	ComplianceScore float64                             `json:"complianceScore"`
+	TrustScore      float64                             `json:"trustScore"`
+	Availability    AvailabilityResult                  `json:"availability"`
+	Issues          []ValidationIssue                   `json:"issues"`
 	Signatures      *crypto.SignatureVerificationResult `json:"signatures,omitempty"`
 }
 

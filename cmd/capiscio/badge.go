@@ -21,7 +21,7 @@ var (
 	issueDomain  string
 	issueExpiry  time.Duration
 	keyFile      string
-	
+
 	// Keep command flags
 	keepOutFile       string
 	keepRenewBefore   time.Duration
@@ -60,7 +60,7 @@ var issueCmd = &cobra.Command{
 		// 1. Get Private Key
 		var priv ed25519.PrivateKey
 		var pub ed25519.PublicKey
-		
+
 		if keyFile != "" {
 			var err error
 			priv, pub, err = loadPrivateKey(keyFile)
@@ -82,7 +82,7 @@ var issueCmd = &cobra.Command{
 
 		// 2. Create Claims
 		now := time.Now()
-		
+
 		// Create Public Key JWK for embedding
 		pubJWK := &jose.JSONWebKey{
 			Key:       pub,
@@ -167,34 +167,34 @@ var verifyCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		token := args[0]
-		
+
 		if keyFile == "" {
 			return fmt.Errorf("public key required via --key (path to JWK file)")
 		}
-		
+
 		// Read key file
 		keyData, err := os.ReadFile(keyFile)
 		if err != nil {
 			return fmt.Errorf("failed to read key file: %w", err)
 		}
-		
+
 		var jwk jose.JSONWebKey
 		if err := json.Unmarshal(keyData, &jwk); err != nil {
 			return fmt.Errorf("failed to parse JWK: %w", err)
 		}
-		
+
 		// 2. Verify using StaticRegistry
 		reg := &StaticRegistry{Key: jwk.Key}
 		verifier := badge.NewVerifier(reg)
-		
+
 		claims, err := verifier.Verify(cmd.Context(), token)
 		if err != nil {
 			return fmt.Errorf("verification failed: %w", err)
 		}
-		
-		fmt.Printf("✅ Badge Valid!\nSubject: %s\nIssuer: %s\nExpires: %s\n", 
+
+		fmt.Printf("✅ Badge Valid!\nSubject: %s\nIssuer: %s\nExpires: %s\n",
 			claims.Subject, claims.Issuer, time.Unix(claims.Expiry, 0))
-		
+
 		return nil
 	},
 }
@@ -224,7 +224,7 @@ func init() {
 	issueCmd.Flags().StringVar(&issueDomain, "domain", "example.com", "Agent Domain")
 	issueCmd.Flags().DurationVar(&issueExpiry, "exp", 1*time.Hour, "Expiration duration")
 	issueCmd.Flags().StringVar(&keyFile, "key", "", "Path to private key file (optional)")
-	
+
 	// Keep Flags (reuses some issue flags)
 	keepCmd.Flags().StringVar(&issueSubject, "sub", "did:capiscio:agent:test", "Subject DID")
 	keepCmd.Flags().StringVar(&issueIssuer, "iss", "https://registry.capisc.io", "Issuer URL")
@@ -232,7 +232,7 @@ func init() {
 	keepCmd.Flags().DurationVar(&issueExpiry, "exp", 1*time.Hour, "Expiration duration")
 	keepCmd.Flags().StringVar(&keyFile, "key", "", "Path to private key file (required)")
 	keepCmd.MarkFlagRequired("key")
-	
+
 	keepCmd.Flags().StringVar(&keepOutFile, "out", "badge.jwt", "Output file path")
 	keepCmd.Flags().DurationVar(&keepRenewBefore, "renew-before", 10*time.Minute, "Time before expiry to renew")
 	keepCmd.Flags().DurationVar(&keepCheckInterval, "check-interval", 1*time.Minute, "Interval to check for renewal")
