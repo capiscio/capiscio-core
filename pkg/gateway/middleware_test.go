@@ -38,7 +38,7 @@ func TestAuthMiddleware(t *testing.T) {
 	verifier := badge.NewVerifier(reg)
 
 	// 2. Create Valid Badge
-	claims := &badge.BadgeClaims{
+	claims := &badge.Claims{
 		Issuer:   "https://test.capisc.io",
 		Subject:  "did:test:123",
 		IssuedAt: time.Now().Unix(),

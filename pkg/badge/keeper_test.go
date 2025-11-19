@@ -21,7 +21,7 @@ func TestKeeper(t *testing.T) {
 	tmpDir := t.TempDir()
 	badgeFile := filepath.Join(tmpDir, "badge.jwt")
 
-	claims := badge.BadgeClaims{
+	claims := badge.Claims{
 		Subject: "did:test",
 		Issuer:  "iss:test",
 	}

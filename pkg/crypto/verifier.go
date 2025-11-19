@@ -104,7 +104,7 @@ func (v *Verifier) VerifyAgentCardSignatures(ctx context.Context, card *agentcar
 	}, nil
 }
 
-func (v *Verifier) verifySingleSignature(ctx context.Context, payload []byte, sig agentcard.AgentCardSignature, index int) SignatureResult {
+func (v *Verifier) verifySingleSignature(ctx context.Context, payload []byte, sig agentcard.Signature, index int) SignatureResult {
 	res := SignatureResult{Index: index}
 
 	// 1. Parse Protected Header
@@ -153,7 +153,7 @@ func (v *Verifier) verifySingleSignature(ctx context.Context, payload []byte, si
 	return res
 }
 
-func (v *Verifier) parseHeader(sig agentcard.AgentCardSignature) (protectedHeader, error) {
+func (v *Verifier) parseHeader(sig agentcard.Signature) (protectedHeader, error) {
 	headerBytes, err := base64.RawURLEncoding.DecodeString(sig.Protected)
 	if err != nil {
 		return protectedHeader{}, fmt.Errorf("invalid protected header encoding: %v", err)

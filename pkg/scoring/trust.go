@@ -63,13 +63,13 @@ func (s *TrustScorer) Score(sigResult *crypto.SignatureVerificationResult) (floa
 		}
 
 		// Check for secure algorithms
-		for _, sig := range sigResult.Signatures {
-			if sig.Algorithm == "RS256" || sig.Algorithm == "ES256" {
-				// Standard secure algorithms
-			} else {
-				// Could penalize weak algos if we supported them, but verifier rejects 'none'
-			}
-		}
+		// for _, sig := range sigResult.Signatures {
+		// 	if sig.Algorithm == "RS256" || sig.Algorithm == "ES256" {
+		// 		// Standard secure algorithms
+		// 	} else {
+		// 		// Could penalize weak algos if we supported them, but verifier rejects 'none'
+		// 	}
+		// }
 
 	} else {
 		// Signatures present but invalid - this is worse than no signatures

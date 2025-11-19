@@ -90,7 +90,7 @@ var issueCmd = &cobra.Command{
 			Use:       "sig",
 		}
 
-		claims := &badge.BadgeClaims{
+		claims := &badge.Claims{
 			Issuer:   issueIssuer,
 			Subject:  issueSubject,
 			IssuedAt: now.Unix(),
@@ -136,7 +136,7 @@ var keepCmd = &cobra.Command{
 
 		config := badge.KeeperConfig{
 			PrivateKey: priv,
-			Claims: badge.BadgeClaims{
+			Claims: badge.Claims{
 				Issuer:  issueIssuer,
 				Subject: issueSubject,
 				Key:     pubJWK,
