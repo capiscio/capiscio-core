@@ -1,0 +1,27 @@
+run:
+  timeout: 5m
+  tests: false
+
+linters:
+  disable-all: true
+  enable:
+    - gofmt        # Checks if code is formatted with gofmt
+    - govet        # Reports suspicious constructs
+    - gocyclo      # Checks function and method cyclomatic complexity
+    - ineffassign  # Detects when assignments to existing variables are not used
+    - misspell     # Finds commonly misspelled English words
+    - revive       # Drop-in replacement for golint
+    - staticcheck  # Go static analysis, much better than golint
+
+linters-settings:
+  gocyclo:
+    # minimal complexity to report, 30 by default (but Go Report Card uses 15)
+    min-complexity: 15
+  revive:
+    rules:
+      - name: exported
+        severity: warning
+        disabled: false
+        arguments:
+          - "checkPrivateReceivers"
+          - "sayRepetitiveLi"
