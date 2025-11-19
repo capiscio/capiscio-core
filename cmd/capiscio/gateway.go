@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"strings"
 
 	"github.com/capiscio/capiscio-core/pkg/badge"
+	"github.com/capiscio/capiscio-core/pkg/gateway"
 	"github.com/capiscio/capiscio-core/pkg/registry"
 	"github.com/spf13/cobra"
 )
@@ -52,49 +52,13 @@ var gatewayStartCmd = &cobra.Command{
 		proxy := httputil.NewSingleHostReverseProxy(targetURL)
 
 		// 4. Middleware
-		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Extract Badge
-			token := extractBadge(r)
-			if token == "" {
-				http.Error(w, "Missing Trust Badge", http.StatusUnauthorized)
-				return
-			}
-
-			// Verify
-			claims, err := verifier.Verify(r.Context(), token)
-			if err != nil {
-				log.Printf("Verification failed: %v", err)
-				http.Error(w, "Invalid Trust Badge", http.StatusUnauthorized)
-				return
-			}
-
-			// Forward verified identity to upstream
-			r.Header.Set("X-Capiscio-Subject", claims.Subject)
-			r.Header.Set("X-Capiscio-Issuer", claims.Issuer)
-			
-			proxy.ServeHTTP(w, r)
-		})
+		handler := gateway.NewAuthMiddleware(verifier, proxy)
 
 		// 5. Start Server
 		addr := fmt.Sprintf(":%d", gatewayPort)
 		log.Printf("Gateway listening on %s -> %s", addr, gatewayTarget)
 		return http.ListenAndServe(addr, handler)
 	},
-}
-
-func extractBadge(r *http.Request) string {
-	// 1. X-Capiscio-Badge
-	if token := r.Header.Get("X-Capiscio-Badge"); token != "" {
-		return token
-	}
-	
-	// 2. Authorization: Bearer
-	auth := r.Header.Get("Authorization")
-	if strings.HasPrefix(auth, "Bearer ") {
-		return strings.TrimPrefix(auth, "Bearer ")
-	}
-	
-	return ""
 }
 
 func init() {

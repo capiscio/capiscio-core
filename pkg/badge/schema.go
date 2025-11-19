@@ -1,5 +1,7 @@
 package badge
 
+import "github.com/go-jose/go-jose/v4"
+
 // BadgeClaims represents the JWT claims payload for a CapiscIO Trust Badge.
 // It follows the structure defined in the Minimal Authority Stack plan.
 type BadgeClaims struct {
@@ -14,6 +16,9 @@ type BadgeClaims struct {
 
 	// Expiry is the timestamp when the badge expires (Unix timestamp).
 	Expiry int64 `json:"exp"`
+
+	// Key is the public key of the subject, embedded for offline verification.
+	Key *jose.JSONWebKey `json:"key,omitempty"`
 
 	// VC contains the Verifiable Credential data.
 	VC VerifiableCredential `json:"vc"`
@@ -32,4 +37,7 @@ type VerifiableCredential struct {
 type CredentialSubject struct {
 	// Domain is the security domain of the agent (e.g., "finance.internal").
 	Domain string `json:"domain,omitempty"`
+
+	// Level indicates the trust level (e.g., "1" = Domain Validated).
+	Level string `json:"level,omitempty"`
 }
