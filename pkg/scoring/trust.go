@@ -31,7 +31,6 @@ func (s *TrustScorer) Score(sigResult *crypto.SignatureVerificationResult) (floa
 		score = 20.0
 	} else if sigResult.Valid {
 		// Valid signatures boost trust significantly
-		score = 80.0
 
 		// Check if signature is from a Trusted Issuer
 		isTrusted := false
