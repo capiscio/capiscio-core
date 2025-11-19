@@ -35,6 +35,13 @@ type VerificationSummary struct {
 	Errors []string
 }
 
+type protectedHeader struct {
+	Alg     string `json:"alg"`
+	Kid     string `json:"kid"`
+	Jku     string `json:"jku"`
+	JwksUri string `json:"jwks_uri"`
+}
+
 // Verifier handles Agent Card signature verification.
 type Verifier struct {
 	jwksFetcher JWKSFetcher
@@ -101,20 +108,9 @@ func (v *Verifier) verifySingleSignature(ctx context.Context, payload []byte, si
 	res := SignatureResult{Index: index}
 
 	// 1. Parse Protected Header
-	headerBytes, err := base64.RawURLEncoding.DecodeString(sig.Protected)
+	header, err := v.parseHeader(sig)
 	if err != nil {
-		res.Error = fmt.Sprintf("invalid protected header encoding: %v", err)
-		return res
-	}
-
-	var header struct {
-		Alg     string `json:"alg"`
-		Kid     string `json:"kid"`
-		Jku     string `json:"jku"`
-		JwksUri string `json:"jwks_uri"`
-	}
-	if err := json.Unmarshal(headerBytes, &header); err != nil {
-		res.Error = fmt.Sprintf("invalid protected header json: %v", err)
+		res.Error = err.Error()
 		return res
 	}
 
@@ -122,26 +118,12 @@ func (v *Verifier) verifySingleSignature(ctx context.Context, payload []byte, si
 	res.KeyID = header.Kid
 
 	// 2. Validate Header
-	if header.Alg == "none" || header.Alg == "" {
-		res.Error = "algorithm 'none' or empty is not allowed"
-		return res
-	}
-
-	jwksURL := header.Jku
-	if jwksURL == "" {
-		jwksURL = header.JwksUri
-	}
-	if jwksURL == "" {
-		res.Error = "missing jku or jwks_uri in header"
+	jwksURL, err := v.validateHeader(header)
+	if err != nil {
+		res.Error = err.Error()
 		return res
 	}
 	res.JWKSUri = jwksURL
-
-	u, err := url.Parse(jwksURL)
-	if err != nil || u.Scheme != "https" {
-		res.Error = "jwks_uri must be a valid https url"
-		return res
-	}
 
 	// 3. Reconstruct JWS (Detached)
 	// JWS Compact Serialization: BASE64URL(UTF8(JWS Protected Header)) || '.' || BASE64URL(JWS Payload) || '.' || BASE64URL(JWS Signature)
@@ -162,30 +144,64 @@ func (v *Verifier) verifySingleSignature(ctx context.Context, payload []byte, si
 	}
 
 	// 5. Verify
-	keys := jwks.Keys
-	if len(keys) == 0 {
-		res.Error = "empty JWKS"
-		return res
-	}
-
-	verified := false
-	for _, key := range keys {
-		if header.Kid != "" && key.KeyID != header.Kid {
-			continue
-		}
-		// Verify returns the payload if successful
-		_, err := jwsObj.Verify(key)
-		if err == nil {
-			verified = true
-			break
-		}
-	}
-
-	if !verified {
-		res.Error = "signature verification failed"
+	if err := v.verifyJWS(jwsObj, jwks, header.Kid); err != nil {
+		res.Error = err.Error()
 		return res
 	}
 
 	res.Valid = true
 	return res
+}
+
+func (v *Verifier) parseHeader(sig agentcard.AgentCardSignature) (protectedHeader, error) {
+	headerBytes, err := base64.RawURLEncoding.DecodeString(sig.Protected)
+	if err != nil {
+		return protectedHeader{}, fmt.Errorf("invalid protected header encoding: %v", err)
+	}
+
+	var header protectedHeader
+	if err := json.Unmarshal(headerBytes, &header); err != nil {
+		return protectedHeader{}, fmt.Errorf("invalid protected header json: %v", err)
+	}
+	return header, nil
+}
+
+func (v *Verifier) validateHeader(header protectedHeader) (string, error) {
+	if header.Alg == "none" || header.Alg == "" {
+		return "", fmt.Errorf("algorithm 'none' or empty is not allowed")
+	}
+
+	jwksURL := header.Jku
+	if jwksURL == "" {
+		jwksURL = header.JwksUri
+	}
+	if jwksURL == "" {
+		return "", fmt.Errorf("missing jku or jwks_uri in header")
+	}
+
+	u, err := url.Parse(jwksURL)
+	if err != nil || u.Scheme != "https" {
+		return "", fmt.Errorf("jwks_uri must be a valid https url")
+	}
+	return jwksURL, nil
+}
+
+func (v *Verifier) verifyJWS(jwsObj *jose.JSONWebSignature, jwks *jose.JSONWebKeySet, kid string) error {
+	keys := jwks.Keys
+	if len(keys) == 0 {
+		return fmt.Errorf("empty JWKS")
+	}
+
+	for _, key := range keys {
+		if kid != "" && key.KeyID != kid {
+			continue
+		}
+		// Verify returns the payload if successful
+		_, err := jwsObj.Verify(key)
+		if err == nil {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("signature verification failed")
 }
