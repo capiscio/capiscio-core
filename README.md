@@ -7,7 +7,7 @@
 
 While it serves as the reference implementation for the **Agent-to-Agent (A2A) Protocol**, its primary mission is to secure the broader agent ecosystem.
 
-> **v1.0.1 Release**: This is the first release of CapiscIO Core. It combines the **Validation Engine** (for A2A compliance) with the new **Authority Layer** (for runtime security).
+> **v1.0.1 Release**: This release combines the **Validation Engine** (for A2A compliance) with the new **Authority Layer** (for runtime security).
 
 ## Why CapiscIO?
 
