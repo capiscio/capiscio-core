@@ -13,6 +13,9 @@ import (
 func TestHTTPClient_Ping_Success(t *testing.T) {
 	// Start a mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify path and query
+		assert.Equal(t, "/tasks", r.URL.Path)
+		assert.Equal(t, "1", r.URL.Query().Get("limit"))
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()

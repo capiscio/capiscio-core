@@ -45,15 +45,16 @@ type jsonRPCError struct {
 }
 
 // Ping sends a standard JSON-RPC request to check availability.
-// It attempts to call 'agent.listSkills' which is a common read-only method.
-// Even if the method is not found, a valid JSON-RPC error response indicates the agent is alive.
+// It attempts to call 'tasks/list' which is a standard v0.3.0 method.
+// Even if the method returns an empty list or an error (e.g. auth), a valid JSON-RPC response indicates the agent is alive.
 func (c *JSONRPCClient) Ping(ctx context.Context) (time.Duration, error) {
 	start := time.Now()
 
 	reqBody := jsonRPCRequest{
 		JSONRPC: "2.0",
-		Method:  "agent.listSkills",
-		ID:      1,
+		Method:  "tasks/list",
+		Params:  map[string]interface{}{"limit": 1},
+		ID:      "ping-1",
 	}
 
 	bodyBytes, err := json.Marshal(reqBody)

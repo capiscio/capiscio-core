@@ -19,12 +19,17 @@ func TestJSONRPCClient_Ping_Success(t *testing.T) {
 			return
 		}
 		assert.Equal(t, "2.0", req.JSONRPC)
-		assert.Equal(t, "agent.listSkills", req.Method)
+		assert.Equal(t, "tasks/list", req.Method)
+		
+		// Verify params
+		params, ok := req.Params.(map[string]interface{})
+		assert.True(t, ok)
+		assert.Equal(t, float64(1), params["limit"]) // JSON unmarshals numbers as float64
 
 		// Send response
 		resp := jsonRPCResponse{
 			JSONRPC: "2.0",
-			Result:  []string{"skill1"},
+			Result:  []string{"task1"},
 			ID:      req.ID,
 		}
 		json.NewEncoder(w).Encode(resp)
