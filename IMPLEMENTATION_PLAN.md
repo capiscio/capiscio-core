@@ -92,14 +92,18 @@ As of November 18, 2025, the `capiscio-core` engine v1.0.0 is **Production Ready
 *Goal: Evolve from "Compliance Validator" to "Identity Authority" and "Anti-Spoofing Shield".*
 
 - [ ] **Delegation Support (OIDC Alignment)**:
-    -   Implement validation for OIDC `act` (actor) claims in JWTs.
-    -   Verify chain of custody for agents acting on behalf of users or other agents.
+    -   Implement validation for OIDC `act` (actor) claims in JWTs (RFC 8693).
+    -   **Critical**: Support nested chains (User -> Agent A -> Agent B) for full auditability.
 - [ ] **ANS (Agent Name Service) Resolver**:
     -   Implement the IETF draft for Agent Name Service.
+    -   **Strategy**: Start with DNS TXT record resolution (e.g., `_agent.name` -> URL) for immediate compatibility.
     -   Add `ResolveANS(name string) (url string, err error)` to the core engine.
 - [ ] **Session Integrity (Anti-Smuggling)**:
-    -   Design "Gateway Mode" logic to monitor active sessions, not just initial handshakes.
-    -   Implement message-level signature verification for high-security streams.
+    -   Design "Gateway Mode" logic to monitor active sessions.
+    -   **Performance**: Implement "Heartbeat" or "Sampled" verification for high-throughput streams to avoid latency penalties.
+- [ ] **Structured Audit Logging (The "Evidence" Layer)**:
+    -   Emit validation events in structured JSON/OTEL format.
+    -   Log specific failure reasons (e.g., "Invalid act claim", "ANS lookup failed") for SIEM integration.
 
 ### Next Steps
 1.  **Immediate**: Integrate `capiscio-core` into `capiscio-cli` and `a2a-security`.
