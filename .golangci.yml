@@ -24,4 +24,3 @@ linters-settings:
         disabled: false
         arguments:
           - "checkPrivateReceivers"
-          - "sayRepetitiveLi"
