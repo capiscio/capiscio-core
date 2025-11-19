@@ -52,7 +52,7 @@ func TestKeeper(t *testing.T) {
 	// Since we just created it with 1h expiry, and RenewBefore is 30m, it should NOT renew.
 	err = keeper.CheckAndRenew()
 	require.NoError(t, err)
-	
+
 	data2, _ := os.ReadFile(badgeFile)
 	token2 := string(data2)
 	assert.Equal(t, token1, token2, "Should not have renewed")
@@ -65,7 +65,7 @@ func TestKeeper(t *testing.T) {
 	// We set RenewBefore to 2h, so 1h < 2h triggers renewal.
 	forceConfig := config
 	forceConfig.RenewBefore = 2 * time.Hour
-	
+
 	keeper2 := badge.NewKeeper(forceConfig)
 	err = keeper2.CheckAndRenew() // Should overwrite
 	require.NoError(t, err)

@@ -16,7 +16,7 @@ import (
 type CloudRegistry struct {
 	RegistryURL string
 	Client      *http.Client
-	
+
 	mu        sync.RWMutex
 	cache     map[string]crypto.PublicKey
 	cacheTime map[string]time.Time

@@ -56,9 +56,9 @@ func TestVerifier_VerifyAgentCardSignatures_InvalidHeader(t *testing.T) {
 	// The error message might vary depending on exactly how the base64 decoding fails or if it falls through to JSON unmarshal
 	// "invalid-base64" contains a hyphen which is valid in base64url, so it might decode but fail JSON unmarshal
 	// Let's check for either error
-	assert.True(t, 
-		strings.Contains(result.Signatures[0].Error, "invalid protected header encoding") || 
-		strings.Contains(result.Signatures[0].Error, "invalid protected header json"),
+	assert.True(t,
+		strings.Contains(result.Signatures[0].Error, "invalid protected header encoding") ||
+			strings.Contains(result.Signatures[0].Error, "invalid protected header json"),
 		"Error should be about encoding or json: %s", result.Signatures[0].Error,
 	)
 }

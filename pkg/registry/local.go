@@ -14,7 +14,7 @@ import (
 // LocalRegistry implements Registry using a local file.
 type LocalRegistry struct {
 	KeyPath string
-	
+
 	mu        sync.RWMutex
 	cachedKey crypto.PublicKey
 }

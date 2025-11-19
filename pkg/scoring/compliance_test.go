@@ -35,7 +35,7 @@ func TestComplianceScorer_Score_MissingRequiredFields(t *testing.T) {
 	}
 
 	score, issues := scorer.Score(card)
-	
+
 	// Expected penalties:
 	// -20 ProtocolVersion
 	// -10 Name
@@ -44,15 +44,15 @@ func TestComplianceScorer_Score_MissingRequiredFields(t *testing.T) {
 	// -15 No Skills
 	// -5 Missing Provider
 	// Total: -80 -> Score 20
-	
+
 	assert.Equal(t, 20.0, score)
 	assert.Len(t, issues, 6)
-	
+
 	codes := make([]string, len(issues))
 	for i, issue := range issues {
 		codes[i] = issue.Code
 	}
-	
+
 	assert.Contains(t, codes, "MISSING_PROTOCOL_VERSION")
 	assert.Contains(t, codes, "MISSING_NAME")
 	assert.Contains(t, codes, "MISSING_VERSION")

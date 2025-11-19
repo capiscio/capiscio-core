@@ -11,25 +11,25 @@ const (
 
 // AgentCard represents the A2A Agent Card structure based on v0.3.0 specification.
 type AgentCard struct {
-	ProtocolVersion                   string                       `json:"protocolVersion"`
-	Name                              string                       `json:"name"`
-	Description                       string                       `json:"description"`
-	URL                               string                       `json:"url"`
-	PreferredTransport                TransportProtocol            `json:"preferredTransport,omitempty"`
-	AdditionalInterfaces              []AgentInterface             `json:"additionalInterfaces,omitempty"`
-	Provider                          *AgentProvider               `json:"provider,omitempty"`
-	IconURL                           string                       `json:"iconUrl,omitempty"`
-	Version                           string                       `json:"version"`
-	DocumentationURL                  string                       `json:"documentationUrl,omitempty"`
-	Capabilities                      AgentCapabilities            `json:"capabilities"`
-	SecuritySchemes                   map[string]SecurityScheme    `json:"securitySchemes,omitempty"`
-	Security                          []map[string][]string        `json:"security,omitempty"`
-	DefaultInputModes                 []string                     `json:"defaultInputModes"`
-	DefaultOutputModes                []string                     `json:"defaultOutputModes"`
-	Skills                            []AgentSkill                 `json:"skills"`
-	SupportsAuthenticatedExtendedCard bool                         `json:"supportsAuthenticatedExtendedCard,omitempty"`
-	Signatures                        []AgentCardSignature         `json:"signatures,omitempty"`
-	Extensions                        []AgentExtension             `json:"extensions,omitempty"`
+	ProtocolVersion                   string                    `json:"protocolVersion"`
+	Name                              string                    `json:"name"`
+	Description                       string                    `json:"description"`
+	URL                               string                    `json:"url"`
+	PreferredTransport                TransportProtocol         `json:"preferredTransport,omitempty"`
+	AdditionalInterfaces              []AgentInterface          `json:"additionalInterfaces,omitempty"`
+	Provider                          *AgentProvider            `json:"provider,omitempty"`
+	IconURL                           string                    `json:"iconUrl,omitempty"`
+	Version                           string                    `json:"version"`
+	DocumentationURL                  string                    `json:"documentationUrl,omitempty"`
+	Capabilities                      AgentCapabilities         `json:"capabilities"`
+	SecuritySchemes                   map[string]SecurityScheme `json:"securitySchemes,omitempty"`
+	Security                          []map[string][]string     `json:"security,omitempty"`
+	DefaultInputModes                 []string                  `json:"defaultInputModes"`
+	DefaultOutputModes                []string                  `json:"defaultOutputModes"`
+	Skills                            []AgentSkill              `json:"skills"`
+	SupportsAuthenticatedExtendedCard bool                      `json:"supportsAuthenticatedExtendedCard,omitempty"`
+	Signatures                        []AgentCardSignature      `json:"signatures,omitempty"`
+	Extensions                        []AgentExtension          `json:"extensions,omitempty"`
 }
 
 // AgentProvider contains information about the agent's provider.
