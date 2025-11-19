@@ -1,7 +1,11 @@
 # CapiscIO Core: The Authority Layer
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Go Reference](https://pkg.go.dev/badge/github.com/capiscio/capiscio-core.svg)](https://pkg.go.dev/github.com/capiscio/capiscio-core)
+[![CI](https://github.com/capiscio/capiscio-core/actions/workflows/ci.yml/badge.svg)](https://github.com/capiscio/capiscio-core/actions/workflows/ci.yml)
+[![Lint](https://github.com/capiscio/capiscio-core/actions/workflows/lint.yml/badge.svg)](https://github.com/capiscio/capiscio-core/actions/workflows/lint.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/capiscio/capiscio-core)](https://goreportcard.com/report/github.com/capiscio/capiscio-core)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/capiscio/capiscio-core?sort=semver)](https://github.com/capiscio/capiscio-core/releases)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 **CapiscIO Core** is the **Universal Authority Layer** for AI Agents. It provides the infrastructure to Issue, Verify, and Enforce **Trust Badges** (Identity) for any agent, regardless of protocol (REST, MCP, A2A, etc.).
 

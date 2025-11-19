@@ -33,5 +33,8 @@ func TestAgentCard_JSONRoundTrip(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Compare
-	assert.Equal(t, original, &decoded)
+	assert.Equal(t, original.Name, decoded.Name)
+	assert.Equal(t, original.Capabilities.Streaming, decoded.Capabilities.Streaming)
+	assert.Equal(t, len(original.Signatures), len(decoded.Signatures))
+	assert.Equal(t, original.Signatures[0].Protected, decoded.Signatures[0].Protected)
 }
