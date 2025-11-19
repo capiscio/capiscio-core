@@ -5,6 +5,7 @@ import (
 	"crypto"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -54,7 +55,7 @@ func (k *Keeper) Run(ctx context.Context) error {
 		case <-ticker.C:
 			if err := k.CheckAndRenew(); err != nil {
 				// Log error but keep daemon alive
-				fmt.Printf("badge renewal failed: %v\n", err)
+				log.Printf("badge renewal failed: %v\n", err)
 			}
 		}
 	}
