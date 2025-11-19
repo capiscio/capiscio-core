@@ -105,10 +105,21 @@ As of November 18, 2025, the `capiscio-core` engine v1.0.0 is **Production Ready
     -   Emit validation events in structured JSON/OTEL format.
     -   Log specific failure reasons (e.g., "Invalid act claim", "ANS lookup failed") for SIEM integration.
 
+### Phase 8: The Enterprise Platform (Open Core Architecture)
+*Goal: Establish the commercial "Moat" by separating Execution (Open Source) from Control (Proprietary).*
+
+- [ ] **Architectural Separation**:
+    -   **CapiscIO Gateway (Open Source)**: The Go-based sidecar/proxy. Handles traffic interception, policy enforcement, and validation.
+    -   **CapiscIO Control Plane (Proprietary SaaS)**: The centralized API for Policy Management, Audit Log Ingestion, and Analytics.
+- [ ] **Data Contract Implementation**:
+    -   **Policy Fetch**: Gateway pulls configuration/rules from the Control Plane via authenticated API.
+    -   **Audit Ingest**: Gateway pushes structured logs to the Control Plane for storage and SIEM export.
+
 ### Next Steps
 1.  **Immediate**: Integrate `capiscio-core` into `capiscio-cli` and `a2a-security`.
 2.  **Q1 2026**: Build the "CapiscIO Gateway" (Reverse Proxy) using the core engine.
 3.  **Q1 2026**: Release the ANS Resolver reference implementation.
+4.  **Q2 2026**: Launch CapiscIO Control Plane (SaaS) Beta.
 
 ## 🛠️ Technical Decisions
 
