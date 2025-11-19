@@ -43,7 +43,7 @@ func TestVerifier_VerifyAgentCardSignatures_InvalidHeader(t *testing.T) {
 	verifier := NewVerifier()
 	card := &agentcard.AgentCard{
 		Name: "Test Agent",
-			Signatures: []agentcard.Signature{
+		Signatures: []agentcard.Signature{
 			{Protected: "invalid-base64", Signature: "sig"},
 		},
 	}
