@@ -28,7 +28,7 @@ type AgentCard struct {
 	DefaultOutputModes                []string                  `json:"defaultOutputModes"`
 	Skills                            []AgentSkill              `json:"skills"`
 	SupportsAuthenticatedExtendedCard bool                      `json:"supportsAuthenticatedExtendedCard,omitempty"`
-	Signatures                        []AgentCardSignature      `json:"signatures,omitempty"`
+	Signatures                        []Signature               `json:"signatures,omitempty"`
 	Extensions                        []AgentExtension          `json:"extensions,omitempty"`
 }
 
@@ -71,8 +71,8 @@ type AgentSkill struct {
 	OutputModes []string `json:"outputModes,omitempty"`
 }
 
-// AgentCardSignature represents a JWS signature on the Agent Card.
-type AgentCardSignature struct {
+// Signature represents a JWS signature on the Agent Card.
+type Signature struct {
 	Protected string `json:"protected"`
 	Signature string `json:"signature"`
 }

@@ -23,7 +23,7 @@ func NewVerifier(reg registry.Registry) *Verifier {
 }
 
 // Verify checks the validity of a TrustBadge JWS token.
-func (v *Verifier) Verify(ctx context.Context, token string) (*BadgeClaims, error) {
+func (v *Verifier) Verify(ctx context.Context, token string) (*Claims, error) {
 	// 1. Parse JWS
 	jwsObj, err := jose.ParseSigned(token, []jose.SignatureAlgorithm{jose.EdDSA, jose.ES256})
 	if err != nil {
@@ -32,7 +32,7 @@ func (v *Verifier) Verify(ctx context.Context, token string) (*BadgeClaims, erro
 
 	// 2. Extract Claims (Unverified) to get Issuer
 	unsafePayload := jwsObj.UnsafePayloadWithoutVerification()
-	var claims BadgeClaims
+	var claims Claims
 	if err := json.Unmarshal(unsafePayload, &claims); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal claims: %w", err)
 	}
@@ -54,7 +54,7 @@ func (v *Verifier) Verify(ctx context.Context, token string) (*BadgeClaims, erro
 	}
 
 	// 5. Re-unmarshal verified payload to ensure integrity
-	var verifiedClaims BadgeClaims
+	var verifiedClaims Claims
 	if err := json.Unmarshal(payload, &verifiedClaims); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal verified claims: %w", err)
 	}

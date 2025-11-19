@@ -2,9 +2,9 @@ package badge
 
 import "github.com/go-jose/go-jose/v4"
 
-// BadgeClaims represents the JWT claims payload for a CapiscIO Trust Badge.
+// Claims represents the JWT claims payload for a CapiscIO Trust Badge.
 // It follows the structure defined in the Minimal Authority Stack plan.
-type BadgeClaims struct {
+type Claims struct {
 	// Issuer is the entity that issued the badge (e.g., "https://registry.capisc.io").
 	Issuer string `json:"iss"`
 

@@ -44,7 +44,7 @@ func TestBadgeLifecycle(t *testing.T) {
 
 	// 2. Create Valid Badge
 	now := time.Now()
-	claims := &badge.BadgeClaims{
+	claims := &badge.Claims{
 		Issuer:   issuerDID,
 		Subject:  "did:capiscio:agent:test",
 		IssuedAt: now.Unix(),

@@ -14,7 +14,7 @@ import (
 // KeeperConfig holds configuration for the Badge Keeper.
 type KeeperConfig struct {
 	PrivateKey    crypto.PrivateKey
-	Claims        BadgeClaims
+	Claims        Claims
 	OutputFile    string
 	Expiry        time.Duration
 	RenewBefore   time.Duration
@@ -53,9 +53,8 @@ func (k *Keeper) Run(ctx context.Context) error {
 			return nil
 		case <-ticker.C:
 			if err := k.CheckAndRenew(); err != nil {
-				// We swallow the error in the loop to keep the daemon alive,
-				// but in a real system we'd log this.
-				// For now, we rely on the next tick to retry.
+				// Log error but keep daemon alive
+				fmt.Printf("badge renewal failed: %v\n", err)
 			}
 		}
 	}
@@ -78,7 +77,7 @@ func (k *Keeper) CheckAndRenew() error {
 			needsRenewal = true
 		} else {
 			payload := jwsObj.UnsafePayloadWithoutVerification()
-			var claims BadgeClaims
+			var claims Claims
 			if err := json.Unmarshal(payload, &claims); err != nil {
 				needsRenewal = true
 			} else {

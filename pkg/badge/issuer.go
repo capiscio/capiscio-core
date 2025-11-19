@@ -10,7 +10,7 @@ import (
 
 // SignBadge creates a signed JWS token from the given claims using the private key.
 // It defaults to EdDSA (Ed25519) signing.
-func SignBadge(claims *BadgeClaims, privateKey crypto.PrivateKey) (string, error) {
+func SignBadge(claims *Claims, privateKey crypto.PrivateKey) (string, error) {
 	// 1. Create Signer
 	// We use EdDSA (Ed25519) as the primary algorithm.
 	// Ideally, we should detect the key type, but for the Minimal Stack, we assume Ed25519.

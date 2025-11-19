@@ -43,7 +43,7 @@ func TestVerifier_VerifyAgentCardSignatures_InvalidHeader(t *testing.T) {
 	verifier := NewVerifier()
 	card := &agentcard.AgentCard{
 		Name: "Test Agent",
-		Signatures: []agentcard.AgentCardSignature{
+			Signatures: []agentcard.Signature{
 			{Protected: "invalid-base64", Signature: "sig"},
 		},
 	}
@@ -114,7 +114,7 @@ func TestVerifier_VerifyAgentCardSignatures_Success(t *testing.T) {
 	parts := strings.Split(compact, ".")
 	assert.Equal(t, 3, len(parts))
 
-	card.Signatures = []agentcard.AgentCardSignature{
+	card.Signatures = []agentcard.Signature{
 		{
 			Protected: parts[0],
 			Signature: parts[2],
@@ -168,7 +168,7 @@ func TestVerifier_VerifyAgentCardSignatures_TamperedPayload(t *testing.T) {
 	compact, _ := jws.CompactSerialize()
 	parts := strings.Split(compact, ".")
 
-	card.Signatures = []agentcard.AgentCardSignature{
+	card.Signatures = []agentcard.Signature{
 		{
 			Protected: parts[0],
 			Signature: parts[2],
