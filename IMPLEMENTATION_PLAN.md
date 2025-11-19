@@ -78,20 +78,33 @@ capiscio-core/
 - [x] **Engine Configuration**: Introduce `EngineConfig` to allow customization of timeouts, proxies, and behavior.
 - [x] **Trust Anchors**: Implement configurable "Trusted Issuers" to allow organizations to define who they trust (replacing hardcoded logic).
 
-## ✅ Status: Production Ready (v1.0.0 Candidate)
+## ✅ Status: v1.0.0 Released / v1.1.0 Planning
 
-As of November 18, 2025, the `capiscio-core` engine is considered **Production Ready**.
+As of November 18, 2025, the `capiscio-core` engine v1.0.0 is **Production Ready** and released. We are now executing on the "Authority Layer" strategy.
 
-### Key Features
+### Key Features (v1.0.0)
 *   **High Performance**: Go-based engine with concurrent validation and caching.
 *   **Secure**: Robust JWS/JWKS implementation with configurable trust anchors.
 *   **Reliable**: Extensive test suite (>80% coverage) covering crypto, scoring, and protocol layers.
 *   **Portable**: Ready for CLI (native) and Python (C-shared) integration.
 
+### Phase 7: The Authority Layer (Strategic Pivot)
+*Goal: Evolve from "Compliance Validator" to "Identity Authority" and "Anti-Spoofing Shield".*
+
+- [ ] **Delegation Support (OIDC Alignment)**:
+    -   Implement validation for OIDC `act` (actor) claims in JWTs.
+    -   Verify chain of custody for agents acting on behalf of users or other agents.
+- [ ] **ANS (Agent Name Service) Resolver**:
+    -   Implement the IETF draft for Agent Name Service.
+    -   Add `ResolveANS(name string) (url string, err error)` to the core engine.
+- [ ] **Session Integrity (Anti-Smuggling)**:
+    -   Design "Gateway Mode" logic to monitor active sessions, not just initial handshakes.
+    -   Implement message-level signature verification for high-security streams.
+
 ### Next Steps
-1.  Integrate `capiscio-core` into `capiscio-cli` (replace TypeScript logic).
-2.  Integrate `capiscio-core` into `a2a-security` (replace Python logic).
-3.  Expand Python bindings to expose `EngineConfig` (currently uses defaults).
+1.  **Immediate**: Integrate `capiscio-core` into `capiscio-cli` and `a2a-security`.
+2.  **Q1 2026**: Build the "CapiscIO Gateway" (Reverse Proxy) using the core engine.
+3.  **Q1 2026**: Release the ANS Resolver reference implementation.
 
 ## 🛠️ Technical Decisions
 
