@@ -56,7 +56,7 @@ func loadPrivateKey(path string) (ed25519.PrivateKey, ed25519.PublicKey, error) 
 var issueCmd = &cobra.Command{
 	Use:   "issue",
 	Short: "Issue a new Trust Badge",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		// 1. Get Private Key
 		var priv ed25519.PrivateKey
 		var pub ed25519.PublicKey
@@ -120,7 +120,7 @@ var issueCmd = &cobra.Command{
 var keepCmd = &cobra.Command{
 	Use:   "keep",
 	Short: "Run a daemon to keep a badge renewed",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		// 1. Load Private Key
 		priv, pub, err := loadPrivateKey(keyFile)
 		if err != nil {
@@ -204,11 +204,11 @@ type StaticRegistry struct {
 	Key interface{}
 }
 
-func (r *StaticRegistry) GetPublicKey(ctx context.Context, issuer string) (crypto.PublicKey, error) {
+func (r *StaticRegistry) GetPublicKey(_ context.Context, _ string) (crypto.PublicKey, error) {
 	return r.Key, nil
 }
 
-func (r *StaticRegistry) IsRevoked(ctx context.Context, id string) (bool, error) {
+func (r *StaticRegistry) IsRevoked(_ context.Context, _ string) (bool, error) {
 	return false, nil
 }
 
@@ -231,7 +231,7 @@ func init() {
 	keepCmd.Flags().StringVar(&issueDomain, "domain", "example.com", "Agent Domain")
 	keepCmd.Flags().DurationVar(&issueExpiry, "exp", 1*time.Hour, "Expiration duration")
 	keepCmd.Flags().StringVar(&keyFile, "key", "", "Path to private key file (required)")
-	keepCmd.MarkFlagRequired("key")
+	_ = keepCmd.MarkFlagRequired("key")
 
 	keepCmd.Flags().StringVar(&keepOutFile, "out", "badge.jwt", "Output file path")
 	keepCmd.Flags().DurationVar(&keepRenewBefore, "renew-before", 10*time.Minute, "Time before expiry to renew")
@@ -239,5 +239,5 @@ func init() {
 
 	// Verify Flags
 	verifyCmd.Flags().StringVar(&keyFile, "key", "", "Path to public key file (JWK)")
-	verifyCmd.MarkFlagRequired("key")
+	_ = verifyCmd.MarkFlagRequired("key")
 }

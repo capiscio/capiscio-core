@@ -1,3 +1,4 @@
+// Package main provides C-compatible bindings for the CapiscIO Core library.
 package main
 
 /*

@@ -1,3 +1,4 @@
+// Package badge provides functionality for issuing and verifying Trust Badges.
 package badge
 
 import (

@@ -18,6 +18,7 @@ type SignatureVerificationResult struct {
 	Summary    VerificationSummary
 }
 
+// SignatureResult holds the details of a single signature verification.
 type SignatureResult struct {
 	Index     int
 	Valid     bool
@@ -28,6 +29,7 @@ type SignatureResult struct {
 	Error     string
 }
 
+// VerificationSummary summarizes the results of all signature verifications.
 type VerificationSummary struct {
 	Total  int
 	Valid  int
@@ -39,7 +41,7 @@ type protectedHeader struct {
 	Alg     string `json:"alg"`
 	Kid     string `json:"kid"`
 	Jku     string `json:"jku"`
-	JwksUri string `json:"jwks_uri"`
+	JwksURI string `json:"jwks_uri"`
 }
 
 // Verifier handles Agent Card signature verification.
@@ -173,7 +175,7 @@ func (v *Verifier) validateHeader(header protectedHeader) (string, error) {
 
 	jwksURL := header.Jku
 	if jwksURL == "" {
-		jwksURL = header.JwksUri
+		jwksURL = header.JwksURI
 	}
 	if jwksURL == "" {
 		return "", fmt.Errorf("missing jku or jwks_uri in header")

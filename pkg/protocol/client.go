@@ -1,3 +1,4 @@
+// Package protocol defines the interfaces and implementations for communicating with A2A agents.
 package protocol
 
 import (

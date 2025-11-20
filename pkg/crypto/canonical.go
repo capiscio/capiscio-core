@@ -1,3 +1,4 @@
+// Package crypto provides cryptographic utilities for CapiscIO.
 package crypto
 
 import (

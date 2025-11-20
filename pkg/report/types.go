@@ -1,3 +1,4 @@
+// Package report defines the structures for validation and scoring reports.
 package report
 
 import (

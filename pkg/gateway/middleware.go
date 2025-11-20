@@ -1,3 +1,4 @@
+// Package gateway provides the HTTP middleware for the CapiscIO Security Sidecar.
 package gateway
 
 import (

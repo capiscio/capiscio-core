@@ -26,7 +26,7 @@ func NewLocalRegistry(path string) *LocalRegistry {
 
 // GetPublicKey reads the key from the local file.
 // It ignores the issuer argument for the MVP (trusts the local key for all).
-func (r *LocalRegistry) GetPublicKey(ctx context.Context, issuer string) (crypto.PublicKey, error) {
+func (r *LocalRegistry) GetPublicKey(_ context.Context, _ string) (crypto.PublicKey, error) {
 	r.mu.RLock()
 	if r.cachedKey != nil {
 		r.mu.RUnlock()
@@ -58,6 +58,6 @@ func (r *LocalRegistry) GetPublicKey(ctx context.Context, issuer string) (crypto
 }
 
 // IsRevoked checks if the ID is in the local blocklist (not implemented yet).
-func (r *LocalRegistry) IsRevoked(ctx context.Context, id string) (bool, error) {
+func (r *LocalRegistry) IsRevoked(_ context.Context, _ string) (bool, error) {
 	return false, nil
 }

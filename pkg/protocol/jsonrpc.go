@@ -72,7 +72,7 @@ func (c *JSONRPCClient) Ping(ctx context.Context) (time.Duration, error) {
 	if err != nil {
 		return 0, fmt.Errorf("request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return 0, fmt.Errorf("server returned status: %d", resp.StatusCode)
@@ -89,6 +89,7 @@ func (c *JSONRPCClient) Ping(ctx context.Context) (time.Duration, error) {
 	return time.Since(start), nil
 }
 
+// Close cleans up resources.
 func (c *JSONRPCClient) Close() error {
 	return nil
 }

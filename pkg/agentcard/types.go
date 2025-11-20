@@ -1,8 +1,10 @@
+// Package agentcard defines the data structures for the A2A Agent Card.
 package agentcard
 
 // TransportProtocol defines the supported transport protocols for A2A agents.
 type TransportProtocol string
 
+// Supported Transport Protocols.
 const (
 	TransportJSONRPC  TransportProtocol = "JSONRPC"
 	TransportGRPC     TransportProtocol = "GRPC"
