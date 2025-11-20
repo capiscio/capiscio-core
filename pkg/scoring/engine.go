@@ -127,6 +127,10 @@ func (e *Engine) Validate(ctx context.Context, card *agentcard.AgentCard, checkA
 		trustScore, trustIssues := e.trust.Score(sigResult)
 		result.TrustScore = trustScore
 		result.Issues = append(result.Issues, trustIssues...)
+	} else {
+		// Ensure fields are initialized when signature verification and trust scoring are skipped
+		result.Signatures = nil
+		result.TrustScore = 0
 	}
 
 	// 4. Availability Scoring (Optional)
