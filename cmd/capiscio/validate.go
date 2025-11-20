@@ -56,6 +56,10 @@ var validateCmd = &cobra.Command{
 	Long:  `Validate an Agent Card from a local file or URL. Checks compliance, verifies signatures, and optionally tests availability.`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(_ *cobra.Command, args []string) error {
+		if flagLive {
+			fmt.Fprintln(os.Stderr, "Warning: --live is deprecated and will be removed in v1.1.0. Please use --test-live instead.")
+		}
+
 		input := args[0]
 		var cardData []byte
 		var err error
@@ -134,7 +138,7 @@ var validateCmd = &cobra.Command{
 			} else {
 				fmt.Println("❌ A2A AGENT VALIDATION FAILED")
 			}
-			
+
 			fmt.Printf("Score: %.0f/100\n", result.ComplianceScore)
 			fmt.Printf("Version: %s\n", card.ProtocolVersion) // Assuming ProtocolVersion is available in card
 
