@@ -28,7 +28,7 @@ var gatewayCmd = &cobra.Command{
 var gatewayStartCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start the gateway server",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		// 1. Setup Registry
 		var reg registry.Registry
 		if gatewayLocalKey != "" {

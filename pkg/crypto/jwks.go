@@ -75,7 +75,7 @@ func (f *DefaultJWKSFetcher) Fetch(ctx context.Context, url string) (*jose.JSONW
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch JWKS: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to fetch JWKS: status %d", resp.StatusCode)

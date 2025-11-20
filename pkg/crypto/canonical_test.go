@@ -12,7 +12,7 @@ func TestCreateCanonicalJSON(t *testing.T) {
 	card := &agentcard.AgentCard{
 		Name:            "Test Agent",
 		ProtocolVersion: "0.3.0",
-			Signatures: []agentcard.Signature{
+		Signatures: []agentcard.Signature{
 			{Protected: "abc", Signature: "def"},
 		},
 		Version: "1.0.0",

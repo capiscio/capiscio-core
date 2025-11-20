@@ -1,3 +1,4 @@
+// Package registry implements the Trust Registry interface for key retrieval.
 package registry
 
 import (
@@ -38,7 +39,7 @@ func (r *CloudRegistry) GetPublicKey(ctx context.Context, issuer string) (crypto
 	// Check cache
 	r.mu.RLock()
 	key, ok := r.cache[issuer]
-	expiry, _ := r.cacheTime[issuer]
+	expiry := r.cacheTime[issuer]
 	r.mu.RUnlock()
 
 	if ok && time.Now().Before(expiry) {
@@ -55,7 +56,7 @@ func (r *CloudRegistry) GetPublicKey(ctx context.Context, issuer string) (crypto
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("registry returned status %d", resp.StatusCode)
@@ -76,6 +77,6 @@ func (r *CloudRegistry) GetPublicKey(ctx context.Context, issuer string) (crypto
 }
 
 // IsRevoked checks revocation (not implemented for MVP).
-func (r *CloudRegistry) IsRevoked(ctx context.Context, id string) (bool, error) {
+func (r *CloudRegistry) IsRevoked(_ context.Context, _ string) (bool, error) {
 	return false, nil
 }

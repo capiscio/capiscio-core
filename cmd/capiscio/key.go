@@ -24,7 +24,7 @@ var keyCmd = &cobra.Command{
 var keyGenCmd = &cobra.Command{
 	Use:   "gen",
 	Short: "Generate a new Ed25519 Key Pair",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		// 1. Generate Key Pair
 		pub, priv, err := ed25519.GenerateKey(rand.Reader)
 		if err != nil {

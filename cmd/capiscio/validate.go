@@ -32,7 +32,7 @@ var validateCmd = &cobra.Command{
 	Short: "Validate an Agent Card",
 	Long:  `Validate an Agent Card from a local file or URL. Checks compliance, verifies signatures, and optionally tests availability.`,
 	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, args []string) error {
 		input := args[0]
 		var cardData []byte
 		var err error
@@ -43,7 +43,7 @@ var validateCmd = &cobra.Command{
 			if err != nil {
 				return fmt.Errorf("failed to fetch URL: %w", err)
 			}
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			cardData, err = io.ReadAll(resp.Body)
 			if err != nil {
 				return fmt.Errorf("failed to read response body: %w", err)

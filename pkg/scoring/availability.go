@@ -1,3 +1,4 @@
+// Package scoring implements the validation and scoring logic for Agent Cards.
 package scoring
 
 import (
@@ -58,7 +59,7 @@ func (s *AvailabilityScorer) Score(ctx context.Context, card *agentcard.AgentCar
 			return res
 		}
 	}
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
 	latency, err := client.Ping(ctx)
 	if err != nil {

@@ -45,7 +45,7 @@ func (c *HTTPClient) Ping(ctx context.Context) (time.Duration, error) {
 	if err != nil {
 		return 0, fmt.Errorf("request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// We consider 5xx errors as failure.
 	// 401/403 is actually a success for liveness (server is there, just protected).
@@ -57,6 +57,7 @@ func (c *HTTPClient) Ping(ctx context.Context) (time.Duration, error) {
 	return time.Since(start), nil
 }
 
+// Close cleans up resources.
 func (c *HTTPClient) Close() error {
 	return nil
 }
