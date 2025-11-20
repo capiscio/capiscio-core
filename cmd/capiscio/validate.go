@@ -89,6 +89,20 @@ var validateCmd = &cobra.Command{
 		}
 
 		// 3. Run Validation Engine
+		modeCount := 0
+		if flagStrict {
+			modeCount++
+		}
+		if flagProgressive {
+			modeCount++
+		}
+		if flagConservative {
+			modeCount++
+		}
+		if modeCount > 1 {
+			return fmt.Errorf("only one validation mode can be specified")
+		}
+
 		mode := scoring.ModeProgressive
 		if flagStrict || flagRegistryReady {
 			mode = scoring.ModeStrict
