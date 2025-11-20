@@ -212,10 +212,9 @@ func (s *ComplianceScorer) checkAdditionalInterfaces(card *agentcard.AgentCard) 
 	return issues, penalty
 }
 
+var semVerRegex = regexp.MustCompile(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$`)
+
 // isValidSemVer checks if a string is a valid Semantic Version.
-// This is a simplified regex for SemVer 2.0.0.
 func isValidSemVer(v string) bool {
-	// Regex from https://semver.org/
-	re := regexp.MustCompile(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$`)
-	return re.MatchString(v)
+	return semVerRegex.MatchString(v)
 }
