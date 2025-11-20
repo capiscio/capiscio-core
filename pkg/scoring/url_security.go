@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"strings"
 
 	"github.com/capiscio/capiscio-core/pkg/report"
 )
@@ -40,13 +41,15 @@ func (v *URLValidator) Validate(rawURL string, fieldName string) []report.Valida
 	}
 
 	// Check scheme
-	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" && parsedURL.Scheme != "grpc" {
+	scheme := strings.ToLower(parsedURL.Scheme)
+	if scheme != "http" && scheme != "https" && scheme != "grpc" {
 		issues = append(issues, report.ValidationIssue{
 			Code:     "INVALID_URL_SCHEME",
 			Message:  "URL must use http, https, or grpc scheme",
 			Severity: "error",
 			Field:    fieldName,
 		})
+		return issues
 	}
 
 	// Check host
@@ -63,19 +66,11 @@ func (v *URLValidator) Validate(rawURL string, fieldName string) []report.Valida
 
 	// Security checks (unless allowed)
 	if !v.AllowPrivateIPs {
-		if isPrivateIP(hostname) {
+		if isLocalOrPrivateHost(hostname) {
 			issues = append(issues, report.ValidationIssue{
 				Code:     "INSECURE_URL_PRIVATE_IP",
-				Message:  "URL resolves to a private IP address (security risk)",
+				Message:  "URL resolves to a local or private IP address (security risk)",
 				Severity: "warning", // Warning by default, Error in strict mode (handled by engine)
-				Field:    fieldName,
-			})
-		}
-		if hostname == "localhost" {
-			issues = append(issues, report.ValidationIssue{
-				Code:     "INSECURE_URL_LOCALHOST",
-				Message:  "URL uses localhost (not accessible externally)",
-				Severity: "warning",
 				Field:    fieldName,
 			})
 		}
@@ -84,7 +79,10 @@ func (v *URLValidator) Validate(rawURL string, fieldName string) []report.Valida
 	return issues
 }
 
-func isPrivateIP(hostname string) bool {
+func isLocalOrPrivateHost(hostname string) bool {
+	if hostname == "localhost" {
+		return true
+	}
 	ip := net.ParseIP(hostname)
 	if ip == nil {
 		// It's a domain name, not an IP

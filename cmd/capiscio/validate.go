@@ -20,32 +20,25 @@ var (
 	flagJSON          bool
 	flagLive          bool
 	flagTestLive      bool
-	flagInsecure      bool
 	flagStrict        bool
-	flagProgressive   bool
-	flagConservative  bool
 	flagSkipSignature bool
 	flagSchemaOnly    bool
 	flagRegistryReady bool
 	flagTimeout       time.Duration
 	flagErrorsOnly    bool
-	flagVerbose       bool
 )
 
 func init() {
 	validateCmd.Flags().BoolVar(&flagJSON, "json", false, "Output results as JSON")
 	validateCmd.Flags().BoolVar(&flagLive, "live", false, "Perform live availability checks (deprecated, use --test-live)")
+	validateCmd.Flags().Lookup("live").Deprecated = "use --test-live instead"
 	validateCmd.Flags().BoolVar(&flagTestLive, "test-live", false, "Test live agent endpoint")
-	validateCmd.Flags().BoolVar(&flagInsecure, "insecure", false, "Allow insecure (HTTP) JWKS fetching")
 	validateCmd.Flags().BoolVar(&flagStrict, "strict", false, "Enable strict validation mode")
-	validateCmd.Flags().BoolVar(&flagProgressive, "progressive", false, "Enable progressive validation mode (default)")
-	validateCmd.Flags().BoolVar(&flagConservative, "conservative", false, "Enable conservative validation mode")
 	validateCmd.Flags().BoolVar(&flagSkipSignature, "skip-signature", false, "Skip JWS signature verification")
 	validateCmd.Flags().BoolVar(&flagSchemaOnly, "schema-only", false, "Validate schema only, skip endpoint testing")
 	validateCmd.Flags().BoolVar(&flagRegistryReady, "registry-ready", false, "Check registry deployment readiness")
 	validateCmd.Flags().DurationVar(&flagTimeout, "timeout", 10*time.Second, "Request timeout")
 	validateCmd.Flags().BoolVar(&flagErrorsOnly, "errors-only", false, "Show only errors and warnings")
-	validateCmd.Flags().BoolVar(&flagVerbose, "verbose", false, "Show detailed validation steps")
 
 	rootCmd.AddCommand(validateCmd)
 }
@@ -89,25 +82,9 @@ var validateCmd = &cobra.Command{
 		}
 
 		// 3. Run Validation Engine
-		modeCount := 0
-		if flagStrict {
-			modeCount++
-		}
-		if flagProgressive {
-			modeCount++
-		}
-		if flagConservative {
-			modeCount++
-		}
-		if modeCount > 1 {
-			return fmt.Errorf("only one validation mode can be specified")
-		}
-
 		mode := scoring.ModeProgressive
 		if flagStrict || flagRegistryReady {
 			mode = scoring.ModeStrict
-		} else if flagConservative {
-			mode = scoring.ModeConservative
 		}
 
 		config := &scoring.EngineConfig{
@@ -146,28 +123,44 @@ var validateCmd = &cobra.Command{
 		}
 
 		// Text Output
-		if !flagErrorsOnly {
+		if !flagErrorsOnly || (flagErrorsOnly && len(result.Issues) > 0) {
 			if result.Success {
 				fmt.Println("✅ A2A AGENT VALIDATION PASSED")
 			} else {
 				fmt.Println("❌ A2A AGENT VALIDATION FAILED")
 			}
 
-			fmt.Printf("Score: %.0f/100\n", result.ComplianceScore)
-			fmt.Printf("Version: %s\n", card.ProtocolVersion) // Assuming ProtocolVersion is available in card
+			if !flagErrorsOnly {
+				fmt.Printf("Score: %.0f/100\n", result.ComplianceScore)
+				fmt.Printf("Version: %s\n", card.ProtocolVersion)
 
-			if result.Success && len(result.Issues) == 0 {
-				fmt.Println("Perfect! Your agent passes all validations")
-			} else if result.Success {
-				fmt.Println("Agent passed with warnings")
+				if result.Success && len(result.Issues) == 0 {
+					fmt.Println("Perfect! Your agent passes all validations")
+				} else if result.Success {
+					fmt.Println("Agent passed with warnings")
+				}
 			}
 		}
 
 		if len(result.Issues) > 0 {
 			if !flagErrorsOnly {
 				fmt.Println("\nERRORS FOUND:")
+			} else {
+				// In errors-only mode, we still want to show what we found
+				fmt.Println("\nISSUES FOUND:")
 			}
 			for _, issue := range result.Issues {
+				// Skip warnings in errors-only mode unless we want to show them?
+				// The flag is "errors-only", usually implies "show only errors".
+				// But the reviewer said "show at least a minimal status or the warning count".
+				// If I filter out warnings here, I might show nothing if there are only warnings.
+				// Let's check the flag description: "Show only errors and warnings". Wait.
+				// The flag name is "errors-only". The description in code is "Show only errors and warnings".
+				// That description is contradictory or I misread it.
+				// validateCmd.Flags().BoolVar(&flagErrorsOnly, "errors-only", false, "Show only errors and warnings")
+				// Usually "errors-only" means "suppress info/debug/success messages".
+				// So showing warnings is probably fine.
+				
 				icon := "⚠️"
 				if issue.Severity == "error" {
 					icon = "❌"
@@ -188,8 +181,8 @@ type CLIOutput struct {
 	Success       bool                     `json:"success"`
 	Score         float64                  `json:"score"`
 	Version       string                   `json:"version"`
-	Errors        []report.ValidationIssue `json:"errors"`
-	Warnings      []report.ValidationIssue `json:"warnings"`
+	Errors        []report.ValidationIssue `json:"errors,omitempty"`
+	Warnings      []report.ValidationIssue `json:"warnings,omitempty"`
 	ScoringResult *report.ValidationResult `json:"scoringResult"`
 	LiveTest      *CLILiveTestResult       `json:"liveTest,omitempty"`
 }

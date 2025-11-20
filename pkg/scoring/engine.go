@@ -17,8 +17,6 @@ const (
 	ModeProgressive ValidationMode = "progressive"
 	// ModeStrict fails on ANY warning or error.
 	ModeStrict ValidationMode = "strict"
-	// ModeConservative only fails on critical errors, ignores best practices.
-	ModeConservative ValidationMode = "conservative"
 )
 
 // EngineConfig holds configuration for the scoring Engine.

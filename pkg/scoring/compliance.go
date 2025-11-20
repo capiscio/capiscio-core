@@ -141,18 +141,23 @@ func (s *ComplianceScorer) checkTransport(card *agentcard.AgentCard) ([]report.V
 		urlVal := NewURLValidator(s.config.AllowPrivateIPs)
 		urlIssues := urlVal.Validate(card.URL, "url")
 		issues = append(issues, urlIssues...)
-		if len(urlIssues) > 0 {
-			penalty += 10
+		for _, issue := range urlIssues {
+			switch issue.Severity {
+			case "error":
+				penalty += 10
+			case "warning":
+				penalty += 2
+			}
 		}
 	}
 
 	if card.PreferredTransport != "" {
-		validTransports := map[string]bool{
+		validTransports := map[agentcard.TransportProtocol]bool{
 			"JSONRPC":   true,
 			"GRPC":      true,
 			"HTTP+JSON": true,
 		}
-		if !validTransports[string(card.PreferredTransport)] {
+		if !validTransports[card.PreferredTransport] {
 			issues = append(issues, report.ValidationIssue{
 				Code: "INVALID_TRANSPORT", Message: "Invalid transport protocol. Valid options: JSONRPC, GRPC, HTTP+JSON", Severity: "error", Field: "preferredTransport",
 			})
@@ -197,8 +202,13 @@ func (s *ComplianceScorer) checkAdditionalInterfaces(card *agentcard.AgentCard) 
 			} else {
 				urlIssues := urlVal.Validate(iface.URL, fmt.Sprintf("additionalInterfaces[%d].url", i))
 				issues = append(issues, urlIssues...)
-				if len(urlIssues) > 0 {
-					penalty += 2
+				for _, issue := range urlIssues {
+					switch issue.Severity {
+					case "error":
+						penalty += 2
+					case "warning":
+						penalty += 1
+					}
 				}
 			}
 			if iface.Transport == "" {
