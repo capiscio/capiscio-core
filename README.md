@@ -161,6 +161,7 @@ func main() {
     card := &agentcard.AgentCard{...}
 
     // Validate and Score
+    // Note: checkLive=true performs network availability checks
     result, err := engine.Validate(context.Background(), card, true)
     if err != nil {
         panic(err)
@@ -169,6 +170,25 @@ func main() {
     fmt.Printf("Compliance Score: %.2f\n", result.TrustScore)
 }
 ```
+
+## CLI Reference
+
+### `validate`
+
+Validates an Agent Card file or URL.
+
+```bash
+capiscio validate ./agent-card.json
+```
+
+**Flags:**
+*   `--json`: Output results as JSON.
+*   `--strict`: Enable strict validation mode (fails on warnings).
+*   `--test-live`: Perform live availability checks (replaces deprecated `--live`).
+*   `--skip-signature`: Skip JWS signature verification.
+*   `--schema-only`: Validate schema only, skip endpoint testing.
+*   `--errors-only`: Show only errors and warnings.
+*   `--timeout`: Request timeout (default 10s).
 
 ## Development
 
