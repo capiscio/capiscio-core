@@ -4,6 +4,8 @@ bin/
 *.dylib
 *.dll
 *.exe
+/capiscio-core
+/capiscio
 
 # Python bindings artifacts
 bindings/python/libcapiscio.h

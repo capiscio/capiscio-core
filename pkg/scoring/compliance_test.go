@@ -8,7 +8,7 @@ import (
 )
 
 func TestComplianceScorer_Score_PerfectCard(t *testing.T) {
-	scorer := NewComplianceScorer()
+	scorer := NewComplianceScorer(nil)
 	card := &agentcard.AgentCard{
 		ProtocolVersion: "0.3.0",
 		Name:            "Perfect Agent",
@@ -29,7 +29,7 @@ func TestComplianceScorer_Score_PerfectCard(t *testing.T) {
 }
 
 func TestComplianceScorer_Score_MissingRequiredFields(t *testing.T) {
-	scorer := NewComplianceScorer()
+	scorer := NewComplianceScorer(nil)
 	card := &agentcard.AgentCard{
 		// Missing ProtocolVersion, Name, Version, URL
 	}
@@ -62,7 +62,7 @@ func TestComplianceScorer_Score_MissingRequiredFields(t *testing.T) {
 }
 
 func TestComplianceScorer_Score_InvalidURL(t *testing.T) {
-	scorer := NewComplianceScorer()
+	scorer := NewComplianceScorer(nil)
 	card := &agentcard.AgentCard{
 		ProtocolVersion: "0.3.0",
 		Name:            "Agent",
@@ -81,7 +81,7 @@ func TestComplianceScorer_Score_InvalidURL(t *testing.T) {
 }
 
 func TestComplianceScorer_Score_SkillIssues(t *testing.T) {
-	scorer := NewComplianceScorer()
+	scorer := NewComplianceScorer(nil)
 	card := &agentcard.AgentCard{
 		ProtocolVersion: "0.3.0",
 		Name:            "Agent",
