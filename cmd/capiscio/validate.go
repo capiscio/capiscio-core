@@ -188,9 +188,10 @@ func adaptToCLIOutput(r *report.ValidationResult, card *agentcard.AgentCard) CLI
 	warnings := []report.ValidationIssue{}
 
 	for _, issue := range r.Issues {
-		if issue.Severity == "error" {
+		switch issue.Severity {
+		case "error":
 			errors = append(errors, issue)
-		} else if issue.Severity == "warning" {
+		case "warning":
 			warnings = append(warnings, issue)
 		}
 	}
