@@ -15,6 +15,18 @@ test:
 	@echo "Running tests..."
 	go test -v ./...
 
+fmt:
+	@echo "Formatting code..."
+	gofmt -s -w .
+
+fmt-check:
+	@echo "Checking code formatting..."
+	@if [ -n "$$(gofmt -s -l .)" ]; then \
+		echo "The following files are not formatted:"; \
+		gofmt -s -l .; \
+		exit 1; \
+	fi
+
 clean:
 	@echo "Cleaning..."
 	rm -rf bin
