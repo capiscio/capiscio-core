@@ -10,7 +10,7 @@
 
 While it serves as the reference implementation for the **Agent-to-Agent (A2A) Protocol**, its primary mission is to secure the broader agent ecosystem.
 
-> **v1.0.1 Release**: This release combines the **Validation Engine** (for A2A compliance) with the new **Authority Layer** (for runtime security).
+> **v0.4.0 Release**: This release combines the **Validation Engine** (for A2A compliance) with the new **Authority Layer** (for runtime security).
 
 ## Why CapiscIO?
 
@@ -38,7 +38,7 @@ Building authentication for AI Agents is hard. OAuth is complex, API keys are in
 ### 1. Installation
 
 ```bash
-go install github.com/capiscio/capiscio-core/cmd/capiscio@v1.0.1
+go install github.com/capiscio/capiscio-core/cmd/capiscio@v0.4.0
 ```
 
 ### 2. Issue a Trust Badge (Identity)
