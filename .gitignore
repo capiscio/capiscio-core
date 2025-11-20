@@ -1,0 +1,16 @@
+# Binaries
+bin/
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Python bindings artifacts
+bindings/python/libcapiscio.h
+
+# Test coverage
+coverage.txt
+
+# IDEs
+.vscode/
+.idea/
