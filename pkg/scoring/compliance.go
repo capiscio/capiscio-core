@@ -36,18 +36,51 @@ func (s *ComplianceScorer) Score(card *agentcard.AgentCard) (float64, []report.V
 	score := 100.0
 
 	// 1. Check Required Fields (Critical)
+	reqIssues, reqPenalty := s.checkRequiredFields(card)
+	issues = append(issues, reqIssues...)
+	score -= reqPenalty
+
+	// 2. Check Skills (Important)
+	skillIssues, skillPenalty := s.checkSkills(card)
+	issues = append(issues, skillIssues...)
+	score -= skillPenalty
+
+	// 3. Check Transport (Important)
+	transIssues, transPenalty := s.checkTransport(card)
+	issues = append(issues, transIssues...)
+	score -= transPenalty
+
+	// 4. Check Provider (Recommended)
+	provIssues, provPenalty := s.checkProvider(card)
+	issues = append(issues, provIssues...)
+	score -= provPenalty
+
+	// 5. Check Additional Interfaces
+	ifaceIssues, ifacePenalty := s.checkAdditionalInterfaces(card)
+	issues = append(issues, ifaceIssues...)
+	score -= ifacePenalty
+
+	if score < 0 {
+		score = 0
+	}
+	return score, issues
+}
+
+func (s *ComplianceScorer) checkRequiredFields(card *agentcard.AgentCard) ([]report.ValidationIssue, float64) {
+	var issues []report.ValidationIssue
+	var penalty float64
+
 	if card.ProtocolVersion == "" {
 		issues = append(issues, report.ValidationIssue{
 			Code: "MISSING_PROTOCOL_VERSION", Message: "protocolVersion is required", Severity: "error", Field: "protocolVersion",
 		})
-		score -= 20
+		penalty += 20
 	} else {
-		// Validate SemVer
 		if !isValidSemVer(card.ProtocolVersion) {
 			issues = append(issues, report.ValidationIssue{
 				Code: "INVALID_PROTOCOL_VERSION", Message: "protocolVersion must be a valid SemVer string", Severity: "error", Field: "protocolVersion",
 			})
-			score -= 10
+			penalty += 10
 		}
 	}
 
@@ -55,57 +88,61 @@ func (s *ComplianceScorer) Score(card *agentcard.AgentCard) (float64, []report.V
 		issues = append(issues, report.ValidationIssue{
 			Code: "MISSING_NAME", Message: "name is required", Severity: "error", Field: "name",
 		})
-		score -= 10
+		penalty += 10
 	}
 	if card.Version == "" {
 		issues = append(issues, report.ValidationIssue{
 			Code: "MISSING_VERSION", Message: "version is required", Severity: "error", Field: "version",
 		})
-		score -= 10
+		penalty += 10
 	}
 
-	// 2. Check Capabilities (Critical)
-	// Note: In Go struct, Capabilities is a struct, not a pointer, so it's always "present" but fields might be false.
-	// We can't easily check if the *object* was missing in JSON without a custom unmarshaler or pointer.
-	// For now, we assume the struct presence is enough, but we should check if it makes sense.
-	// Actually, A2A spec says capabilities object is required.
+	return issues, penalty
+}
 
-	// 3. Check Skills (Important)
+func (s *ComplianceScorer) checkSkills(card *agentcard.AgentCard) ([]report.ValidationIssue, float64) {
+	var issues []report.ValidationIssue
+	var penalty float64
+
 	if len(card.Skills) == 0 {
 		issues = append(issues, report.ValidationIssue{
 			Code: "NO_SKILLS", Message: "At least one skill should be defined", Severity: "warning", Field: "skills",
 		})
-		score -= 15
+		penalty += 15
 	} else {
 		for i, skill := range card.Skills {
 			if skill.ID == "" {
 				issues = append(issues, report.ValidationIssue{
 					Code: "MISSING_SKILL_ID", Message: "Skill ID is required", Severity: "error", Field: fmt.Sprintf("skills[%d].id", i),
 				})
-				score -= 5
+				penalty += 5
 			}
 			if len(skill.Tags) == 0 {
 				issues = append(issues, report.ValidationIssue{
 					Code: "MISSING_SKILL_TAGS", Message: "Skill tags are required", Severity: "warning", Field: fmt.Sprintf("skills[%d].tags", i),
 				})
-				score -= 2
+				penalty += 2
 			}
 		}
 	}
+	return issues, penalty
+}
 
-	// 4. Check Transport (Important)
+func (s *ComplianceScorer) checkTransport(card *agentcard.AgentCard) ([]report.ValidationIssue, float64) {
+	var issues []report.ValidationIssue
+	var penalty float64
+
 	if card.URL == "" {
 		issues = append(issues, report.ValidationIssue{
 			Code: "MISSING_URL", Message: "Agent URL is required", Severity: "error", Field: "url",
 		})
-		score -= 20
+		penalty += 20
 	} else {
-		// Use URLValidator
 		urlVal := NewURLValidator(s.config.AllowPrivateIPs)
 		urlIssues := urlVal.Validate(card.URL, "url")
 		issues = append(issues, urlIssues...)
 		if len(urlIssues) > 0 {
-			score -= 10
+			penalty += 10
 		}
 	}
 
@@ -119,26 +156,36 @@ func (s *ComplianceScorer) Score(card *agentcard.AgentCard) (float64, []report.V
 			issues = append(issues, report.ValidationIssue{
 				Code: "INVALID_TRANSPORT", Message: "Invalid transport protocol. Valid options: JSONRPC, GRPC, HTTP+JSON", Severity: "error", Field: "preferredTransport",
 			})
-			score -= 10
+			penalty += 10
 		}
 	}
+	return issues, penalty
+}
 
-	// 5. Check Provider (Recommended)
+func (s *ComplianceScorer) checkProvider(card *agentcard.AgentCard) ([]report.ValidationIssue, float64) {
+	var issues []report.ValidationIssue
+	var penalty float64
+
 	if card.Provider == nil {
 		issues = append(issues, report.ValidationIssue{
 			Code: "MISSING_PROVIDER", Message: "Provider information is recommended", Severity: "warning", Field: "provider",
 		})
-		score -= 5
+		penalty += 5
 	} else {
 		if card.Provider.Organization == "" {
 			issues = append(issues, report.ValidationIssue{
 				Code: "MISSING_PROVIDER_ORG", Message: "Provider organization is required", Severity: "error", Field: "provider.organization",
 			})
-			score -= 5
+			penalty += 5
 		}
 	}
+	return issues, penalty
+}
 
-	// 6. Check Additional Interfaces
+func (s *ComplianceScorer) checkAdditionalInterfaces(card *agentcard.AgentCard) ([]report.ValidationIssue, float64) {
+	var issues []report.ValidationIssue
+	var penalty float64
+
 	if len(card.AdditionalInterfaces) > 0 {
 		urlVal := NewURLValidator(s.config.AllowPrivateIPs)
 		for i, iface := range card.AdditionalInterfaces {
@@ -146,27 +193,23 @@ func (s *ComplianceScorer) Score(card *agentcard.AgentCard) (float64, []report.V
 				issues = append(issues, report.ValidationIssue{
 					Code: "MISSING_INTERFACE_URL", Message: "Interface URL is required", Severity: "error", Field: fmt.Sprintf("additionalInterfaces[%d].url", i),
 				})
-				score -= 5
+				penalty += 5
 			} else {
 				urlIssues := urlVal.Validate(iface.URL, fmt.Sprintf("additionalInterfaces[%d].url", i))
 				issues = append(issues, urlIssues...)
 				if len(urlIssues) > 0 {
-					score -= 2
+					penalty += 2
 				}
 			}
 			if iface.Transport == "" {
 				issues = append(issues, report.ValidationIssue{
 					Code: "MISSING_INTERFACE_TRANSPORT", Message: "Interface transport is required", Severity: "error", Field: fmt.Sprintf("additionalInterfaces[%d].transport", i),
 				})
-				score -= 5
+				penalty += 5
 			}
 		}
 	}
-
-	if score < 0 {
-		score = 0
-	}
-	return score, issues
+	return issues, penalty
 }
 
 // isValidSemVer checks if a string is a valid Semantic Version.
