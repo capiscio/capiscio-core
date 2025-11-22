@@ -20,7 +20,7 @@ capiscio validate <path-to-card>
 
 **Options:**
 - `--strict`: Enable strict validation mode.
-- `--live`: Perform live endpoint testing.
+- `--test-live`: Perform live endpoint testing.
 
 ### `score`
 

@@ -178,7 +178,7 @@ capiscio validate ./agent-card.json
 **Flags:**
 *   `--json`: Output results as JSON.
 *   `--strict`: Enable strict validation mode (fails on warnings).
-*   `--test-live`: Perform live availability checks (replaces deprecated `--live`).
+*   `--test-live`: Perform live availability checks (use this instead of the deprecated `--live` flag).
 *   `--skip-signature`: Skip JWS signature verification.
 *   `--schema-only`: Validate schema only, skip endpoint testing.
 *   `--errors-only`: Show only errors and warnings.
