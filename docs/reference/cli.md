@@ -21,6 +21,10 @@ capiscio validate <path-to-card>
 **Options:**
 - `--strict`: Enable strict validation mode.
 - `--test-live`: Perform live endpoint testing.
+- `--skip-signature`: Skip JWS signature verification.
+- `--schema-only`: Validate schema only, skip endpoint testing.
+- `--errors-only`: Show only errors and warnings.
+- `--timeout`: Request timeout (default 10s).
 
 ### `score`
 
