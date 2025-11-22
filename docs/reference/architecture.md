@@ -21,5 +21,6 @@ graph TD
     B --> F{Scorer}
     F --> G[Trust Score]
     F --> H[Compliance Score]
+    F --> J[Utility Score]
     B --> I[Output JSON]
 ```
