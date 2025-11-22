@@ -16,13 +16,13 @@ theme:
   favicon: https://docs.capisc.io/assets/favicon.ico
   palette:
     - scheme: slate
-      primary: blue grey
+      primary: blue-grey
       accent: cyan
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
     - scheme: default
-      primary: blue grey
+      primary: blue-grey
       accent: cyan
       toggle:
         icon: material/brightness-7
