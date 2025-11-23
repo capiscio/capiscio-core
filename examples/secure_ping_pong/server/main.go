@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/ed25519"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"log"
@@ -10,12 +12,19 @@ import (
 )
 
 func main() {
-	// 1. Initialize SimpleGuard in DevMode
-	// This will auto-generate ephemeral keys for the server
-	// In a real scenario, you would load keys from disk/env
+	// 1. Initialize SimpleGuard with shared demo keys
+	// In a real scenario, you would load keys from disk/env/KMS
+	seedBytes, _ := hex.DecodeString("44b86d311e52d166fa2a17fcf4cde823785bd07f0ccaa9528e4202d090d92c2a")
+	pubBytes, _ := hex.DecodeString("04a566503aea697e71e76616992815aa09daa5b850255b5dbfd3379172bf3480")
+
+	// Go's ed25519.PrivateKey is 64 bytes (seed + pub), so we generate it from the 32-byte seed
+	privKey := ed25519.NewKeyFromSeed(seedBytes)
+
 	cfg := simpleguard.Config{
-		AgentID: "server-agent",
-		DevMode: true,
+		AgentID:    "demo-agent",
+		PrivateKey: privKey,
+		PublicKey:  ed25519.PublicKey(pubBytes),
+		KeyID:      "demo-key-1",
 	}
 
 	guard, err := simpleguard.New(cfg)

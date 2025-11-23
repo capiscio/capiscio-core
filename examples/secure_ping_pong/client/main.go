@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/ed25519"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,11 +15,17 @@ import (
 )
 
 func main() {
-	// 1. Initialize SimpleGuard in DevMode
-	// This gives us keys to sign our requests
+	// 1. Initialize SimpleGuard with shared demo keys
+	seedBytes, _ := hex.DecodeString("44b86d311e52d166fa2a17fcf4cde823785bd07f0ccaa9528e4202d090d92c2a")
+	pubBytes, _ := hex.DecodeString("04a566503aea697e71e76616992815aa09daa5b850255b5dbfd3379172bf3480")
+
+	privKey := ed25519.NewKeyFromSeed(seedBytes)
+
 	cfg := simpleguard.Config{
-		AgentID: "client-agent",
-		DevMode: true,
+		AgentID:    "demo-agent",
+		PrivateKey: privKey,
+		PublicKey:  ed25519.PublicKey(pubBytes),
+		KeyID:      "demo-key-1",
 	}
 
 	guard, err := simpleguard.New(cfg)
