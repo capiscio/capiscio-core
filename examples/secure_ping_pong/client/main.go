@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/capiscio/capiscio-core/pkg/simpleguard"
+	"github.com/go-jose/go-jose/v4"
 )
 
 func main() {
@@ -41,11 +42,12 @@ func main() {
 	sendPing(client, guard, url, "Hello Server!", false)
 
 	// Scenario 2: Tampered Body (Simulated)
-	// We can't easily simulate tampering with the high-level SignOutbound helper
-	// because it calculates the hash for us. 
-	// To demonstrate failure, we'd need to sign one body and send another.
 	fmt.Println("\n--- Scenario 2: Tampered Body ---")
 	simulateTampering(client, guard, url)
+
+	// Scenario 3: Replay Attack (Expired Token)
+	fmt.Println("\n--- Scenario 3: Replay Attack (Expired Token) ---")
+	simulateReplayAttack(client, privKey, url)
 }
 
 func sendPing(client *http.Client, guard *simpleguard.SimpleGuard, url string, message string, expectError bool) {
@@ -111,5 +113,53 @@ func simulateTampering(client *http.Client, guard *simpleguard.SimpleGuard, url 
 		fmt.Println("✅ SUCCESS: Tampered request was blocked (403 Forbidden)")
 	} else {
 		fmt.Printf("❌ FAILURE: Tampered request was accepted (%d)\n", resp.StatusCode)
+	}
+}
+
+func simulateReplayAttack(client *http.Client, privKey ed25519.PrivateKey, url string) {
+	// Manually create an expired token
+	// We can't use guard.SignOutbound because it enforces current time
+	
+	opts := &jose.SignerOptions{}
+	opts.WithType("JWT")
+	opts.WithHeader("kid", "demo-key-1")
+
+	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.EdDSA, Key: privKey}, opts)
+	if err != nil {
+		log.Fatalf("Failed to create signer: %v", err)
+	}
+
+	now := time.Now().Unix()
+	claims := simpleguard.Claims{
+		Subject:  "demo-agent",
+		Issuer:   "demo-agent",
+		IssuedAt: now - 120, // Issued 2 mins ago
+		Expiry:   now - 60,  // Expired 1 min ago
+	}
+
+	payloadBytes, _ := json.Marshal(claims)
+	jwsObj, err := signer.Sign(payloadBytes)
+	if err != nil {
+		log.Fatalf("Failed to sign: %v", err)
+	}
+	
+	token, _ := jwsObj.CompactSerialize()
+
+	// Send request
+	req, _ := http.NewRequest("POST", url, bytes.NewBuffer([]byte("{}")))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Capiscio-JWS", token)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Request failed: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 403 {
+		fmt.Println("✅ SUCCESS: Replay/Expired token was blocked (403 Forbidden)")
+	} else {
+		fmt.Printf("❌ FAILURE: Expired token was accepted (%d)\n", resp.StatusCode)
 	}
 }
