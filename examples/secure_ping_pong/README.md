@@ -42,7 +42,8 @@ You should see output demonstrating:
 
 ## How it Works
 
-1.  **Zero Config**: Both client and server use `DevMode: true`, which auto-generates ephemeral Ed25519 keys on startup.
+1.  **Shared Demo Keys**: Both client and server use explicit shared demo Ed25519 keys for demonstration purposes. In production, you would load keys from disk, environment variables, or a KMS.
+    - For true zero-config development, you can enable `DevMode: true` in both client and server to auto-generate ephemeral keys on startup.
 2.  **Identity**: The client signs the request with its private key.
 3.  **Integrity**: The client includes a hash of the body (`bh` claim) in the token.
 4.  **Verification**: The server middleware:

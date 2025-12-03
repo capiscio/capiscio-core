@@ -17,8 +17,14 @@ import (
 
 func main() {
 	// 1. Initialize SimpleGuard with shared demo keys
-	seedBytes, _ := hex.DecodeString("44b86d311e52d166fa2a17fcf4cde823785bd07f0ccaa9528e4202d090d92c2a")
-	pubBytes, _ := hex.DecodeString("04a566503aea697e71e76616992815aa09daa5b850255b5dbfd3379172bf3480")
+	seedBytes, err := hex.DecodeString("44b86d311e52d166fa2a17fcf4cde823785bd07f0ccaa9528e4202d090d92c2a")
+	if err != nil {
+		log.Fatalf("Failed to decode seed: %v", err)
+	}
+	pubBytes, err := hex.DecodeString("04a566503aea697e71e76616992815aa09daa5b850255b5dbfd3379172bf3480")
+	if err != nil {
+		log.Fatalf("Failed to decode public key: %v", err)
+	}
 
 	privKey := ed25519.NewKeyFromSeed(seedBytes)
 
@@ -53,7 +59,11 @@ func main() {
 func sendPing(client *http.Client, guard *simpleguard.SimpleGuard, url string, message string, expectError bool) {
 	// Prepare Payload
 	payload := map[string]string{"msg": message}
-	bodyBytes, _ := json.Marshal(payload)
+	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		log.Printf("Failed to marshal payload: %v", err)
+		return
+	}
 
 	// Sign
 	claims := simpleguard.Claims{
@@ -65,7 +75,11 @@ func sendPing(client *http.Client, guard *simpleguard.SimpleGuard, url string, m
 	}
 
 	// Send
-	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(bodyBytes))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		log.Printf("Failed to create request: %v", err)
+		return
+	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Capiscio-JWS", token)
 
@@ -78,7 +92,11 @@ func sendPing(client *http.Client, guard *simpleguard.SimpleGuard, url string, m
 	defer resp.Body.Close()
 	duration := time.Since(start)
 
-	respBody, _ := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Failed to read response: %v", err)
+		return
+	}
 
 	if resp.StatusCode == 200 {
 		fmt.Printf("✅ Success (%d) in %v\n", resp.StatusCode, duration)
@@ -93,12 +111,20 @@ func simulateTampering(client *http.Client, guard *simpleguard.SimpleGuard, url 
 	// 1. Sign original body
 	originalBody := []byte(`{"msg": "original"}`)
 	claims := simpleguard.Claims{Subject: "bad-actor"}
-	token, _ := guard.SignOutbound(claims, originalBody)
+	token, err := guard.SignOutbound(claims, originalBody)
+	if err != nil {
+		log.Printf("Failed to sign: %v", err)
+		return
+	}
 
 	// 2. Send different body
 	tamperedBody := []byte(`{"msg": "tampered"}`)
-	
-	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(tamperedBody))
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(tamperedBody))
+	if err != nil {
+		log.Printf("Failed to create request: %v", err)
+		return
+	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Capiscio-JWS", token)
 
@@ -108,7 +134,7 @@ func simulateTampering(client *http.Client, guard *simpleguard.SimpleGuard, url 
 		return
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode == 403 {
 		fmt.Println("✅ SUCCESS: Tampered request was blocked (403 Forbidden)")
 	} else {
@@ -119,7 +145,7 @@ func simulateTampering(client *http.Client, guard *simpleguard.SimpleGuard, url 
 func simulateReplayAttack(client *http.Client, privKey ed25519.PrivateKey, url string) {
 	// Manually create an expired token
 	// We can't use guard.SignOutbound because it enforces current time
-	
+
 	opts := &jose.SignerOptions{}
 	opts.WithType("JWT")
 	opts.WithHeader("kid", "demo-key-1")
@@ -137,16 +163,26 @@ func simulateReplayAttack(client *http.Client, privKey ed25519.PrivateKey, url s
 		Expiry:   now - 60,  // Expired 1 min ago
 	}
 
-	payloadBytes, _ := json.Marshal(claims)
+	payloadBytes, err := json.Marshal(claims)
+	if err != nil {
+		log.Fatalf("Failed to marshal claims: %v", err)
+	}
 	jwsObj, err := signer.Sign(payloadBytes)
 	if err != nil {
 		log.Fatalf("Failed to sign: %v", err)
 	}
-	
-	token, _ := jwsObj.CompactSerialize()
+
+	token, err := jwsObj.CompactSerialize()
+	if err != nil {
+		log.Fatalf("Failed to serialize token: %v", err)
+	}
 
 	// Send request
-	req, _ := http.NewRequest("POST", url, bytes.NewBuffer([]byte("{}")))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte("{}")))
+	if err != nil {
+		log.Printf("Failed to create request: %v", err)
+		return
+	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Capiscio-JWS", token)
 

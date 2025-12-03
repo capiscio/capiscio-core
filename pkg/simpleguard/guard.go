@@ -12,9 +12,9 @@ import (
 	"github.com/go-jose/go-jose/v4"
 )
 
-const (
-	MaxTokenAge = 60 * time.Second
-)
+// MaxTokenAge is kept for backward compatibility. Use Config.MaxTokenAge instead.
+// Deprecated: Use DefaultMaxTokenAge or Config.MaxTokenAge.
+const MaxTokenAge = 60 * time.Second
 
 // SimpleGuard handles A2A security enforcement.
 type SimpleGuard struct {
@@ -24,6 +24,17 @@ type SimpleGuard struct {
 
 // New creates a new SimpleGuard instance.
 func New(cfg Config) (*SimpleGuard, error) {
+	// Apply defaults for configurable values
+	if cfg.MaxTokenAge == 0 {
+		cfg.MaxTokenAge = DefaultMaxTokenAge
+	}
+	if cfg.ClockSkewTolerance == 0 {
+		cfg.ClockSkewTolerance = DefaultClockSkewTolerance
+	}
+	if cfg.MaxBodySize == 0 {
+		cfg.MaxBodySize = DefaultMaxBodySize
+	}
+
 	// Auto-generate keys in DevMode if missing
 	if cfg.DevMode && (cfg.PrivateKey == nil || cfg.PublicKey == nil) {
 		pub, priv, err := ed25519.GenerateKey(rand.Reader)
@@ -40,12 +51,19 @@ func New(cfg Config) (*SimpleGuard, error) {
 		}
 	}
 
+	// Validate key type - only Ed25519 is supported
+	if cfg.PrivateKey != nil {
+		if _, ok := cfg.PrivateKey.(ed25519.PrivateKey); !ok {
+			return nil, fmt.Errorf("unsupported private key type: only ed25519.PrivateKey is supported")
+		}
+	}
+
 	// Create signer
 	opts := &jose.SignerOptions{}
 	opts.WithType("JWT")
 	opts.WithHeader("kid", cfg.KeyID)
 
-	// Assuming Ed25519 for now as per Python SDK parity
+	// Only Ed25519 keys are supported for signing (as per Python SDK parity)
 	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.EdDSA, Key: cfg.PrivateKey}, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create signer: %w", err)
@@ -61,10 +79,10 @@ func New(cfg Config) (*SimpleGuard, error) {
 // It enforces iat and exp to prevent backdating.
 func (g *SimpleGuard) SignOutbound(claims Claims, body []byte) (string, error) {
 	now := time.Now()
-	
-	// Enforce timestamps
+
+	// Enforce timestamps using configured MaxTokenAge
 	claims.IssuedAt = now.Unix()
-	claims.Expiry = now.Add(MaxTokenAge).Unix()
+	claims.Expiry = now.Add(g.config.MaxTokenAge).Unix()
 	claims.Issuer = g.config.AgentID
 
 	// Calculate body hash if body is present
@@ -97,10 +115,9 @@ func (g *SimpleGuard) VerifyInbound(token string, body []byte) (*Claims, error) 
 	}
 
 	// 2. Verify Signature
-	// In a real scenario, we'd look up the key based on the 'kid' header.
-	// For SimpleGuard parity (often used in dev/p2p where we know the peer or trust our own key for testing),
-	// we'll use the configured PublicKey. 
-	// TODO: Add support for a KeyResolver or TrustedKeys map.
+	// NOTE: Only a single configured public key is supported for signature verification.
+	//       Key rotation and multiple trusted parties are not supported in this version.
+	//       Future versions may add support for key resolution via a KeyResolver interface.
 	payload, err := jwsObj.Verify(g.config.PublicKey)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrSignatureInvalid, err)
@@ -114,19 +131,20 @@ func (g *SimpleGuard) VerifyInbound(token string, body []byte) (*Claims, error) 
 
 	// 4. Verify Timestamps
 	now := time.Now().Unix()
-	
-	// Check Expiry
-	if claims.Expiry < now {
+	clockSkew := int64(g.config.ClockSkewTolerance.Seconds())
+
+	// Check Expiry (reject tokens at or past expiration)
+	if claims.Expiry <= now {
 		return nil, ErrTokenExpired
 	}
 
-	// Check IssuedAt (allow some clock skew, e.g., 5 seconds future)
-	if claims.IssuedAt > now+5 {
+	// Check IssuedAt (allow configured clock skew for future timestamps)
+	if claims.IssuedAt > now+clockSkew {
 		return nil, ErrTokenFuture
 	}
 
-	// Check Age (redundant with exp but good for sanity)
-	if now-claims.IssuedAt > int64(MaxTokenAge.Seconds())+5 {
+	// Check Age (ensure token isn't older than MaxTokenAge + clock skew)
+	if now-claims.IssuedAt > int64(g.config.MaxTokenAge.Seconds())+clockSkew {
 		return nil, ErrTokenExpired
 	}
 
@@ -135,22 +153,17 @@ func (g *SimpleGuard) VerifyInbound(token string, body []byte) (*Claims, error) 
 		if claims.BodyHash == "" {
 			return nil, fmt.Errorf("%w: missing bh claim for body", ErrIntegrityFailed)
 		}
-		
+
 		hash := sha256.Sum256(body)
 		expectedHash := base64.RawURLEncoding.EncodeToString(hash[:])
-		
+
 		if claims.BodyHash != expectedHash {
 			return nil, fmt.Errorf("%w: expected %s, got %s", ErrIntegrityFailed, expectedHash, claims.BodyHash)
 		}
 	} else if claims.BodyHash != "" {
-		// Body is empty but claim has hash? 
-		// Technically valid if hash is of empty string, but usually implies mismatch.
-		// Let's check hash of empty string.
-		hash := sha256.Sum256([]byte{})
-		emptyHash := base64.RawURLEncoding.EncodeToString(hash[:])
-		if claims.BodyHash != emptyHash {
-			return nil, fmt.Errorf("%w: body is empty but bh claim does not match empty hash", ErrIntegrityFailed)
-		}
+		// Body is empty but bh claim exists - this indicates a mismatch.
+		// The token was signed for a request with a body, but we received no body.
+		return nil, fmt.Errorf("%w: body is empty but bh claim is present", ErrIntegrityFailed)
 	}
 
 	return &claims, nil

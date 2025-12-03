@@ -65,10 +65,13 @@ func TestSimpleGuard_SignAndVerify(t *testing.T) {
 			IssuedAt: time.Now().Add(-2 * time.Minute).Unix(),
 			Expiry:   time.Now().Add(-1 * time.Minute).Unix(),
 		}
-		
-		b, _ := json.Marshal(claims)
-		jws, _ := signer.Sign(b)
-		token, _ := jws.CompactSerialize()
+
+		b, err := json.Marshal(claims)
+		require.NoError(t, err)
+		jws, err := signer.Sign(b)
+		require.NoError(t, err)
+		token, err := jws.CompactSerialize()
+		require.NoError(t, err)
 
 		_, err = guard.VerifyInbound(token, nil)
 		assert.ErrorIs(t, err, ErrTokenExpired)
