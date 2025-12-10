@@ -348,7 +348,7 @@ Examples:
 		result, err := verifier.VerifyWithOptions(cmd.Context(), token, opts)
 		if err != nil {
 			// Check if it's a badge error with a code
-			if badgeErr, ok := badge.IsBadgeError(err); ok {
+			if badgeErr, ok := badge.AsError(err); ok {
 				fmt.Fprintf(os.Stderr, "❌ Verification Failed\n")
 				fmt.Fprintf(os.Stderr, "   Error: %s\n", badgeErr.Code)
 				fmt.Fprintf(os.Stderr, "   Message: %s\n", badgeErr.Message)

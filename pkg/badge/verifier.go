@@ -113,14 +113,14 @@ func (v *Verifier) VerifyWithOptions(ctx context.Context, token string, opts Ver
 	// Step 1: Parse JWS
 	jwsObj, err := jose.ParseSigned(token, []jose.SignatureAlgorithm{jose.EdDSA, jose.ES256})
 	if err != nil {
-		return nil, WrapBadgeError(ErrCodeMalformed, "failed to parse JWS", err)
+		return nil, WrapError(ErrCodeMalformed, "failed to parse JWS", err)
 	}
 
 	// Step 2: Extract Claims (Unverified) to get Issuer
 	unsafePayload := jwsObj.UnsafePayloadWithoutVerification()
 	var claims Claims
 	if err := json.Unmarshal(unsafePayload, &claims); err != nil {
-		return nil, WrapBadgeError(ErrCodeMalformed, "failed to unmarshal claims", err)
+		return nil, WrapError(ErrCodeMalformed, "failed to unmarshal claims", err)
 	}
 
 	// Step 3: Validate structure
@@ -131,19 +131,19 @@ func (v *Verifier) VerifyWithOptions(ctx context.Context, token string, opts Ver
 	// Step 4: Fetch CA public key
 	pubKey, err := v.registry.GetPublicKey(ctx, claims.Issuer)
 	if err != nil {
-		return nil, WrapBadgeError(ErrCodeIssuerUntrusted, fmt.Sprintf("failed to fetch public key for issuer %s", claims.Issuer), err)
+		return nil, WrapError(ErrCodeIssuerUntrusted, fmt.Sprintf("failed to fetch public key for issuer %s", claims.Issuer), err)
 	}
 
 	// Step 5: Verify Signature
 	payload, err := jwsObj.Verify(pubKey)
 	if err != nil {
-		return nil, WrapBadgeError(ErrCodeSignatureInvalid, "signature verification failed", err)
+		return nil, WrapError(ErrCodeSignatureInvalid, "signature verification failed", err)
 	}
 
 	// Re-unmarshal verified payload to ensure integrity
 	var verifiedClaims Claims
 	if err := json.Unmarshal(payload, &verifiedClaims); err != nil {
-		return nil, WrapBadgeError(ErrCodeMalformed, "failed to unmarshal verified claims", err)
+		return nil, WrapError(ErrCodeMalformed, "failed to unmarshal verified claims", err)
 	}
 
 	// Step 6: Validate claims
@@ -173,36 +173,36 @@ func (v *Verifier) VerifyWithOptions(ctx context.Context, token string, opts Ver
 func (v *Verifier) validateStructure(jwsObj *jose.JSONWebSignature, claims *Claims) error {
 	// Check that we have at least one signature
 	if len(jwsObj.Signatures) == 0 {
-		return NewBadgeError(ErrCodeMalformed, "no signatures present")
+		return NewError(ErrCodeMalformed, "no signatures present")
 	}
 
 	// Check algorithm (already enforced by ParseSigned, but be explicit)
 	sig := jwsObj.Signatures[0]
 	if sig.Header.Algorithm != string(jose.EdDSA) && sig.Header.Algorithm != string(jose.ES256) {
-		return NewBadgeError(ErrCodeMalformed, fmt.Sprintf("unsupported algorithm: %s", sig.Header.Algorithm))
+		return NewError(ErrCodeMalformed, fmt.Sprintf("unsupported algorithm: %s", sig.Header.Algorithm))
 	}
 
 	// Check required claims
 	if claims.JTI == "" {
-		return NewBadgeError(ErrCodeClaimsInvalid, "missing jti claim")
+		return NewError(ErrCodeClaimsInvalid, "missing jti claim")
 	}
 	if claims.Issuer == "" {
-		return NewBadgeError(ErrCodeClaimsInvalid, "missing iss claim")
+		return NewError(ErrCodeClaimsInvalid, "missing iss claim")
 	}
 	if claims.Subject == "" {
-		return NewBadgeError(ErrCodeClaimsInvalid, "missing sub claim")
+		return NewError(ErrCodeClaimsInvalid, "missing sub claim")
 	}
 	if claims.IssuedAt == 0 {
-		return NewBadgeError(ErrCodeClaimsInvalid, "missing iat claim")
+		return NewError(ErrCodeClaimsInvalid, "missing iat claim")
 	}
 	if claims.Expiry == 0 {
-		return NewBadgeError(ErrCodeClaimsInvalid, "missing exp claim")
+		return NewError(ErrCodeClaimsInvalid, "missing exp claim")
 	}
 
 	// Validate subject is a valid did:web
 	_, err := did.Parse(claims.Subject)
 	if err != nil {
-		return WrapBadgeError(ErrCodeClaimsInvalid, "invalid subject DID", err)
+		return WrapError(ErrCodeClaimsInvalid, "invalid subject DID", err)
 	}
 
 	// Check VC structure
@@ -217,7 +217,7 @@ func (v *Verifier) validateStructure(jwsObj *jose.JSONWebSignature, claims *Clai
 		}
 	}
 	if !hasVC || !hasAgentIdentity {
-		return NewBadgeError(ErrCodeClaimsInvalid, "vc.type must include VerifiableCredential and AgentIdentity")
+		return NewError(ErrCodeClaimsInvalid, "vc.type must include VerifiableCredential and AgentIdentity")
 	}
 
 	return nil
@@ -229,12 +229,12 @@ func (v *Verifier) validateClaims(claims *Claims, opts VerifyOptions, now time.T
 
 	// Step 6a: exp > current_time (not expired)
 	if claims.Expiry <= nowUnix {
-		return NewBadgeError(ErrCodeExpired, fmt.Sprintf("badge expired at %s", time.Unix(claims.Expiry, 0).Format(time.RFC3339)))
+		return NewError(ErrCodeExpired, fmt.Sprintf("badge expired at %s", time.Unix(claims.Expiry, 0).Format(time.RFC3339)))
 	}
 
 	// Step 6b: iat <= current_time (not issued in future)
 	if claims.IssuedAt > nowUnix {
-		return NewBadgeError(ErrCodeNotYetValid, fmt.Sprintf("badge not valid until %s", time.Unix(claims.IssuedAt, 0).Format(time.RFC3339)))
+		return NewError(ErrCodeNotYetValid, fmt.Sprintf("badge not valid until %s", time.Unix(claims.IssuedAt, 0).Format(time.RFC3339)))
 	}
 
 	// Step 6c: Issuer in trusted issuer list
@@ -247,7 +247,7 @@ func (v *Verifier) validateClaims(claims *Claims, opts VerifyOptions, now time.T
 			}
 		}
 		if !trusted {
-			return NewBadgeError(ErrCodeIssuerUntrusted, fmt.Sprintf("issuer %s not in trusted list", claims.Issuer))
+			return NewError(ErrCodeIssuerUntrusted, fmt.Sprintf("issuer %s not in trusted list", claims.Issuer))
 		}
 	}
 
@@ -261,7 +261,7 @@ func (v *Verifier) validateClaims(claims *Claims, opts VerifyOptions, now time.T
 			}
 		}
 		if !inAudience {
-			return NewBadgeError(ErrCodeAudienceMismatch, fmt.Sprintf("verifier %s not in badge audience", opts.Audience))
+			return NewError(ErrCodeAudienceMismatch, fmt.Sprintf("verifier %s not in badge audience", opts.Audience))
 		}
 	}
 
@@ -276,16 +276,16 @@ func (v *Verifier) checkRevocation(ctx context.Context, claims *Claims, opts Ver
 		status, err := v.registry.GetBadgeStatus(ctx, claims.Issuer, claims.JTI)
 		if err != nil {
 			// If we can't check revocation online, that's an error in online mode
-			return WrapBadgeError(ErrCodeRevoked, "failed to check revocation status", err)
+			return WrapError(ErrCodeRevoked, "failed to check revocation status", err)
 		}
 		if status.Revoked {
-			return NewBadgeError(ErrCodeRevoked, fmt.Sprintf("badge %s has been revoked", claims.JTI))
+			return NewError(ErrCodeRevoked, fmt.Sprintf("badge %s has been revoked", claims.JTI))
 		}
 
 	case VerifyModeOffline:
 		// Offline: Check local revocation cache
 		if opts.RevocationCache != nil && opts.RevocationCache.IsRevoked(claims.JTI) {
-			return NewBadgeError(ErrCodeRevoked, fmt.Sprintf("badge %s is in revocation cache", claims.JTI))
+			return NewError(ErrCodeRevoked, fmt.Sprintf("badge %s is in revocation cache", claims.JTI))
 		}
 
 	case VerifyModeHybrid:
@@ -293,12 +293,12 @@ func (v *Verifier) checkRevocation(ctx context.Context, claims *Claims, opts Ver
 		status, err := v.registry.GetBadgeStatus(ctx, claims.Issuer, claims.JTI)
 		if err == nil {
 			if status.Revoked {
-				return NewBadgeError(ErrCodeRevoked, fmt.Sprintf("badge %s has been revoked", claims.JTI))
+				return NewError(ErrCodeRevoked, fmt.Sprintf("badge %s has been revoked", claims.JTI))
 			}
 		} else if opts.RevocationCache != nil {
 			// Fall back to cache
 			if opts.RevocationCache.IsRevoked(claims.JTI) {
-				return NewBadgeError(ErrCodeRevoked, fmt.Sprintf("badge %s is in revocation cache", claims.JTI))
+				return NewError(ErrCodeRevoked, fmt.Sprintf("badge %s is in revocation cache", claims.JTI))
 			}
 		}
 	}
@@ -329,11 +329,11 @@ func (v *Verifier) checkAgentStatus(ctx context.Context, claims *Claims, opts Ve
 			result.Warnings = append(result.Warnings, fmt.Sprintf("agent status check failed: %v", err))
 			return nil
 		}
-		return WrapBadgeError(ErrCodeAgentDisabled, "failed to check agent status", err)
+		return WrapError(ErrCodeAgentDisabled, "failed to check agent status", err)
 	}
 
 	if !status.IsActive() {
-		return NewBadgeError(ErrCodeAgentDisabled, fmt.Sprintf("agent %s is %s", agentID, status.Status))
+		return NewError(ErrCodeAgentDisabled, fmt.Sprintf("agent %s is %s", agentID, status.Status))
 	}
 
 	return nil

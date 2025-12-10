@@ -36,8 +36,8 @@ const (
 	ErrCodeAgentDisabled = "BADGE_AGENT_DISABLED"
 )
 
-// BadgeError represents a badge verification error with an RFC-002 error code.
-type BadgeError struct {
+// Error represents a badge verification error with an RFC-002 error code.
+type Error struct {
 	// Code is one of the BADGE_* error codes.
 	Code string
 
@@ -49,7 +49,7 @@ type BadgeError struct {
 }
 
 // Error implements the error interface.
-func (e *BadgeError) Error() string {
+func (e *Error) Error() string {
 	if e.Cause != nil {
 		return fmt.Sprintf("%s: %s: %v", e.Code, e.Message, e.Cause)
 	}
@@ -57,30 +57,30 @@ func (e *BadgeError) Error() string {
 }
 
 // Unwrap returns the underlying cause for errors.Is/errors.As.
-func (e *BadgeError) Unwrap() error {
+func (e *Error) Unwrap() error {
 	return e.Cause
 }
 
 // Is checks if the error matches a target error code.
-func (e *BadgeError) Is(target error) bool {
-	var t *BadgeError
+func (e *Error) Is(target error) bool {
+	var t *Error
 	if errors.As(target, &t) {
 		return e.Code == t.Code
 	}
 	return false
 }
 
-// NewBadgeError creates a new BadgeError with the given code and message.
-func NewBadgeError(code, message string) *BadgeError {
-	return &BadgeError{
+// NewError creates a new Error with the given code and message.
+func NewError(code, message string) *Error {
+	return &Error{
 		Code:    code,
 		Message: message,
 	}
 }
 
-// WrapBadgeError creates a new BadgeError that wraps an underlying error.
-func WrapBadgeError(code, message string, cause error) *BadgeError {
-	return &BadgeError{
+// WrapError creates a new Error that wraps an underlying error.
+func WrapError(code, message string, cause error) *Error {
+	return &Error{
 		Code:    code,
 		Message: message,
 		Cause:   cause,
@@ -91,45 +91,45 @@ func WrapBadgeError(code, message string, cause error) *BadgeError {
 // Use these with errors.Is() for type-safe error checking.
 var (
 	// ErrMalformed is returned when the JWS structure is invalid.
-	ErrMalformed = NewBadgeError(ErrCodeMalformed, "badge structure is invalid")
+	ErrMalformed = NewError(ErrCodeMalformed, "badge structure is invalid")
 
 	// ErrSignatureInvalid is returned when signature verification fails.
-	ErrSignatureInvalid = NewBadgeError(ErrCodeSignatureInvalid, "signature verification failed")
+	ErrSignatureInvalid = NewError(ErrCodeSignatureInvalid, "signature verification failed")
 
 	// ErrExpired is returned when the badge has expired.
-	ErrExpired = NewBadgeError(ErrCodeExpired, "badge has expired")
+	ErrExpired = NewError(ErrCodeExpired, "badge has expired")
 
 	// ErrNotYetValid is returned when the badge is not yet valid (iat in future).
-	ErrNotYetValid = NewBadgeError(ErrCodeNotYetValid, "badge is not yet valid")
+	ErrNotYetValid = NewError(ErrCodeNotYetValid, "badge is not yet valid")
 
 	// ErrIssuerUntrusted is returned when the issuer is not trusted.
-	ErrIssuerUntrusted = NewBadgeError(ErrCodeIssuerUntrusted, "issuer is not trusted")
+	ErrIssuerUntrusted = NewError(ErrCodeIssuerUntrusted, "issuer is not trusted")
 
 	// ErrAudienceMismatch is returned when verifier is not in audience.
-	ErrAudienceMismatch = NewBadgeError(ErrCodeAudienceMismatch, "verifier not in badge audience")
+	ErrAudienceMismatch = NewError(ErrCodeAudienceMismatch, "verifier not in badge audience")
 
 	// ErrRevoked is returned when the badge has been revoked.
-	ErrRevoked = NewBadgeError(ErrCodeRevoked, "badge has been revoked")
+	ErrRevoked = NewError(ErrCodeRevoked, "badge has been revoked")
 
 	// ErrClaimsInvalid is returned when required claims are missing or malformed.
-	ErrClaimsInvalid = NewBadgeError(ErrCodeClaimsInvalid, "required claims missing or malformed")
+	ErrClaimsInvalid = NewError(ErrCodeClaimsInvalid, "required claims missing or malformed")
 
 	// ErrAgentDisabled is returned when the agent has been disabled.
-	ErrAgentDisabled = NewBadgeError(ErrCodeAgentDisabled, "agent has been disabled")
+	ErrAgentDisabled = NewError(ErrCodeAgentDisabled, "agent has been disabled")
 )
 
-// IsBadgeError checks if err is a BadgeError and returns it if so.
-func IsBadgeError(err error) (*BadgeError, bool) {
-	var badgeErr *BadgeError
+// AsError checks if err is an Error and returns it if so.
+func AsError(err error) (*Error, bool) {
+	var badgeErr *Error
 	if errors.As(err, &badgeErr) {
 		return badgeErr, true
 	}
 	return nil, false
 }
 
-// GetErrorCode extracts the error code from a BadgeError, or returns empty string.
+// GetErrorCode extracts the error code from an Error, or returns empty string.
 func GetErrorCode(err error) string {
-	if badgeErr, ok := IsBadgeError(err); ok {
+	if badgeErr, ok := AsError(err); ok {
 		return badgeErr.Code
 	}
 	return ""
