@@ -1,0 +1,83 @@
+// DID service for did:web parsing and construction
+syntax = "proto3";
+
+package capiscio.v1;
+
+option go_package = "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1";
+
+// DIDService handles did:web operations
+service DIDService {
+  // Parse a did:web identifier
+  rpc Parse(ParseDIDRequest) returns (ParseDIDResponse);
+  
+  // Construct a new agent DID
+  rpc NewAgentDID(NewAgentDIDRequest) returns (NewAgentDIDResponse);
+  
+  // Construct a Capiscio registry DID
+  rpc NewCapiscIOAgentDID(NewCapiscIOAgentDIDRequest) returns (NewAgentDIDResponse);
+  
+  // Get the document URL for a DID
+  rpc DocumentURL(DocumentURLRequest) returns (DocumentURLResponse);
+  
+  // Check if a DID is an agent DID
+  rpc IsAgentDID(IsAgentDIDRequest) returns (IsAgentDIDResponse);
+}
+
+// Parsed DID structure
+message DID {
+  string raw = 1;           // Original DID string
+  string method = 2;        // "web"
+  string domain = 3;        // Domain part
+  repeated string path = 4; // Path segments
+  string fragment = 5;      // Fragment (if any)
+}
+
+// Request to parse a DID
+message ParseDIDRequest {
+  string did = 1;
+}
+
+// Response with parsed DID
+message ParseDIDResponse {
+  DID did = 1;
+  string error_message = 2;
+}
+
+// Request to create an agent DID
+message NewAgentDIDRequest {
+  string domain = 1;
+  string agent_id = 2;
+}
+
+// Response with created DID
+message NewAgentDIDResponse {
+  string did = 1;
+  string error_message = 2;
+}
+
+// Request to create a Capiscio registry DID
+message NewCapiscIOAgentDIDRequest {
+  string agent_id = 1;
+}
+
+// Request to get document URL
+message DocumentURLRequest {
+  string did = 1;
+}
+
+// Response with document URL
+message DocumentURLResponse {
+  string url = 1;
+  string error_message = 2;
+}
+
+// Request to check if DID is agent DID
+message IsAgentDIDRequest {
+  string did = 1;
+}
+
+// Response for agent DID check
+message IsAgentDIDResponse {
+  bool is_agent_did = 1;
+  string agent_id = 2;  // Extracted agent ID if valid
+}

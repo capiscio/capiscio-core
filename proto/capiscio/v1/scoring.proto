@@ -1,0 +1,158 @@
+// Scoring service for agent validation and trust scores
+syntax = "proto3";
+
+package capiscio.v1;
+
+option go_package = "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1";
+
+import "capiscio/v1/common.proto";
+
+// ScoringService evaluates agent cards and generates trust scores
+service ScoringService {
+  // Validate an agent card and generate a score
+  rpc ScoreAgentCard(ScoreAgentCardRequest) returns (ScoreAgentCardResponse);
+  
+  // Validate a single rule
+  rpc ValidateRule(ValidateRuleRequest) returns (ValidateRuleResponse);
+  
+  // Get available rule sets
+  rpc ListRuleSets(ListRuleSetsRequest) returns (ListRuleSetsResponse);
+  
+  // Get rule set details
+  rpc GetRuleSet(GetRuleSetRequest) returns (GetRuleSetResponse);
+  
+  // Calculate aggregate score from multiple validations
+  rpc AggregateScores(AggregateScoresRequest) returns (AggregateScoresResponse);
+}
+
+// Score categories
+enum ScoreCategory {
+  SCORE_CATEGORY_UNSPECIFIED = 0;
+  SCORE_CATEGORY_IDENTITY = 1;
+  SCORE_CATEGORY_CAPABILITIES = 2;
+  SCORE_CATEGORY_SECURITY = 3;
+  SCORE_CATEGORY_COMPLIANCE = 4;
+  SCORE_CATEGORY_TRANSPARENCY = 5;
+}
+
+// Rule severity for scoring
+enum RuleSeverity {
+  RULE_SEVERITY_UNSPECIFIED = 0;
+  RULE_SEVERITY_INFO = 1;
+  RULE_SEVERITY_WARNING = 2;
+  RULE_SEVERITY_ERROR = 3;
+  RULE_SEVERITY_CRITICAL = 4;
+}
+
+// Individual rule definition
+message Rule {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  ScoreCategory category = 4;
+  RuleSeverity severity = 5;
+  int32 weight = 6;           // Weight for scoring (0-100)
+  string expression = 7;       // Rule expression/predicate
+}
+
+// Rule set containing multiple rules
+message RuleSet {
+  string id = 1;
+  string name = 2;
+  string version = 3;
+  string description = 4;
+  repeated Rule rules = 5;
+  map<string, string> metadata = 6;
+}
+
+// Result of evaluating a single rule
+message RuleResult {
+  string rule_id = 1;
+  bool passed = 2;
+  string message = 3;
+  double score_contribution = 4;  // Points contributed to final score
+  map<string, string> details = 5;
+}
+
+// Category score breakdown
+message CategoryScore {
+  ScoreCategory category = 1;
+  double score = 2;           // 0.0 to 1.0
+  int32 rules_passed = 3;
+  int32 rules_failed = 4;
+  repeated RuleResult results = 5;
+}
+
+// Full scoring result
+message ScoringResult {
+  double overall_score = 1;         // 0.0 to 1.0
+  Rating rating = 2;                 // Derived rating
+  repeated CategoryScore categories = 3;
+  repeated RuleResult rule_results = 4;
+  ValidationResult validation = 5;   // Any validation issues found
+  Timestamp scored_at = 6;
+  string rule_set_id = 7;
+  string rule_set_version = 8;
+}
+
+// Request to score an agent card
+message ScoreAgentCardRequest {
+  string agent_card_json = 1;        // JSON of agent card
+  string rule_set_id = 2;            // Optional: specific rule set
+  repeated ScoreCategory categories = 3;  // Optional: limit to categories
+}
+
+// Response with score
+message ScoreAgentCardResponse {
+  ScoringResult result = 1;
+  string error_message = 2;
+}
+
+// Request to validate a single rule
+message ValidateRuleRequest {
+  string rule_id = 1;
+  string agent_card_json = 2;
+}
+
+// Response for single rule validation
+message ValidateRuleResponse {
+  RuleResult result = 1;
+  string error_message = 2;
+}
+
+// Request to list rule sets
+message ListRuleSetsRequest {
+  int32 limit = 1;
+  string cursor = 2;
+}
+
+// Response with rule sets
+message ListRuleSetsResponse {
+  repeated RuleSet rule_sets = 1;
+  string next_cursor = 2;
+}
+
+// Request to get rule set
+message GetRuleSetRequest {
+  string id = 1;
+  string version = 2;  // Optional: specific version
+}
+
+// Response with rule set
+message GetRuleSetResponse {
+  RuleSet rule_set = 1;
+  string error_message = 2;
+}
+
+// Request to aggregate scores
+message AggregateScoresRequest {
+  repeated ScoringResult results = 1;
+  string aggregation_method = 2;  // "mean", "weighted", "min"
+}
+
+// Response with aggregated score
+message AggregateScoresResponse {
+  double aggregate_score = 1;
+  Rating aggregate_rating = 2;
+  map<string, double> category_aggregates = 3;
+}

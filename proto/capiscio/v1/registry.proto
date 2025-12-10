@@ -1,0 +1,204 @@
+// Registry service for agent discovery and registration
+syntax = "proto3";
+
+package capiscio.v1;
+
+option go_package = "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1";
+
+import "capiscio/v1/common.proto";
+import "capiscio/v1/badge.proto";
+
+// RegistryService handles agent registration and discovery
+service RegistryService {
+  // Get an agent card by DID
+  rpc GetAgent(GetAgentRequest) returns (GetAgentResponse);
+  
+  // Search for agents
+  rpc SearchAgents(SearchAgentsRequest) returns (SearchAgentsResponse);
+  
+  // Register a new agent
+  rpc RegisterAgent(RegisterAgentRequest) returns (RegisterAgentResponse);
+  
+  // Update an existing agent
+  rpc UpdateAgent(UpdateAgentRequest) returns (UpdateAgentResponse);
+  
+  // Deregister an agent
+  rpc DeregisterAgent(DeregisterAgentRequest) returns (DeregisterAgentResponse);
+  
+  // Verify agent registration
+  rpc VerifyRegistration(VerifyRegistrationRequest) returns (VerifyRegistrationResponse);
+  
+  // List agents (with pagination)
+  rpc ListAgents(ListAgentsRequest) returns (ListAgentsResponse);
+  
+  // Get registry statistics
+  rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
+  
+  // Ping registry health
+  rpc Ping(PingRequest) returns (PingResponse);
+}
+
+// Agent status
+enum AgentStatus {
+  AGENT_STATUS_UNSPECIFIED = 0;
+  AGENT_STATUS_ACTIVE = 1;
+  AGENT_STATUS_INACTIVE = 2;
+  AGENT_STATUS_SUSPENDED = 3;
+  AGENT_STATUS_PENDING = 4;
+}
+
+// Registered agent information
+message RegisteredAgent {
+  string did = 1;
+  string name = 2;
+  string description = 3;
+  string agent_card_json = 4;       // Full agent card as JSON
+  AgentStatus status = 5;
+  BadgeClaims badge = 6;            // Trust badge if signed
+  Rating rating = 7;
+  Timestamp registered_at = 8;
+  Timestamp updated_at = 9;
+  repeated string capabilities = 10;
+  repeated string tags = 11;
+  map<string, string> metadata = 12;
+}
+
+// Request to get agent
+message GetAgentRequest {
+  string did = 1;
+  bool include_badge = 2;           // Whether to include badge info
+  bool verify_badge = 3;            // Whether to verify badge
+}
+
+// Response with agent
+message GetAgentResponse {
+  RegisteredAgent agent = 1;
+  bool badge_valid = 2;
+  string error_message = 3;
+}
+
+// Search operator
+enum SearchOperator {
+  SEARCH_OPERATOR_UNSPECIFIED = 0;
+  SEARCH_OPERATOR_AND = 1;
+  SEARCH_OPERATOR_OR = 2;
+}
+
+// Search request
+message SearchAgentsRequest {
+  string query = 1;                   // Free text query
+  repeated string capabilities = 2;   // Filter by capabilities
+  repeated string tags = 3;           // Filter by tags
+  SearchOperator operator = 4;        // How to combine filters
+  Rating min_rating = 5;              // Minimum rating filter
+  AgentStatus status_filter = 6;      // Status filter
+  int32 limit = 7;
+  string cursor = 8;
+  string sort_by = 9;                 // Field to sort by
+  bool sort_descending = 10;
+}
+
+// Search response
+message SearchAgentsResponse {
+  repeated RegisteredAgent agents = 1;
+  string next_cursor = 2;
+  int32 total_count = 3;
+}
+
+// Register request
+message RegisterAgentRequest {
+  string agent_card_json = 1;
+  string signed_badge = 2;            // Optional: pre-signed badge
+  repeated string tags = 3;
+  map<string, string> metadata = 4;
+}
+
+// Register response
+message RegisterAgentResponse {
+  string did = 1;
+  AgentStatus status = 2;
+  string error_message = 3;
+}
+
+// Update request
+message UpdateAgentRequest {
+  string did = 1;
+  string agent_card_json = 2;         // Optional: new agent card
+  string signed_badge = 3;            // Optional: new badge
+  repeated string tags = 4;           // Optional: new tags (replaces existing)
+  map<string, string> metadata = 5;   // Optional: new metadata (merges)
+}
+
+// Update response
+message UpdateAgentResponse {
+  RegisteredAgent agent = 1;
+  string error_message = 2;
+}
+
+// Deregister request
+message DeregisterAgentRequest {
+  string did = 1;
+  string reason = 2;
+}
+
+// Deregister response
+message DeregisterAgentResponse {
+  bool success = 1;
+  string error_message = 2;
+}
+
+// Verify registration request
+message VerifyRegistrationRequest {
+  string did = 1;
+  bool verify_badge = 2;
+  bool verify_keys = 3;
+}
+
+// Verify registration response
+message VerifyRegistrationResponse {
+  bool is_registered = 1;
+  bool badge_valid = 2;
+  bool keys_valid = 3;
+  ValidationResult validation = 4;
+  string error_message = 5;
+}
+
+// List agents request
+message ListAgentsRequest {
+  AgentStatus status_filter = 1;
+  int32 limit = 2;
+  string cursor = 3;
+}
+
+// List agents response
+message ListAgentsResponse {
+  repeated RegisteredAgent agents = 1;
+  string next_cursor = 2;
+  int32 total_count = 3;
+}
+
+// Get stats request
+message GetStatsRequest {}
+
+// Registry statistics
+message GetStatsResponse {
+  int32 total_agents = 1;
+  int32 active_agents = 2;
+  int32 inactive_agents = 3;
+  int32 suspended_agents = 4;
+  int32 pending_agents = 5;
+  int32 badged_agents = 6;          // Agents with valid badges
+  map<string, int32> agents_by_rating = 7;
+  map<string, int32> agents_by_capability = 8;
+  Timestamp last_updated = 9;
+}
+
+// Ping request
+message PingRequest {}
+
+// Ping response
+message PingResponse {
+  string status = 1;
+  string version = 2;
+  Timestamp server_time = 3;
+}

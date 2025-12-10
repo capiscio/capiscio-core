@@ -1,0 +1,19 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/capiscio/capiscio-core/pkg/rpc/gen
+plugins:
+  # Go
+  - remote: buf.build/protocolbuffers/go
+    out: ../pkg/rpc/gen
+    opt: paths=source_relative
+  - remote: buf.build/grpc/go
+    out: ../pkg/rpc/gen
+    opt: paths=source_relative
+  # Python
+  - remote: buf.build/protocolbuffers/python
+    out: ../../capiscio-sdk-python/capiscio_sdk/_rpc/gen
+  - remote: buf.build/grpc/python
+    out: ../../capiscio-sdk-python/capiscio_sdk/_rpc/gen

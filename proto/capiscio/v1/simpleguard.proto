@@ -1,0 +1,173 @@
+// SimpleGuard service for basic signing and verification
+syntax = "proto3";
+
+package capiscio.v1;
+
+option go_package = "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1";
+
+import "capiscio/v1/common.proto";
+import "capiscio/v1/trust.proto";
+
+// SimpleGuardService provides simplified signing and verification
+service SimpleGuardService {
+  // Sign a message
+  rpc Sign(SignRequest) returns (SignResponse);
+  
+  // Verify a signed message
+  rpc Verify(VerifyRequest) returns (VerifyResponse);
+  
+  // Sign with attached payload (creates JWS)
+  rpc SignAttached(SignAttachedRequest) returns (SignAttachedResponse);
+  
+  // Verify with attached payload
+  rpc VerifyAttached(VerifyAttachedRequest) returns (VerifyAttachedResponse);
+  
+  // Generate a new key pair
+  rpc GenerateKeyPair(GenerateKeyPairRequest) returns (GenerateKeyPairResponse);
+  
+  // Load key from file
+  rpc LoadKey(LoadKeyRequest) returns (LoadKeyResponse);
+  
+  // Export key to file
+  rpc ExportKey(ExportKeyRequest) returns (ExportKeyResponse);
+  
+  // Get key info
+  rpc GetKeyInfo(GetKeyInfoRequest) returns (GetKeyInfoResponse);
+}
+
+// Signature format
+enum SignatureFormat {
+  SIGNATURE_FORMAT_UNSPECIFIED = 0;
+  SIGNATURE_FORMAT_JWS_COMPACT = 1;
+  SIGNATURE_FORMAT_JWS_JSON = 2;
+  SIGNATURE_FORMAT_RAW = 3;
+}
+
+// Request to sign
+message SignRequest {
+  bytes payload = 1;
+  string key_id = 2;              // Key to use for signing
+  SignatureFormat format = 3;
+  map<string, string> headers = 4;  // Additional JWS headers
+}
+
+// Response with signature
+message SignResponse {
+  bytes signature = 1;
+  string signature_string = 2;    // String form if applicable
+  string error_message = 3;
+}
+
+// Request to verify
+message VerifyRequest {
+  bytes payload = 1;
+  bytes signature = 2;
+  string signature_string = 3;    // Alternative to bytes
+  string expected_signer = 4;     // Optional: expected signer DID
+}
+
+// Response for verification
+message VerifyResponse {
+  bool valid = 1;
+  string signer_did = 2;          // Extracted signer DID
+  string key_id = 3;              // Key used for verification
+  ValidationResult validation = 4;
+  string error_message = 5;
+}
+
+// Request to sign with attached payload
+message SignAttachedRequest {
+  bytes payload = 1;
+  string key_id = 2;
+  SignatureFormat format = 3;
+  map<string, string> headers = 4;
+  bool detach_payload = 5;        // Whether to detach payload from JWS
+}
+
+// Response with attached signature
+message SignAttachedResponse {
+  string jws = 1;                 // Complete JWS
+  string error_message = 2;
+}
+
+// Request to verify attached
+message VerifyAttachedRequest {
+  string jws = 1;
+  bytes detached_payload = 2;     // If payload was detached
+  string expected_signer = 3;
+}
+
+// Response for attached verification
+message VerifyAttachedResponse {
+  bool valid = 1;
+  bytes payload = 2;              // Extracted payload
+  string signer_did = 3;
+  string key_id = 4;
+  ValidationResult validation = 5;
+  string error_message = 6;
+}
+
+// Request to generate key pair
+message GenerateKeyPairRequest {
+  KeyAlgorithm algorithm = 1;
+  string key_id = 2;              // Optional: specific key ID
+  map<string, string> metadata = 3;
+}
+
+// Response with generated keys
+message GenerateKeyPairResponse {
+  string key_id = 1;
+  bytes public_key = 2;
+  bytes private_key = 3;
+  string public_key_pem = 4;
+  string private_key_pem = 5;
+  KeyAlgorithm algorithm = 6;
+  string error_message = 7;
+}
+
+// Request to load key
+message LoadKeyRequest {
+  string file_path = 1;
+  KeyFormat format = 2;
+  string passphrase = 3;          // Optional: for encrypted keys
+}
+
+// Response for load key
+message LoadKeyResponse {
+  string key_id = 1;
+  KeyAlgorithm algorithm = 2;
+  bool has_private_key = 3;
+  string error_message = 4;
+}
+
+// Request to export key
+message ExportKeyRequest {
+  string key_id = 1;
+  string file_path = 2;
+  KeyFormat format = 3;
+  bool include_private = 4;
+  string passphrase = 5;          // Optional: encrypt private key
+}
+
+// Response for export
+message ExportKeyResponse {
+  string file_path = 1;
+  string error_message = 2;
+}
+
+// Request for key info
+message GetKeyInfoRequest {
+  string key_id = 1;
+}
+
+// Response with key info
+message GetKeyInfoResponse {
+  string key_id = 1;
+  KeyAlgorithm algorithm = 2;
+  bool has_private_key = 3;
+  bytes public_key = 4;
+  string public_key_pem = 5;
+  Timestamp created_at = 6;
+  map<string, string> metadata = 7;
+  string error_message = 8;
+}
