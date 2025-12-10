@@ -2,6 +2,8 @@
 package rpc
 
 import (
+	"log"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -23,7 +25,15 @@ func RegisterServices(server *grpc.Server) {
 	// Register CapiscIO services
 	pb.RegisterBadgeServiceServer(server, NewBadgeService())
 	pb.RegisterDIDServiceServer(server, NewDIDService())
-	pb.RegisterTrustStoreServiceServer(server, NewTrustStoreService())
+
+	// TrustStoreService requires initialization
+	trustService, err := NewTrustStoreService()
+	if err != nil {
+		log.Printf("Warning: failed to initialize TrustStoreService: %v", err)
+	} else {
+		pb.RegisterTrustStoreServiceServer(server, trustService)
+	}
+
 	pb.RegisterRevocationServiceServer(server, NewRevocationService())
 	pb.RegisterScoringServiceServer(server, NewScoringService())
 	pb.RegisterSimpleGuardServiceServer(server, NewSimpleGuardService())
