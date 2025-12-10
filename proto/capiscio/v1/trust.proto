@@ -1,0 +1,163 @@
+// Trust store service for key management
+syntax = "proto3";
+
+package capiscio.v1;
+
+option go_package = "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1";
+
+import "capiscio/v1/common.proto";
+
+// TrustStoreService manages trusted keys and certificates
+service TrustStoreService {
+  // Add a trusted public key
+  rpc AddKey(AddKeyRequest) returns (AddKeyResponse);
+  
+  // Remove a trusted key
+  rpc RemoveKey(RemoveKeyRequest) returns (RemoveKeyResponse);
+  
+  // Get a key by DID
+  rpc GetKey(GetKeyRequest) returns (GetKeyResponse);
+  
+  // List all trusted keys
+  rpc ListKeys(ListKeysRequest) returns (ListKeysResponse);
+  
+  // Check if a key is trusted
+  rpc IsTrusted(IsTrustedRequest) returns (IsTrustedResponse);
+  
+  // Import keys from a directory
+  rpc ImportFromDirectory(ImportFromDirectoryRequest) returns (ImportFromDirectoryResponse);
+  
+  // Export keys to a directory
+  rpc ExportToDirectory(ExportToDirectoryRequest) returns (ExportToDirectoryResponse);
+  
+  // Clear all keys
+  rpc Clear(ClearKeysRequest) returns (ClearKeysResponse);
+}
+
+// Key algorithms supported
+enum KeyAlgorithm {
+  KEY_ALGORITHM_UNSPECIFIED = 0;
+  KEY_ALGORITHM_ED25519 = 1;
+  KEY_ALGORITHM_ECDSA_P256 = 2;
+  KEY_ALGORITHM_ECDSA_P384 = 3;
+  KEY_ALGORITHM_RSA_2048 = 4;
+  KEY_ALGORITHM_RSA_4096 = 5;
+}
+
+// Key format types
+enum KeyFormat {
+  KEY_FORMAT_UNSPECIFIED = 0;
+  KEY_FORMAT_JWK = 1;
+  KEY_FORMAT_PEM = 2;
+  KEY_FORMAT_DER = 3;
+}
+
+// Trusted key metadata
+message TrustedKey {
+  string did = 1;                     // DID associated with key
+  string key_id = 2;                  // Key identifier
+  KeyAlgorithm algorithm = 3;         // Key algorithm
+  bytes public_key = 4;               // Public key bytes
+  KeyFormat format = 5;               // Key format
+  Timestamp added_at = 6;             // When key was added
+  Timestamp expires_at = 7;           // Optional expiration
+  map<string, string> metadata = 8;   // Additional metadata
+}
+
+// Request to add a key
+message AddKeyRequest {
+  string did = 1;
+  bytes public_key = 2;
+  KeyFormat format = 3;
+  map<string, string> metadata = 4;
+}
+
+// Response for add key
+message AddKeyResponse {
+  string key_id = 1;
+  string error_message = 2;
+}
+
+// Request to remove a key
+message RemoveKeyRequest {
+  string did = 1;
+  string key_id = 2;  // Optional: if not set, removes all keys for DID
+}
+
+// Response for remove key
+message RemoveKeyResponse {
+  int32 keys_removed = 1;
+  string error_message = 2;
+}
+
+// Request to get a key
+message GetKeyRequest {
+  string did = 1;
+  string key_id = 2;  // Optional: if not set, returns primary key
+}
+
+// Response with key
+message GetKeyResponse {
+  TrustedKey key = 1;
+  string error_message = 2;
+}
+
+// Request to list keys
+message ListKeysRequest {
+  string did_filter = 1;  // Optional: filter by DID prefix
+  int32 limit = 2;
+  string cursor = 3;
+}
+
+// Response with keys list
+message ListKeysResponse {
+  repeated TrustedKey keys = 1;
+  string next_cursor = 2;
+  int32 total_count = 3;
+}
+
+// Request to check if trusted
+message IsTrustedRequest {
+  string did = 1;
+}
+
+// Response for trust check
+message IsTrustedResponse {
+  bool is_trusted = 1;
+  TrustedKey key = 2;  // If trusted, the matching key
+}
+
+// Request to import from directory
+message ImportFromDirectoryRequest {
+  string directory_path = 1;
+  bool recursive = 2;
+}
+
+// Response for import
+message ImportFromDirectoryResponse {
+  int32 keys_imported = 1;
+  int32 keys_skipped = 2;
+  repeated string errors = 3;
+}
+
+// Request to export to directory
+message ExportToDirectoryRequest {
+  string directory_path = 1;
+  KeyFormat format = 2;
+}
+
+// Response for export
+message ExportToDirectoryResponse {
+  int32 keys_exported = 1;
+  string error_message = 2;
+}
+
+// Request to clear all keys
+message ClearKeysRequest {
+  bool confirm = 1;  // Must be true to clear
+}
+
+// Response for clear
+message ClearKeysResponse {
+  int32 keys_cleared = 1;
+}

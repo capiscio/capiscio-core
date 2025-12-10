@@ -9,13 +9,16 @@ import (
 	"time"
 
 	"github.com/capiscio/capiscio-core/pkg/badge"
+	"github.com/capiscio/capiscio-core/pkg/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 // MockRegistry is a simple in-memory registry for testing.
 type MockRegistry struct {
-	Keys map[string]crypto.PublicKey
+	Keys          map[string]crypto.PublicKey
+	RevokedBadges map[string]bool
+	AgentStatuses map[string]string
 }
 
 func (m *MockRegistry) GetPublicKey(ctx context.Context, issuer string) (crypto.PublicKey, error) {
@@ -26,7 +29,30 @@ func (m *MockRegistry) GetPublicKey(ctx context.Context, issuer string) (crypto.
 }
 
 func (m *MockRegistry) IsRevoked(ctx context.Context, id string) (bool, error) {
+	if m.RevokedBadges != nil {
+		return m.RevokedBadges[id], nil
+	}
 	return false, nil
+}
+
+func (m *MockRegistry) GetBadgeStatus(ctx context.Context, issuerURL string, jti string) (*registry.BadgeStatus, error) {
+	if m.RevokedBadges != nil && m.RevokedBadges[jti] {
+		return &registry.BadgeStatus{JTI: jti, Revoked: true}, nil
+	}
+	return &registry.BadgeStatus{JTI: jti, Revoked: false}, nil
+}
+
+func (m *MockRegistry) GetAgentStatus(ctx context.Context, issuerURL string, agentID string) (*registry.AgentStatus, error) {
+	if m.AgentStatuses != nil {
+		if status, ok := m.AgentStatuses[agentID]; ok {
+			return &registry.AgentStatus{ID: agentID, Status: status}, nil
+		}
+	}
+	return &registry.AgentStatus{ID: agentID, Status: registry.AgentStatusActive}, nil
+}
+
+func (m *MockRegistry) SyncRevocations(ctx context.Context, issuerURL string, since time.Time) ([]registry.Revocation, error) {
+	return nil, nil
 }
 
 func TestBadgeLifecycle(t *testing.T) {
@@ -42,15 +68,20 @@ func TestBadgeLifecycle(t *testing.T) {
 	}
 	verifier := badge.NewVerifier(reg)
 
-	// 2. Create Valid Badge
+	// 2. Create Valid Badge (with all RFC-002 required fields)
 	now := time.Now()
 	claims := &badge.Claims{
+		JTI:      "test-jti-12345",
 		Issuer:   issuerDID,
-		Subject:  "did:capiscio:agent:test",
+		Subject:  "did:web:test-registry.capisc.io:agents:test",
 		IssuedAt: now.Unix(),
 		Expiry:   now.Add(1 * time.Hour).Unix(),
 		VC: badge.VerifiableCredential{
-			Type: []string{"VerifiableCredential"},
+			Type: []string{"VerifiableCredential", "AgentIdentity"},
+			CredentialSubject: badge.CredentialSubject{
+				Domain: "test.example.com",
+				Level:  "1",
+			},
 		},
 	}
 
@@ -63,16 +94,18 @@ func TestBadgeLifecycle(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, claims.Subject, verifiedClaims.Subject)
 	assert.Equal(t, claims.Issuer, verifiedClaims.Issuer)
+	assert.Equal(t, claims.JTI, verifiedClaims.JTI)
 
 	// 4. Test Expired Badge
 	expiredClaims := *claims
+	expiredClaims.JTI = "expired-badge"
 	expiredClaims.Expiry = now.Add(-1 * time.Hour).Unix() // Expired 1 hour ago
 	expiredToken, err := badge.SignBadge(&expiredClaims, priv)
 	require.NoError(t, err)
 
 	_, err = verifier.Verify(context.Background(), expiredToken)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "expired")
+	assert.Contains(t, err.Error(), "BADGE_EXPIRED")
 
 	// 5. Test Invalid Signature (Wrong Key)
 	_, wrongPriv, _ := ed25519.GenerateKey(rand.Reader)
@@ -81,5 +114,208 @@ func TestBadgeLifecycle(t *testing.T) {
 
 	_, err = verifier.Verify(context.Background(), forgedToken)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "verification failed")
+	assert.Contains(t, err.Error(), "BADGE_SIGNATURE_INVALID")
+}
+
+func TestBadgeVerifyWithOptions(t *testing.T) {
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	issuerDID := "https://test-registry.capisc.io"
+	reg := &MockRegistry{
+		Keys: map[string]crypto.PublicKey{
+			issuerDID: pub,
+		},
+	}
+	verifier := badge.NewVerifier(reg)
+
+	now := time.Now()
+	claims := &badge.Claims{
+		JTI:      "test-jti-options",
+		Issuer:   issuerDID,
+		Subject:  "did:web:test-registry.capisc.io:agents:test",
+		Audience: []string{"https://api.example.com"},
+		IssuedAt: now.Unix(),
+		Expiry:   now.Add(1 * time.Hour).Unix(),
+		VC: badge.VerifiableCredential{
+			Type: []string{"VerifiableCredential", "AgentIdentity"},
+			CredentialSubject: badge.CredentialSubject{
+				Domain: "test.example.com",
+				Level:  "2",
+			},
+		},
+	}
+
+	token, err := badge.SignBadge(claims, priv)
+	require.NoError(t, err)
+
+	t.Run("audience match", func(t *testing.T) {
+		opts := badge.VerifyOptions{
+			Mode:                 badge.VerifyModeOnline,
+			Audience:             "https://api.example.com",
+			SkipRevocationCheck:  true,
+			SkipAgentStatusCheck: true,
+		}
+		result, err := verifier.VerifyWithOptions(context.Background(), token, opts)
+		require.NoError(t, err)
+		assert.Equal(t, "2", result.Claims.TrustLevel())
+	})
+
+	t.Run("audience mismatch", func(t *testing.T) {
+		opts := badge.VerifyOptions{
+			Mode:                 badge.VerifyModeOnline,
+			Audience:             "https://other.example.com",
+			SkipRevocationCheck:  true,
+			SkipAgentStatusCheck: true,
+		}
+		_, err := verifier.VerifyWithOptions(context.Background(), token, opts)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "BADGE_AUDIENCE_MISMATCH")
+	})
+
+	t.Run("trusted issuer match", func(t *testing.T) {
+		opts := badge.VerifyOptions{
+			Mode:                 badge.VerifyModeOnline,
+			TrustedIssuers:       []string{issuerDID},
+			SkipRevocationCheck:  true,
+			SkipAgentStatusCheck: true,
+		}
+		result, err := verifier.VerifyWithOptions(context.Background(), token, opts)
+		require.NoError(t, err)
+		assert.NotNil(t, result.Claims)
+	})
+
+	t.Run("trusted issuer mismatch", func(t *testing.T) {
+		opts := badge.VerifyOptions{
+			Mode:                 badge.VerifyModeOnline,
+			TrustedIssuers:       []string{"https://other-registry.capisc.io"},
+			SkipRevocationCheck:  true,
+			SkipAgentStatusCheck: true,
+		}
+		_, err := verifier.VerifyWithOptions(context.Background(), token, opts)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "BADGE_ISSUER_UNTRUSTED")
+	})
+}
+
+func TestBadgeRevocation(t *testing.T) {
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	issuerDID := "https://test-registry.capisc.io"
+	reg := &MockRegistry{
+		Keys: map[string]crypto.PublicKey{
+			issuerDID: pub,
+		},
+		RevokedBadges: map[string]bool{
+			"revoked-badge": true,
+		},
+	}
+	verifier := badge.NewVerifier(reg)
+
+	now := time.Now()
+	claims := &badge.Claims{
+		JTI:      "revoked-badge",
+		Issuer:   issuerDID,
+		Subject:  "did:web:test-registry.capisc.io:agents:test",
+		IssuedAt: now.Unix(),
+		Expiry:   now.Add(1 * time.Hour).Unix(),
+		VC: badge.VerifiableCredential{
+			Type: []string{"VerifiableCredential", "AgentIdentity"},
+			CredentialSubject: badge.CredentialSubject{
+				Domain: "test.example.com",
+				Level:  "1",
+			},
+		},
+	}
+
+	token, err := badge.SignBadge(claims, priv)
+	require.NoError(t, err)
+
+	_, err = verifier.Verify(context.Background(), token)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "BADGE_REVOKED")
+}
+
+func TestBadgeAgentDisabled(t *testing.T) {
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	issuerDID := "https://test-registry.capisc.io"
+	reg := &MockRegistry{
+		Keys: map[string]crypto.PublicKey{
+			issuerDID: pub,
+		},
+		AgentStatuses: map[string]string{
+			"disabled-agent": registry.AgentStatusDisabled,
+		},
+	}
+	verifier := badge.NewVerifier(reg)
+
+	now := time.Now()
+	claims := &badge.Claims{
+		JTI:      "badge-for-disabled-agent",
+		Issuer:   issuerDID,
+		Subject:  "did:web:test-registry.capisc.io:agents:disabled-agent",
+		IssuedAt: now.Unix(),
+		Expiry:   now.Add(1 * time.Hour).Unix(),
+		VC: badge.VerifiableCredential{
+			Type: []string{"VerifiableCredential", "AgentIdentity"},
+			CredentialSubject: badge.CredentialSubject{
+				Domain: "test.example.com",
+				Level:  "1",
+			},
+		},
+	}
+
+	token, err := badge.SignBadge(claims, priv)
+	require.NoError(t, err)
+
+	_, err = verifier.Verify(context.Background(), token)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "BADGE_AGENT_DISABLED")
+}
+
+func TestClaimsHelpers(t *testing.T) {
+	claims := &badge.Claims{
+		JTI:      "test-jti",
+		Subject:  "did:web:registry.capisc.io:agents:my-agent-001",
+		IssuedAt: time.Now().Unix(),
+		Expiry:   time.Now().Add(1 * time.Hour).Unix(),
+		VC: badge.VerifiableCredential{
+			Type: []string{"VerifiableCredential", "AgentIdentity"},
+			CredentialSubject: badge.CredentialSubject{
+				Domain: "example.com",
+				Level:  "2",
+			},
+		},
+	}
+
+	t.Run("AgentID", func(t *testing.T) {
+		assert.Equal(t, "my-agent-001", claims.AgentID())
+	})
+
+	t.Run("TrustLevel", func(t *testing.T) {
+		assert.Equal(t, "2", claims.TrustLevel())
+	})
+
+	t.Run("Domain", func(t *testing.T) {
+		assert.Equal(t, "example.com", claims.Domain())
+	})
+
+	t.Run("IsExpired", func(t *testing.T) {
+		assert.False(t, claims.IsExpired())
+
+		expiredClaims := *claims
+		expiredClaims.Expiry = time.Now().Add(-1 * time.Hour).Unix()
+		assert.True(t, expiredClaims.IsExpired())
+	})
+
+	t.Run("IsNotYetValid", func(t *testing.T) {
+		assert.False(t, claims.IsNotYetValid())
+
+		futureClaims := *claims
+		futureClaims.IssuedAt = time.Now().Add(1 * time.Hour).Unix()
+		assert.True(t, futureClaims.IsNotYetValid())
+	})
 }

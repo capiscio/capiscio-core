@@ -1,0 +1,142 @@
+// Revocation service for key and badge revocation
+syntax = "proto3";
+
+package capiscio.v1;
+
+option go_package = "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1";
+
+import "capiscio/v1/common.proto";
+
+// RevocationService manages revocation lists and checks
+service RevocationService {
+  // Check if a key is revoked
+  rpc IsRevoked(IsRevokedRequest) returns (IsRevokedResponse);
+  
+  // Add a revocation entry
+  rpc Revoke(RevokeRequest) returns (RevokeResponse);
+  
+  // Remove a revocation entry
+  rpc Unrevoke(UnrevokeRequest) returns (UnrevokeResponse);
+  
+  // List revoked entries
+  rpc ListRevocations(ListRevocationsRequest) returns (ListRevocationsResponse);
+  
+  // Fetch revocation list from URL
+  rpc FetchRevocationList(FetchRevocationListRequest) returns (FetchRevocationListResponse);
+  
+  // Clear the revocation cache
+  rpc ClearCache(ClearCacheRequest) returns (ClearCacheResponse);
+  
+  // Get cache statistics
+  rpc GetCacheStats(GetCacheStatsRequest) returns (GetCacheStatsResponse);
+}
+
+// Revocation reason codes
+enum RevocationReason {
+  REVOCATION_REASON_UNSPECIFIED = 0;
+  REVOCATION_REASON_KEY_COMPROMISE = 1;
+  REVOCATION_REASON_AFFILIATION_CHANGED = 2;
+  REVOCATION_REASON_SUPERSEDED = 3;
+  REVOCATION_REASON_CESSATION_OF_OPERATION = 4;
+  REVOCATION_REASON_PRIVILEGE_WITHDRAWN = 5;
+}
+
+// Revocation entry
+message RevocationEntry {
+  string subject = 1;               // DID or key ID being revoked
+  RevocationReason reason = 2;      // Reason for revocation
+  Timestamp revoked_at = 3;         // When revocation occurred
+  Timestamp expires_at = 4;         // Optional: when revocation expires
+  string issuer = 5;                // Who issued the revocation
+  string comment = 6;               // Optional comment
+}
+
+// Request to check revocation
+message IsRevokedRequest {
+  string subject = 1;                // DID or key ID to check
+  Timestamp at_time = 2;             // Optional: check at specific time
+  bool check_remote = 3;             // Whether to check remote lists
+}
+
+// Response for revocation check
+message IsRevokedResponse {
+  bool is_revoked = 1;
+  RevocationEntry entry = 2;        // If revoked, the entry
+  string source = 3;                // Where revocation was found
+}
+
+// Request to revoke
+message RevokeRequest {
+  string subject = 1;
+  RevocationReason reason = 2;
+  string comment = 3;
+}
+
+// Response for revoke
+message RevokeResponse {
+  RevocationEntry entry = 1;
+  string error_message = 2;
+}
+
+// Request to unrevoke
+message UnrevokeRequest {
+  string subject = 1;
+}
+
+// Response for unrevoke
+message UnrevokeResponse {
+  bool was_revoked = 1;
+  string error_message = 2;
+}
+
+// Request to list revocations
+message ListRevocationsRequest {
+  string subject_filter = 1;        // Optional: filter by subject prefix
+  RevocationReason reason_filter = 2;
+  int32 limit = 3;
+  string cursor = 4;
+}
+
+// Response with revocations list
+message ListRevocationsResponse {
+  repeated RevocationEntry entries = 1;
+  string next_cursor = 2;
+  int32 total_count = 3;
+}
+
+// Request to fetch remote revocation list
+message FetchRevocationListRequest {
+  string url = 1;
+  Duration timeout = 2;
+}
+
+// Response for fetch
+message FetchRevocationListResponse {
+  int32 entries_added = 1;
+  int32 entries_updated = 2;
+  Timestamp fetched_at = 3;
+  string error_message = 4;
+}
+
+// Request to clear cache
+message ClearCacheRequest {
+  string source_filter = 1;  // Optional: clear only from specific source
+}
+
+// Response for clear cache
+message ClearCacheResponse {
+  int32 entries_cleared = 1;
+}
+
+// Request for cache stats
+message GetCacheStatsRequest {}
+
+// Cache statistics
+message GetCacheStatsResponse {
+  int32 total_entries = 1;
+  int32 local_entries = 2;
+  int32 remote_entries = 3;
+  Timestamp last_remote_fetch = 4;
+  Duration cache_ttl = 5;
+  map<string, int32> entries_by_source = 6;
+}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/go-jose/go-jose/v4"
 )
@@ -58,6 +59,25 @@ func (r *LocalRegistry) GetPublicKey(_ context.Context, _ string) (crypto.Public
 }
 
 // IsRevoked checks if the ID is in the local blocklist (not implemented yet).
+// Deprecated: Use GetBadgeStatus instead.
 func (r *LocalRegistry) IsRevoked(_ context.Context, _ string) (bool, error) {
 	return false, nil
+}
+
+// GetBadgeStatus is not supported for local registry.
+// Returns an error indicating online verification is not available.
+func (r *LocalRegistry) GetBadgeStatus(_ context.Context, _ string, _ string) (*BadgeStatus, error) {
+	return nil, fmt.Errorf("badge status check not supported in offline mode")
+}
+
+// GetAgentStatus is not supported for local registry.
+// Returns an error indicating online verification is not available.
+func (r *LocalRegistry) GetAgentStatus(_ context.Context, _ string, _ string) (*AgentStatus, error) {
+	return nil, fmt.Errorf("agent status check not supported in offline mode")
+}
+
+// SyncRevocations is not supported for local registry.
+// Returns an error indicating online sync is not available.
+func (r *LocalRegistry) SyncRevocations(_ context.Context, _ string, _ time.Time) ([]Revocation, error) {
+	return nil, fmt.Errorf("revocation sync not supported in offline mode")
 }

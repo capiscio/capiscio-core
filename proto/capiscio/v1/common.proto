@@ -1,0 +1,63 @@
+// Common types shared across Capiscio gRPC services
+syntax = "proto3";
+
+package capiscio.v1;
+
+option go_package = "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1";
+
+// Timestamp in RFC3339 format
+message Timestamp {
+  string value = 1;  // RFC3339 formatted timestamp
+}
+
+// Duration in seconds
+message Duration {
+  int64 seconds = 1;
+}
+
+// Generic key-value pair
+message KeyValue {
+  string key = 1;
+  string value = 2;
+}
+
+// Validation severity levels
+enum ValidationSeverity {
+  VALIDATION_SEVERITY_UNSPECIFIED = 0;
+  VALIDATION_SEVERITY_INFO = 1;
+  VALIDATION_SEVERITY_WARNING = 2;
+  VALIDATION_SEVERITY_ERROR = 3;
+}
+
+// A single validation issue
+message ValidationIssue {
+  string field = 1;
+  string message = 2;
+  ValidationSeverity severity = 3;
+  string code = 4;
+  string details = 5;
+}
+
+// Generic validation result
+message ValidationResult {
+  bool valid = 1;
+  repeated ValidationIssue issues = 2;
+  string validated_at = 3;
+}
+
+// Rating levels (used by scoring)
+enum Rating {
+  RATING_UNSPECIFIED = 0;
+  RATING_CRITICAL = 1;
+  RATING_POOR = 2;
+  RATING_FAIR = 3;
+  RATING_GOOD = 4;
+  RATING_EXCELLENT = 5;
+}
+
+// Error details for rich error responses
+message ErrorDetail {
+  string code = 1;
+  string message = 2;
+  map<string, string> metadata = 3;
+}

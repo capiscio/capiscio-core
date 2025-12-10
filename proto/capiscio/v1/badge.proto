@@ -1,0 +1,112 @@
+// Badge service for Trust Badge signing and verification (RFC-002)
+syntax = "proto3";
+
+package capiscio.v1;
+
+option go_package = "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1";
+
+// BadgeService handles Trust Badge operations
+service BadgeService {
+  // Sign a new badge with the provided claims
+  rpc SignBadge(SignBadgeRequest) returns (SignBadgeResponse);
+  
+  // Verify a badge token (basic verification)
+  rpc VerifyBadge(VerifyBadgeRequest) returns (VerifyBadgeResponse);
+  
+  // Verify a badge with full options (online checks, etc.)
+  rpc VerifyBadgeWithOptions(VerifyBadgeWithOptionsRequest) returns (VerifyBadgeResponse);
+  
+  // Parse badge claims without verification
+  rpc ParseBadge(ParseBadgeRequest) returns (ParseBadgeResponse);
+}
+
+// Trust level for badges (RFC-002)
+enum TrustLevel {
+  TRUST_LEVEL_UNSPECIFIED = 0;
+  TRUST_LEVEL_DV = 1;  // Domain Validated
+  TRUST_LEVEL_OV = 2;  // Organization Validated
+  TRUST_LEVEL_EV = 3;  // Extended Validated
+}
+
+// Badge claims structure
+message BadgeClaims {
+  string jti = 1;           // JWT ID - unique identifier
+  string iss = 2;           // Issuer URL
+  string sub = 3;           // Subject (did:web identifier)
+  int64 iat = 4;            // Issued At (Unix timestamp)
+  int64 exp = 5;            // Expiration (Unix timestamp)
+  int64 nbf = 6;            // Not Before (Unix timestamp)
+  repeated string aud = 7;  // Audience
+  TrustLevel trust_level = 8;
+  string domain = 9;
+  string agent_name = 10;
+  string scope = 11;
+}
+
+// Request to sign a badge
+message SignBadgeRequest {
+  BadgeClaims claims = 1;
+  // Private key in JWK format (JSON string)
+  string private_key_jwk = 2;
+  // Key ID for the signing key
+  string key_id = 3;
+}
+
+// Response with signed badge
+message SignBadgeResponse {
+  string token = 1;  // Signed JWT token
+  BadgeClaims claims = 2;
+}
+
+// Request to verify a badge
+message VerifyBadgeRequest {
+  string token = 1;
+  // Public key in JWK format (JSON string) - optional if JWKS URL used
+  string public_key_jwk = 2;
+}
+
+// Verification mode
+enum VerifyMode {
+  VERIFY_MODE_UNSPECIFIED = 0;
+  VERIFY_MODE_OFFLINE = 1;   // Local verification only
+  VERIFY_MODE_ONLINE = 2;    // Full online checks
+  VERIFY_MODE_HYBRID = 3;    // Online if cache stale
+}
+
+// Options for badge verification
+message VerifyOptions {
+  VerifyMode mode = 1;
+  repeated string trusted_issuers = 2;
+  string audience = 3;
+  bool skip_revocation = 4;
+  bool skip_agent_status = 5;
+  int64 clock_tolerance_seconds = 6;
+  string registry_url = 7;
+}
+
+// Request to verify with options
+message VerifyBadgeWithOptionsRequest {
+  string token = 1;
+  VerifyOptions options = 2;
+}
+
+// Badge verification result
+message VerifyBadgeResponse {
+  bool valid = 1;
+  BadgeClaims claims = 2;
+  VerifyMode mode_used = 3;
+  repeated string warnings = 4;
+  string error_code = 5;
+  string error_message = 6;
+}
+
+// Request to parse badge without verification
+message ParseBadgeRequest {
+  string token = 1;
+}
+
+// Response with parsed claims
+message ParseBadgeResponse {
+  BadgeClaims claims = 1;
+  string error_message = 2;
+}
