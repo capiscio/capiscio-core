@@ -5,8 +5,12 @@ import (
 	"crypto/ed25519"
 	"encoding/json"
 	"fmt"
+	"os"
+	"strings"
+	"time"
 
 	"github.com/capiscio/capiscio-core/pkg/badge"
+	"github.com/capiscio/capiscio-core/pkg/did"
 	"github.com/go-jose/go-jose/v4"
 
 	pb "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1"
@@ -23,7 +27,7 @@ func NewBadgeService() *BadgeService {
 }
 
 // SignBadge signs a new badge with the provided claims.
-func (s *BadgeService) SignBadge(ctx context.Context, req *pb.SignBadgeRequest) (*pb.SignBadgeResponse, error) {
+func (s *BadgeService) SignBadge(_ context.Context, req *pb.SignBadgeRequest) (*pb.SignBadgeResponse, error) {
 	if req.Claims == nil {
 		return &pb.SignBadgeResponse{}, fmt.Errorf("claims are required")
 	}
@@ -56,7 +60,7 @@ func (s *BadgeService) SignBadge(ctx context.Context, req *pb.SignBadgeRequest) 
 }
 
 // VerifyBadge verifies a badge token (basic verification).
-func (s *BadgeService) VerifyBadge(ctx context.Context, req *pb.VerifyBadgeRequest) (*pb.VerifyBadgeResponse, error) {
+func (s *BadgeService) VerifyBadge(_ context.Context, req *pb.VerifyBadgeRequest) (*pb.VerifyBadgeResponse, error) {
 	if req.Token == "" {
 		return &pb.VerifyBadgeResponse{
 			Valid:        false,
@@ -121,7 +125,7 @@ func (s *BadgeService) VerifyBadge(ctx context.Context, req *pb.VerifyBadgeReque
 }
 
 // VerifyBadgeWithOptions performs badge verification with full options.
-func (s *BadgeService) VerifyBadgeWithOptions(ctx context.Context, req *pb.VerifyBadgeWithOptionsRequest) (*pb.VerifyBadgeResponse, error) {
+func (s *BadgeService) VerifyBadgeWithOptions(_ context.Context, req *pb.VerifyBadgeWithOptionsRequest) (*pb.VerifyBadgeResponse, error) {
 	if req.Token == "" {
 		return &pb.VerifyBadgeResponse{
 			Valid:        false,
@@ -130,17 +134,166 @@ func (s *BadgeService) VerifyBadgeWithOptions(ctx context.Context, req *pb.Verif
 		}, nil
 	}
 
-	// TODO: Implement full verification with registry integration
-	// For now, return unimplemented
+	// Parse claims first to check issuer type
+	jwsObj, err := jose.ParseSigned(req.Token, []jose.SignatureAlgorithm{jose.EdDSA, jose.ES256})
+	if err != nil {
+		return &pb.VerifyBadgeResponse{
+			Valid:        false,
+			ErrorCode:    "MALFORMED",
+			ErrorMessage: fmt.Sprintf("failed to parse JWS: %v", err),
+		}, nil
+	}
+
+	// Extract claims without verification to check issuer
+	payload := jwsObj.UnsafePayloadWithoutVerification()
+	var claims badge.Claims
+	if err := json.Unmarshal(payload, &claims); err != nil {
+		return &pb.VerifyBadgeResponse{
+			Valid:        false,
+			ErrorCode:    "MALFORMED",
+			ErrorMessage: fmt.Sprintf("failed to parse claims: %v", err),
+		}, nil
+	}
+
+	// Build verification options
+	opts := badge.VerifyOptions{
+		Mode:                 badge.VerifyModeOnline,
+		SkipRevocationCheck:  true, // Default to skip for RPC (no registry configured)
+		SkipAgentStatusCheck: true, // Default to skip for RPC (no registry configured)
+	}
+
+	if req.Options != nil {
+		switch req.Options.Mode {
+		case pb.VerifyMode_VERIFY_MODE_OFFLINE:
+			opts.Mode = badge.VerifyModeOffline
+		case pb.VerifyMode_VERIFY_MODE_HYBRID:
+			opts.Mode = badge.VerifyModeHybrid
+		}
+		opts.TrustedIssuers = req.Options.TrustedIssuers
+		opts.Audience = req.Options.Audience
+		opts.SkipRevocationCheck = req.Options.SkipRevocation
+		opts.SkipAgentStatusCheck = req.Options.SkipAgentStatus
+		opts.AcceptSelfSigned = req.Options.AcceptSelfSigned
+	}
+
+	// Check if this is a self-signed badge (did:key issuer)
+	if strings.HasPrefix(claims.Issuer, "did:key:") {
+		if !opts.AcceptSelfSigned {
+			return &pb.VerifyBadgeResponse{
+				Valid:        false,
+				ErrorCode:    "SELF_SIGNED_NOT_ACCEPTED",
+				ErrorMessage: "self-signed badges (did:key issuer) require accept_self_signed option",
+			}, nil
+		}
+
+		// Extract public key from did:key
+		pubKey, err := did.PublicKeyFromKeyDID(claims.Issuer)
+		if err != nil {
+			return &pb.VerifyBadgeResponse{
+				Valid:        false,
+				ErrorCode:    "INVALID_ISSUER",
+				ErrorMessage: fmt.Sprintf("failed to extract public key from did:key: %v", err),
+			}, nil
+		}
+
+		// Verify signature
+		verifiedPayload, err := jwsObj.Verify(pubKey)
+		if err != nil {
+			return &pb.VerifyBadgeResponse{
+				Valid:        false,
+				ErrorCode:    "SIGNATURE_INVALID",
+				ErrorMessage: fmt.Sprintf("signature verification failed: %v", err),
+			}, nil
+		}
+
+		// Re-parse verified claims
+		if err := json.Unmarshal(verifiedPayload, &claims); err != nil {
+			return &pb.VerifyBadgeResponse{
+				Valid:        false,
+				ErrorCode:    "MALFORMED",
+				ErrorMessage: fmt.Sprintf("failed to parse verified claims: %v", err),
+			}, nil
+		}
+
+		// Validate self-signed constraints: iss == sub
+		if claims.Issuer != claims.Subject {
+			return &pb.VerifyBadgeResponse{
+				Valid:        false,
+				ErrorCode:    "SELF_SIGNED_INVALID",
+				ErrorMessage: "self-signed badge must have iss == sub",
+			}, nil
+		}
+
+		// Validate trust level is 0 for self-signed
+		if claims.TrustLevel() != "0" {
+			return &pb.VerifyBadgeResponse{
+				Valid:    false,
+				ErrorCode:    "SELF_SIGNED_INVALID",
+				ErrorMessage: fmt.Sprintf("self-signed badge must be trust level 0, got %s", claims.TrustLevel()),
+			}, nil
+		}
+
+		// Check expiry
+		if claims.IsExpired() {
+			return &pb.VerifyBadgeResponse{
+				Valid:        false,
+				ErrorCode:    "EXPIRED",
+				ErrorMessage: "badge has expired",
+			}, nil
+		}
+
+		// Check not yet valid
+		if claims.IsNotYetValid() {
+			return &pb.VerifyBadgeResponse{
+				Valid:        false,
+				ErrorCode:    "NOT_YET_VALID",
+				ErrorMessage: "badge is not yet valid",
+			}, nil
+		}
+
+		// Check audience if specified
+		if opts.Audience != "" && len(claims.Audience) > 0 {
+			found := false
+			for _, aud := range claims.Audience {
+				if aud == opts.Audience {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return &pb.VerifyBadgeResponse{
+					Valid:        false,
+					ErrorCode:    "AUDIENCE_MISMATCH",
+					ErrorMessage: fmt.Sprintf("audience %s not in allowed list", opts.Audience),
+				}, nil
+			}
+		}
+
+		warnings := []string{
+			"self-signed badge (did:key issuer)",
+			"revocation check skipped (self-signed badge)",
+			"agent status check skipped (self-signed badge)",
+		}
+
+		return &pb.VerifyBadgeResponse{
+			Valid:    true,
+			Claims:   badgeClaimsToProto(&claims),
+			ModeUsed: pb.VerifyMode_VERIFY_MODE_OFFLINE,
+			Warnings: warnings,
+		}, nil
+	}
+
+	// For did:web issuers, we need a registry or public key
+	// This is the registry-backed verification path
 	return &pb.VerifyBadgeResponse{
 		Valid:        false,
-		ErrorCode:    "UNIMPLEMENTED",
-		ErrorMessage: "full verification with options not yet implemented",
+		ErrorCode:    "REGISTRY_NOT_CONFIGURED",
+		ErrorMessage: "registry-backed verification not yet available via RPC; use --key flag with CLI or provide public_key_jwk",
 	}, nil
 }
 
 // ParseBadge parses badge claims without verification.
-func (s *BadgeService) ParseBadge(ctx context.Context, req *pb.ParseBadgeRequest) (*pb.ParseBadgeResponse, error) {
+func (s *BadgeService) ParseBadge(_ context.Context, req *pb.ParseBadgeRequest) (*pb.ParseBadgeResponse, error) {
 	if req.Token == "" {
 		return &pb.ParseBadgeResponse{
 			ErrorMessage: "token is required",
@@ -211,12 +364,16 @@ func badgeClaimsToProto(c *badge.Claims) *pb.BadgeClaims {
 
 func trustLevelToString(tl pb.TrustLevel) string {
 	switch tl {
+	case pb.TrustLevel_TRUST_LEVEL_SELF_SIGNED:
+		return "0"
 	case pb.TrustLevel_TRUST_LEVEL_DV:
 		return "1"
 	case pb.TrustLevel_TRUST_LEVEL_OV:
 		return "2"
 	case pb.TrustLevel_TRUST_LEVEL_EV:
 		return "3"
+	case pb.TrustLevel_TRUST_LEVEL_CV:
+		return "4"
 	default:
 		return ""
 	}
@@ -224,13 +381,232 @@ func trustLevelToString(tl pb.TrustLevel) string {
 
 func stringToTrustLevel(s string) pb.TrustLevel {
 	switch s {
+	case "0":
+		return pb.TrustLevel_TRUST_LEVEL_SELF_SIGNED
 	case "1":
 		return pb.TrustLevel_TRUST_LEVEL_DV
 	case "2":
 		return pb.TrustLevel_TRUST_LEVEL_OV
 	case "3":
 		return pb.TrustLevel_TRUST_LEVEL_EV
+	case "4":
+		return pb.TrustLevel_TRUST_LEVEL_CV
 	default:
 		return pb.TrustLevel_TRUST_LEVEL_UNSPECIFIED
+	}
+}
+
+// RequestBadge requests a new badge from a Certificate Authority (RFC-002 §12.1).
+func (s *BadgeService) RequestBadge(ctx context.Context, req *pb.RequestBadgeRequest) (*pb.RequestBadgeResponse, error) {
+	if req.AgentId == "" {
+		return &pb.RequestBadgeResponse{
+			Success:   false,
+			Error:     "agent_id is required",
+			ErrorCode: "INVALID_INPUT",
+		}, nil
+	}
+
+	if req.ApiKey == "" {
+		return &pb.RequestBadgeResponse{
+			Success:   false,
+			Error:     "api_key is required for CA mode",
+			ErrorCode: "AUTH_REQUIRED",
+		}, nil
+	}
+
+	// Build options
+	caURL := req.CaUrl
+	if caURL == "" {
+		caURL = badge.DefaultCAURL
+	}
+
+	ttl := time.Duration(req.TtlSeconds) * time.Second
+	if ttl == 0 {
+		ttl = badge.DefaultTTL
+	}
+
+	opts := badge.RequestBadgeOptions{
+		AgentID:    req.AgentId,
+		Domain:     req.Domain,
+		TTL:        ttl,
+		TrustLevel: trustLevelToString(req.TrustLevel),
+		Audience:   req.Audience,
+	}
+
+	// Create client and request badge
+	client := badge.NewClient(caURL, req.ApiKey)
+	result, err := client.RequestBadge(ctx, opts)
+	if err != nil {
+		// Check for specific error types
+		if clientErr, ok := err.(*badge.ClientError); ok {
+			return &pb.RequestBadgeResponse{
+				Success:   false,
+				Error:     clientErr.Message,
+				ErrorCode: clientErr.Code,
+			}, nil
+		}
+		return &pb.RequestBadgeResponse{
+			Success:   false,
+			Error:     err.Error(),
+			ErrorCode: "CA_ERROR",
+		}, nil
+	}
+
+	return &pb.RequestBadgeResponse{
+		Success:    true,
+		Token:      result.Token,
+		Jti:        result.JTI,
+		Subject:    result.Subject,
+		TrustLevel: stringToTrustLevel(result.TrustLevel),
+		ExpiresAt:  result.ExpiresAt.Unix(),
+	}, nil
+}
+
+// StartKeeper starts a badge keeper daemon that automatically renews badges (RFC-002 §7.3).
+func (s *BadgeService) StartKeeper(req *pb.StartKeeperRequest, stream pb.BadgeService_StartKeeperServer) error {
+	// Validate request
+	switch req.Mode {
+	case pb.KeeperMode_KEEPER_MODE_CA:
+		if req.AgentId == "" {
+			return fmt.Errorf("agent_id is required for CA mode")
+		}
+		if req.ApiKey == "" {
+			return fmt.Errorf("api_key is required for CA mode")
+		}
+	case pb.KeeperMode_KEEPER_MODE_SELF_SIGN:
+		if req.PrivateKeyPath == "" {
+			return fmt.Errorf("private_key_path is required for self-sign mode")
+		}
+	default:
+		return fmt.Errorf("mode must be CA or SELF_SIGN")
+	}
+
+	// Build keeper config
+	config := badge.KeeperConfig{
+		OutputFile: req.OutputFile,
+		Domain:     req.Domain,
+		TrustLevel: trustLevelToString(req.TrustLevel),
+	}
+
+	// Set durations with defaults
+	if req.TtlSeconds > 0 {
+		config.Expiry = time.Duration(req.TtlSeconds) * time.Second
+	} else {
+		config.Expiry = 5 * time.Minute
+	}
+
+	if req.RenewBeforeSeconds > 0 {
+		config.RenewBefore = time.Duration(req.RenewBeforeSeconds) * time.Second
+	} else {
+		config.RenewBefore = 1 * time.Minute
+	}
+
+	if req.CheckIntervalSeconds > 0 {
+		config.CheckInterval = time.Duration(req.CheckIntervalSeconds) * time.Second
+	} else {
+		config.CheckInterval = 30 * time.Second
+	}
+
+	// Configure mode-specific settings
+	if req.Mode == pb.KeeperMode_KEEPER_MODE_CA {
+		config.Mode = badge.KeeperModeCA
+		config.CAURL = req.CaUrl
+		if config.CAURL == "" {
+			config.CAURL = badge.DefaultCAURL
+		}
+		config.APIKey = req.ApiKey
+		config.AgentID = req.AgentId
+	} else {
+		config.Mode = badge.KeeperModeSelfSign
+		config.TrustLevel = "0" // Self-sign is always level 0
+
+		// Load private key
+		keyData, err := os.ReadFile(req.PrivateKeyPath)
+		if err != nil {
+			return fmt.Errorf("failed to read private key: %w", err)
+		}
+
+		var jwk jose.JSONWebKey
+		if err := json.Unmarshal(keyData, &jwk); err != nil {
+			return fmt.Errorf("failed to parse private key JWK: %w", err)
+		}
+
+		priv, ok := jwk.Key.(ed25519.PrivateKey)
+		if !ok {
+			return fmt.Errorf("expected Ed25519 private key")
+		}
+
+		config.PrivateKey = priv
+
+		// Generate did:key for self-signed mode
+		pub := priv.Public().(ed25519.PublicKey)
+		didKey := did.NewKeyDID(pub)
+
+		pubJWK := &jose.JSONWebKey{
+			Key:       pub,
+			Algorithm: string(jose.EdDSA),
+			Use:       "sig",
+		}
+
+		config.Claims = badge.Claims{
+			Issuer:  didKey,
+			Subject: didKey,
+			Key:     pubJWK,
+			VC: badge.VerifiableCredential{
+				Type: []string{"VerifiableCredential", "AgentIdentity"},
+				CredentialSubject: badge.CredentialSubject{
+					Domain: req.Domain,
+					Level:  "0",
+				},
+			},
+		}
+	}
+
+	// Create keeper
+	keeper := badge.NewKeeper(config)
+
+	// Create event channel
+	events := make(chan badge.KeeperEvent, 10)
+
+	// Start keeper in goroutine
+	ctx := stream.Context()
+	go func() {
+		_ = keeper.RunWithEvents(ctx, events)
+	}()
+
+	// Stream events to client
+	for event := range events {
+		pbEvent := &pb.KeeperEvent{
+			Type:       keeperEventTypeToPB(event.Type),
+			BadgeJti:   event.BadgeJTI,
+			Subject:    event.Subject,
+			TrustLevel: stringToTrustLevel(event.TrustLevel),
+			ExpiresAt:  event.ExpiresAt.Unix(),
+			Error:      event.Error,
+			ErrorCode:  event.ErrorCode,
+			Timestamp:  event.Timestamp.Unix(),
+			Token:      event.Token,
+		}
+
+		if err := stream.Send(pbEvent); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func keeperEventTypeToPB(t badge.KeeperEventType) pb.KeeperEventType {
+	switch t {
+	case badge.KeeperEventStarted:
+		return pb.KeeperEventType_KEEPER_EVENT_STARTED
+	case badge.KeeperEventRenewed:
+		return pb.KeeperEventType_KEEPER_EVENT_RENEWED
+	case badge.KeeperEventError:
+		return pb.KeeperEventType_KEEPER_EVENT_ERROR
+	case badge.KeeperEventStopped:
+		return pb.KeeperEventType_KEEPER_EVENT_STOPPED
+	default:
+		return pb.KeeperEventType_KEEPER_EVENT_UNSPECIFIED
 	}
 }

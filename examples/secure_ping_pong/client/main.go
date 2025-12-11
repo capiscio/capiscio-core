@@ -81,7 +81,7 @@ func sendPing(client *http.Client, guard *simpleguard.SimpleGuard, url string, m
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Capiscio-JWS", token)
+	req.Header.Set("X-Capiscio-Badge", token)
 
 	start := time.Now()
 	resp, err := client.Do(req)
@@ -126,7 +126,7 @@ func simulateTampering(client *http.Client, guard *simpleguard.SimpleGuard, url 
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Capiscio-JWS", token)
+	req.Header.Set("X-Capiscio-Badge", token)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -184,7 +184,7 @@ func simulateReplayAttack(client *http.Client, privKey ed25519.PrivateKey, url s
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Capiscio-JWS", token)
+	req.Header.Set("X-Capiscio-Badge", token)
 
 	resp, err := client.Do(req)
 	if err != nil {

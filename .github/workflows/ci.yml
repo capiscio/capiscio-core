@@ -42,3 +42,26 @@ jobs:
 
       - name: Run Tests
         run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+      - name: Check Coverage Threshold
+        run: |
+          # Parse coverage from profile
+          COVERAGE=$(go tool cover -func=coverage.txt | grep total | awk '{print $3}' | sed 's/%//')
+          echo "Total coverage: $COVERAGE%"
+          
+          # Check minimum threshold (70%)
+          THRESHOLD=70
+          if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+            echo "❌ Coverage $COVERAGE% is below minimum threshold of $THRESHOLD%"
+            exit 1
+          fi
+          echo "✅ Coverage $COVERAGE% meets minimum threshold of $THRESHOLD%"
+
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.txt
+          flags: unittests
+          name: capiscio-core
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

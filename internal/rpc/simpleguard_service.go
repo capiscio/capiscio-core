@@ -17,6 +17,7 @@ import (
 
 	"github.com/go-jose/go-jose/v4"
 
+	"github.com/capiscio/capiscio-core/pkg/did"
 	pb "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1"
 )
 
@@ -45,7 +46,7 @@ func NewSimpleGuardService() *SimpleGuardService {
 }
 
 // Sign signs a message using the specified key.
-func (s *SimpleGuardService) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignResponse, error) {
+func (s *SimpleGuardService) Sign(_ context.Context, req *pb.SignRequest) (*pb.SignResponse, error) {
 	s.mu.RLock()
 	entry, exists := s.keys[req.KeyId]
 	s.mu.RUnlock()
@@ -72,7 +73,7 @@ func (s *SimpleGuardService) Sign(ctx context.Context, req *pb.SignRequest) (*pb
 }
 
 // Verify verifies a signed message.
-func (s *SimpleGuardService) Verify(ctx context.Context, req *pb.VerifyRequest) (*pb.VerifyResponse, error) {
+func (s *SimpleGuardService) Verify(_ context.Context, req *pb.VerifyRequest) (*pb.VerifyResponse, error) {
 	// If we have a signature string, decode it
 	sig := req.Signature
 	if len(sig) == 0 && req.SignatureString != "" {
@@ -111,7 +112,7 @@ func (s *SimpleGuardService) Verify(ctx context.Context, req *pb.VerifyRequest) 
 }
 
 // SignAttached signs with attached payload (creates JWS).
-func (s *SimpleGuardService) SignAttached(ctx context.Context, req *pb.SignAttachedRequest) (*pb.SignAttachedResponse, error) {
+func (s *SimpleGuardService) SignAttached(_ context.Context, req *pb.SignAttachedRequest) (*pb.SignAttachedResponse, error) {
 	s.mu.RLock()
 	entry, exists := s.keys[req.KeyId]
 	s.mu.RUnlock()
@@ -187,7 +188,7 @@ func (s *SimpleGuardService) SignAttached(ctx context.Context, req *pb.SignAttac
 }
 
 // VerifyAttached verifies with attached payload.
-func (s *SimpleGuardService) VerifyAttached(ctx context.Context, req *pb.VerifyAttachedRequest) (*pb.VerifyAttachedResponse, error) {
+func (s *SimpleGuardService) VerifyAttached(_ context.Context, req *pb.VerifyAttachedRequest) (*pb.VerifyAttachedResponse, error) {
 	// Parse JWS
 	jwsObj, err := jose.ParseSigned(req.Jws, []jose.SignatureAlgorithm{jose.EdDSA})
 	if err != nil {
@@ -272,7 +273,7 @@ func (s *SimpleGuardService) VerifyAttached(ctx context.Context, req *pb.VerifyA
 }
 
 // GenerateKeyPair generates a new key pair.
-func (s *SimpleGuardService) GenerateKeyPair(ctx context.Context, req *pb.GenerateKeyPairRequest) (*pb.GenerateKeyPairResponse, error) {
+func (s *SimpleGuardService) GenerateKeyPair(_ context.Context, req *pb.GenerateKeyPairRequest) (*pb.GenerateKeyPairResponse, error) {
 	// Only Ed25519 supported for now
 	if req.Algorithm != pb.KeyAlgorithm_KEY_ALGORITHM_UNSPECIFIED && req.Algorithm != pb.KeyAlgorithm_KEY_ALGORITHM_ED25519 {
 		return &pb.GenerateKeyPairResponse{
@@ -322,6 +323,9 @@ func (s *SimpleGuardService) GenerateKeyPair(ctx context.Context, req *pb.Genera
 		Bytes: pubPKIX,
 	})
 
+	// Generate did:key URI from public key (RFC-002 §6.1)
+	didKey := did.NewKeyDID(pub)
+
 	return &pb.GenerateKeyPairResponse{
 		KeyId:         keyID,
 		PublicKey:     pub,
@@ -329,11 +333,12 @@ func (s *SimpleGuardService) GenerateKeyPair(ctx context.Context, req *pb.Genera
 		PublicKeyPem:  string(pubPEM),
 		PrivateKeyPem: string(privPEM),
 		Algorithm:     pb.KeyAlgorithm_KEY_ALGORITHM_ED25519,
+		DidKey:        didKey,
 	}, nil
 }
 
 // LoadKey loads key from file.
-func (s *SimpleGuardService) LoadKey(ctx context.Context, req *pb.LoadKeyRequest) (*pb.LoadKeyResponse, error) {
+func (s *SimpleGuardService) LoadKey(_ context.Context, req *pb.LoadKeyRequest) (*pb.LoadKeyResponse, error) {
 	// Read file
 	data, err := os.ReadFile(req.FilePath)
 	if err != nil {
@@ -410,7 +415,7 @@ func (s *SimpleGuardService) LoadKey(ctx context.Context, req *pb.LoadKeyRequest
 }
 
 // ExportKey exports key to file.
-func (s *SimpleGuardService) ExportKey(ctx context.Context, req *pb.ExportKeyRequest) (*pb.ExportKeyResponse, error) {
+func (s *SimpleGuardService) ExportKey(_ context.Context, req *pb.ExportKeyRequest) (*pb.ExportKeyResponse, error) {
 	s.mu.RLock()
 	entry, exists := s.keys[req.KeyId]
 	s.mu.RUnlock()
@@ -453,7 +458,7 @@ func (s *SimpleGuardService) ExportKey(ctx context.Context, req *pb.ExportKeyReq
 }
 
 // GetKeyInfo gets key info.
-func (s *SimpleGuardService) GetKeyInfo(ctx context.Context, req *pb.GetKeyInfoRequest) (*pb.GetKeyInfoResponse, error) {
+func (s *SimpleGuardService) GetKeyInfo(_ context.Context, req *pb.GetKeyInfoRequest) (*pb.GetKeyInfoResponse, error) {
 	s.mu.RLock()
 	entry, exists := s.keys[req.KeyId]
 	s.mu.RUnlock()

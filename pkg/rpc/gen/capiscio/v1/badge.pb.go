@@ -23,29 +23,35 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Trust level for badges (RFC-002)
+// Trust level for badges (RFC-002 v1.1)
 type TrustLevel int32
 
 const (
 	TrustLevel_TRUST_LEVEL_UNSPECIFIED TrustLevel = 0
-	TrustLevel_TRUST_LEVEL_DV          TrustLevel = 1 // Domain Validated
-	TrustLevel_TRUST_LEVEL_OV          TrustLevel = 2 // Organization Validated
-	TrustLevel_TRUST_LEVEL_EV          TrustLevel = 3 // Extended Validated
+	TrustLevel_TRUST_LEVEL_SELF_SIGNED TrustLevel = 1 // Self-signed (Level 0, did:key)
+	TrustLevel_TRUST_LEVEL_DV          TrustLevel = 2 // Domain Validated (Level 1)
+	TrustLevel_TRUST_LEVEL_OV          TrustLevel = 3 // Organization Validated (Level 2)
+	TrustLevel_TRUST_LEVEL_EV          TrustLevel = 4 // Extended Validated (Level 3)
+	TrustLevel_TRUST_LEVEL_CV          TrustLevel = 5 // Community Vouched (Level 4)
 )
 
 // Enum value maps for TrustLevel.
 var (
 	TrustLevel_name = map[int32]string{
 		0: "TRUST_LEVEL_UNSPECIFIED",
-		1: "TRUST_LEVEL_DV",
-		2: "TRUST_LEVEL_OV",
-		3: "TRUST_LEVEL_EV",
+		1: "TRUST_LEVEL_SELF_SIGNED",
+		2: "TRUST_LEVEL_DV",
+		3: "TRUST_LEVEL_OV",
+		4: "TRUST_LEVEL_EV",
+		5: "TRUST_LEVEL_CV",
 	}
 	TrustLevel_value = map[string]int32{
 		"TRUST_LEVEL_UNSPECIFIED": 0,
-		"TRUST_LEVEL_DV":          1,
-		"TRUST_LEVEL_OV":          2,
-		"TRUST_LEVEL_EV":          3,
+		"TRUST_LEVEL_SELF_SIGNED": 1,
+		"TRUST_LEVEL_DV":          2,
+		"TRUST_LEVEL_OV":          3,
+		"TRUST_LEVEL_EV":          4,
+		"TRUST_LEVEL_CV":          5,
 	}
 )
 
@@ -127,6 +133,112 @@ func (x VerifyMode) Number() protoreflect.EnumNumber {
 // Deprecated: Use VerifyMode.Descriptor instead.
 func (VerifyMode) EnumDescriptor() ([]byte, []int) {
 	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{1}
+}
+
+// Keeper operation mode
+type KeeperMode int32
+
+const (
+	KeeperMode_KEEPER_MODE_UNSPECIFIED KeeperMode = 0
+	KeeperMode_KEEPER_MODE_CA          KeeperMode = 1 // Request badges from CA
+	KeeperMode_KEEPER_MODE_SELF_SIGN   KeeperMode = 2 // Self-sign badges locally (development)
+)
+
+// Enum value maps for KeeperMode.
+var (
+	KeeperMode_name = map[int32]string{
+		0: "KEEPER_MODE_UNSPECIFIED",
+		1: "KEEPER_MODE_CA",
+		2: "KEEPER_MODE_SELF_SIGN",
+	}
+	KeeperMode_value = map[string]int32{
+		"KEEPER_MODE_UNSPECIFIED": 0,
+		"KEEPER_MODE_CA":          1,
+		"KEEPER_MODE_SELF_SIGN":   2,
+	}
+)
+
+func (x KeeperMode) Enum() *KeeperMode {
+	p := new(KeeperMode)
+	*p = x
+	return p
+}
+
+func (x KeeperMode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (KeeperMode) Descriptor() protoreflect.EnumDescriptor {
+	return file_capiscio_v1_badge_proto_enumTypes[2].Descriptor()
+}
+
+func (KeeperMode) Type() protoreflect.EnumType {
+	return &file_capiscio_v1_badge_proto_enumTypes[2]
+}
+
+func (x KeeperMode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use KeeperMode.Descriptor instead.
+func (KeeperMode) EnumDescriptor() ([]byte, []int) {
+	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{2}
+}
+
+// Event types emitted by the keeper
+type KeeperEventType int32
+
+const (
+	KeeperEventType_KEEPER_EVENT_UNSPECIFIED KeeperEventType = 0
+	KeeperEventType_KEEPER_EVENT_STARTED     KeeperEventType = 1 // Keeper started successfully
+	KeeperEventType_KEEPER_EVENT_RENEWED     KeeperEventType = 2 // Badge was renewed
+	KeeperEventType_KEEPER_EVENT_ERROR       KeeperEventType = 3 // An error occurred (non-fatal)
+	KeeperEventType_KEEPER_EVENT_STOPPED     KeeperEventType = 4 // Keeper stopped (client disconnect or fatal error)
+)
+
+// Enum value maps for KeeperEventType.
+var (
+	KeeperEventType_name = map[int32]string{
+		0: "KEEPER_EVENT_UNSPECIFIED",
+		1: "KEEPER_EVENT_STARTED",
+		2: "KEEPER_EVENT_RENEWED",
+		3: "KEEPER_EVENT_ERROR",
+		4: "KEEPER_EVENT_STOPPED",
+	}
+	KeeperEventType_value = map[string]int32{
+		"KEEPER_EVENT_UNSPECIFIED": 0,
+		"KEEPER_EVENT_STARTED":     1,
+		"KEEPER_EVENT_RENEWED":     2,
+		"KEEPER_EVENT_ERROR":       3,
+		"KEEPER_EVENT_STOPPED":     4,
+	}
+)
+
+func (x KeeperEventType) Enum() *KeeperEventType {
+	p := new(KeeperEventType)
+	*p = x
+	return p
+}
+
+func (x KeeperEventType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (KeeperEventType) Descriptor() protoreflect.EnumDescriptor {
+	return file_capiscio_v1_badge_proto_enumTypes[3].Descriptor()
+}
+
+func (KeeperEventType) Type() protoreflect.EnumType {
+	return &file_capiscio_v1_badge_proto_enumTypes[3]
+}
+
+func (x KeeperEventType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use KeeperEventType.Descriptor instead.
+func (KeeperEventType) EnumDescriptor() ([]byte, []int) {
+	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{3}
 }
 
 // Badge claims structure
@@ -434,6 +546,7 @@ type VerifyOptions struct {
 	SkipAgentStatus       bool                   `protobuf:"varint,5,opt,name=skip_agent_status,json=skipAgentStatus,proto3" json:"skip_agent_status,omitempty"`
 	ClockToleranceSeconds int64                  `protobuf:"varint,6,opt,name=clock_tolerance_seconds,json=clockToleranceSeconds,proto3" json:"clock_tolerance_seconds,omitempty"`
 	RegistryUrl           string                 `protobuf:"bytes,7,opt,name=registry_url,json=registryUrl,proto3" json:"registry_url,omitempty"`
+	AcceptSelfSigned      bool                   `protobuf:"varint,8,opt,name=accept_self_signed,json=acceptSelfSigned,proto3" json:"accept_self_signed,omitempty"` // Accept Level 0 did:key badges
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -515,6 +628,13 @@ func (x *VerifyOptions) GetRegistryUrl() string {
 		return x.RegistryUrl
 	}
 	return ""
+}
+
+func (x *VerifyOptions) GetAcceptSelfSigned() bool {
+	if x != nil {
+		return x.AcceptSelfSigned
+	}
+	return false
 }
 
 // Request to verify with options
@@ -753,6 +873,469 @@ func (x *ParseBadgeResponse) GetErrorMessage() string {
 	return ""
 }
 
+// Request to obtain a badge from a Certificate Authority
+type RequestBadgeRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Agent ID (UUID) to request badge for
+	AgentId string `protobuf:"bytes,1,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
+	// CA URL (default: https://registry.capisc.io)
+	CaUrl string `protobuf:"bytes,2,opt,name=ca_url,json=caUrl,proto3" json:"ca_url,omitempty"`
+	// API key for authentication with the CA
+	ApiKey string `protobuf:"bytes,3,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
+	// Agent domain (optional, uses agent's registered domain if not provided)
+	Domain string `protobuf:"bytes,4,opt,name=domain,proto3" json:"domain,omitempty"`
+	// Requested TTL in seconds (default: 300, per RFC-002)
+	TtlSeconds int32 `protobuf:"varint,5,opt,name=ttl_seconds,json=ttlSeconds,proto3" json:"ttl_seconds,omitempty"`
+	// Requested trust level (1-4, default: 1)
+	TrustLevel TrustLevel `protobuf:"varint,6,opt,name=trust_level,json=trustLevel,proto3,enum=capiscio.v1.TrustLevel" json:"trust_level,omitempty"`
+	// Optional audience restrictions
+	Audience      []string `protobuf:"bytes,7,rep,name=audience,proto3" json:"audience,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestBadgeRequest) Reset() {
+	*x = RequestBadgeRequest{}
+	mi := &file_capiscio_v1_badge_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestBadgeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestBadgeRequest) ProtoMessage() {}
+
+func (x *RequestBadgeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_badge_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestBadgeRequest.ProtoReflect.Descriptor instead.
+func (*RequestBadgeRequest) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *RequestBadgeRequest) GetAgentId() string {
+	if x != nil {
+		return x.AgentId
+	}
+	return ""
+}
+
+func (x *RequestBadgeRequest) GetCaUrl() string {
+	if x != nil {
+		return x.CaUrl
+	}
+	return ""
+}
+
+func (x *RequestBadgeRequest) GetApiKey() string {
+	if x != nil {
+		return x.ApiKey
+	}
+	return ""
+}
+
+func (x *RequestBadgeRequest) GetDomain() string {
+	if x != nil {
+		return x.Domain
+	}
+	return ""
+}
+
+func (x *RequestBadgeRequest) GetTtlSeconds() int32 {
+	if x != nil {
+		return x.TtlSeconds
+	}
+	return 0
+}
+
+func (x *RequestBadgeRequest) GetTrustLevel() TrustLevel {
+	if x != nil {
+		return x.TrustLevel
+	}
+	return TrustLevel_TRUST_LEVEL_UNSPECIFIED
+}
+
+func (x *RequestBadgeRequest) GetAudience() []string {
+	if x != nil {
+		return x.Audience
+	}
+	return nil
+}
+
+// Response from badge request
+type RequestBadgeResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Whether the request succeeded
+	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	// The signed badge token (JWS)
+	Token string `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
+	// Badge ID (jti)
+	Jti string `protobuf:"bytes,3,opt,name=jti,proto3" json:"jti,omitempty"`
+	// Subject DID
+	Subject string `protobuf:"bytes,4,opt,name=subject,proto3" json:"subject,omitempty"`
+	// Trust level assigned
+	TrustLevel TrustLevel `protobuf:"varint,5,opt,name=trust_level,json=trustLevel,proto3,enum=capiscio.v1.TrustLevel" json:"trust_level,omitempty"`
+	// When the badge expires (Unix timestamp)
+	ExpiresAt int64 `protobuf:"varint,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	// Error message if success=false
+	Error string `protobuf:"bytes,7,opt,name=error,proto3" json:"error,omitempty"`
+	// Error code (RFC-002 §8.4 codes)
+	ErrorCode     string `protobuf:"bytes,8,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestBadgeResponse) Reset() {
+	*x = RequestBadgeResponse{}
+	mi := &file_capiscio_v1_badge_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestBadgeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestBadgeResponse) ProtoMessage() {}
+
+func (x *RequestBadgeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_badge_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestBadgeResponse.ProtoReflect.Descriptor instead.
+func (*RequestBadgeResponse) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *RequestBadgeResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *RequestBadgeResponse) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+func (x *RequestBadgeResponse) GetJti() string {
+	if x != nil {
+		return x.Jti
+	}
+	return ""
+}
+
+func (x *RequestBadgeResponse) GetSubject() string {
+	if x != nil {
+		return x.Subject
+	}
+	return ""
+}
+
+func (x *RequestBadgeResponse) GetTrustLevel() TrustLevel {
+	if x != nil {
+		return x.TrustLevel
+	}
+	return TrustLevel_TRUST_LEVEL_UNSPECIFIED
+}
+
+func (x *RequestBadgeResponse) GetExpiresAt() int64 {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return 0
+}
+
+func (x *RequestBadgeResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+func (x *RequestBadgeResponse) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
+// Request to start a badge keeper daemon
+type StartKeeperRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Mode: CA or self-signed
+	Mode KeeperMode `protobuf:"varint,1,opt,name=mode,proto3,enum=capiscio.v1.KeeperMode" json:"mode,omitempty"`
+	// Agent ID (required for CA mode)
+	AgentId string `protobuf:"bytes,2,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
+	// CA URL (default: https://registry.capisc.io)
+	CaUrl string `protobuf:"bytes,3,opt,name=ca_url,json=caUrl,proto3" json:"ca_url,omitempty"`
+	// API key for CA authentication (required for CA mode)
+	ApiKey string `protobuf:"bytes,4,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
+	// Output file path for the badge
+	OutputFile string `protobuf:"bytes,5,opt,name=output_file,json=outputFile,proto3" json:"output_file,omitempty"`
+	// Badge TTL in seconds (default: 300)
+	TtlSeconds int32 `protobuf:"varint,6,opt,name=ttl_seconds,json=ttlSeconds,proto3" json:"ttl_seconds,omitempty"`
+	// Time before expiry to renew, in seconds (default: 60)
+	RenewBeforeSeconds int32 `protobuf:"varint,7,opt,name=renew_before_seconds,json=renewBeforeSeconds,proto3" json:"renew_before_seconds,omitempty"`
+	// Check interval in seconds (default: 30)
+	CheckIntervalSeconds int32 `protobuf:"varint,8,opt,name=check_interval_seconds,json=checkIntervalSeconds,proto3" json:"check_interval_seconds,omitempty"`
+	// Private key path (required for self-sign mode, JWK file)
+	PrivateKeyPath string `protobuf:"bytes,9,opt,name=private_key_path,json=privateKeyPath,proto3" json:"private_key_path,omitempty"`
+	// Domain for the badge
+	Domain string `protobuf:"bytes,10,opt,name=domain,proto3" json:"domain,omitempty"`
+	// Trust level (for CA mode, 1-4; self-sign always 0)
+	TrustLevel    TrustLevel `protobuf:"varint,11,opt,name=trust_level,json=trustLevel,proto3,enum=capiscio.v1.TrustLevel" json:"trust_level,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StartKeeperRequest) Reset() {
+	*x = StartKeeperRequest{}
+	mi := &file_capiscio_v1_badge_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StartKeeperRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartKeeperRequest) ProtoMessage() {}
+
+func (x *StartKeeperRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_badge_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartKeeperRequest.ProtoReflect.Descriptor instead.
+func (*StartKeeperRequest) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *StartKeeperRequest) GetMode() KeeperMode {
+	if x != nil {
+		return x.Mode
+	}
+	return KeeperMode_KEEPER_MODE_UNSPECIFIED
+}
+
+func (x *StartKeeperRequest) GetAgentId() string {
+	if x != nil {
+		return x.AgentId
+	}
+	return ""
+}
+
+func (x *StartKeeperRequest) GetCaUrl() string {
+	if x != nil {
+		return x.CaUrl
+	}
+	return ""
+}
+
+func (x *StartKeeperRequest) GetApiKey() string {
+	if x != nil {
+		return x.ApiKey
+	}
+	return ""
+}
+
+func (x *StartKeeperRequest) GetOutputFile() string {
+	if x != nil {
+		return x.OutputFile
+	}
+	return ""
+}
+
+func (x *StartKeeperRequest) GetTtlSeconds() int32 {
+	if x != nil {
+		return x.TtlSeconds
+	}
+	return 0
+}
+
+func (x *StartKeeperRequest) GetRenewBeforeSeconds() int32 {
+	if x != nil {
+		return x.RenewBeforeSeconds
+	}
+	return 0
+}
+
+func (x *StartKeeperRequest) GetCheckIntervalSeconds() int32 {
+	if x != nil {
+		return x.CheckIntervalSeconds
+	}
+	return 0
+}
+
+func (x *StartKeeperRequest) GetPrivateKeyPath() string {
+	if x != nil {
+		return x.PrivateKeyPath
+	}
+	return ""
+}
+
+func (x *StartKeeperRequest) GetDomain() string {
+	if x != nil {
+		return x.Domain
+	}
+	return ""
+}
+
+func (x *StartKeeperRequest) GetTrustLevel() TrustLevel {
+	if x != nil {
+		return x.TrustLevel
+	}
+	return TrustLevel_TRUST_LEVEL_UNSPECIFIED
+}
+
+// Event emitted by the badge keeper
+type KeeperEvent struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Event type
+	Type KeeperEventType `protobuf:"varint,1,opt,name=type,proto3,enum=capiscio.v1.KeeperEventType" json:"type,omitempty"`
+	// Badge JTI (for RENEWED events)
+	BadgeJti string `protobuf:"bytes,2,opt,name=badge_jti,json=badgeJti,proto3" json:"badge_jti,omitempty"`
+	// Subject DID (for RENEWED events)
+	Subject string `protobuf:"bytes,3,opt,name=subject,proto3" json:"subject,omitempty"`
+	// Trust level (for RENEWED events)
+	TrustLevel TrustLevel `protobuf:"varint,4,opt,name=trust_level,json=trustLevel,proto3,enum=capiscio.v1.TrustLevel" json:"trust_level,omitempty"`
+	// When the badge expires (Unix timestamp, for RENEWED events)
+	ExpiresAt int64 `protobuf:"varint,5,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	// Error message (for ERROR events)
+	Error string `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"`
+	// Error code (for ERROR events)
+	ErrorCode string `protobuf:"bytes,7,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	// Timestamp of the event (Unix timestamp)
+	Timestamp int64 `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	// The badge token itself (for RENEWED events, optional)
+	Token         string `protobuf:"bytes,9,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *KeeperEvent) Reset() {
+	*x = KeeperEvent{}
+	mi := &file_capiscio_v1_badge_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *KeeperEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*KeeperEvent) ProtoMessage() {}
+
+func (x *KeeperEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_badge_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use KeeperEvent.ProtoReflect.Descriptor instead.
+func (*KeeperEvent) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *KeeperEvent) GetType() KeeperEventType {
+	if x != nil {
+		return x.Type
+	}
+	return KeeperEventType_KEEPER_EVENT_UNSPECIFIED
+}
+
+func (x *KeeperEvent) GetBadgeJti() string {
+	if x != nil {
+		return x.BadgeJti
+	}
+	return ""
+}
+
+func (x *KeeperEvent) GetSubject() string {
+	if x != nil {
+		return x.Subject
+	}
+	return ""
+}
+
+func (x *KeeperEvent) GetTrustLevel() TrustLevel {
+	if x != nil {
+		return x.TrustLevel
+	}
+	return TrustLevel_TRUST_LEVEL_UNSPECIFIED
+}
+
+func (x *KeeperEvent) GetExpiresAt() int64 {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return 0
+}
+
+func (x *KeeperEvent) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+func (x *KeeperEvent) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
+func (x *KeeperEvent) GetTimestamp() int64 {
+	if x != nil {
+		return x.Timestamp
+	}
+	return 0
+}
+
+func (x *KeeperEvent) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
 var File_capiscio_v1_badge_proto protoreflect.FileDescriptor
 
 const file_capiscio_v1_badge_proto_rawDesc = "" +
@@ -782,7 +1365,7 @@ const file_capiscio_v1_badge_proto_rawDesc = "" +
 	"\x06claims\x18\x02 \x01(\v2\x18.capiscio.v1.BadgeClaimsR\x06claims\"P\n" +
 	"\x12VerifyBadgeRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12$\n" +
-	"\x0epublic_key_jwk\x18\x02 \x01(\tR\fpublicKeyJwk\"\xb1\x02\n" +
+	"\x0epublic_key_jwk\x18\x02 \x01(\tR\fpublicKeyJwk\"\xdf\x02\n" +
 	"\rVerifyOptions\x12+\n" +
 	"\x04mode\x18\x01 \x01(\x0e2\x17.capiscio.v1.VerifyModeR\x04mode\x12'\n" +
 	"\x0ftrusted_issuers\x18\x02 \x03(\tR\x0etrustedIssuers\x12\x1a\n" +
@@ -790,7 +1373,8 @@ const file_capiscio_v1_badge_proto_rawDesc = "" +
 	"\x0fskip_revocation\x18\x04 \x01(\bR\x0eskipRevocation\x12*\n" +
 	"\x11skip_agent_status\x18\x05 \x01(\bR\x0fskipAgentStatus\x126\n" +
 	"\x17clock_tolerance_seconds\x18\x06 \x01(\x03R\x15clockToleranceSeconds\x12!\n" +
-	"\fregistry_url\x18\a \x01(\tR\vregistryUrl\"k\n" +
+	"\fregistry_url\x18\a \x01(\tR\vregistryUrl\x12,\n" +
+	"\x12accept_self_signed\x18\b \x01(\bR\x10acceptSelfSigned\"k\n" +
 	"\x1dVerifyBadgeWithOptionsRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x124\n" +
 	"\aoptions\x18\x02 \x01(\v2\x1a.capiscio.v1.VerifyOptionsR\aoptions\"\xf3\x01\n" +
@@ -806,25 +1390,91 @@ const file_capiscio_v1_badge_proto_rawDesc = "" +
 	"\x05token\x18\x01 \x01(\tR\x05token\"k\n" +
 	"\x12ParseBadgeResponse\x120\n" +
 	"\x06claims\x18\x01 \x01(\v2\x18.capiscio.v1.BadgeClaimsR\x06claims\x12#\n" +
-	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage*e\n" +
+	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\"\xef\x01\n" +
+	"\x13RequestBadgeRequest\x12\x19\n" +
+	"\bagent_id\x18\x01 \x01(\tR\aagentId\x12\x15\n" +
+	"\x06ca_url\x18\x02 \x01(\tR\x05caUrl\x12\x17\n" +
+	"\aapi_key\x18\x03 \x01(\tR\x06apiKey\x12\x16\n" +
+	"\x06domain\x18\x04 \x01(\tR\x06domain\x12\x1f\n" +
+	"\vttl_seconds\x18\x05 \x01(\x05R\n" +
+	"ttlSeconds\x128\n" +
+	"\vtrust_level\x18\x06 \x01(\x0e2\x17.capiscio.v1.TrustLevelR\n" +
+	"trustLevel\x12\x1a\n" +
+	"\baudience\x18\a \x03(\tR\baudience\"\x80\x02\n" +
+	"\x14RequestBadgeResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
+	"\x05token\x18\x02 \x01(\tR\x05token\x12\x10\n" +
+	"\x03jti\x18\x03 \x01(\tR\x03jti\x12\x18\n" +
+	"\asubject\x18\x04 \x01(\tR\asubject\x128\n" +
+	"\vtrust_level\x18\x05 \x01(\x0e2\x17.capiscio.v1.TrustLevelR\n" +
+	"trustLevel\x12\x1d\n" +
+	"\n" +
+	"expires_at\x18\x06 \x01(\x03R\texpiresAt\x12\x14\n" +
+	"\x05error\x18\a \x01(\tR\x05error\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\b \x01(\tR\terrorCode\"\xb2\x03\n" +
+	"\x12StartKeeperRequest\x12+\n" +
+	"\x04mode\x18\x01 \x01(\x0e2\x17.capiscio.v1.KeeperModeR\x04mode\x12\x19\n" +
+	"\bagent_id\x18\x02 \x01(\tR\aagentId\x12\x15\n" +
+	"\x06ca_url\x18\x03 \x01(\tR\x05caUrl\x12\x17\n" +
+	"\aapi_key\x18\x04 \x01(\tR\x06apiKey\x12\x1f\n" +
+	"\voutput_file\x18\x05 \x01(\tR\n" +
+	"outputFile\x12\x1f\n" +
+	"\vttl_seconds\x18\x06 \x01(\x05R\n" +
+	"ttlSeconds\x120\n" +
+	"\x14renew_before_seconds\x18\a \x01(\x05R\x12renewBeforeSeconds\x124\n" +
+	"\x16check_interval_seconds\x18\b \x01(\x05R\x14checkIntervalSeconds\x12(\n" +
+	"\x10private_key_path\x18\t \x01(\tR\x0eprivateKeyPath\x12\x16\n" +
+	"\x06domain\x18\n" +
+	" \x01(\tR\x06domain\x128\n" +
+	"\vtrust_level\x18\v \x01(\x0e2\x17.capiscio.v1.TrustLevelR\n" +
+	"trustLevel\"\xb8\x02\n" +
+	"\vKeeperEvent\x120\n" +
+	"\x04type\x18\x01 \x01(\x0e2\x1c.capiscio.v1.KeeperEventTypeR\x04type\x12\x1b\n" +
+	"\tbadge_jti\x18\x02 \x01(\tR\bbadgeJti\x12\x18\n" +
+	"\asubject\x18\x03 \x01(\tR\asubject\x128\n" +
+	"\vtrust_level\x18\x04 \x01(\x0e2\x17.capiscio.v1.TrustLevelR\n" +
+	"trustLevel\x12\x1d\n" +
+	"\n" +
+	"expires_at\x18\x05 \x01(\x03R\texpiresAt\x12\x14\n" +
+	"\x05error\x18\x06 \x01(\tR\x05error\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\a \x01(\tR\terrorCode\x12\x1c\n" +
+	"\ttimestamp\x18\b \x01(\x03R\ttimestamp\x12\x14\n" +
+	"\x05token\x18\t \x01(\tR\x05token*\x96\x01\n" +
 	"\n" +
 	"TrustLevel\x12\x1b\n" +
-	"\x17TRUST_LEVEL_UNSPECIFIED\x10\x00\x12\x12\n" +
-	"\x0eTRUST_LEVEL_DV\x10\x01\x12\x12\n" +
-	"\x0eTRUST_LEVEL_OV\x10\x02\x12\x12\n" +
-	"\x0eTRUST_LEVEL_EV\x10\x03*r\n" +
+	"\x17TRUST_LEVEL_UNSPECIFIED\x10\x00\x12\x1b\n" +
+	"\x17TRUST_LEVEL_SELF_SIGNED\x10\x01\x12\x12\n" +
+	"\x0eTRUST_LEVEL_DV\x10\x02\x12\x12\n" +
+	"\x0eTRUST_LEVEL_OV\x10\x03\x12\x12\n" +
+	"\x0eTRUST_LEVEL_EV\x10\x04\x12\x12\n" +
+	"\x0eTRUST_LEVEL_CV\x10\x05*r\n" +
 	"\n" +
 	"VerifyMode\x12\x1b\n" +
 	"\x17VERIFY_MODE_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13VERIFY_MODE_OFFLINE\x10\x01\x12\x16\n" +
 	"\x12VERIFY_MODE_ONLINE\x10\x02\x12\x16\n" +
-	"\x12VERIFY_MODE_HYBRID\x10\x032\xe3\x02\n" +
+	"\x12VERIFY_MODE_HYBRID\x10\x03*X\n" +
+	"\n" +
+	"KeeperMode\x12\x1b\n" +
+	"\x17KEEPER_MODE_UNSPECIFIED\x10\x00\x12\x12\n" +
+	"\x0eKEEPER_MODE_CA\x10\x01\x12\x19\n" +
+	"\x15KEEPER_MODE_SELF_SIGN\x10\x02*\x95\x01\n" +
+	"\x0fKeeperEventType\x12\x1c\n" +
+	"\x18KEEPER_EVENT_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14KEEPER_EVENT_STARTED\x10\x01\x12\x18\n" +
+	"\x14KEEPER_EVENT_RENEWED\x10\x02\x12\x16\n" +
+	"\x12KEEPER_EVENT_ERROR\x10\x03\x12\x18\n" +
+	"\x14KEEPER_EVENT_STOPPED\x10\x042\x84\x04\n" +
 	"\fBadgeService\x12J\n" +
 	"\tSignBadge\x12\x1d.capiscio.v1.SignBadgeRequest\x1a\x1e.capiscio.v1.SignBadgeResponse\x12P\n" +
 	"\vVerifyBadge\x12\x1f.capiscio.v1.VerifyBadgeRequest\x1a .capiscio.v1.VerifyBadgeResponse\x12f\n" +
 	"\x16VerifyBadgeWithOptions\x12*.capiscio.v1.VerifyBadgeWithOptionsRequest\x1a .capiscio.v1.VerifyBadgeResponse\x12M\n" +
 	"\n" +
-	"ParseBadge\x12\x1e.capiscio.v1.ParseBadgeRequest\x1a\x1f.capiscio.v1.ParseBadgeResponseB\xb0\x01\n" +
+	"ParseBadge\x12\x1e.capiscio.v1.ParseBadgeRequest\x1a\x1f.capiscio.v1.ParseBadgeResponse\x12S\n" +
+	"\fRequestBadge\x12 .capiscio.v1.RequestBadgeRequest\x1a!.capiscio.v1.RequestBadgeResponse\x12J\n" +
+	"\vStartKeeper\x12\x1f.capiscio.v1.StartKeeperRequest\x1a\x18.capiscio.v1.KeeperEvent0\x01B\xb0\x01\n" +
 	"\x0fcom.capiscio.v1B\n" +
 	"BadgeProtoP\x01ZDgithub.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1;capisciov1\xa2\x02\x03CXX\xaa\x02\vCapiscio.V1\xca\x02\vCapiscio\\V1\xe2\x02\x17Capiscio\\V1\\GPBMetadata\xea\x02\fCapiscio::V1b\x06proto3"
 
@@ -840,43 +1490,59 @@ func file_capiscio_v1_badge_proto_rawDescGZIP() []byte {
 	return file_capiscio_v1_badge_proto_rawDescData
 }
 
-var file_capiscio_v1_badge_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_capiscio_v1_badge_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_capiscio_v1_badge_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_capiscio_v1_badge_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_capiscio_v1_badge_proto_goTypes = []any{
 	(TrustLevel)(0),                       // 0: capiscio.v1.TrustLevel
 	(VerifyMode)(0),                       // 1: capiscio.v1.VerifyMode
-	(*BadgeClaims)(nil),                   // 2: capiscio.v1.BadgeClaims
-	(*SignBadgeRequest)(nil),              // 3: capiscio.v1.SignBadgeRequest
-	(*SignBadgeResponse)(nil),             // 4: capiscio.v1.SignBadgeResponse
-	(*VerifyBadgeRequest)(nil),            // 5: capiscio.v1.VerifyBadgeRequest
-	(*VerifyOptions)(nil),                 // 6: capiscio.v1.VerifyOptions
-	(*VerifyBadgeWithOptionsRequest)(nil), // 7: capiscio.v1.VerifyBadgeWithOptionsRequest
-	(*VerifyBadgeResponse)(nil),           // 8: capiscio.v1.VerifyBadgeResponse
-	(*ParseBadgeRequest)(nil),             // 9: capiscio.v1.ParseBadgeRequest
-	(*ParseBadgeResponse)(nil),            // 10: capiscio.v1.ParseBadgeResponse
+	(KeeperMode)(0),                       // 2: capiscio.v1.KeeperMode
+	(KeeperEventType)(0),                  // 3: capiscio.v1.KeeperEventType
+	(*BadgeClaims)(nil),                   // 4: capiscio.v1.BadgeClaims
+	(*SignBadgeRequest)(nil),              // 5: capiscio.v1.SignBadgeRequest
+	(*SignBadgeResponse)(nil),             // 6: capiscio.v1.SignBadgeResponse
+	(*VerifyBadgeRequest)(nil),            // 7: capiscio.v1.VerifyBadgeRequest
+	(*VerifyOptions)(nil),                 // 8: capiscio.v1.VerifyOptions
+	(*VerifyBadgeWithOptionsRequest)(nil), // 9: capiscio.v1.VerifyBadgeWithOptionsRequest
+	(*VerifyBadgeResponse)(nil),           // 10: capiscio.v1.VerifyBadgeResponse
+	(*ParseBadgeRequest)(nil),             // 11: capiscio.v1.ParseBadgeRequest
+	(*ParseBadgeResponse)(nil),            // 12: capiscio.v1.ParseBadgeResponse
+	(*RequestBadgeRequest)(nil),           // 13: capiscio.v1.RequestBadgeRequest
+	(*RequestBadgeResponse)(nil),          // 14: capiscio.v1.RequestBadgeResponse
+	(*StartKeeperRequest)(nil),            // 15: capiscio.v1.StartKeeperRequest
+	(*KeeperEvent)(nil),                   // 16: capiscio.v1.KeeperEvent
 }
 var file_capiscio_v1_badge_proto_depIdxs = []int32{
 	0,  // 0: capiscio.v1.BadgeClaims.trust_level:type_name -> capiscio.v1.TrustLevel
-	2,  // 1: capiscio.v1.SignBadgeRequest.claims:type_name -> capiscio.v1.BadgeClaims
-	2,  // 2: capiscio.v1.SignBadgeResponse.claims:type_name -> capiscio.v1.BadgeClaims
+	4,  // 1: capiscio.v1.SignBadgeRequest.claims:type_name -> capiscio.v1.BadgeClaims
+	4,  // 2: capiscio.v1.SignBadgeResponse.claims:type_name -> capiscio.v1.BadgeClaims
 	1,  // 3: capiscio.v1.VerifyOptions.mode:type_name -> capiscio.v1.VerifyMode
-	6,  // 4: capiscio.v1.VerifyBadgeWithOptionsRequest.options:type_name -> capiscio.v1.VerifyOptions
-	2,  // 5: capiscio.v1.VerifyBadgeResponse.claims:type_name -> capiscio.v1.BadgeClaims
+	8,  // 4: capiscio.v1.VerifyBadgeWithOptionsRequest.options:type_name -> capiscio.v1.VerifyOptions
+	4,  // 5: capiscio.v1.VerifyBadgeResponse.claims:type_name -> capiscio.v1.BadgeClaims
 	1,  // 6: capiscio.v1.VerifyBadgeResponse.mode_used:type_name -> capiscio.v1.VerifyMode
-	2,  // 7: capiscio.v1.ParseBadgeResponse.claims:type_name -> capiscio.v1.BadgeClaims
-	3,  // 8: capiscio.v1.BadgeService.SignBadge:input_type -> capiscio.v1.SignBadgeRequest
-	5,  // 9: capiscio.v1.BadgeService.VerifyBadge:input_type -> capiscio.v1.VerifyBadgeRequest
-	7,  // 10: capiscio.v1.BadgeService.VerifyBadgeWithOptions:input_type -> capiscio.v1.VerifyBadgeWithOptionsRequest
-	9,  // 11: capiscio.v1.BadgeService.ParseBadge:input_type -> capiscio.v1.ParseBadgeRequest
-	4,  // 12: capiscio.v1.BadgeService.SignBadge:output_type -> capiscio.v1.SignBadgeResponse
-	8,  // 13: capiscio.v1.BadgeService.VerifyBadge:output_type -> capiscio.v1.VerifyBadgeResponse
-	8,  // 14: capiscio.v1.BadgeService.VerifyBadgeWithOptions:output_type -> capiscio.v1.VerifyBadgeResponse
-	10, // 15: capiscio.v1.BadgeService.ParseBadge:output_type -> capiscio.v1.ParseBadgeResponse
-	12, // [12:16] is the sub-list for method output_type
-	8,  // [8:12] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	4,  // 7: capiscio.v1.ParseBadgeResponse.claims:type_name -> capiscio.v1.BadgeClaims
+	0,  // 8: capiscio.v1.RequestBadgeRequest.trust_level:type_name -> capiscio.v1.TrustLevel
+	0,  // 9: capiscio.v1.RequestBadgeResponse.trust_level:type_name -> capiscio.v1.TrustLevel
+	2,  // 10: capiscio.v1.StartKeeperRequest.mode:type_name -> capiscio.v1.KeeperMode
+	0,  // 11: capiscio.v1.StartKeeperRequest.trust_level:type_name -> capiscio.v1.TrustLevel
+	3,  // 12: capiscio.v1.KeeperEvent.type:type_name -> capiscio.v1.KeeperEventType
+	0,  // 13: capiscio.v1.KeeperEvent.trust_level:type_name -> capiscio.v1.TrustLevel
+	5,  // 14: capiscio.v1.BadgeService.SignBadge:input_type -> capiscio.v1.SignBadgeRequest
+	7,  // 15: capiscio.v1.BadgeService.VerifyBadge:input_type -> capiscio.v1.VerifyBadgeRequest
+	9,  // 16: capiscio.v1.BadgeService.VerifyBadgeWithOptions:input_type -> capiscio.v1.VerifyBadgeWithOptionsRequest
+	11, // 17: capiscio.v1.BadgeService.ParseBadge:input_type -> capiscio.v1.ParseBadgeRequest
+	13, // 18: capiscio.v1.BadgeService.RequestBadge:input_type -> capiscio.v1.RequestBadgeRequest
+	15, // 19: capiscio.v1.BadgeService.StartKeeper:input_type -> capiscio.v1.StartKeeperRequest
+	6,  // 20: capiscio.v1.BadgeService.SignBadge:output_type -> capiscio.v1.SignBadgeResponse
+	10, // 21: capiscio.v1.BadgeService.VerifyBadge:output_type -> capiscio.v1.VerifyBadgeResponse
+	10, // 22: capiscio.v1.BadgeService.VerifyBadgeWithOptions:output_type -> capiscio.v1.VerifyBadgeResponse
+	12, // 23: capiscio.v1.BadgeService.ParseBadge:output_type -> capiscio.v1.ParseBadgeResponse
+	14, // 24: capiscio.v1.BadgeService.RequestBadge:output_type -> capiscio.v1.RequestBadgeResponse
+	16, // 25: capiscio.v1.BadgeService.StartKeeper:output_type -> capiscio.v1.KeeperEvent
+	20, // [20:26] is the sub-list for method output_type
+	14, // [14:20] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_capiscio_v1_badge_proto_init() }
@@ -889,8 +1555,8 @@ func file_capiscio_v1_badge_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capiscio_v1_badge_proto_rawDesc), len(file_capiscio_v1_badge_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   9,
+			NumEnums:      4,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

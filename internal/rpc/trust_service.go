@@ -33,7 +33,7 @@ func NewTrustStoreService() (*TrustStoreService, error) {
 }
 
 // AddKey adds a trusted public key.
-func (s *TrustStoreService) AddKey(ctx context.Context, req *pb.AddKeyRequest) (*pb.AddKeyResponse, error) {
+func (s *TrustStoreService) AddKey(_ context.Context, req *pb.AddKeyRequest) (*pb.AddKeyResponse, error) {
 	var jwk jose.JSONWebKey
 
 	switch req.Format {
@@ -87,7 +87,7 @@ func (s *TrustStoreService) AddKey(ctx context.Context, req *pb.AddKeyRequest) (
 }
 
 // RemoveKey removes a trusted key.
-func (s *TrustStoreService) RemoveKey(ctx context.Context, req *pb.RemoveKeyRequest) (*pb.RemoveKeyResponse, error) {
+func (s *TrustStoreService) RemoveKey(_ context.Context, req *pb.RemoveKeyRequest) (*pb.RemoveKeyResponse, error) {
 	if err := s.store.Remove(req.Did); err != nil {
 		return &pb.RemoveKeyResponse{
 			ErrorMessage: fmt.Sprintf("failed to remove key: %v", err),
@@ -97,7 +97,7 @@ func (s *TrustStoreService) RemoveKey(ctx context.Context, req *pb.RemoveKeyRequ
 }
 
 // GetKey gets a key by DID.
-func (s *TrustStoreService) GetKey(ctx context.Context, req *pb.GetKeyRequest) (*pb.GetKeyResponse, error) {
+func (s *TrustStoreService) GetKey(_ context.Context, req *pb.GetKeyRequest) (*pb.GetKeyResponse, error) {
 	jwk, err := s.store.Get(req.Did)
 	if err != nil {
 		return &pb.GetKeyResponse{
@@ -119,7 +119,7 @@ func (s *TrustStoreService) GetKey(ctx context.Context, req *pb.GetKeyRequest) (
 }
 
 // ListKeys lists all trusted keys.
-func (s *TrustStoreService) ListKeys(ctx context.Context, req *pb.ListKeysRequest) (*pb.ListKeysResponse, error) {
+func (s *TrustStoreService) ListKeys(_ context.Context, _ *pb.ListKeysRequest) (*pb.ListKeysResponse, error) {
 	keys, err := s.store.List()
 	if err != nil {
 		return &pb.ListKeysResponse{}, nil
@@ -142,7 +142,7 @@ func (s *TrustStoreService) ListKeys(ctx context.Context, req *pb.ListKeysReques
 }
 
 // IsTrusted checks if a key is trusted.
-func (s *TrustStoreService) IsTrusted(ctx context.Context, req *pb.IsTrustedRequest) (*pb.IsTrustedResponse, error) {
+func (s *TrustStoreService) IsTrusted(_ context.Context, req *pb.IsTrustedRequest) (*pb.IsTrustedResponse, error) {
 	_, err := s.store.Get(req.Did)
 	return &pb.IsTrustedResponse{
 		IsTrusted: err == nil,
@@ -150,7 +150,7 @@ func (s *TrustStoreService) IsTrusted(ctx context.Context, req *pb.IsTrustedRequ
 }
 
 // ImportFromDirectory imports keys from a directory.
-func (s *TrustStoreService) ImportFromDirectory(ctx context.Context, req *pb.ImportFromDirectoryRequest) (*pb.ImportFromDirectoryResponse, error) {
+func (s *TrustStoreService) ImportFromDirectory(_ context.Context, req *pb.ImportFromDirectoryRequest) (*pb.ImportFromDirectoryResponse, error) {
 	entries, err := os.ReadDir(req.DirectoryPath)
 	if err != nil {
 		return &pb.ImportFromDirectoryResponse{
@@ -228,7 +228,7 @@ func (s *TrustStoreService) ImportFromDirectory(ctx context.Context, req *pb.Imp
 }
 
 // ExportToDirectory exports keys to a directory.
-func (s *TrustStoreService) ExportToDirectory(ctx context.Context, req *pb.ExportToDirectoryRequest) (*pb.ExportToDirectoryResponse, error) {
+func (s *TrustStoreService) ExportToDirectory(_ context.Context, req *pb.ExportToDirectoryRequest) (*pb.ExportToDirectoryResponse, error) {
 	keys, err := s.store.List()
 	if err != nil {
 		return &pb.ExportToDirectoryResponse{
@@ -281,7 +281,7 @@ func (s *TrustStoreService) ExportToDirectory(ctx context.Context, req *pb.Expor
 }
 
 // Clear clears all keys.
-func (s *TrustStoreService) Clear(ctx context.Context, req *pb.ClearKeysRequest) (*pb.ClearKeysResponse, error) {
+func (s *TrustStoreService) Clear(_ context.Context, _ *pb.ClearKeysRequest) (*pb.ClearKeysResponse, error) {
 	keys, err := s.store.List()
 	if err != nil {
 		return &pb.ClearKeysResponse{}, nil
@@ -300,7 +300,7 @@ func (s *TrustStoreService) Clear(ctx context.Context, req *pb.ClearKeysRequest)
 }
 
 // Ping responds to health checks.
-func (s *TrustStoreService) Ping(ctx context.Context, req *pb.PingRequest) (*pb.PingResponse, error) {
+func (s *TrustStoreService) Ping(_ context.Context, _ *pb.PingRequest) (*pb.PingResponse, error) {
 	return &pb.PingResponse{
 		Status:  "ok",
 		Version: "1.0.0",

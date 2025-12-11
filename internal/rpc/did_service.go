@@ -19,7 +19,7 @@ func NewDIDService() *DIDService {
 }
 
 // Parse parses a did:web identifier.
-func (s *DIDService) Parse(ctx context.Context, req *pb.ParseDIDRequest) (*pb.ParseDIDResponse, error) {
+func (s *DIDService) Parse(_ context.Context, req *pb.ParseDIDRequest) (*pb.ParseDIDResponse, error) {
 	if req.Did == "" {
 		return &pb.ParseDIDResponse{
 			ErrorMessage: "did is required",
@@ -44,7 +44,7 @@ func (s *DIDService) Parse(ctx context.Context, req *pb.ParseDIDRequest) (*pb.Pa
 }
 
 // NewAgentDID constructs a new agent DID.
-func (s *DIDService) NewAgentDID(ctx context.Context, req *pb.NewAgentDIDRequest) (*pb.NewAgentDIDResponse, error) {
+func (s *DIDService) NewAgentDID(_ context.Context, req *pb.NewAgentDIDRequest) (*pb.NewAgentDIDResponse, error) {
 	if req.Domain == "" {
 		return &pb.NewAgentDIDResponse{
 			ErrorMessage: "domain is required",
@@ -63,7 +63,7 @@ func (s *DIDService) NewAgentDID(ctx context.Context, req *pb.NewAgentDIDRequest
 }
 
 // NewCapiscIOAgentDID constructs a Capiscio registry DID.
-func (s *DIDService) NewCapiscIOAgentDID(ctx context.Context, req *pb.NewCapiscIOAgentDIDRequest) (*pb.NewAgentDIDResponse, error) {
+func (s *DIDService) NewCapiscIOAgentDID(_ context.Context, req *pb.NewCapiscIOAgentDIDRequest) (*pb.NewAgentDIDResponse, error) {
 	if req.AgentId == "" {
 		return &pb.NewAgentDIDResponse{
 			ErrorMessage: "agent_id is required",
@@ -77,7 +77,7 @@ func (s *DIDService) NewCapiscIOAgentDID(ctx context.Context, req *pb.NewCapiscI
 }
 
 // DocumentURL gets the document URL for a DID.
-func (s *DIDService) DocumentURL(ctx context.Context, req *pb.DocumentURLRequest) (*pb.DocumentURLResponse, error) {
+func (s *DIDService) DocumentURL(_ context.Context, req *pb.DocumentURLRequest) (*pb.DocumentURLResponse, error) {
 	if req.Did == "" {
 		return &pb.DocumentURLResponse{
 			ErrorMessage: "did is required",
@@ -97,7 +97,7 @@ func (s *DIDService) DocumentURL(ctx context.Context, req *pb.DocumentURLRequest
 }
 
 // IsAgentDID checks if a DID is an agent DID.
-func (s *DIDService) IsAgentDID(ctx context.Context, req *pb.IsAgentDIDRequest) (*pb.IsAgentDIDResponse, error) {
+func (s *DIDService) IsAgentDID(_ context.Context, req *pb.IsAgentDIDRequest) (*pb.IsAgentDIDResponse, error) {
 	if req.Did == "" {
 		return &pb.IsAgentDIDResponse{
 			IsAgentDid: false,

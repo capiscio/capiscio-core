@@ -17,7 +17,7 @@ func NewRevocationService() *RevocationService {
 }
 
 // IsRevoked checks if a key is revoked.
-func (s *RevocationService) IsRevoked(ctx context.Context, req *pb.IsRevokedRequest) (*pb.IsRevokedResponse, error) {
+func (s *RevocationService) IsRevoked(_ context.Context, _ *pb.IsRevokedRequest) (*pb.IsRevokedResponse, error) {
 	// TODO: Implement with revocation.Cache
 	return &pb.IsRevokedResponse{
 		IsRevoked: false,
@@ -25,7 +25,7 @@ func (s *RevocationService) IsRevoked(ctx context.Context, req *pb.IsRevokedRequ
 }
 
 // Revoke adds a revocation entry.
-func (s *RevocationService) Revoke(ctx context.Context, req *pb.RevokeRequest) (*pb.RevokeResponse, error) {
+func (s *RevocationService) Revoke(_ context.Context, _ *pb.RevokeRequest) (*pb.RevokeResponse, error) {
 	// TODO: Implement with revocation.Cache
 	return &pb.RevokeResponse{
 		ErrorMessage: "not yet implemented",
@@ -33,7 +33,7 @@ func (s *RevocationService) Revoke(ctx context.Context, req *pb.RevokeRequest) (
 }
 
 // Unrevoke removes a revocation entry.
-func (s *RevocationService) Unrevoke(ctx context.Context, req *pb.UnrevokeRequest) (*pb.UnrevokeResponse, error) {
+func (s *RevocationService) Unrevoke(_ context.Context, _ *pb.UnrevokeRequest) (*pb.UnrevokeResponse, error) {
 	// TODO: Implement with revocation.Cache
 	return &pb.UnrevokeResponse{
 		ErrorMessage: "not yet implemented",
@@ -41,13 +41,13 @@ func (s *RevocationService) Unrevoke(ctx context.Context, req *pb.UnrevokeReques
 }
 
 // ListRevocations lists revoked entries.
-func (s *RevocationService) ListRevocations(ctx context.Context, req *pb.ListRevocationsRequest) (*pb.ListRevocationsResponse, error) {
+func (s *RevocationService) ListRevocations(_ context.Context, _ *pb.ListRevocationsRequest) (*pb.ListRevocationsResponse, error) {
 	// TODO: Implement with revocation.Cache
 	return &pb.ListRevocationsResponse{}, nil
 }
 
 // FetchRevocationList fetches revocation list from URL.
-func (s *RevocationService) FetchRevocationList(ctx context.Context, req *pb.FetchRevocationListRequest) (*pb.FetchRevocationListResponse, error) {
+func (s *RevocationService) FetchRevocationList(_ context.Context, _ *pb.FetchRevocationListRequest) (*pb.FetchRevocationListResponse, error) {
 	// TODO: Implement with revocation.Cache
 	return &pb.FetchRevocationListResponse{
 		ErrorMessage: "not yet implemented",
@@ -55,13 +55,13 @@ func (s *RevocationService) FetchRevocationList(ctx context.Context, req *pb.Fet
 }
 
 // ClearCache clears the revocation cache.
-func (s *RevocationService) ClearCache(ctx context.Context, req *pb.ClearCacheRequest) (*pb.ClearCacheResponse, error) {
+func (s *RevocationService) ClearCache(_ context.Context, _ *pb.ClearCacheRequest) (*pb.ClearCacheResponse, error) {
 	// TODO: Implement with revocation.Cache
 	return &pb.ClearCacheResponse{}, nil
 }
 
 // GetCacheStats gets cache statistics.
-func (s *RevocationService) GetCacheStats(ctx context.Context, req *pb.GetCacheStatsRequest) (*pb.GetCacheStatsResponse, error) {
+func (s *RevocationService) GetCacheStats(_ context.Context, _ *pb.GetCacheStatsRequest) (*pb.GetCacheStatsResponse, error) {
 	// TODO: Implement with revocation.Cache
 	return &pb.GetCacheStatsResponse{}, nil
 }

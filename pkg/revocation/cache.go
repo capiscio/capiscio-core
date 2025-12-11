@@ -270,6 +270,7 @@ func NewMemoryCache() *MemoryCache {
 	}
 }
 
+// IsRevoked checks if a badge JTI has been revoked.
 func (c *MemoryCache) IsRevoked(jti string) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -277,6 +278,7 @@ func (c *MemoryCache) IsRevoked(jti string) bool {
 	return ok
 }
 
+// Add adds a revoked badge to the cache.
 func (c *MemoryCache) Add(jti string, revokedAt time.Time) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -285,6 +287,7 @@ func (c *MemoryCache) Add(jti string, revokedAt time.Time) error {
 	return nil
 }
 
+// Sync synchronizes the cache with a list of revocations.
 func (c *MemoryCache) Sync(revocations []Revocation) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -295,12 +298,14 @@ func (c *MemoryCache) Sync(revocations []Revocation) error {
 	return nil
 }
 
+// LastSynced returns the time of the last cache sync.
 func (c *MemoryCache) LastSynced() time.Time {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.syncedAt
 }
 
+// IsStale returns true if the cache hasn't been synced within the threshold.
 func (c *MemoryCache) IsStale(threshold time.Duration) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()

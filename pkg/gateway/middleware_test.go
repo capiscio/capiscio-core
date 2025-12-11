@@ -51,9 +51,10 @@ func TestAuthMiddleware(t *testing.T) {
 	verifier := badge.NewVerifier(reg)
 
 	// 2. Create Valid Badge (with RFC-002 required fields)
+	// Use proper did:web format for issuer
 	claims := &badge.Claims{
 		JTI:      "test-jti-gateway",
-		Issuer:   "https://test.capisc.io",
+		Issuer:   "did:web:test.capisc.io",
 		Subject:  "did:web:test.capisc.io:agents:test-agent",
 		IssuedAt: time.Now().Unix(),
 		Expiry:   time.Now().Add(1 * time.Hour).Unix(),

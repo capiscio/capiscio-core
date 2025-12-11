@@ -23,10 +23,10 @@ func Middleware(guard *SimpleGuard) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 
-			// 1. Extract Token
-			token := r.Header.Get("X-Capiscio-JWS")
+			// 1. Extract Token (RFC-002 §9.1)
+			token := r.Header.Get("X-Capiscio-Badge")
 			if token == "" {
-				http.Error(w, "Missing X-Capiscio-JWS header", http.StatusUnauthorized)
+				http.Error(w, "Missing X-Capiscio-Badge header", http.StatusUnauthorized)
 				return
 			}
 

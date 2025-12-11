@@ -123,6 +123,7 @@ message GenerateKeyPairResponse {
   string private_key_pem = 5;
   KeyAlgorithm algorithm = 6;
   string error_message = 7;
+  string did_key = 8;  // did:key URI derived from public key (RFC-002 §6.1)
 }
 
 // Request to load key

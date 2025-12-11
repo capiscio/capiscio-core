@@ -207,7 +207,7 @@ func (s *ComplianceScorer) checkAdditionalInterfaces(card *agentcard.AgentCard) 
 					case "error":
 						penalty += 2
 					case "warning":
-						penalty += 1
+						penalty++
 					}
 				}
 			}

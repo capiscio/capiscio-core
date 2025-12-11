@@ -34,7 +34,7 @@ func init() {
 	rootCmd.AddCommand(rpcCmd)
 }
 
-func runRPCServer(cmd *cobra.Command, args []string) error {
+func runRPCServer(_ *cobra.Command, _ []string) error {
 	var listener net.Listener
 	var err error
 
@@ -73,7 +73,7 @@ func runRPCServer(cmd *cobra.Command, args []string) error {
 		fmt.Printf("gRPC server listening on unix://%s\n", socketPath)
 
 		// Ensure socket is cleaned up on exit
-		defer os.RemoveAll(socketPath)
+		defer func() { _ = os.RemoveAll(socketPath) }()
 	}
 
 	// Create gRPC server with services
