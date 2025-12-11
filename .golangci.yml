@@ -1,11 +1,8 @@
-version: "2"
-
 run:
   timeout: 5m
   tests: false
 
 linters:
-  default: none
   enable:
     - govet        # Reports suspicious constructs
     - gocyclo      # Checks function and method cyclomatic complexity
@@ -13,13 +10,11 @@ linters:
     - misspell     # Finds commonly misspelled English words
     - revive       # Drop-in replacement for golint
     - staticcheck  # Go static analysis, much better than golint
-  exclusions:
-    generated: lax
-    presets:
-      - comments
-    paths:
-      - examples/
-      - third_party/
+
+issues:
+  exclude-dirs:
+    - examples
+    - third_party
 
 linters-settings:
   gocyclo:
