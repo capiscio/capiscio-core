@@ -124,6 +124,168 @@ func (s *BadgeService) VerifyBadge(_ context.Context, req *pb.VerifyBadgeRequest
 	}, nil
 }
 
+// parseJWSToken parses a JWS token and extracts claims.
+func (s *BadgeService) parseJWSToken(token string) (*jose.JSONWebSignature, *badge.Claims, error) {
+	jwsObj, err := jose.ParseSigned(token, []jose.SignatureAlgorithm{jose.EdDSA, jose.ES256})
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to parse JWS: %w", err)
+	}
+
+	payload := jwsObj.UnsafePayloadWithoutVerification()
+	var claims badge.Claims
+	if err := json.Unmarshal(payload, &claims); err != nil {
+		return nil, nil, fmt.Errorf("failed to parse claims: %w", err)
+	}
+
+	return jwsObj, &claims, nil
+}
+
+// buildVerifyOptions constructs verification options from the request.
+func (s *BadgeService) buildVerifyOptions(req *pb.VerifyBadgeWithOptionsRequest) badge.VerifyOptions {
+	opts := badge.VerifyOptions{
+		Mode:                 badge.VerifyModeOnline,
+		SkipRevocationCheck:  true,
+		SkipAgentStatusCheck: true,
+	}
+
+	if req.Options == nil {
+		return opts
+	}
+
+	switch req.Options.Mode {
+	case pb.VerifyMode_VERIFY_MODE_OFFLINE:
+		opts.Mode = badge.VerifyModeOffline
+	case pb.VerifyMode_VERIFY_MODE_HYBRID:
+		opts.Mode = badge.VerifyModeHybrid
+	}
+	opts.TrustedIssuers = req.Options.TrustedIssuers
+	opts.Audience = req.Options.Audience
+	opts.SkipRevocationCheck = req.Options.SkipRevocation
+	opts.SkipAgentStatusCheck = req.Options.SkipAgentStatus
+	opts.AcceptSelfSigned = req.Options.AcceptSelfSigned
+
+	return opts
+}
+
+// verifySelfSignedBadge verifies a self-signed badge with did:key issuer.
+func (s *BadgeService) verifySelfSignedBadge(jwsObj *jose.JSONWebSignature, claims *badge.Claims, opts badge.VerifyOptions) (*pb.VerifyBadgeResponse, error) {
+	// Check if self-signed badges are accepted
+	if !opts.AcceptSelfSigned {
+		return &pb.VerifyBadgeResponse{
+			Valid:        false,
+			ErrorCode:    "SELF_SIGNED_NOT_ACCEPTED",
+			ErrorMessage: "self-signed badges (did:key issuer) require accept_self_signed option",
+		}, nil
+	}
+
+	// Extract public key from did:key
+	pubKey, err := did.PublicKeyFromKeyDID(claims.Issuer)
+	if err != nil {
+		return &pb.VerifyBadgeResponse{
+			Valid:        false,
+			ErrorCode:    "INVALID_ISSUER",
+			ErrorMessage: fmt.Sprintf("failed to extract public key from did:key: %v", err),
+		}, nil
+	}
+
+	// Verify signature
+	verifiedPayload, err := jwsObj.Verify(pubKey)
+	if err != nil {
+		return &pb.VerifyBadgeResponse{
+			Valid:        false,
+			ErrorCode:    "SIGNATURE_INVALID",
+			ErrorMessage: fmt.Sprintf("signature verification failed: %v", err),
+		}, nil
+	}
+
+	// Re-parse verified claims
+	var verifiedClaims badge.Claims
+	if err := json.Unmarshal(verifiedPayload, &verifiedClaims); err != nil {
+		return &pb.VerifyBadgeResponse{
+			Valid:        false,
+			ErrorCode:    "MALFORMED",
+			ErrorMessage: fmt.Sprintf("failed to parse verified claims: %v", err),
+		}, nil
+	}
+
+	// Validate self-signed constraints
+	if resp := s.validateSelfSignedConstraints(&verifiedClaims, opts); resp != nil {
+		return resp, nil
+	}
+
+	warnings := []string{
+		"self-signed badge (did:key issuer)",
+		"revocation check skipped (self-signed badge)",
+		"agent status check skipped (self-signed badge)",
+	}
+
+	return &pb.VerifyBadgeResponse{
+		Valid:    true,
+		Claims:   badgeClaimsToProto(&verifiedClaims),
+		ModeUsed: pb.VerifyMode_VERIFY_MODE_OFFLINE,
+		Warnings: warnings,
+	}, nil
+}
+
+// validateSelfSignedConstraints checks self-signed badge constraints.
+func (s *BadgeService) validateSelfSignedConstraints(claims *badge.Claims, opts badge.VerifyOptions) *pb.VerifyBadgeResponse {
+	// Validate iss == sub
+	if claims.Issuer != claims.Subject {
+		return &pb.VerifyBadgeResponse{
+			Valid:        false,
+			ErrorCode:    "SELF_SIGNED_INVALID",
+			ErrorMessage: "self-signed badge must have iss == sub",
+		}
+	}
+
+	// Validate trust level is 0
+	if claims.TrustLevel() != "0" {
+		return &pb.VerifyBadgeResponse{
+			Valid:        false,
+			ErrorCode:    "SELF_SIGNED_INVALID",
+			ErrorMessage: fmt.Sprintf("self-signed badge must be trust level 0, got %s", claims.TrustLevel()),
+		}
+	}
+
+	// Check expiry
+	if claims.IsExpired() {
+		return &pb.VerifyBadgeResponse{
+			Valid:        false,
+			ErrorCode:    "EXPIRED",
+			ErrorMessage: "badge has expired",
+		}
+	}
+
+	// Check not yet valid
+	if claims.IsNotYetValid() {
+		return &pb.VerifyBadgeResponse{
+			Valid:        false,
+			ErrorCode:    "NOT_YET_VALID",
+			ErrorMessage: "badge is not yet valid",
+		}
+	}
+
+	// Check audience
+	if opts.Audience != "" && len(claims.Audience) > 0 {
+		found := false
+		for _, aud := range claims.Audience {
+			if aud == opts.Audience {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return &pb.VerifyBadgeResponse{
+				Valid:        false,
+				ErrorCode:    "AUDIENCE_MISMATCH",
+				ErrorMessage: fmt.Sprintf("audience %s not in allowed list", opts.Audience),
+			}
+		}
+	}
+
+	return nil
+}
+
 // VerifyBadgeWithOptions performs badge verification with full options.
 func (s *BadgeService) VerifyBadgeWithOptions(_ context.Context, req *pb.VerifyBadgeWithOptionsRequest) (*pb.VerifyBadgeResponse, error) {
 	if req.Token == "" {
@@ -134,157 +296,25 @@ func (s *BadgeService) VerifyBadgeWithOptions(_ context.Context, req *pb.VerifyB
 		}, nil
 	}
 
-	// Parse claims first to check issuer type
-	jwsObj, err := jose.ParseSigned(req.Token, []jose.SignatureAlgorithm{jose.EdDSA, jose.ES256})
+	// Parse JWS and extract claims
+	jwsObj, claims, err := s.parseJWSToken(req.Token)
 	if err != nil {
 		return &pb.VerifyBadgeResponse{
 			Valid:        false,
 			ErrorCode:    "MALFORMED",
-			ErrorMessage: fmt.Sprintf("failed to parse JWS: %v", err),
-		}, nil
-	}
-
-	// Extract claims without verification to check issuer
-	payload := jwsObj.UnsafePayloadWithoutVerification()
-	var claims badge.Claims
-	if err := json.Unmarshal(payload, &claims); err != nil {
-		return &pb.VerifyBadgeResponse{
-			Valid:        false,
-			ErrorCode:    "MALFORMED",
-			ErrorMessage: fmt.Sprintf("failed to parse claims: %v", err),
+			ErrorMessage: err.Error(),
 		}, nil
 	}
 
 	// Build verification options
-	opts := badge.VerifyOptions{
-		Mode:                 badge.VerifyModeOnline,
-		SkipRevocationCheck:  true, // Default to skip for RPC (no registry configured)
-		SkipAgentStatusCheck: true, // Default to skip for RPC (no registry configured)
-	}
-
-	if req.Options != nil {
-		switch req.Options.Mode {
-		case pb.VerifyMode_VERIFY_MODE_OFFLINE:
-			opts.Mode = badge.VerifyModeOffline
-		case pb.VerifyMode_VERIFY_MODE_HYBRID:
-			opts.Mode = badge.VerifyModeHybrid
-		}
-		opts.TrustedIssuers = req.Options.TrustedIssuers
-		opts.Audience = req.Options.Audience
-		opts.SkipRevocationCheck = req.Options.SkipRevocation
-		opts.SkipAgentStatusCheck = req.Options.SkipAgentStatus
-		opts.AcceptSelfSigned = req.Options.AcceptSelfSigned
-	}
+	opts := s.buildVerifyOptions(req)
 
 	// Check if this is a self-signed badge (did:key issuer)
 	if strings.HasPrefix(claims.Issuer, "did:key:") {
-		if !opts.AcceptSelfSigned {
-			return &pb.VerifyBadgeResponse{
-				Valid:        false,
-				ErrorCode:    "SELF_SIGNED_NOT_ACCEPTED",
-				ErrorMessage: "self-signed badges (did:key issuer) require accept_self_signed option",
-			}, nil
-		}
-
-		// Extract public key from did:key
-		pubKey, err := did.PublicKeyFromKeyDID(claims.Issuer)
-		if err != nil {
-			return &pb.VerifyBadgeResponse{
-				Valid:        false,
-				ErrorCode:    "INVALID_ISSUER",
-				ErrorMessage: fmt.Sprintf("failed to extract public key from did:key: %v", err),
-			}, nil
-		}
-
-		// Verify signature
-		verifiedPayload, err := jwsObj.Verify(pubKey)
-		if err != nil {
-			return &pb.VerifyBadgeResponse{
-				Valid:        false,
-				ErrorCode:    "SIGNATURE_INVALID",
-				ErrorMessage: fmt.Sprintf("signature verification failed: %v", err),
-			}, nil
-		}
-
-		// Re-parse verified claims
-		if err := json.Unmarshal(verifiedPayload, &claims); err != nil {
-			return &pb.VerifyBadgeResponse{
-				Valid:        false,
-				ErrorCode:    "MALFORMED",
-				ErrorMessage: fmt.Sprintf("failed to parse verified claims: %v", err),
-			}, nil
-		}
-
-		// Validate self-signed constraints: iss == sub
-		if claims.Issuer != claims.Subject {
-			return &pb.VerifyBadgeResponse{
-				Valid:        false,
-				ErrorCode:    "SELF_SIGNED_INVALID",
-				ErrorMessage: "self-signed badge must have iss == sub",
-			}, nil
-		}
-
-		// Validate trust level is 0 for self-signed
-		if claims.TrustLevel() != "0" {
-			return &pb.VerifyBadgeResponse{
-				Valid:    false,
-				ErrorCode:    "SELF_SIGNED_INVALID",
-				ErrorMessage: fmt.Sprintf("self-signed badge must be trust level 0, got %s", claims.TrustLevel()),
-			}, nil
-		}
-
-		// Check expiry
-		if claims.IsExpired() {
-			return &pb.VerifyBadgeResponse{
-				Valid:        false,
-				ErrorCode:    "EXPIRED",
-				ErrorMessage: "badge has expired",
-			}, nil
-		}
-
-		// Check not yet valid
-		if claims.IsNotYetValid() {
-			return &pb.VerifyBadgeResponse{
-				Valid:        false,
-				ErrorCode:    "NOT_YET_VALID",
-				ErrorMessage: "badge is not yet valid",
-			}, nil
-		}
-
-		// Check audience if specified
-		if opts.Audience != "" && len(claims.Audience) > 0 {
-			found := false
-			for _, aud := range claims.Audience {
-				if aud == opts.Audience {
-					found = true
-					break
-				}
-			}
-			if !found {
-				return &pb.VerifyBadgeResponse{
-					Valid:        false,
-					ErrorCode:    "AUDIENCE_MISMATCH",
-					ErrorMessage: fmt.Sprintf("audience %s not in allowed list", opts.Audience),
-				}, nil
-			}
-		}
-
-		warnings := []string{
-			"self-signed badge (did:key issuer)",
-			"revocation check skipped (self-signed badge)",
-			"agent status check skipped (self-signed badge)",
-		}
-
-		return &pb.VerifyBadgeResponse{
-			Valid:    true,
-			Claims:   badgeClaimsToProto(&claims),
-			ModeUsed: pb.VerifyMode_VERIFY_MODE_OFFLINE,
-			Warnings: warnings,
-		}, nil
+		return s.verifySelfSignedBadge(jwsObj, claims, opts)
 	}
 
 	// For did:web issuers, we need a registry or public key
-	// This is the registry-backed verification path
 	return &pb.VerifyBadgeResponse{
 		Valid:        false,
 		ErrorCode:    "REGISTRY_NOT_CONFIGURED",
@@ -462,9 +492,8 @@ func (s *BadgeService) RequestBadge(ctx context.Context, req *pb.RequestBadgeReq
 	}, nil
 }
 
-// StartKeeper starts a badge keeper daemon that automatically renews badges (RFC-002 §7.3).
-func (s *BadgeService) StartKeeper(req *pb.StartKeeperRequest, stream pb.BadgeService_StartKeeperServer) error {
-	// Validate request
+// validateKeeperRequest validates the keeper request parameters.
+func (s *BadgeService) validateKeeperRequest(req *pb.StartKeeperRequest) error {
 	switch req.Mode {
 	case pb.KeeperMode_KEEPER_MODE_CA:
 		if req.AgentId == "" {
@@ -480,8 +509,11 @@ func (s *BadgeService) StartKeeper(req *pb.StartKeeperRequest, stream pb.BadgeSe
 	default:
 		return fmt.Errorf("mode must be CA or SELF_SIGN")
 	}
+	return nil
+}
 
-	// Build keeper config
+// buildKeeperConfig builds the base keeper configuration from request.
+func (s *BadgeService) buildKeeperConfig(req *pb.StartKeeperRequest) badge.KeeperConfig {
 	config := badge.KeeperConfig{
 		OutputFile: req.OutputFile,
 		Domain:     req.Domain,
@@ -489,76 +521,100 @@ func (s *BadgeService) StartKeeper(req *pb.StartKeeperRequest, stream pb.BadgeSe
 	}
 
 	// Set durations with defaults
+	config.Expiry = 5 * time.Minute
 	if req.TtlSeconds > 0 {
 		config.Expiry = time.Duration(req.TtlSeconds) * time.Second
-	} else {
-		config.Expiry = 5 * time.Minute
 	}
 
+	config.RenewBefore = 1 * time.Minute
 	if req.RenewBeforeSeconds > 0 {
 		config.RenewBefore = time.Duration(req.RenewBeforeSeconds) * time.Second
-	} else {
-		config.RenewBefore = 1 * time.Minute
 	}
 
+	config.CheckInterval = 30 * time.Second
 	if req.CheckIntervalSeconds > 0 {
 		config.CheckInterval = time.Duration(req.CheckIntervalSeconds) * time.Second
-	} else {
-		config.CheckInterval = 30 * time.Second
 	}
+
+	return config
+}
+
+// configureCAMode configures the keeper for CA mode.
+func (s *BadgeService) configureCAMode(config *badge.KeeperConfig, req *pb.StartKeeperRequest) {
+	config.Mode = badge.KeeperModeCA
+	config.CAURL = req.CaUrl
+	if config.CAURL == "" {
+		config.CAURL = badge.DefaultCAURL
+	}
+	config.APIKey = req.ApiKey
+	config.AgentID = req.AgentId
+}
+
+// configureSelfSignMode configures the keeper for self-sign mode.
+func (s *BadgeService) configureSelfSignMode(config *badge.KeeperConfig, req *pb.StartKeeperRequest) error {
+	config.Mode = badge.KeeperModeSelfSign
+	config.TrustLevel = "0" // Self-sign is always level 0
+
+	// Load private key
+	keyData, err := os.ReadFile(req.PrivateKeyPath)
+	if err != nil {
+		return fmt.Errorf("failed to read private key: %w", err)
+	}
+
+	var jwk jose.JSONWebKey
+	if err := json.Unmarshal(keyData, &jwk); err != nil {
+		return fmt.Errorf("failed to parse private key JWK: %w", err)
+	}
+
+	priv, ok := jwk.Key.(ed25519.PrivateKey)
+	if !ok {
+		return fmt.Errorf("expected Ed25519 private key")
+	}
+
+	config.PrivateKey = priv
+
+	// Generate did:key for self-signed mode
+	pub := priv.Public().(ed25519.PublicKey)
+	didKey := did.NewKeyDID(pub)
+
+	pubJWK := &jose.JSONWebKey{
+		Key:       pub,
+		Algorithm: string(jose.EdDSA),
+		Use:       "sig",
+	}
+
+	config.Claims = badge.Claims{
+		Issuer:  didKey,
+		Subject: didKey,
+		Key:     pubJWK,
+		VC: badge.VerifiableCredential{
+			Type: []string{"VerifiableCredential", "AgentIdentity"},
+			CredentialSubject: badge.CredentialSubject{
+				Domain: req.Domain,
+				Level:  "0",
+			},
+		},
+	}
+
+	return nil
+}
+
+// StartKeeper starts a badge keeper daemon that automatically renews badges (RFC-002 §7.3).
+func (s *BadgeService) StartKeeper(req *pb.StartKeeperRequest, stream pb.BadgeService_StartKeeperServer) error {
+	// Validate request
+	if err := s.validateKeeperRequest(req); err != nil {
+		return err
+	}
+
+	// Build base keeper config
+	config := s.buildKeeperConfig(req)
 
 	// Configure mode-specific settings
 	if req.Mode == pb.KeeperMode_KEEPER_MODE_CA {
-		config.Mode = badge.KeeperModeCA
-		config.CAURL = req.CaUrl
-		if config.CAURL == "" {
-			config.CAURL = badge.DefaultCAURL
-		}
-		config.APIKey = req.ApiKey
-		config.AgentID = req.AgentId
+		s.configureCAMode(&config, req)
 	} else {
-		config.Mode = badge.KeeperModeSelfSign
-		config.TrustLevel = "0" // Self-sign is always level 0
-
-		// Load private key
-		keyData, err := os.ReadFile(req.PrivateKeyPath)
-		if err != nil {
-			return fmt.Errorf("failed to read private key: %w", err)
-		}
-
-		var jwk jose.JSONWebKey
-		if err := json.Unmarshal(keyData, &jwk); err != nil {
-			return fmt.Errorf("failed to parse private key JWK: %w", err)
-		}
-
-		priv, ok := jwk.Key.(ed25519.PrivateKey)
-		if !ok {
-			return fmt.Errorf("expected Ed25519 private key")
-		}
-
-		config.PrivateKey = priv
-
-		// Generate did:key for self-signed mode
-		pub := priv.Public().(ed25519.PublicKey)
-		didKey := did.NewKeyDID(pub)
-
-		pubJWK := &jose.JSONWebKey{
-			Key:       pub,
-			Algorithm: string(jose.EdDSA),
-			Use:       "sig",
-		}
-
-		config.Claims = badge.Claims{
-			Issuer:  didKey,
-			Subject: didKey,
-			Key:     pubJWK,
-			VC: badge.VerifiableCredential{
-				Type: []string{"VerifiableCredential", "AgentIdentity"},
-				CredentialSubject: badge.CredentialSubject{
-					Domain: req.Domain,
-					Level:  "0",
-				},
-			},
+		if err := s.configureSelfSignMode(&config, req); err != nil {
+			return err
 		}
 	}
 

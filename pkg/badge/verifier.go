@@ -107,6 +107,72 @@ func (v *Verifier) Verify(ctx context.Context, token string) (*Claims, error) {
 	return result.Claims, nil
 }
 
+// parseJWSAndClaims parses JWS token and extracts unverified claims.
+func (v *Verifier) parseJWSAndClaims(token string) (*jose.JSONWebSignature, *Claims, error) {
+	jwsObj, err := jose.ParseSigned(token, []jose.SignatureAlgorithm{jose.EdDSA, jose.ES256})
+	if err != nil {
+		return nil, nil, WrapError(ErrCodeMalformed, "failed to parse JWS", err)
+	}
+
+	unsafePayload := jwsObj.UnsafePayloadWithoutVerification()
+	var claims Claims
+	if err := json.Unmarshal(unsafePayload, &claims); err != nil {
+		return nil, nil, WrapError(ErrCodeMalformed, "failed to unmarshal claims", err)
+	}
+
+	return jwsObj, &claims, nil
+}
+
+// getPublicKey retrieves the public key for verification based on issuer type.
+func (v *Verifier) getPublicKey(ctx context.Context, issuerDID *did.DID, isSelfSigned bool, issuer string) (crypto.PublicKey, error) {
+	if isSelfSigned {
+		return issuerDID.GetPublicKey(), nil
+	}
+	// Fetch CA public key from registry
+	pubKey, err := v.registry.GetPublicKey(ctx, issuer)
+	if err != nil {
+		return nil, WrapError(ErrCodeIssuerUntrusted, fmt.Sprintf("failed to fetch public key for issuer %s", issuer), err)
+	}
+	return pubKey, nil
+}
+
+// verifySignature verifies the JWS signature and returns verified claims.
+func (v *Verifier) verifySignature(jwsObj *jose.JSONWebSignature, pubKey crypto.PublicKey) (*Claims, error) {
+	payload, err := jwsObj.Verify(pubKey)
+	if err != nil {
+		return nil, WrapError(ErrCodeSignatureInvalid, "signature verification failed", err)
+	}
+
+	var verifiedClaims Claims
+	if err := json.Unmarshal(payload, &verifiedClaims); err != nil {
+		return nil, WrapError(ErrCodeMalformed, "failed to unmarshal verified claims", err)
+	}
+	return &verifiedClaims, nil
+}
+
+// handlePostVerificationChecks performs revocation and agent status checks.
+func (v *Verifier) handlePostVerificationChecks(ctx context.Context, claims *Claims, opts VerifyOptions, isSelfSigned bool, result *VerifyResult) error {
+	// Check revocation (skip for self-signed)
+	if isSelfSigned {
+		result.Warnings = append(result.Warnings, "revocation check skipped (self-signed badge)")
+	} else if !opts.SkipRevocationCheck {
+		if err := v.checkRevocation(ctx, claims, opts); err != nil {
+			return err
+		}
+	}
+
+	// Check agent status (skip for self-signed)
+	if isSelfSigned {
+		result.Warnings = append(result.Warnings, "agent status check skipped (self-signed badge)")
+	} else if !opts.SkipAgentStatusCheck {
+		if err := v.checkAgentStatus(ctx, claims, opts, result); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // VerifyWithOptions performs badge verification with the specified options.
 // Implements RFC-002 §8.1 verification flow.
 //
@@ -121,25 +187,16 @@ func (v *Verifier) VerifyWithOptions(ctx context.Context, token string, opts Ver
 		now = opts.Now
 	}
 
-	result := &VerifyResult{
-		Mode: opts.Mode,
-	}
+	result := &VerifyResult{Mode: opts.Mode}
 
-	// Step 1: Parse JWS
-	jwsObj, err := jose.ParseSigned(token, []jose.SignatureAlgorithm{jose.EdDSA, jose.ES256})
+	// Step 1-2: Parse JWS and extract claims
+	jwsObj, claims, err := v.parseJWSAndClaims(token)
 	if err != nil {
-		return nil, WrapError(ErrCodeMalformed, "failed to parse JWS", err)
-	}
-
-	// Step 2: Extract Claims (Unverified) to get Issuer
-	unsafePayload := jwsObj.UnsafePayloadWithoutVerification()
-	var claims Claims
-	if err := json.Unmarshal(unsafePayload, &claims); err != nil {
-		return nil, WrapError(ErrCodeMalformed, "failed to unmarshal claims", err)
+		return nil, err
 	}
 
 	// Step 3: Validate structure
-	if err := v.validateStructure(jwsObj, &claims); err != nil {
+	if err := v.validateStructure(jwsObj, claims); err != nil {
 		return nil, err
 	}
 
@@ -148,65 +205,38 @@ func (v *Verifier) VerifyWithOptions(ctx context.Context, token string, opts Ver
 	if err != nil {
 		return nil, WrapError(ErrCodeClaimsInvalid, "invalid issuer DID", err)
 	}
-
 	isSelfSigned := issuerDID.IsKeyDID()
 
 	// Step 4a: For self-signed badges, validate Level 0 constraints
 	if isSelfSigned {
-		if err := v.validateSelfSigned(&claims, opts); err != nil {
+		if err := v.validateSelfSigned(claims, opts); err != nil {
 			return nil, err
 		}
 	}
 
 	// Step 4b: Get public key (from did:key or registry)
-	var pubKey crypto.PublicKey
-	if isSelfSigned {
-		// Extract public key from did:key (always returns a valid key for valid did:key)
-		pubKey = issuerDID.GetPublicKey()
-	} else {
-		// Fetch CA public key from registry
-		pubKey, err = v.registry.GetPublicKey(ctx, claims.Issuer)
-		if err != nil {
-			return nil, WrapError(ErrCodeIssuerUntrusted, fmt.Sprintf("failed to fetch public key for issuer %s", claims.Issuer), err)
-		}
-	}
-
-	// Step 5: Verify Signature
-	payload, err := jwsObj.Verify(pubKey)
+	pubKey, err := v.getPublicKey(ctx, issuerDID, isSelfSigned, claims.Issuer)
 	if err != nil {
-		return nil, WrapError(ErrCodeSignatureInvalid, "signature verification failed", err)
-	}
-
-	// Re-unmarshal verified payload to ensure integrity
-	var verifiedClaims Claims
-	if err := json.Unmarshal(payload, &verifiedClaims); err != nil {
-		return nil, WrapError(ErrCodeMalformed, "failed to unmarshal verified claims", err)
-	}
-
-	// Step 6: Validate claims
-	if err := v.validateClaims(&verifiedClaims, opts, now(), isSelfSigned); err != nil {
 		return nil, err
 	}
 
-	// Step 7: Check revocation (skip for self-signed)
-	if !opts.SkipRevocationCheck && !isSelfSigned {
-		if err := v.checkRevocation(ctx, &verifiedClaims, opts); err != nil {
-			return nil, err
-		}
-	} else if isSelfSigned {
-		result.Warnings = append(result.Warnings, "revocation check skipped (self-signed badge)")
+	// Step 5: Verify Signature
+	verifiedClaims, err := v.verifySignature(jwsObj, pubKey)
+	if err != nil {
+		return nil, err
 	}
 
-	// Step 8: Check agent status (skip for self-signed)
-	if !opts.SkipAgentStatusCheck && !isSelfSigned {
-		if err := v.checkAgentStatus(ctx, &verifiedClaims, opts, result); err != nil {
-			return nil, err
-		}
-	} else if isSelfSigned {
-		result.Warnings = append(result.Warnings, "agent status check skipped (self-signed badge)")
+	// Step 6: Validate claims
+	if err := v.validateClaims(verifiedClaims, opts, now(), isSelfSigned); err != nil {
+		return nil, err
 	}
 
-	result.Claims = &verifiedClaims
+	// Step 7-8: Check revocation and agent status
+	if err := v.handlePostVerificationChecks(ctx, verifiedClaims, opts, isSelfSigned, result); err != nil {
+		return nil, err
+	}
+
+	result.Claims = verifiedClaims
 	return result, nil
 }
 

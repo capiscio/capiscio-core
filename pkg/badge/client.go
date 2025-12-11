@@ -57,41 +57,31 @@ type RequestBadgeResult struct {
 	ExpiresAt  time.Time
 }
 
-// RequestBadge requests a new badge from the CA.
-func (c *Client) RequestBadge(ctx context.Context, opts RequestBadgeOptions) (*RequestBadgeResult, error) {
-	if opts.AgentID == "" {
-		return nil, fmt.Errorf("agent_id is required")
-	}
-
-	// Build request body
+// buildRequestBody constructs the request body map from options.
+func (c *Client) buildRequestBody(opts RequestBadgeOptions) ([]byte, error) {
 	reqBody := map[string]interface{}{}
-	
+
 	if opts.Domain != "" {
 		reqBody["domain"] = opts.Domain
 	}
-	
 	if opts.TrustLevel != "" {
 		reqBody["trustLevel"] = opts.TrustLevel
 	}
-	
 	if opts.TTL > 0 {
 		reqBody["duration"] = opts.TTL.String()
 	}
-	
 	if len(opts.Audience) > 0 {
 		reqBody["audience"] = opts.Audience
 	}
 
-	bodyBytes, err := json.Marshal(reqBody)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
+	return json.Marshal(reqBody)
+}
 
-	// Build URL
-	url := fmt.Sprintf("%s/v1/agents/%s/badge", c.CAURL, opts.AgentID)
+// createBadgeRequest creates an HTTP request for badge issuance.
+func (c *Client) createBadgeRequest(ctx context.Context, agentID string, body []byte) (*http.Request, error) {
+	url := fmt.Sprintf("%s/v1/agents/%s/badge", c.CAURL, agentID)
 
-	// Create request
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(bodyBytes))
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -100,66 +90,38 @@ func (c *Client) RequestBadge(ctx context.Context, opts RequestBadgeOptions) (*R
 	req.Header.Set("Authorization", "Bearer "+c.APIKey)
 	req.Header.Set("User-Agent", "capiscio-core/1.0")
 
-	// Send request
-	resp, err := c.HTTPClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %w", err)
-	}
-	defer resp.Body.Close()
+	return req, nil
+}
 
-	// Read response
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
+// handleErrorResponse converts HTTP error status codes to ClientError.
+func (c *Client) handleErrorResponse(statusCode int, respBody []byte, agentID string) error {
+	switch statusCode {
+	case http.StatusUnauthorized:
+		return &ClientError{Code: "AUTH_INVALID", Message: "invalid or expired API key"}
+	case http.StatusForbidden:
+		return &ClientError{Code: "FORBIDDEN", Message: "agent is disabled or you don't have permission"}
+	case http.StatusNotFound:
+		return &ClientError{Code: "AGENT_NOT_FOUND", Message: fmt.Sprintf("agent not found: %s", agentID)}
+	case http.StatusConflict:
+		return c.parseConflictError(respBody)
+	default:
+		return &ClientError{Code: "CA_ERROR", Message: fmt.Sprintf("CA returned status %d: %s", statusCode, string(respBody))}
 	}
+}
 
-	// Handle error responses
-	if resp.StatusCode == http.StatusUnauthorized {
-		return nil, &ClientError{
-			Code:    "AUTH_INVALID",
-			Message: "invalid or expired API key",
-		}
+// parseConflictError parses conflict error responses.
+func (c *Client) parseConflictError(respBody []byte) error {
+	var errResp struct {
+		Error string `json:"error"`
 	}
-
-	if resp.StatusCode == http.StatusForbidden {
-		return nil, &ClientError{
-			Code:    "FORBIDDEN",
-			Message: "agent is disabled or you don't have permission",
-		}
+	if err := json.Unmarshal(respBody, &errResp); err == nil && errResp.Error != "" {
+		return &ClientError{Code: "DOMAIN_REQUIRED", Message: errResp.Error}
 	}
+	return &ClientError{Code: "CONFLICT", Message: "agent configuration conflict"}
+}
 
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, &ClientError{
-			Code:    "AGENT_NOT_FOUND",
-			Message: fmt.Sprintf("agent not found: %s", opts.AgentID),
-		}
-	}
-
-	if resp.StatusCode == http.StatusConflict {
-		// Agent has no domain configured
-		var errResp struct {
-			Error string `json:"error"`
-		}
-		if err := json.Unmarshal(respBody, &errResp); err == nil && errResp.Error != "" {
-			return nil, &ClientError{
-				Code:    "DOMAIN_REQUIRED",
-				Message: errResp.Error,
-			}
-		}
-		return nil, &ClientError{
-			Code:    "CONFLICT",
-			Message: "agent configuration conflict",
-		}
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, &ClientError{
-			Code:    "CA_ERROR",
-			Message: fmt.Sprintf("CA returned status %d: %s", resp.StatusCode, string(respBody)),
-		}
-	}
-
-	// Parse success response
+// parseSuccessResponse parses a successful badge response.
+func (c *Client) parseSuccessResponse(respBody []byte) (*RequestBadgeResult, error) {
 	var caResp struct {
 		Success bool `json:"success"`
 		Data    struct {
@@ -177,10 +139,7 @@ func (c *Client) RequestBadge(ctx context.Context, opts RequestBadgeOptions) (*R
 	}
 
 	if !caResp.Success {
-		return nil, &ClientError{
-			Code:    "CA_ERROR",
-			Message: caResp.Error,
-		}
+		return nil, &ClientError{Code: "CA_ERROR", Message: caResp.Error}
 	}
 
 	return &RequestBadgeResult{
@@ -190,6 +149,45 @@ func (c *Client) RequestBadge(ctx context.Context, opts RequestBadgeOptions) (*R
 		TrustLevel: caResp.Data.TrustLevel,
 		ExpiresAt:  caResp.Data.ExpiresAt,
 	}, nil
+}
+
+// RequestBadge requests a new badge from the CA.
+func (c *Client) RequestBadge(ctx context.Context, opts RequestBadgeOptions) (*RequestBadgeResult, error) {
+	if opts.AgentID == "" {
+		return nil, fmt.Errorf("agent_id is required")
+	}
+
+	// Build request body
+	bodyBytes, err := c.buildRequestBody(opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	// Create request
+	req, err := c.createBadgeRequest(ctx, opts.AgentID, bodyBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	// Send request
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Read response
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	// Handle error responses
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.handleErrorResponse(resp.StatusCode, respBody, opts.AgentID)
+	}
+
+	return c.parseSuccessResponse(respBody)
 }
 
 // ClientError represents an error from the badge client.
