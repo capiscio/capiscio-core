@@ -142,27 +142,33 @@ func (s *BadgeService) parseJWSToken(token string) (*jose.JSONWebSignature, *bad
 
 // buildVerifyOptions constructs verification options from the request.
 func (s *BadgeService) buildVerifyOptions(req *pb.VerifyBadgeWithOptionsRequest) badge.VerifyOptions {
-	opts := badge.VerifyOptions{
-		Mode:                 badge.VerifyModeOnline,
-		SkipRevocationCheck:  true,
-		SkipAgentStatusCheck: true,
-	}
-
+	// Return defaults when no options provided
 	if req.Options == nil {
-		return opts
+		return badge.VerifyOptions{
+			Mode:                 badge.VerifyModeOnline,
+			SkipRevocationCheck:  true,
+			SkipAgentStatusCheck: true,
+		}
 	}
 
+	// Build options from request
+	opts := badge.VerifyOptions{
+		TrustedIssuers:       req.Options.TrustedIssuers,
+		Audience:             req.Options.Audience,
+		SkipRevocationCheck:  req.Options.SkipRevocation,
+		SkipAgentStatusCheck: req.Options.SkipAgentStatus,
+		AcceptSelfSigned:     req.Options.AcceptSelfSigned,
+	}
+
+	// Map verify mode from proto enum
 	switch req.Options.Mode {
 	case pb.VerifyMode_VERIFY_MODE_OFFLINE:
 		opts.Mode = badge.VerifyModeOffline
 	case pb.VerifyMode_VERIFY_MODE_HYBRID:
 		opts.Mode = badge.VerifyModeHybrid
+	default:
+		opts.Mode = badge.VerifyModeOnline
 	}
-	opts.TrustedIssuers = req.Options.TrustedIssuers
-	opts.Audience = req.Options.Audience
-	opts.SkipRevocationCheck = req.Options.SkipRevocation
-	opts.SkipAgentStatusCheck = req.Options.SkipAgentStatus
-	opts.AcceptSelfSigned = req.Options.AcceptSelfSigned
 
 	return opts
 }
