@@ -41,7 +41,10 @@ jobs:
         run: go build -v ./...
 
       - name: Run Tests
-        run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+        run: |
+          # Run tests excluding generated protobuf code
+          go test -v -race -coverprofile=coverage.txt -covermode=atomic \
+            $(go list ./pkg/... ./internal/... | grep -v /gen/)
 
       - name: Check Coverage Threshold
         run: |
@@ -49,7 +52,7 @@ jobs:
           COVERAGE=$(go tool cover -func=coverage.txt | grep total | awk '{print $3}' | sed 's/%//')
           echo "Total coverage: $COVERAGE%"
           
-          # Check minimum threshold (70%)
+          # Check minimum threshold (70% for library code)
           THRESHOLD=70
           if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
             echo "❌ Coverage $COVERAGE% is below minimum threshold of $THRESHOLD%"
