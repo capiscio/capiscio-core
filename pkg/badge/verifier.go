@@ -2,6 +2,7 @@ package badge
 
 import (
 	"context"
+	"crypto"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -32,9 +33,17 @@ type VerifyOptions struct {
 	// Mode determines online/offline verification behavior.
 	Mode VerifyMode
 
-	// TrustedIssuers is a list of allowed issuer URLs.
+	// TrustedIssuers is a list of allowed issuer DIDs (did:web or did:key).
 	// If empty, all issuers are accepted (not recommended for production).
+	// For Level 0 self-signed badges, the did:key issuer must be in this list
+	// or AcceptSelfSigned must be true.
 	TrustedIssuers []string
+
+	// AcceptSelfSigned allows Level 0 self-signed badges (did:key issuer).
+	// WARNING: Production verifiers SHOULD NOT accept self-signed badges
+	// unless explicitly required for specific use cases.
+	// Default: false (reject self-signed badges)
+	AcceptSelfSigned bool
 
 	// Audience is the verifier's identity for audience validation.
 	// If set and badge has aud claim, verifier must be in audience.
@@ -98,75 +107,171 @@ func (v *Verifier) Verify(ctx context.Context, token string) (*Claims, error) {
 	return result.Claims, nil
 }
 
+// parseJWSAndClaims parses JWS token and extracts unverified claims.
+func (v *Verifier) parseJWSAndClaims(token string) (*jose.JSONWebSignature, *Claims, error) {
+	jwsObj, err := jose.ParseSigned(token, []jose.SignatureAlgorithm{jose.EdDSA, jose.ES256})
+	if err != nil {
+		return nil, nil, WrapError(ErrCodeMalformed, "failed to parse JWS", err)
+	}
+
+	unsafePayload := jwsObj.UnsafePayloadWithoutVerification()
+	var claims Claims
+	if err := json.Unmarshal(unsafePayload, &claims); err != nil {
+		return nil, nil, WrapError(ErrCodeMalformed, "failed to unmarshal claims", err)
+	}
+
+	return jwsObj, &claims, nil
+}
+
+// getPublicKey retrieves the public key for verification based on issuer type.
+func (v *Verifier) getPublicKey(ctx context.Context, issuerDID *did.DID, isSelfSigned bool, issuer string) (crypto.PublicKey, error) {
+	if isSelfSigned {
+		return issuerDID.GetPublicKey(), nil
+	}
+	// Fetch CA public key from registry
+	pubKey, err := v.registry.GetPublicKey(ctx, issuer)
+	if err != nil {
+		return nil, WrapError(ErrCodeIssuerUntrusted, fmt.Sprintf("failed to fetch public key for issuer %s", issuer), err)
+	}
+	return pubKey, nil
+}
+
+// verifySignature verifies the JWS signature and returns verified claims.
+func (v *Verifier) verifySignature(jwsObj *jose.JSONWebSignature, pubKey crypto.PublicKey) (*Claims, error) {
+	payload, err := jwsObj.Verify(pubKey)
+	if err != nil {
+		return nil, WrapError(ErrCodeSignatureInvalid, "signature verification failed", err)
+	}
+
+	var verifiedClaims Claims
+	if err := json.Unmarshal(payload, &verifiedClaims); err != nil {
+		return nil, WrapError(ErrCodeMalformed, "failed to unmarshal verified claims", err)
+	}
+	return &verifiedClaims, nil
+}
+
+// handlePostVerificationChecks performs revocation and agent status checks.
+func (v *Verifier) handlePostVerificationChecks(ctx context.Context, claims *Claims, opts VerifyOptions, isSelfSigned bool, result *VerifyResult) error {
+	// Check revocation (skip for self-signed)
+	if isSelfSigned {
+		result.Warnings = append(result.Warnings, "revocation check skipped (self-signed badge)")
+	} else if !opts.SkipRevocationCheck {
+		if err := v.checkRevocation(ctx, claims, opts); err != nil {
+			return err
+		}
+	}
+
+	// Check agent status (skip for self-signed)
+	if isSelfSigned {
+		result.Warnings = append(result.Warnings, "agent status check skipped (self-signed badge)")
+	} else if !opts.SkipAgentStatusCheck {
+		if err := v.checkAgentStatus(ctx, claims, opts, result); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // VerifyWithOptions performs badge verification with the specified options.
 // Implements RFC-002 §8.1 verification flow.
+//
+// For Level 0 self-signed badges (did:key issuer):
+//   - Public key is extracted from the did:key identifier
+//   - Revocation check is skipped (self-signed badges not in registry)
+//   - Agent status check is skipped (no registry)
+//   - iss must equal sub (self-assertion only)
 func (v *Verifier) VerifyWithOptions(ctx context.Context, token string, opts VerifyOptions) (*VerifyResult, error) {
 	now := time.Now
 	if opts.Now != nil {
 		now = opts.Now
 	}
 
-	result := &VerifyResult{
-		Mode: opts.Mode,
-	}
+	result := &VerifyResult{Mode: opts.Mode}
 
-	// Step 1: Parse JWS
-	jwsObj, err := jose.ParseSigned(token, []jose.SignatureAlgorithm{jose.EdDSA, jose.ES256})
+	// Step 1-2: Parse JWS and extract claims
+	jwsObj, claims, err := v.parseJWSAndClaims(token)
 	if err != nil {
-		return nil, WrapError(ErrCodeMalformed, "failed to parse JWS", err)
-	}
-
-	// Step 2: Extract Claims (Unverified) to get Issuer
-	unsafePayload := jwsObj.UnsafePayloadWithoutVerification()
-	var claims Claims
-	if err := json.Unmarshal(unsafePayload, &claims); err != nil {
-		return nil, WrapError(ErrCodeMalformed, "failed to unmarshal claims", err)
+		return nil, err
 	}
 
 	// Step 3: Validate structure
-	if err := v.validateStructure(jwsObj, &claims); err != nil {
+	if err := v.validateStructure(jwsObj, claims); err != nil {
 		return nil, err
 	}
 
-	// Step 4: Fetch CA public key
-	pubKey, err := v.registry.GetPublicKey(ctx, claims.Issuer)
+	// Step 4: Determine if self-signed (did:key issuer)
+	issuerDID, err := did.Parse(claims.Issuer)
 	if err != nil {
-		return nil, WrapError(ErrCodeIssuerUntrusted, fmt.Sprintf("failed to fetch public key for issuer %s", claims.Issuer), err)
+		return nil, WrapError(ErrCodeClaimsInvalid, "invalid issuer DID", err)
+	}
+	isSelfSigned := issuerDID.IsKeyDID()
+
+	// Step 4a: For self-signed badges, validate Level 0 constraints
+	if isSelfSigned {
+		if err := v.validateSelfSigned(claims, opts); err != nil {
+			return nil, err
+		}
+	}
+
+	// Step 4b: Get public key (from did:key or registry)
+	pubKey, err := v.getPublicKey(ctx, issuerDID, isSelfSigned, claims.Issuer)
+	if err != nil {
+		return nil, err
 	}
 
 	// Step 5: Verify Signature
-	payload, err := jwsObj.Verify(pubKey)
+	verifiedClaims, err := v.verifySignature(jwsObj, pubKey)
 	if err != nil {
-		return nil, WrapError(ErrCodeSignatureInvalid, "signature verification failed", err)
-	}
-
-	// Re-unmarshal verified payload to ensure integrity
-	var verifiedClaims Claims
-	if err := json.Unmarshal(payload, &verifiedClaims); err != nil {
-		return nil, WrapError(ErrCodeMalformed, "failed to unmarshal verified claims", err)
-	}
-
-	// Step 6: Validate claims
-	if err := v.validateClaims(&verifiedClaims, opts, now()); err != nil {
 		return nil, err
 	}
 
-	// Step 7: Check revocation (if not skipped)
-	if !opts.SkipRevocationCheck {
-		if err := v.checkRevocation(ctx, &verifiedClaims, opts); err != nil {
-			return nil, err
-		}
+	// Step 6: Validate claims
+	if err := v.validateClaims(verifiedClaims, opts, now(), isSelfSigned); err != nil {
+		return nil, err
 	}
 
-	// Step 8: Check agent status (if not skipped)
-	if !opts.SkipAgentStatusCheck {
-		if err := v.checkAgentStatus(ctx, &verifiedClaims, opts, result); err != nil {
-			return nil, err
-		}
+	// Step 7-8: Check revocation and agent status
+	if err := v.handlePostVerificationChecks(ctx, verifiedClaims, opts, isSelfSigned, result); err != nil {
+		return nil, err
 	}
 
-	result.Claims = &verifiedClaims
+	result.Claims = verifiedClaims
 	return result, nil
+}
+
+// validateSelfSigned validates Level 0 self-signed badge constraints per RFC-002 v1.1.
+func (v *Verifier) validateSelfSigned(claims *Claims, opts VerifyOptions) error {
+	// Check if self-signed badges are accepted
+	if !opts.AcceptSelfSigned {
+		// Check if issuer is in trusted issuers list (explicitly trusted did:key)
+		trusted := false
+		for _, iss := range opts.TrustedIssuers {
+			if claims.Issuer == iss {
+				trusted = true
+				break
+			}
+		}
+		if !trusted {
+			return NewError(ErrCodeIssuerUntrusted,
+				"self-signed badges (did:key issuer) are not accepted; set AcceptSelfSigned=true or add issuer to TrustedIssuers")
+		}
+	}
+
+	// RFC-002 v1.1 §4.3.1: For Level 0, iss MUST equal sub
+	if claims.Issuer != claims.Subject {
+		return NewError(ErrCodeClaimsInvalid,
+			fmt.Sprintf("self-signed badge requires iss == sub, got iss=%s, sub=%s", claims.Issuer, claims.Subject))
+	}
+
+	// RFC-002 v1.1 §4.3.3: Level MUST be "0" for self-signed
+	level := claims.TrustLevel()
+	if level != "0" {
+		return NewError(ErrCodeClaimsInvalid,
+			fmt.Sprintf("self-signed badge (did:key issuer) must have level \"0\", got \"%s\"", level))
+	}
+
+	return nil
 }
 
 // validateStructure checks header and payload structure per RFC-002 §8.1 step 3.
@@ -199,11 +304,15 @@ func (v *Verifier) validateStructure(jwsObj *jose.JSONWebSignature, claims *Clai
 		return NewError(ErrCodeClaimsInvalid, "missing exp claim")
 	}
 
-	// Validate subject is a valid did:web
-	_, err := did.Parse(claims.Subject)
+	// Validate subject is a valid DID (did:web or did:key)
+	subjectDID, err := did.Parse(claims.Subject)
 	if err != nil {
 		return WrapError(ErrCodeClaimsInvalid, "invalid subject DID", err)
 	}
+
+	// For did:key subjects (Level 0), subject must be same as issuer (validated elsewhere)
+	// For did:web subjects (Level 1-4), subject identifies the agent
+	_ = subjectDID // Used for validation
 
 	// Check VC structure
 	hasVC := false
@@ -224,7 +333,7 @@ func (v *Verifier) validateStructure(jwsObj *jose.JSONWebSignature, claims *Clai
 }
 
 // validateClaims performs claim validation per RFC-002 §8.1 step 6.
-func (v *Verifier) validateClaims(claims *Claims, opts VerifyOptions, now time.Time) error {
+func (v *Verifier) validateClaims(claims *Claims, opts VerifyOptions, now time.Time, isSelfSigned bool) error {
 	nowUnix := now.Unix()
 
 	// Step 6a: exp > current_time (not expired)
@@ -237,8 +346,8 @@ func (v *Verifier) validateClaims(claims *Claims, opts VerifyOptions, now time.T
 		return NewError(ErrCodeNotYetValid, fmt.Sprintf("badge not valid until %s", time.Unix(claims.IssuedAt, 0).Format(time.RFC3339)))
 	}
 
-	// Step 6c: Issuer in trusted issuer list
-	if len(opts.TrustedIssuers) > 0 {
+	// Step 6c: Issuer in trusted issuer list (unless self-signed with AcceptSelfSigned)
+	if len(opts.TrustedIssuers) > 0 && !isSelfSigned {
 		trusted := false
 		for _, iss := range opts.TrustedIssuers {
 			if claims.Issuer == iss {
@@ -250,6 +359,7 @@ func (v *Verifier) validateClaims(claims *Claims, opts VerifyOptions, now time.T
 			return NewError(ErrCodeIssuerUntrusted, fmt.Sprintf("issuer %s not in trusted list", claims.Issuer))
 		}
 	}
+	// Note: self-signed issuer trust is checked in validateSelfSigned()
 
 	// Step 6d: Audience validation
 	if opts.Audience != "" && len(claims.Audience) > 0 {
@@ -263,6 +373,13 @@ func (v *Verifier) validateClaims(claims *Claims, opts VerifyOptions, now time.T
 		if !inAudience {
 			return NewError(ErrCodeAudienceMismatch, fmt.Sprintf("verifier %s not in badge audience", opts.Audience))
 		}
+	}
+
+	// Step 6e: Validate trust level range (0-4)
+	level := claims.TrustLevel()
+	validLevels := map[string]bool{"0": true, "1": true, "2": true, "3": true, "4": true}
+	if !validLevels[level] {
+		return NewError(ErrCodeClaimsInvalid, fmt.Sprintf("invalid trust level: %s (must be 0-4)", level))
 	}
 
 	return nil

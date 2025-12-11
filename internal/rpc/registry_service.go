@@ -18,7 +18,7 @@ func NewRegistryService() *RegistryService {
 }
 
 // GetAgent gets an agent card by DID.
-func (s *RegistryService) GetAgent(ctx context.Context, req *pb.GetAgentRequest) (*pb.GetAgentResponse, error) {
+func (s *RegistryService) GetAgent(_ context.Context, _ *pb.GetAgentRequest) (*pb.GetAgentResponse, error) {
 	// TODO: Implement with registry.Registry
 	return &pb.GetAgentResponse{
 		ErrorMessage: "not yet implemented",
@@ -26,13 +26,13 @@ func (s *RegistryService) GetAgent(ctx context.Context, req *pb.GetAgentRequest)
 }
 
 // SearchAgents searches for agents.
-func (s *RegistryService) SearchAgents(ctx context.Context, req *pb.SearchAgentsRequest) (*pb.SearchAgentsResponse, error) {
+func (s *RegistryService) SearchAgents(_ context.Context, _ *pb.SearchAgentsRequest) (*pb.SearchAgentsResponse, error) {
 	// TODO: Implement with registry.Registry
 	return &pb.SearchAgentsResponse{}, nil
 }
 
 // RegisterAgent registers a new agent.
-func (s *RegistryService) RegisterAgent(ctx context.Context, req *pb.RegisterAgentRequest) (*pb.RegisterAgentResponse, error) {
+func (s *RegistryService) RegisterAgent(_ context.Context, _ *pb.RegisterAgentRequest) (*pb.RegisterAgentResponse, error) {
 	// TODO: Implement with registry.Registry
 	return &pb.RegisterAgentResponse{
 		ErrorMessage: "not yet implemented",
@@ -40,7 +40,7 @@ func (s *RegistryService) RegisterAgent(ctx context.Context, req *pb.RegisterAge
 }
 
 // UpdateAgent updates an existing agent.
-func (s *RegistryService) UpdateAgent(ctx context.Context, req *pb.UpdateAgentRequest) (*pb.UpdateAgentResponse, error) {
+func (s *RegistryService) UpdateAgent(_ context.Context, _ *pb.UpdateAgentRequest) (*pb.UpdateAgentResponse, error) {
 	// TODO: Implement with registry.Registry
 	return &pb.UpdateAgentResponse{
 		ErrorMessage: "not yet implemented",
@@ -48,7 +48,7 @@ func (s *RegistryService) UpdateAgent(ctx context.Context, req *pb.UpdateAgentRe
 }
 
 // DeregisterAgent deregisters an agent.
-func (s *RegistryService) DeregisterAgent(ctx context.Context, req *pb.DeregisterAgentRequest) (*pb.DeregisterAgentResponse, error) {
+func (s *RegistryService) DeregisterAgent(_ context.Context, _ *pb.DeregisterAgentRequest) (*pb.DeregisterAgentResponse, error) {
 	// TODO: Implement with registry.Registry
 	return &pb.DeregisterAgentResponse{
 		ErrorMessage: "not yet implemented",
@@ -56,7 +56,7 @@ func (s *RegistryService) DeregisterAgent(ctx context.Context, req *pb.Deregiste
 }
 
 // VerifyRegistration verifies agent registration.
-func (s *RegistryService) VerifyRegistration(ctx context.Context, req *pb.VerifyRegistrationRequest) (*pb.VerifyRegistrationResponse, error) {
+func (s *RegistryService) VerifyRegistration(_ context.Context, _ *pb.VerifyRegistrationRequest) (*pb.VerifyRegistrationResponse, error) {
 	// TODO: Implement with registry.Registry
 	return &pb.VerifyRegistrationResponse{
 		ErrorMessage: "not yet implemented",
@@ -64,19 +64,19 @@ func (s *RegistryService) VerifyRegistration(ctx context.Context, req *pb.Verify
 }
 
 // ListAgents lists agents (with pagination).
-func (s *RegistryService) ListAgents(ctx context.Context, req *pb.ListAgentsRequest) (*pb.ListAgentsResponse, error) {
+func (s *RegistryService) ListAgents(_ context.Context, _ *pb.ListAgentsRequest) (*pb.ListAgentsResponse, error) {
 	// TODO: Implement with registry.Registry
 	return &pb.ListAgentsResponse{}, nil
 }
 
 // GetStats gets registry statistics.
-func (s *RegistryService) GetStats(ctx context.Context, req *pb.GetStatsRequest) (*pb.GetStatsResponse, error) {
+func (s *RegistryService) GetStats(_ context.Context, _ *pb.GetStatsRequest) (*pb.GetStatsResponse, error) {
 	// TODO: Implement with registry.Registry
 	return &pb.GetStatsResponse{}, nil
 }
 
 // Ping pings registry health.
-func (s *RegistryService) Ping(ctx context.Context, req *pb.PingRequest) (*pb.PingResponse, error) {
+func (s *RegistryService) Ping(_ context.Context, _ *pb.PingRequest) (*pb.PingResponse, error) {
 	return &pb.PingResponse{
 		Status:  "ok",
 		Version: "1.0.0",

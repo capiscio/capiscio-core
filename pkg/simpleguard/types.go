@@ -50,7 +50,7 @@ type Config struct {
 }
 
 var (
-	ErrMissingHeader    = errors.New("missing X-Capiscio-JWS header")
+	ErrMissingHeader    = errors.New("missing X-Capiscio-Badge header")
 	ErrInvalidToken     = errors.New("invalid token format")
 	ErrTokenExpired     = errors.New("token expired")
 	ErrTokenFuture      = errors.New("token issued in the future")

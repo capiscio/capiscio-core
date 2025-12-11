@@ -123,16 +123,30 @@ curl http://localhost:8080/api/v1/agent
 
 Trust Badges include a **Trust Level** claim that indicates the verification depth:
 
-| Level | Name | Verification |
-|-------|------|--------------|
-| 1 | DV (Domain Validated) | Domain ownership verified |
-| 2 | OV (Organization Validated) | Organization identity verified |
-| 3 | EV (Extended Validation) | Extended identity verification |
+| Level | Name | Verification | DID Method |
+|-------|------|--------------|------------|
+| 0 | SS (Self-Signed) | No external validation | `did:key` |
+| 1 | DV (Domain Validated) | Domain ownership verified | `did:web` |
+| 2 | OV (Organization Validated) | Organization identity verified | `did:web` |
+| 3 | EV (Extended Validation) | Extended identity verification | `did:web` |
+| 4 | CV (Community Vouched) | Peer attestations verified | `did:web` |
 
 ```bash
-# Issue with specific trust level
-capiscio badge issue --self-sign --level 2
+# Issue Level 0 (Self-Signed) - for development only
+capiscio badge issue --self-sign
+# Note: --self-sign implies level 0 and uses did:key
+
+# Issue Level 2 (OV) - requires CA key
+capiscio badge issue --key ca-private.jwk --level 2 --domain example.com
+
+# Verify (rejects self-signed by default)
+capiscio badge verify "$TOKEN"
+
+# Accept self-signed for development
+capiscio badge verify "$TOKEN" --accept-self-signed
 ```
+
+> ⚠️ **Production Warning**: Self-signed (Level 0) badges should be rejected in production. Use `--accept-self-signed` only for development/testing.
 
 ## 🌐 DID:Web Integration
 

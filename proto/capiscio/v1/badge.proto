@@ -18,14 +18,24 @@ service BadgeService {
   
   // Parse badge claims without verification
   rpc ParseBadge(ParseBadgeRequest) returns (ParseBadgeResponse);
+  
+  // Request a badge from a Certificate Authority (RFC-002 §12.1)
+  // This is for production use where badges are issued by CapiscIO registry
+  rpc RequestBadge(RequestBadgeRequest) returns (RequestBadgeResponse);
+  
+  // Start a badge keeper that automatically renews badges (RFC-002 §7.3)
+  // Returns a stream of keeper events (started, renewed, error, stopped)
+  rpc StartKeeper(StartKeeperRequest) returns (stream KeeperEvent);
 }
 
-// Trust level for badges (RFC-002)
+// Trust level for badges (RFC-002 v1.1)
 enum TrustLevel {
   TRUST_LEVEL_UNSPECIFIED = 0;
-  TRUST_LEVEL_DV = 1;  // Domain Validated
-  TRUST_LEVEL_OV = 2;  // Organization Validated
-  TRUST_LEVEL_EV = 3;  // Extended Validated
+  TRUST_LEVEL_SELF_SIGNED = 1;  // Self-signed (Level 0, did:key)
+  TRUST_LEVEL_DV = 2;           // Domain Validated (Level 1)
+  TRUST_LEVEL_OV = 3;           // Organization Validated (Level 2)
+  TRUST_LEVEL_EV = 4;           // Extended Validated (Level 3)
+  TRUST_LEVEL_CV = 5;           // Community Vouched (Level 4)
 }
 
 // Badge claims structure
@@ -82,6 +92,7 @@ message VerifyOptions {
   bool skip_agent_status = 5;
   int64 clock_tolerance_seconds = 6;
   string registry_url = 7;
+  bool accept_self_signed = 8;  // Accept Level 0 did:key badges
 }
 
 // Request to verify with options
@@ -109,4 +120,145 @@ message ParseBadgeRequest {
 message ParseBadgeResponse {
   BadgeClaims claims = 1;
   string error_message = 2;
+}
+
+// ============================================================================
+// Badge Request from CA (RFC-002 §12.1)
+// ============================================================================
+
+// Request to obtain a badge from a Certificate Authority
+message RequestBadgeRequest {
+  // Agent ID (UUID) to request badge for
+  string agent_id = 1;
+  
+  // CA URL (default: https://registry.capisc.io)
+  string ca_url = 2;
+  
+  // API key for authentication with the CA
+  string api_key = 3;
+  
+  // Agent domain (optional, uses agent's registered domain if not provided)
+  string domain = 4;
+  
+  // Requested TTL in seconds (default: 300, per RFC-002)
+  int32 ttl_seconds = 5;
+  
+  // Requested trust level (1-4, default: 1)
+  TrustLevel trust_level = 6;
+  
+  // Optional audience restrictions
+  repeated string audience = 7;
+}
+
+// Response from badge request
+message RequestBadgeResponse {
+  // Whether the request succeeded
+  bool success = 1;
+  
+  // The signed badge token (JWS)
+  string token = 2;
+  
+  // Badge ID (jti)
+  string jti = 3;
+  
+  // Subject DID
+  string subject = 4;
+  
+  // Trust level assigned
+  TrustLevel trust_level = 5;
+  
+  // When the badge expires (Unix timestamp)
+  int64 expires_at = 6;
+  
+  // Error message if success=false
+  string error = 7;
+  
+  // Error code (RFC-002 §8.4 codes)
+  string error_code = 8;
+}
+
+// ============================================================================
+// Badge Keeper (RFC-002 §7.3)
+// ============================================================================
+
+// Request to start a badge keeper daemon
+message StartKeeperRequest {
+  // Mode: CA or self-signed
+  KeeperMode mode = 1;
+  
+  // Agent ID (required for CA mode)
+  string agent_id = 2;
+  
+  // CA URL (default: https://registry.capisc.io)
+  string ca_url = 3;
+  
+  // API key for CA authentication (required for CA mode)
+  string api_key = 4;
+  
+  // Output file path for the badge
+  string output_file = 5;
+  
+  // Badge TTL in seconds (default: 300)
+  int32 ttl_seconds = 6;
+  
+  // Time before expiry to renew, in seconds (default: 60)
+  int32 renew_before_seconds = 7;
+  
+  // Check interval in seconds (default: 30)
+  int32 check_interval_seconds = 8;
+  
+  // Private key path (required for self-sign mode, JWK file)
+  string private_key_path = 9;
+  
+  // Domain for the badge
+  string domain = 10;
+  
+  // Trust level (for CA mode, 1-4; self-sign always 0)
+  TrustLevel trust_level = 11;
+}
+
+// Keeper operation mode
+enum KeeperMode {
+  KEEPER_MODE_UNSPECIFIED = 0;
+  KEEPER_MODE_CA = 1;         // Request badges from CA
+  KEEPER_MODE_SELF_SIGN = 2;  // Self-sign badges locally (development)
+}
+
+// Event types emitted by the keeper
+enum KeeperEventType {
+  KEEPER_EVENT_UNSPECIFIED = 0;
+  KEEPER_EVENT_STARTED = 1;   // Keeper started successfully
+  KEEPER_EVENT_RENEWED = 2;   // Badge was renewed
+  KEEPER_EVENT_ERROR = 3;     // An error occurred (non-fatal)
+  KEEPER_EVENT_STOPPED = 4;   // Keeper stopped (client disconnect or fatal error)
+}
+
+// Event emitted by the badge keeper
+message KeeperEvent {
+  // Event type
+  KeeperEventType type = 1;
+  
+  // Badge JTI (for RENEWED events)
+  string badge_jti = 2;
+  
+  // Subject DID (for RENEWED events)
+  string subject = 3;
+  
+  // Trust level (for RENEWED events)
+  TrustLevel trust_level = 4;
+  
+  // When the badge expires (Unix timestamp, for RENEWED events)
+  int64 expires_at = 5;
+  
+  // Error message (for ERROR events)
+  string error = 6;
+  
+  // Error code (for ERROR events)
+  string error_code = 7;
+  
+  // Timestamp of the event (Unix timestamp)
+  int64 timestamp = 8;
+  
+  // The badge token itself (for RENEWED events, optional)
+  string token = 9;
 }

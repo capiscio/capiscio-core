@@ -699,6 +699,7 @@ type GenerateKeyPairResponse struct {
 	PrivateKeyPem string                 `protobuf:"bytes,5,opt,name=private_key_pem,json=privateKeyPem,proto3" json:"private_key_pem,omitempty"`
 	Algorithm     KeyAlgorithm           `protobuf:"varint,6,opt,name=algorithm,proto3,enum=capiscio.v1.KeyAlgorithm" json:"algorithm,omitempty"`
 	ErrorMessage  string                 `protobuf:"bytes,7,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	DidKey        string                 `protobuf:"bytes,8,opt,name=did_key,json=didKey,proto3" json:"did_key,omitempty"` // did:key URI derived from public key (RFC-002 §6.1)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -778,6 +779,13 @@ func (x *GenerateKeyPairResponse) GetAlgorithm() KeyAlgorithm {
 func (x *GenerateKeyPairResponse) GetErrorMessage() string {
 	if x != nil {
 		return x.ErrorMessage
+	}
+	return ""
+}
+
+func (x *GenerateKeyPairResponse) GetDidKey() string {
+	if x != nil {
+		return x.DidKey
 	}
 	return ""
 }
@@ -1251,7 +1259,7 @@ const file_capiscio_v1_simpleguard_proto_rawDesc = "" +
 	"\bmetadata\x18\x03 \x03(\v21.capiscio.v1.GenerateKeyPairRequest.MetadataEntryR\bmetadata\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x9c\x02\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xb5\x02\n" +
 	"\x17GenerateKeyPairResponse\x12\x15\n" +
 	"\x06key_id\x18\x01 \x01(\tR\x05keyId\x12\x1d\n" +
 	"\n" +
@@ -1261,7 +1269,8 @@ const file_capiscio_v1_simpleguard_proto_rawDesc = "" +
 	"\x0epublic_key_pem\x18\x04 \x01(\tR\fpublicKeyPem\x12&\n" +
 	"\x0fprivate_key_pem\x18\x05 \x01(\tR\rprivateKeyPem\x127\n" +
 	"\talgorithm\x18\x06 \x01(\x0e2\x19.capiscio.v1.KeyAlgorithmR\talgorithm\x12#\n" +
-	"\rerror_message\x18\a \x01(\tR\ferrorMessage\"}\n" +
+	"\rerror_message\x18\a \x01(\tR\ferrorMessage\x12\x17\n" +
+	"\adid_key\x18\b \x01(\tR\x06didKey\"}\n" +
 	"\x0eLoadKeyRequest\x12\x1b\n" +
 	"\tfile_path\x18\x01 \x01(\tR\bfilePath\x12.\n" +
 	"\x06format\x18\x02 \x01(\x0e2\x16.capiscio.v1.KeyFormatR\x06format\x12\x1e\n" +

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/capiscio/capiscio-core/pkg/badge"
+	"github.com/capiscio/capiscio-core/pkg/did"
 	"github.com/capiscio/capiscio-core/pkg/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -60,7 +61,8 @@ func TestBadgeLifecycle(t *testing.T) {
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
-	issuerDID := "https://test-registry.capisc.io"
+	// Use proper did:web format for issuer
+	issuerDID := "did:web:test-registry.capisc.io"
 	reg := &MockRegistry{
 		Keys: map[string]crypto.PublicKey{
 			issuerDID: pub,
@@ -121,7 +123,8 @@ func TestBadgeVerifyWithOptions(t *testing.T) {
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
-	issuerDID := "https://test-registry.capisc.io"
+	// Use proper did:web format for issuer
+	issuerDID := "did:web:test-registry.capisc.io"
 	reg := &MockRegistry{
 		Keys: map[string]crypto.PublicKey{
 			issuerDID: pub,
@@ -188,7 +191,7 @@ func TestBadgeVerifyWithOptions(t *testing.T) {
 	t.Run("trusted issuer mismatch", func(t *testing.T) {
 		opts := badge.VerifyOptions{
 			Mode:                 badge.VerifyModeOnline,
-			TrustedIssuers:       []string{"https://other-registry.capisc.io"},
+			TrustedIssuers:       []string{"did:web:other-registry.capisc.io"},
 			SkipRevocationCheck:  true,
 			SkipAgentStatusCheck: true,
 		}
@@ -202,7 +205,8 @@ func TestBadgeRevocation(t *testing.T) {
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
-	issuerDID := "https://test-registry.capisc.io"
+	// Use proper did:web format for issuer
+	issuerDID := "did:web:test-registry.capisc.io"
 	reg := &MockRegistry{
 		Keys: map[string]crypto.PublicKey{
 			issuerDID: pub,
@@ -241,7 +245,8 @@ func TestBadgeAgentDisabled(t *testing.T) {
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
-	issuerDID := "https://test-registry.capisc.io"
+	// Use proper did:web format for issuer
+	issuerDID := "did:web:test-registry.capisc.io"
 	reg := &MockRegistry{
 		Keys: map[string]crypto.PublicKey{
 			issuerDID: pub,
@@ -317,5 +322,178 @@ func TestClaimsHelpers(t *testing.T) {
 		futureClaims := *claims
 		futureClaims.IssuedAt = time.Now().Add(1 * time.Hour).Unix()
 		assert.True(t, futureClaims.IsNotYetValid())
+	})
+}
+
+// ============================================================================
+// Self-Signed Badge Tests (RFC-002 v1.1 Level 0)
+// ============================================================================
+
+func TestSelfSignedBadge(t *testing.T) {
+	// Generate a key pair for self-signing
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	// Create did:key from the public key
+	didKey := did.NewKeyDID(pub)
+
+	// Create a mock registry (won't be used for self-signed)
+	reg := &MockRegistry{
+		Keys: map[string]crypto.PublicKey{},
+	}
+	verifier := badge.NewVerifier(reg)
+
+	now := time.Now()
+
+	t.Run("valid self-signed badge with AcceptSelfSigned", func(t *testing.T) {
+		// Level 0 self-signed badge: iss == sub == did:key
+		claims := &badge.Claims{
+			JTI:      "self-signed-badge-001",
+			Issuer:   didKey,
+			Subject:  didKey, // iss == sub for self-signed
+			IssuedAt: now.Unix(),
+			Expiry:   now.Add(1 * time.Hour).Unix(),
+			VC: badge.VerifiableCredential{
+				Type: []string{"VerifiableCredential", "AgentIdentity"},
+				CredentialSubject: badge.CredentialSubject{
+					Domain: "self-signed.example.com",
+					Level:  "0", // Must be Level 0 for self-signed
+				},
+			},
+		}
+
+		token, err := badge.SignBadge(claims, priv)
+		require.NoError(t, err)
+
+		opts := badge.VerifyOptions{
+			Mode:             badge.VerifyModeOffline, // No registry access needed
+			AcceptSelfSigned: true,
+		}
+		result, err := verifier.VerifyWithOptions(context.Background(), token, opts)
+		require.NoError(t, err)
+		assert.Equal(t, didKey, result.Claims.Issuer)
+		assert.Equal(t, didKey, result.Claims.Subject)
+		assert.Equal(t, "0", result.Claims.TrustLevel())
+		// Should have warnings about skipped checks
+		assert.Contains(t, result.Warnings, "revocation check skipped (self-signed badge)")
+		assert.Contains(t, result.Warnings, "agent status check skipped (self-signed badge)")
+	})
+
+	t.Run("self-signed badge rejected without AcceptSelfSigned", func(t *testing.T) {
+		claims := &badge.Claims{
+			JTI:      "self-signed-badge-002",
+			Issuer:   didKey,
+			Subject:  didKey,
+			IssuedAt: now.Unix(),
+			Expiry:   now.Add(1 * time.Hour).Unix(),
+			VC: badge.VerifiableCredential{
+				Type: []string{"VerifiableCredential", "AgentIdentity"},
+				CredentialSubject: badge.CredentialSubject{
+					Domain: "self-signed.example.com",
+					Level:  "0",
+				},
+			},
+		}
+
+		token, err := badge.SignBadge(claims, priv)
+		require.NoError(t, err)
+
+		opts := badge.VerifyOptions{
+			Mode:             badge.VerifyModeOffline,
+			AcceptSelfSigned: false, // Default - reject self-signed
+		}
+		_, err = verifier.VerifyWithOptions(context.Background(), token, opts)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "self-signed badges")
+		assert.Contains(t, err.Error(), "BADGE_ISSUER_UNTRUSTED")
+	})
+
+	t.Run("self-signed badge with explicitly trusted did:key", func(t *testing.T) {
+		claims := &badge.Claims{
+			JTI:      "self-signed-badge-003",
+			Issuer:   didKey,
+			Subject:  didKey,
+			IssuedAt: now.Unix(),
+			Expiry:   now.Add(1 * time.Hour).Unix(),
+			VC: badge.VerifiableCredential{
+				Type: []string{"VerifiableCredential", "AgentIdentity"},
+				CredentialSubject: badge.CredentialSubject{
+					Domain: "self-signed.example.com",
+					Level:  "0",
+				},
+			},
+		}
+
+		token, err := badge.SignBadge(claims, priv)
+		require.NoError(t, err)
+
+		opts := badge.VerifyOptions{
+			Mode:             badge.VerifyModeOffline,
+			AcceptSelfSigned: false,
+			TrustedIssuers:   []string{didKey}, // Explicitly trust this did:key
+		}
+		result, err := verifier.VerifyWithOptions(context.Background(), token, opts)
+		require.NoError(t, err)
+		assert.Equal(t, "0", result.Claims.TrustLevel())
+	})
+
+	t.Run("self-signed badge with wrong level rejected", func(t *testing.T) {
+		// Try to claim Level 1 with did:key issuer - should be rejected
+		claims := &badge.Claims{
+			JTI:      "self-signed-badge-004",
+			Issuer:   didKey,
+			Subject:  didKey,
+			IssuedAt: now.Unix(),
+			Expiry:   now.Add(1 * time.Hour).Unix(),
+			VC: badge.VerifiableCredential{
+				Type: []string{"VerifiableCredential", "AgentIdentity"},
+				CredentialSubject: badge.CredentialSubject{
+					Domain: "self-signed.example.com",
+					Level:  "1", // Invalid - did:key must be Level 0
+				},
+			},
+		}
+
+		token, err := badge.SignBadge(claims, priv)
+		require.NoError(t, err)
+
+		opts := badge.VerifyOptions{
+			Mode:             badge.VerifyModeOffline,
+			AcceptSelfSigned: true,
+		}
+		_, err = verifier.VerifyWithOptions(context.Background(), token, opts)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "BADGE_CLAIMS_INVALID")
+		assert.Contains(t, err.Error(), "level \"0\"")
+	})
+
+	t.Run("self-signed badge with iss != sub rejected", func(t *testing.T) {
+		// Try to issue badge for different subject - should be rejected
+		claims := &badge.Claims{
+			JTI:      "self-signed-badge-005",
+			Issuer:   didKey,
+			Subject:  "did:web:example.com:agents:other-agent", // Different from issuer
+			IssuedAt: now.Unix(),
+			Expiry:   now.Add(1 * time.Hour).Unix(),
+			VC: badge.VerifiableCredential{
+				Type: []string{"VerifiableCredential", "AgentIdentity"},
+				CredentialSubject: badge.CredentialSubject{
+					Domain: "self-signed.example.com",
+					Level:  "0",
+				},
+			},
+		}
+
+		token, err := badge.SignBadge(claims, priv)
+		require.NoError(t, err)
+
+		opts := badge.VerifyOptions{
+			Mode:             badge.VerifyModeOffline,
+			AcceptSelfSigned: true,
+		}
+		_, err = verifier.VerifyWithOptions(context.Background(), token, opts)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "BADGE_CLAIMS_INVALID")
+		assert.Contains(t, err.Error(), "iss == sub")
 	})
 }

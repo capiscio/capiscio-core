@@ -25,6 +25,8 @@ const (
 	BadgeService_VerifyBadge_FullMethodName            = "/capiscio.v1.BadgeService/VerifyBadge"
 	BadgeService_VerifyBadgeWithOptions_FullMethodName = "/capiscio.v1.BadgeService/VerifyBadgeWithOptions"
 	BadgeService_ParseBadge_FullMethodName             = "/capiscio.v1.BadgeService/ParseBadge"
+	BadgeService_RequestBadge_FullMethodName           = "/capiscio.v1.BadgeService/RequestBadge"
+	BadgeService_StartKeeper_FullMethodName            = "/capiscio.v1.BadgeService/StartKeeper"
 )
 
 // BadgeServiceClient is the client API for BadgeService service.
@@ -41,6 +43,12 @@ type BadgeServiceClient interface {
 	VerifyBadgeWithOptions(ctx context.Context, in *VerifyBadgeWithOptionsRequest, opts ...grpc.CallOption) (*VerifyBadgeResponse, error)
 	// Parse badge claims without verification
 	ParseBadge(ctx context.Context, in *ParseBadgeRequest, opts ...grpc.CallOption) (*ParseBadgeResponse, error)
+	// Request a badge from a Certificate Authority (RFC-002 §12.1)
+	// This is for production use where badges are issued by CapiscIO registry
+	RequestBadge(ctx context.Context, in *RequestBadgeRequest, opts ...grpc.CallOption) (*RequestBadgeResponse, error)
+	// Start a badge keeper that automatically renews badges (RFC-002 §7.3)
+	// Returns a stream of keeper events (started, renewed, error, stopped)
+	StartKeeper(ctx context.Context, in *StartKeeperRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[KeeperEvent], error)
 }
 
 type badgeServiceClient struct {
@@ -91,6 +99,35 @@ func (c *badgeServiceClient) ParseBadge(ctx context.Context, in *ParseBadgeReque
 	return out, nil
 }
 
+func (c *badgeServiceClient) RequestBadge(ctx context.Context, in *RequestBadgeRequest, opts ...grpc.CallOption) (*RequestBadgeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RequestBadgeResponse)
+	err := c.cc.Invoke(ctx, BadgeService_RequestBadge_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *badgeServiceClient) StartKeeper(ctx context.Context, in *StartKeeperRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[KeeperEvent], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &BadgeService_ServiceDesc.Streams[0], BadgeService_StartKeeper_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[StartKeeperRequest, KeeperEvent]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type BadgeService_StartKeeperClient = grpc.ServerStreamingClient[KeeperEvent]
+
 // BadgeServiceServer is the server API for BadgeService service.
 // All implementations must embed UnimplementedBadgeServiceServer
 // for forward compatibility.
@@ -105,6 +142,12 @@ type BadgeServiceServer interface {
 	VerifyBadgeWithOptions(context.Context, *VerifyBadgeWithOptionsRequest) (*VerifyBadgeResponse, error)
 	// Parse badge claims without verification
 	ParseBadge(context.Context, *ParseBadgeRequest) (*ParseBadgeResponse, error)
+	// Request a badge from a Certificate Authority (RFC-002 §12.1)
+	// This is for production use where badges are issued by CapiscIO registry
+	RequestBadge(context.Context, *RequestBadgeRequest) (*RequestBadgeResponse, error)
+	// Start a badge keeper that automatically renews badges (RFC-002 §7.3)
+	// Returns a stream of keeper events (started, renewed, error, stopped)
+	StartKeeper(*StartKeeperRequest, grpc.ServerStreamingServer[KeeperEvent]) error
 	mustEmbedUnimplementedBadgeServiceServer()
 }
 
@@ -126,6 +169,12 @@ func (UnimplementedBadgeServiceServer) VerifyBadgeWithOptions(context.Context, *
 }
 func (UnimplementedBadgeServiceServer) ParseBadge(context.Context, *ParseBadgeRequest) (*ParseBadgeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ParseBadge not implemented")
+}
+func (UnimplementedBadgeServiceServer) RequestBadge(context.Context, *RequestBadgeRequest) (*RequestBadgeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RequestBadge not implemented")
+}
+func (UnimplementedBadgeServiceServer) StartKeeper(*StartKeeperRequest, grpc.ServerStreamingServer[KeeperEvent]) error {
+	return status.Error(codes.Unimplemented, "method StartKeeper not implemented")
 }
 func (UnimplementedBadgeServiceServer) mustEmbedUnimplementedBadgeServiceServer() {}
 func (UnimplementedBadgeServiceServer) testEmbeddedByValue()                      {}
@@ -220,6 +269,35 @@ func _BadgeService_ParseBadge_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BadgeService_RequestBadge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestBadgeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BadgeServiceServer).RequestBadge(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BadgeService_RequestBadge_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BadgeServiceServer).RequestBadge(ctx, req.(*RequestBadgeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BadgeService_StartKeeper_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(StartKeeperRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(BadgeServiceServer).StartKeeper(m, &grpc.GenericServerStream[StartKeeperRequest, KeeperEvent]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type BadgeService_StartKeeperServer = grpc.ServerStreamingServer[KeeperEvent]
+
 // BadgeService_ServiceDesc is the grpc.ServiceDesc for BadgeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -243,7 +321,17 @@ var BadgeService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "ParseBadge",
 			Handler:    _BadgeService_ParseBadge_Handler,
 		},
+		{
+			MethodName: "RequestBadge",
+			Handler:    _BadgeService_RequestBadge_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "StartKeeper",
+			Handler:       _BadgeService_StartKeeper_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "capiscio/v1/badge.proto",
 }

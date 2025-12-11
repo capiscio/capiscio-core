@@ -45,7 +45,7 @@ Examples:
   # Add from stdin (pipe from curl)
   curl -s https://registry.capisc.io/.well-known/jwks.json | capiscio trust add --from-jwks -`,
 	Args: cobra.MaximumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, args []string) error {
 		store, err := trust.NewFileStore("")
 		if err != nil {
 			return fmt.Errorf("failed to open trust store: %w", err)
@@ -150,7 +150,7 @@ func addFromJWKS(store *trust.FileStore, source string) error {
 var trustListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List trusted CA keys",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		store, err := trust.NewFileStore("")
 		if err != nil {
 			return fmt.Errorf("failed to open trust store: %w", err)
@@ -185,7 +185,7 @@ var trustRemoveCmd = &cobra.Command{
 	Use:   "remove [kid]",
 	Short: "Remove a CA key from the trust store",
 	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, args []string) error {
 		kid := args[0]
 
 		store, err := trust.NewFileStore("")
