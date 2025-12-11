@@ -4,7 +4,7 @@
 
 While it serves as the reference implementation for the **Agent-to-Agent (A2A) Protocol**, its primary mission is to secure the broader agent ecosystem.
 
-> **v1.0.2 Release**: This release combines the **Validation Engine** (for A2A compliance) with the new **Authority Layer** (for runtime security).
+> **v1.1.0 Release**: Full implementation of **RFC-002 Trust Badge Specification** with did:web DIDs, Trust Levels, and enhanced verification.
 
 ## Why CapiscIO?
 
@@ -22,9 +22,9 @@ Building authentication for AI Agents is hard. OAuth is complex, API keys are in
 
 ## Key Features
 
-*   **Trust Badges**: Issue and Verify VC-aligned JWS tokens (`X-Capiscio-Badge`) that serve as an Agent's passport.
+*   **Trust Badges (RFC-002)**: Issue and Verify VC-aligned JWS tokens with did:web DIDs and Trust Levels (DV/OV/EV).
 *   **Gateway Sidecar**: A high-performance Reverse Proxy that enforces identity before traffic reaches your Agent.
-*   **Registry Interface**: Pluggable trust anchors supporting both **Local Mode** (Air-gapped/Dev) and **Cloud Mode** (Enterprise).
+*   **Registry Interface**: Pluggable trust anchors supporting **Local Mode** (Air-gapped/Dev), **Offline Mode** (Trust Store), and **Cloud Mode** (Enterprise).
 *   **Go-Native**: Built for speed and concurrency, deployable as a single static binary.
 
 ## ⚡ Quick Start (The "Minimal Stack")
@@ -32,54 +32,81 @@ Building authentication for AI Agents is hard. OAuth is complex, API keys are in
 ### 1. Installation
 
 ```bash
-go install github.com/capiscio/capiscio-core/cmd/capiscio@v1.0.2
+go install github.com/capiscio/capiscio-core/cmd/capiscio@latest
 ```
 
 ### 2. Issue a Trust Badge (Identity)
 
-You can generate an ephemeral key for testing, or create a persistent key pair for production.
-
-**Option A: Ephemeral (Dev)**
+**Self-Signed (Development)**
 ```bash
-capiscio badge issue --sub "did:capiscio:agent:my-agent" --exp 1h > badge.jwt 2> key.jwk
+# Level 0 (Self-Signed) - for development only
+capiscio badge issue --self-sign
+
+# With explicit domain
+capiscio badge issue --self-sign --domain example.com
+
+# With audience restriction
+capiscio badge issue --self-sign --aud "https://api.example.com"
 ```
 
-**Option B: Persistent (Production)**
+**With Persistent Key (Production)**
 ```bash
 # 1. Generate a Key Pair
 capiscio key gen --out-priv private.jwk --out-pub public.jwk
 
 # 2. Issue a Badge using the Private Key
-capiscio badge issue --key private.jwk --sub "did:capiscio:agent:prod" > badge.jwt
+capiscio badge issue --key private.jwk --sub "did:web:registry.capisc.io:agents:prod"
 ```
 
-**Option C: Automated Renewal (Daemon)**
-Run the "Badge Keeper" as a sidecar to keep your badge fresh automatically.
+**Automated Renewal (Daemon)**
 ```bash
 capiscio badge keep \
   --key private.jwk \
-  --sub "did:capiscio:agent:prod" \
+  --sub "did:web:registry.capisc.io:agents:prod" \
   --out badge.jwt \
-  --exp 1h \
-  --renew-before 10m
+  --exp 5m \
+  --renew-before 1m
 ```
 
-### 3. Start the Gateway (Enforcement)
-
-Run the gateway as a sidecar to your agent (e.g., running on port 3000). It will block any request without a valid badge.
+### 3. Verify a Badge
 
 ```bash
-# Extract the public key from the previous step
-grep "{" key.jwk > public-key.json
+# Online verification (fetches CA key from issuer)
+capiscio badge verify "$TOKEN"
 
-# Start the gateway listening on port 8080, forwarding to localhost:3000
+# Offline verification (uses local trust store)
+capiscio badge verify "$TOKEN" --offline
+
+# Accept self-signed for development
+capiscio badge verify "$TOKEN" --accept-self-signed
+
+# With audience check
+capiscio badge verify "$TOKEN" --audience "https://api.example.com"
+```
+
+### 4. Manage Trust Store (Offline Mode)
+
+```bash
+# Add CA keys from JWKS endpoint
+capiscio trust add --from-jwks https://registry.capisc.io/.well-known/jwks.json
+
+# List trusted keys
+capiscio trust list
+
+# Remove a key
+capiscio trust remove <kid>
+```
+
+### 5. Start the Gateway (Enforcement)
+
+```bash
 capiscio gateway start \
   --port 8080 \
   --target http://localhost:3000 \
   --local-key public-key.json
 ```
 
-### 4. Make a Request
+### 6. Make a Request
 
 ```bash
 # This will succeed (200 OK)
@@ -87,6 +114,58 @@ curl -H "X-Capiscio-Badge: $(cat badge.jwt)" http://localhost:8080/api/v1/agent
 
 # This will fail (401 Unauthorized)
 curl http://localhost:8080/api/v1/agent
+```
+
+## 🔐 Trust Levels (RFC-002)
+
+Trust Badges include a **Trust Level** claim that indicates the verification depth:
+
+| Level | Name | Verification | DID Method |
+|-------|------|--------------|------------|
+| 0 | SS (Self-Signed) | No external validation | `did:key` |
+| 1 | DV (Domain Validated) | Domain ownership verified | `did:web` |
+| 2 | OV (Organization Validated) | Organization identity verified | `did:web` |
+| 3 | EV (Extended Validation) | Extended identity verification | `did:web` |
+| 4 | CV (Community Vouched) | Peer attestations verified | `did:web` |
+
+```bash
+# Issue Level 0 (Self-Signed) - for development only
+capiscio badge issue --self-sign
+# Note: --self-sign implies level 0 and uses did:key
+
+# Issue Level 2 (OV) - requires CA key
+capiscio badge issue --key ca-private.jwk --level 2 --domain example.com
+
+# Verify (rejects self-signed by default)
+capiscio badge verify "$TOKEN"
+
+# Accept self-signed for development
+capiscio badge verify "$TOKEN" --accept-self-signed
+```
+
+> ⚠️ **Production Warning**: Self-signed (Level 0) badges should be rejected in production. Use `--accept-self-signed` only for development/testing.
+
+## 🌐 DID:Web Integration
+
+Badges use **did:web** DIDs for agent identity:
+
+```
+did:web:registry.capisc.io:agents:my-agent-123
+```
+
+The `pkg/did` package provides utilities for parsing and constructing DIDs:
+
+```go
+import "github.com/capiscio/capiscio-core/pkg/did"
+
+// Parse a DID
+d, err := did.Parse("did:web:registry.capisc.io:agents:my-agent")
+
+// Get the DID Document URL
+url := d.DocumentURL() // https://registry.capisc.io/agents/my-agent/did.json
+
+// Create a new agent DID
+agentDID := did.NewCapiscIOAgentDID("my-agent-123")
 ```
 
 ## 🌍 Universal Compatibility
@@ -101,10 +180,12 @@ You can use the **Gateway** to secure *any* AI Agent, even if it doesn't fully i
 
 ## 🏗️ Architecture
 
-### The Authority Layer (New)
-*   **Trust Badge**: A standard JWS containing Identity (`sub`) and Capabilities (`vc`).
+### The Authority Layer
+*   **Trust Badge**: A standard JWS containing Identity (`sub`), Trust Level, and Capabilities (`vc`).
 *   **Gateway**: A reverse proxy that enforces badge validity before forwarding traffic.
-*   **Registry**: The source of truth for public keys (Local or Cloud).
+*   **Registry**: The source of truth for public keys (Local, Trust Store, or Cloud).
+*   **Trust Store**: Local storage for CA keys enabling offline verification.
+*   **Revocation Cache**: Local cache for revocation lists (5-minute staleness per RFC-002).
 
 ### The Validation Engine (Foundation)
 CapiscIO Core retains its original capabilities as a robust validator for the A2A Protocol:
@@ -129,7 +210,7 @@ func main() {
     // 2. Create Verifier
     verifier := badge.NewVerifier(reg)
     
-    // 3. Verify a Token
+    // 3. Verify a Token (simple)
     claims, err := verifier.Verify(context.Background(), tokenString)
     if err != nil {
         log.Fatal("Invalid badge")
@@ -139,7 +220,35 @@ func main() {
 }
 ```
 
-### 2. Validation Engine (Compliance)
+### 2. Advanced Verification (RFC-002)
+
+```go
+import (
+    "github.com/capiscio/capiscio-core/pkg/badge"
+)
+
+func main() {
+    verifier := badge.NewVerifier(reg)
+    
+    // Verify with options
+    result, err := verifier.VerifyWithOptions(ctx, tokenString, badge.VerifyOptions{
+        Mode:             badge.VerifyModeOffline,  // Use trust store
+        TrustedIssuers:   []string{"https://registry.capisc.io"},
+        Audience:         "https://api.example.com",
+        AcceptSelfSigned: false,  // Reject Level 0 in production
+    })
+    if err != nil {
+        var badgeErr *badge.BadgeError
+        if errors.As(err, &badgeErr) {
+            fmt.Printf("Badge error: %s (code: %s)\n", badgeErr.Message, badgeErr.Code)
+        }
+    }
+    
+    fmt.Printf("Trust Level: %d\n", result.Claims.TrustLevel)
+}
+```
+
+### 3. Validation Engine (Compliance)
 
 ```go
 import (
@@ -148,14 +257,9 @@ import (
 )
 
 func main() {
-    // Initialize the engine
     engine := scoring.NewEngine(nil)
-
-    // Load an Agent Card
     card := &agentcard.AgentCard{...}
 
-    // Validate and Score
-    // Note: checkLive=true performs network availability checks
     result, err := engine.Validate(context.Background(), card, true)
     if err != nil {
         panic(err)
@@ -164,6 +268,21 @@ func main() {
     fmt.Printf("Compliance Score: %.2f\n", result.TrustScore)
 }
 ```
+
+## 📦 Packages
+
+| Package | Description |
+|---------|-------------|
+| `pkg/badge` | Trust Badge issuance, verification, and error handling |
+| `pkg/did` | did:web and did:key parsing and construction |
+| `pkg/trust` | Local trust store for CA keys |
+| `pkg/revocation` | Revocation list caching |
+| `pkg/registry` | Registry interface (Local, Cloud) |
+| `pkg/gateway` | HTTP Gateway middleware |
+| `pkg/agentcard` | Agent Card schema and validation |
+| `pkg/scoring` | Trust scoring engine |
+| `pkg/crypto` | JWKS fetching and key utilities |
+| `pkg/simpleguard` | Lightweight request signing/verification |
 
 ## CLI Reference
 
