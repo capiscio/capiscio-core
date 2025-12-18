@@ -30,12 +30,51 @@ type Claims struct {
 	// Expiry is the timestamp when the badge expires (Unix timestamp).
 	Expiry int64 `json:"exp"`
 
+	// NotBefore is the timestamp before which the badge MUST NOT be accepted.
+	// Optional. Per RFC-002 §4.3.1.
+	NotBefore int64 `json:"nbf,omitempty"`
+
+	// IAL is the Identity Assurance Level. REQUIRED per RFC-002 §4.3.2.
+	// "0" = Account-attested (IAL-0), "1" = Proof of Possession (IAL-1).
+	IAL string `json:"ial"`
+
 	// Key is the public key of the subject, embedded for offline verification.
 	// REQUIRED in production. MAY be omitted in non-production environments.
 	Key *jose.JSONWebKey `json:"key,omitempty"`
 
+	// CNF is the confirmation claim per RFC 7800.
+	// When present, binds the badge to a specific key holder.
+	// Used for Proof of Possession (PoP) badges (RFC-002 §7.2.2, RFC-005).
+	CNF *ConfirmationClaim `json:"cnf,omitempty"`
+
+	// PoPChallengeID is a reference to the PoP challenge used during issuance.
+	// Optional. Provides audit trail for PoP-issued badges (RFC-002 §4.3.3).
+	PoPChallengeID string `json:"pop_challenge_id,omitempty"`
+
+	// AgentCardHash is the SHA-256 hash of the canonical AgentCard at issuance.
+	// Optional. Enables verifiers to detect AgentCard drift (RFC-002 §4.3.3).
+	AgentCardHash string `json:"agent_card_hash,omitempty"`
+
+	// DIDDocHash is the SHA-256 hash of the DID Document at issuance.
+	// Optional. Enables verifiers to detect key rotation (RFC-002 §4.3.3).
+	DIDDocHash string `json:"did_doc_hash,omitempty"`
+
 	// VC contains the Verifiable Credential data.
 	VC VerifiableCredential `json:"vc"`
+}
+
+// ConfirmationClaim represents the cnf claim per RFC 7800.
+// Used to bind a badge to a specific key for Proof of Possession.
+type ConfirmationClaim struct {
+	// KID is the key ID referencing the key in the DID Document.
+	// This is the primary mechanism for PoP badges.
+	KID string `json:"kid,omitempty"`
+
+	// JWK is the full JWK of the confirmation key (alternative to kid).
+	JWK *jose.JSONWebKey `json:"jwk,omitempty"`
+
+	// JKT is the JWK thumbprint (SHA-256) of the confirmation key.
+	JKT string `json:"jkt,omitempty"`
 }
 
 // AgentID extracts the agent ID from the Subject DID.
@@ -82,6 +121,31 @@ func (c *Claims) TrustLevel() string {
 // Domain returns the domain from the VC credential subject.
 func (c *Claims) Domain() string {
 	return c.VC.CredentialSubject.Domain
+}
+
+// AssuranceLevel returns the identity assurance level of the badge.
+// Per RFC-002 §7.2.1:
+// - IAL-0: Account-attested bearer badge
+// - IAL-1: Proof of Possession badge
+// The IAL claim is authoritative; cnf is supporting evidence.
+func (c *Claims) AssuranceLevel() string {
+	// If IAL claim is explicitly set, use it
+	if c.IAL == "1" {
+		return "IAL-1"
+	}
+	if c.IAL == "0" {
+		return "IAL-0"
+	}
+	// Fallback for legacy badges without IAL claim: check cnf
+	if c.CNF != nil && (c.CNF.KID != "" || c.CNF.JWK != nil || c.CNF.JKT != "") {
+		return "IAL-1"
+	}
+	return "IAL-0"
+}
+
+// HasProofOfPossession returns true if this is a PoP-issued badge.
+func (c *Claims) HasProofOfPossession() bool {
+	return c.AssuranceLevel() == "IAL-1"
 }
 
 // VerifiableCredential represents the simplified VC object.
