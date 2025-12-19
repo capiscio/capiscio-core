@@ -19,19 +19,20 @@ capiscio-core/
 ├── pkg/
 │   ├── badge/              # Badge operations
 │   │   ├── schema.go       # Badge structure (RFC-002 + RFC-003)
-│   │   ├── verify.go       # Signature verification
-│   │   └── validate.go     # Trust level validation
+│   │   ├── verifier.go     # Signature and trust verification
+│   │   ├── issuer.go       # Badge issuance logic
+│   │   ├── keeper.go       # State management and persistence
+│   │   ├── client.go       # Client-facing badge helpers
+│   │   └── errors.go       # Badge-specific error types
 │   ├── did/                # DID resolution
-│   │   ├── resolver.go     # Multi-method resolver
-│   │   └── web.go          # did:web support
+│   │   └── did.go          # did:web and did:key support
+│   ├── crypto/             # Cryptographic utilities & JWKS operations
+│   │   ├── jwks.go         # JWKS fetch/caching and key management
+│   │   └── verifier.go     # JWS verification
 │   ├── gateway/            # Gateway/sidecar mode
-│   │   ├── proxy.go        # HTTP proxy
-│   │   └── validator.go    # Badge validation middleware
-│   └── jwks/               # JWKS operations
-│       ├── fetch.go        # Fetch public keys
-│       └── verify.go       # JWS verification
+│   │   └── middleware.go   # Badge validation middleware
 ├── internal/
-│   └── cli/                # CLI commands implementation
+│   └── rpc/                # Internal RPC utilities
 └── bindings/               # Language bindings (optional)
 ```
 
@@ -43,7 +44,7 @@ capiscio-core/
 - Badge MUST be JWS compact format
 - MUST have `iss`, `sub`, `jti`, `exp`, `iat` claims
 - MUST use Ed25519 signatures
-- Trust level 0-4 validation
+- Trust level "0"-"3" validation (stored as strings; level "4" is reserved/not yet implemented)
 
 **RFC-003: Key Ownership Proof**
 - IAL-1 badges MUST have `cnf` claim with JWK
@@ -54,8 +55,14 @@ capiscio-core/
 
 **CLI Pattern (cmd/capiscio/)**
 ```go
+// Actual implementation uses global rootCmd with subcommands
+// added via init() functions in badge.go, gateway.go, key.go, etc.
+var rootCmd = &cobra.Command{
+    Use:   "capiscio",
+    Short: "CapiscIO CLI for badge verification and gateway operations",
+}
+
 func main() {
-    rootCmd := cli.NewRootCommand()
     if err := rootCmd.Execute(); err != nil {
         fmt.Fprintln(os.Stderr, err)
         os.Exit(1)
@@ -145,34 +152,22 @@ func TestParseBadge(t *testing.T) {
 ### 5. Badge Verification Flow
 
 ```go
-// Step 1: Parse JWS
-badge, err := badge.ParseBadge(token)
+// The Verifier type (see pkg/badge/verifier.go) encapsulates:
+//   - badge parsing
+//   - JWKS lookup and key resolution (via pkg/crypto/)
+//   - signature verification
+//   - claim validation
+//   - optional revocation checks
+verifier := badge.Verifier{}
+
+// Verify performs all verification steps and returns a validated badge
+// or an error if any step fails.
+validatedBadge, err := verifier.Verify(ctx, rawBadgeJWT)
 if err != nil {
-    return nil, fmt.Errorf("failed to parse badge: %w", err)
+    return nil, fmt.Errorf("badge verification failed: %w", err)
 }
 
-// Step 2: Fetch JWKS from issuer
-jwks, err := jwks.Fetch(badge.Issuer + "/.well-known/jwks.json")
-if err != nil {
-    return nil, fmt.Errorf("failed to fetch JWKS: %w", err)
-}
-
-// Step 3: Verify signature
-valid, err := badge.VerifySignature(jwks)
-if err != nil || !valid {
-    return nil, fmt.Errorf("signature verification failed")
-}
-
-// Step 4: Validate claims
-if err := badge.ValidateClaims(); err != nil {
-    return nil, fmt.Errorf("invalid claims: %w", err)
-}
-
-// Step 5: Check revocation (optional)
-revoked, err := badge.CheckRevocation()
-if err != nil {
-    return nil, fmt.Errorf("revocation check failed: %w", err)
-}
+return validatedBadge, nil
 ```
 
 ### 6. DID Resolution
@@ -183,35 +178,33 @@ if err != nil {
 
 **Resolution Pattern:**
 ```go
-type DIDResolver interface {
-    Resolve(did string) (*DIDDocument, error)
-}
+// DID resolution is driven by the shared parser in pkg/did.
+// did:web DIDs are converted to HTTPS URLs by did.Parse(), rather than
+// via a dedicated resolver interface/struct.
+//
+// Example:
+//
+//   did:web:registry.capisc.io:agents:agent-123
+//   -> https://registry.capisc.io/agents/agent-123/did.json
+//
+// Callers use did.Parse to obtain the information needed to fetch the
+// DID Document with their HTTP client.
 
-type DidWebResolver struct {
-    httpClient *http.Client
-}
+import "github.com/capiscio/capiscio-core/v2/pkg/did"
 
-func (r *DidWebResolver) Resolve(did string) (*DIDDocument, error) {
-    // did:web:registry.capisc.io:agents:agent-123
-    // -> https://registry.capisc.io/agents/agent-123/did.json
-    
-    url, err := didWebToURL(did)
+func resolveDIDWeb(raw string) (*DIDDocument, error) {
+    // Parse the DID using the canonical parser.
+    parsed, err := did.Parse(raw)
     if err != nil {
         return nil, err
     }
-    
-    resp, err := r.httpClient.Get(url)
-    if err != nil {
-        return nil, err
-    }
-    defer resp.Body.Close()
-    
-    var doc DIDDocument
-    if err := json.NewDecoder(resp.Body).Decode(&doc); err != nil {
-        return nil, err
-    }
-    
-    return &doc, nil
+
+    // parsed now encodes the HTTPS URL for did:web DIDs according to
+    // pkg/did's logic. Use that URL with your HTTP client to retrieve
+    // the DID Document (did.json) and decode it into a DIDDocument.
+    //
+    // This function is illustrative; wire it to your HTTP client as needed.
+    return nil, nil
 }
 ```
 
@@ -307,29 +300,36 @@ make release
 
 ## Key Structs and Interfaces
 
-### Badge (pkg/badge/schema.go)
+### Claims (pkg/badge/schema.go)
 
 ```go
-type Badge struct {
+// Claims represents the JWT claims used for CapiscIO badges.
+type Claims struct {
     // Standard JWT claims
-    Issuer    string    `json:"iss"`           // CA URL
-    Subject   string    `json:"sub"`           // Agent DID
-    TokenID   string    `json:"jti"`           // UUID
-    ExpiresAt int64     `json:"exp"`           // Unix timestamp
-    IssuedAt  int64     `json:"iat"`           // Unix timestamp
-    NotBefore int64     `json:"nbf,omitempty"` // Optional
-    
-    // RFC-002 claims
-    TrustLevel int      `json:"trust_level"`   // 0-4
-    
+    JTI      string `json:"jti"` // JWT ID (UUID)
+    Issuer   string `json:"iss"` // CA URL
+    Subject  string `json:"sub"` // Agent DID
+    Expiry   int64  `json:"exp"` // Unix timestamp
+    IssuedAt int64  `json:"iat"` // Unix timestamp
+
     // RFC-003 claims (IAL-1)
-    IAL        int      `json:"ial,omitempty"` // Identity assurance level
-    CNF        *CNF     `json:"cnf,omitempty"` // Confirmation claim
+    IAL string `json:"ial,omitempty"` // Identity assurance level
+    CNF *ConfirmationClaim `json:"cnf,omitempty"` // Confirmation claim
+
+    // Verifiable Credential payload
+    VC VerifiableCredential `json:"vc"`
 }
 
-type CNF struct {
-    JWK *JWK `json:"jwk"` // Agent's public key
+// ConfirmationClaim represents the "cnf" confirmation claim.
+type ConfirmationClaim struct {
+    KID string           `json:"kid,omitempty"` // Key ID reference
+    JWK *jose.JSONWebKey `json:"jwk,omitempty"` // Embedded agent public key
+    JKT string           `json:"jkt,omitempty"` // JWK thumbprint
 }
+
+// Note: Trust level is not a direct field on Claims.
+// It is encoded as a string "0", "1", "2", or "3" in:
+//   Claims.VC.CredentialSubject.Level
 ```
 
 ### DID Document (pkg/did/)
@@ -368,12 +368,12 @@ CAPISCIO_LOG_LEVEL="debug"
 
 **Required:**
 - `github.com/spf13/cobra` - CLI framework
-- `github.com/lestrrat-go/jwx` - JWS/JWT operations
+- `github.com/go-jose/go-jose/v4` - JWS/JWT operations
 - `golang.org/x/crypto` - Ed25519 signatures
+- `google.golang.org/grpc` - gRPC server/client
 
 **Optional:**
 - `github.com/stretchr/testify` - Testing utilities
-- `github.com/rs/zerolog` - Structured logging
 
 ## Code Quality Standards
 
