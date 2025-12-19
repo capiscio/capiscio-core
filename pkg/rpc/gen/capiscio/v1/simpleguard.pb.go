@@ -1324,7 +1324,7 @@ const file_capiscio_v1_simpleguard_proto_rawDesc = "" +
 	"\tExportKey\x12\x1d.capiscio.v1.ExportKeyRequest\x1a\x1e.capiscio.v1.ExportKeyResponse\x12M\n" +
 	"\n" +
 	"GetKeyInfo\x12\x1e.capiscio.v1.GetKeyInfoRequest\x1a\x1f.capiscio.v1.GetKeyInfoResponseB\xb6\x01\n" +
-	"\x0fcom.capiscio.v1B\x10SimpleguardProtoP\x01ZDgithub.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1;capisciov1\xa2\x02\x03CXX\xaa\x02\vCapiscio.V1\xca\x02\vCapiscio\\V1\xe2\x02\x17Capiscio\\V1\\GPBMetadata\xea\x02\fCapiscio::V1b\x06proto3"
+	"\x0fcom.capiscio.v1B\x10SimpleguardProtoP\x01ZDgithub.com/capiscio/capiscio-core/v2/pkg/rpc/gen/capiscio/v1;capisciov1\xa2\x02\x03CXX\xaa\x02\vCapiscio.V1\xca\x02\vCapiscio\\V1\xe2\x02\x17Capiscio\\V1\\GPBMetadata\xea\x02\fCapiscio::V1b\x06proto3"
 
 var (
 	file_capiscio_v1_simpleguard_proto_rawDescOnce sync.Once

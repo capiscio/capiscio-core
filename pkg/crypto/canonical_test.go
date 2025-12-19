@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/capiscio/capiscio-core/pkg/agentcard"
+	"github.com/capiscio/capiscio-core/v2/pkg/agentcard"
 )
 
 func TestCreateCanonicalJSON(t *testing.T) {

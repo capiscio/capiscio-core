@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/capiscio/capiscio-core/pkg/trust"
+	"github.com/capiscio/capiscio-core/v2/pkg/trust"
 	"github.com/go-jose/go-jose/v4"
 	"github.com/spf13/cobra"
 )

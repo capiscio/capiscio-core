@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/capiscio/capiscio-core/pkg/agentcard"
+	"github.com/capiscio/capiscio-core/v2/pkg/agentcard"
 	"github.com/go-jose/go-jose/v4"
 )
 

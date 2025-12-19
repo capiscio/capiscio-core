@@ -518,7 +518,7 @@ const file_capiscio_v1_common_proto_rawDesc = "" +
 	"\vRATING_FAIR\x10\x03\x12\x0f\n" +
 	"\vRATING_GOOD\x10\x04\x12\x14\n" +
 	"\x10RATING_EXCELLENT\x10\x05B\xb1\x01\n" +
-	"\x0fcom.capiscio.v1B\vCommonProtoP\x01ZDgithub.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1;capisciov1\xa2\x02\x03CXX\xaa\x02\vCapiscio.V1\xca\x02\vCapiscio\\V1\xe2\x02\x17Capiscio\\V1\\GPBMetadata\xea\x02\fCapiscio::V1b\x06proto3"
+	"\x0fcom.capiscio.v1B\vCommonProtoP\x01ZDgithub.com/capiscio/capiscio-core/v2/pkg/rpc/gen/capiscio/v1;capisciov1\xa2\x02\x03CXX\xaa\x02\vCapiscio.V1\xca\x02\vCapiscio\\V1\xe2\x02\x17Capiscio\\V1\\GPBMetadata\xea\x02\fCapiscio::V1b\x06proto3"
 
 var (
 	file_capiscio_v1_common_proto_rawDescOnce sync.Once

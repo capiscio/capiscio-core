@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/capiscio/capiscio-core/pkg/badge"
-	"github.com/capiscio/capiscio-core/pkg/did"
+	"github.com/capiscio/capiscio-core/v2/pkg/badge"
+	"github.com/capiscio/capiscio-core/v2/pkg/did"
 	"github.com/go-jose/go-jose/v4"
 
-	pb "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1"
+	pb "github.com/capiscio/capiscio-core/v2/pkg/rpc/gen/capiscio/v1"
 )
 
 // BadgeService implements the gRPC BadgeService.

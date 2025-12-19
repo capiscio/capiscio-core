@@ -17,8 +17,8 @@ import (
 
 	"github.com/go-jose/go-jose/v4"
 
-	"github.com/capiscio/capiscio-core/pkg/did"
-	pb "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1"
+	"github.com/capiscio/capiscio-core/v2/pkg/did"
+	pb "github.com/capiscio/capiscio-core/v2/pkg/rpc/gen/capiscio/v1"
 )
 
 // KeyEntry holds a loaded key pair.

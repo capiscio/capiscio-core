@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/capiscio/capiscio-core/pkg/agentcard"
+	"github.com/capiscio/capiscio-core/v2/pkg/agentcard"
 )
 
 // CreateCanonicalJSON creates a canonical JSON representation of the Agent Card

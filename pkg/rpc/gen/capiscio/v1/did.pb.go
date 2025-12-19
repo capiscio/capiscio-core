@@ -588,7 +588,7 @@ const file_capiscio_v1_did_proto_rawDesc = "" +
 	"\vDocumentURL\x12\x1f.capiscio.v1.DocumentURLRequest\x1a .capiscio.v1.DocumentURLResponse\x12M\n" +
 	"\n" +
 	"IsAgentDID\x12\x1e.capiscio.v1.IsAgentDIDRequest\x1a\x1f.capiscio.v1.IsAgentDIDResponseB\xae\x01\n" +
-	"\x0fcom.capiscio.v1B\bDidProtoP\x01ZDgithub.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1;capisciov1\xa2\x02\x03CXX\xaa\x02\vCapiscio.V1\xca\x02\vCapiscio\\V1\xe2\x02\x17Capiscio\\V1\\GPBMetadata\xea\x02\fCapiscio::V1b\x06proto3"
+	"\x0fcom.capiscio.v1B\bDidProtoP\x01ZDgithub.com/capiscio/capiscio-core/v2/pkg/rpc/gen/capiscio/v1;capisciov1\xa2\x02\x03CXX\xaa\x02\vCapiscio.V1\xca\x02\vCapiscio\\V1\xe2\x02\x17Capiscio\\V1\\GPBMetadata\xea\x02\fCapiscio::V1b\x06proto3"
 
 var (
 	file_capiscio_v1_did_proto_rawDescOnce sync.Once

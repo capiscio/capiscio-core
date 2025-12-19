@@ -1,8 +1,8 @@
 package scoring
 
 import (
-	"github.com/capiscio/capiscio-core/pkg/crypto"
-	"github.com/capiscio/capiscio-core/pkg/report"
+	"github.com/capiscio/capiscio-core/v2/pkg/crypto"
+	"github.com/capiscio/capiscio-core/v2/pkg/report"
 )
 
 // TrustScorer evaluates the trustworthiness of the Agent Card.

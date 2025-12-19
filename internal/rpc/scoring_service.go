@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/capiscio/capiscio-core/pkg/agentcard"
-	"github.com/capiscio/capiscio-core/pkg/report"
-	pb "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1"
-	"github.com/capiscio/capiscio-core/pkg/scoring"
+	"github.com/capiscio/capiscio-core/v2/pkg/agentcard"
+	"github.com/capiscio/capiscio-core/v2/pkg/report"
+	pb "github.com/capiscio/capiscio-core/v2/pkg/rpc/gen/capiscio/v1"
+	"github.com/capiscio/capiscio-core/v2/pkg/scoring"
 )
 
 // ScoringService implements the gRPC ScoringService.

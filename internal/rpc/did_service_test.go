@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	pb "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1"
+	pb "github.com/capiscio/capiscio-core/v2/pkg/rpc/gen/capiscio/v1"
 )
 
 func TestNewDIDService(t *testing.T) {

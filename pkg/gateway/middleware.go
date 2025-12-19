@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/capiscio/capiscio-core/pkg/badge"
+	"github.com/capiscio/capiscio-core/v2/pkg/badge"
 )
 
 // NewAuthMiddleware creates a middleware that enforces Badge validity.

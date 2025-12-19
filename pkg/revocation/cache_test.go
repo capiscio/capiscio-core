@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/capiscio/capiscio-core/pkg/revocation"
+	"github.com/capiscio/capiscio-core/v2/pkg/revocation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

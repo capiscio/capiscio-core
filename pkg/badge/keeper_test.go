@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/capiscio/capiscio-core/pkg/badge"
+	"github.com/capiscio/capiscio-core/v2/pkg/badge"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

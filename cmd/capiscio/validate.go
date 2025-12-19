@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/capiscio/capiscio-core/pkg/agentcard"
-	"github.com/capiscio/capiscio-core/pkg/report"
-	"github.com/capiscio/capiscio-core/pkg/scoring"
+	"github.com/capiscio/capiscio-core/v2/pkg/agentcard"
+	"github.com/capiscio/capiscio-core/v2/pkg/report"
+	"github.com/capiscio/capiscio-core/v2/pkg/scoring"
 	"github.com/spf13/cobra"
 )
 

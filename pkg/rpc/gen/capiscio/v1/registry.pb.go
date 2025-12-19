@@ -1582,7 +1582,7 @@ const file_capiscio_v1_registry_proto_rawDesc = "" +
 	"ListAgents\x12\x1e.capiscio.v1.ListAgentsRequest\x1a\x1f.capiscio.v1.ListAgentsResponse\x12G\n" +
 	"\bGetStats\x12\x1c.capiscio.v1.GetStatsRequest\x1a\x1d.capiscio.v1.GetStatsResponse\x12;\n" +
 	"\x04Ping\x12\x18.capiscio.v1.PingRequest\x1a\x19.capiscio.v1.PingResponseB\xb3\x01\n" +
-	"\x0fcom.capiscio.v1B\rRegistryProtoP\x01ZDgithub.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1;capisciov1\xa2\x02\x03CXX\xaa\x02\vCapiscio.V1\xca\x02\vCapiscio\\V1\xe2\x02\x17Capiscio\\V1\\GPBMetadata\xea\x02\fCapiscio::V1b\x06proto3"
+	"\x0fcom.capiscio.v1B\rRegistryProtoP\x01ZDgithub.com/capiscio/capiscio-core/v2/pkg/rpc/gen/capiscio/v1;capisciov1\xa2\x02\x03CXX\xaa\x02\vCapiscio.V1\xca\x02\vCapiscio\\V1\xe2\x02\x17Capiscio\\V1\\GPBMetadata\xea\x02\fCapiscio::V1b\x06proto3"
 
 var (
 	file_capiscio_v1_registry_proto_rawDescOnce sync.Once

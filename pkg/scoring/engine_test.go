@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/capiscio/capiscio-core/pkg/agentcard"
+	"github.com/capiscio/capiscio-core/v2/pkg/agentcard"
 	"github.com/stretchr/testify/assert"
 )
 

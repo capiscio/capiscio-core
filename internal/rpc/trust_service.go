@@ -13,8 +13,8 @@ import (
 
 	"github.com/go-jose/go-jose/v4"
 
-	pb "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1"
-	"github.com/capiscio/capiscio-core/pkg/trust"
+	pb "github.com/capiscio/capiscio-core/v2/pkg/rpc/gen/capiscio/v1"
+	"github.com/capiscio/capiscio-core/v2/pkg/trust"
 )
 
 // TrustStoreService implements the gRPC TrustStoreService.
