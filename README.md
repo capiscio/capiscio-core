@@ -135,6 +135,7 @@ capiscio rpc --address localhost:50051
 # Python SDK will auto-start the server
 python -c "
 from capiscio_sdk._rpc.client import CapiscioRPCClient
+token = '<YOUR_BADGE_TOKEN_HERE>'  # Replace with your actual badge token
 with CapiscioRPCClient() as client:
     valid, claims, warnings, err = client.badge.verify_badge_with_options(
         token,

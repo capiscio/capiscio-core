@@ -44,7 +44,7 @@ type Claims struct {
 
 	// CNF is the confirmation claim per RFC 7800.
 	// When present, binds the badge to a specific key holder.
-	// Used for Proof of Possession (PoP) badges (RFC-002 §7.2.2, RFC-005).
+	// Used for Proof of Possession (PoP) badges (RFC-002 §7.2.2, RFC-003).
 	CNF *ConfirmationClaim `json:"cnf,omitempty"`
 
 	// PoPChallengeID is a reference to the PoP challenge used during issuance.
