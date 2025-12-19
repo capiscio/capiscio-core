@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/capiscio/capiscio-core/pkg/badge"
-	"github.com/capiscio/capiscio-core/pkg/gateway"
-	"github.com/capiscio/capiscio-core/pkg/registry"
+	"github.com/capiscio/capiscio-core/v2/pkg/badge"
+	"github.com/capiscio/capiscio-core/v2/pkg/gateway"
+	"github.com/capiscio/capiscio-core/v2/pkg/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

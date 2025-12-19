@@ -3,9 +3,9 @@ package rpc
 import (
 	"context"
 
-	"github.com/capiscio/capiscio-core/pkg/did"
+	"github.com/capiscio/capiscio-core/v2/pkg/did"
 
-	pb "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1"
+	pb "github.com/capiscio/capiscio-core/v2/pkg/rpc/gen/capiscio/v1"
 )
 
 // DIDService implements the gRPC DIDService.

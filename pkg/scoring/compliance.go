@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/capiscio/capiscio-core/pkg/agentcard"
-	"github.com/capiscio/capiscio-core/pkg/report"
+	"github.com/capiscio/capiscio-core/v2/pkg/agentcard"
+	"github.com/capiscio/capiscio-core/v2/pkg/report"
 )
 
 // ComplianceScorer evaluates how well the Agent Card adheres to the A2A specification.

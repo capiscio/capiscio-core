@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/capiscio/capiscio-core/pkg/did"
-	"github.com/capiscio/capiscio-core/pkg/registry"
+	"github.com/capiscio/capiscio-core/v2/pkg/did"
+	"github.com/capiscio/capiscio-core/v2/pkg/registry"
 	"github.com/go-jose/go-jose/v4"
 )
 

@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/capiscio/capiscio-core/internal/rpc"
+	"github.com/capiscio/capiscio-core/v2/internal/rpc"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 )

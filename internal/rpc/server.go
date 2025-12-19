@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 
-	pb "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1"
+	pb "github.com/capiscio/capiscio-core/v2/pkg/rpc/gen/capiscio/v1"
 )
 
 // RegisterServices registers all CapiscIO gRPC services with the server.

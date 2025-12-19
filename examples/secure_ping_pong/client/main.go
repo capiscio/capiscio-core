@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/capiscio/capiscio-core/pkg/simpleguard"
+	"github.com/capiscio/capiscio-core/v2/pkg/simpleguard"
 	"github.com/go-jose/go-jose/v4"
 )
 

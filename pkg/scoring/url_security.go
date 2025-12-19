@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/capiscio/capiscio-core/pkg/report"
+	"github.com/capiscio/capiscio-core/v2/pkg/report"
 )
 
 // URLValidator validates URLs for security and compliance.

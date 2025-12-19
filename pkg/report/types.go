@@ -2,7 +2,7 @@
 package report
 
 import (
-	"github.com/capiscio/capiscio-core/pkg/crypto"
+	"github.com/capiscio/capiscio-core/v2/pkg/crypto"
 )
 
 // ValidationResult contains the complete results of an Agent Card validation.

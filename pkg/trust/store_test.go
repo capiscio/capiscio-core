@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/capiscio/capiscio-core/pkg/trust"
+	"github.com/capiscio/capiscio-core/v2/pkg/trust"
 	"github.com/go-jose/go-jose/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

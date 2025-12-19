@@ -8,7 +8,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/capiscio/capiscio-core/pkg/simpleguard"
+	"github.com/capiscio/capiscio-core/v2/pkg/simpleguard"
 )
 
 func main() {

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	pb "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1"
-	"github.com/capiscio/capiscio-core/pkg/scoring"
+	pb "github.com/capiscio/capiscio-core/v2/pkg/rpc/gen/capiscio/v1"
+	"github.com/capiscio/capiscio-core/v2/pkg/scoring"
 )
 
 func TestScoreAgentCard_ValidCard(t *testing.T) {

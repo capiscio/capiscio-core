@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/capiscio/capiscio-core/pkg/did"
+	"github.com/capiscio/capiscio-core/v2/pkg/did"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

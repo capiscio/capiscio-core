@@ -5,9 +5,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/capiscio/capiscio-core/pkg/agentcard"
-	"github.com/capiscio/capiscio-core/pkg/protocol"
-	"github.com/capiscio/capiscio-core/pkg/report"
+	"github.com/capiscio/capiscio-core/v2/pkg/agentcard"
+	"github.com/capiscio/capiscio-core/v2/pkg/protocol"
+	"github.com/capiscio/capiscio-core/v2/pkg/report"
 )
 
 // AvailabilityScorer evaluates the operational status of the agent.

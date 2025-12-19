@@ -3,7 +3,7 @@ package scoring
 import (
 	"testing"
 
-	"github.com/capiscio/capiscio-core/pkg/crypto"
+	"github.com/capiscio/capiscio-core/v2/pkg/crypto"
 	"github.com/stretchr/testify/assert"
 )
 
