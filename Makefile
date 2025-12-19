@@ -1,6 +1,10 @@
-.PHONY: all build-cli build-python test clean
+.PHONY: all build-cli build-python test clean proto
 
 all: build-cli build-python
+
+proto:
+	@echo "Generating protobuf files..."
+	cd proto && buf generate
 
 build-cli:
 	@echo "Building CLI..."
