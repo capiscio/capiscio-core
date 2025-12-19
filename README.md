@@ -10,7 +10,7 @@
 
 While it serves as the reference implementation for the **Agent-to-Agent (A2A) Protocol**, its primary mission is to secure the broader agent ecosystem.
 
-> **v1.1.0 Release**: Full implementation of **RFC-002 Trust Badge Specification** with did:web DIDs, Trust Levels, and enhanced verification.
+> **v2.2.0 Release**: Full implementation of **RFC-002 Trust Badge Specification** and **RFC-003 Key Ownership Proof (PoP)** with did:web/did:key DIDs, Trust Levels, gRPC SDK integration, and enhanced verification.
 
 ## Why CapiscIO?
 
@@ -28,7 +28,9 @@ Building authentication for AI Agents is hard. OAuth is complex, API keys are in
 
 ## Key Features
 
-*   **Trust Badges (RFC-002)**: Issue and Verify VC-aligned JWS tokens with did:web DIDs and Trust Levels (DV/OV/EV).
+*   **Trust Badges (RFC-002)**: Issue and Verify VC-aligned JWS tokens with did:web/did:key DIDs and Trust Levels (0-4: SS/DV/OV/EV/CV).
+*   **Proof of Possession (RFC-003)**: Challenge-response protocol for cryptographic key ownership proof with IAL-1 assurance.
+*   **gRPC SDK Integration**: Native gRPC server for Python, Node.js, and other language SDKs with 7 specialized services.
 *   **Gateway Sidecar**: A high-performance Reverse Proxy that enforces identity before traffic reaches your Agent.
 *   **Registry Interface**: Pluggable trust anchors supporting **Local Mode** (Air-gapped/Dev), **Offline Mode** (Trust Store), and **Cloud Mode** (Enterprise).
 *   **Go-Native**: Built for speed and concurrency, deployable as a single static binary.
@@ -118,6 +120,38 @@ curl -H "X-Capiscio-Badge: $(cat badge.jwt)" http://localhost:8080/api/v1/agent
 # This will fail (401 Unauthorized)
 curl http://localhost:8080/api/v1/agent
 ```
+
+### 7. Start the gRPC Server (SDK Integration)
+
+The gRPC server provides programmatic access to all CapiscIO functionality for SDKs in Python, Node.js, and other languages.
+
+```bash
+# Start on Unix socket (default - recommended for local dev)
+capiscio rpc
+
+# Start on TCP address (for remote SDKs)
+capiscio rpc --address localhost:50051
+
+# Python SDK will auto-start the server
+python -c "
+from capiscio_sdk._rpc.client import CapiscioRPCClient
+token = '<YOUR_BADGE_TOKEN_HERE>'  # Replace with your actual badge token
+with CapiscioRPCClient() as client:
+    valid, claims, warnings, err = client.badge.verify_badge_with_options(
+        token,
+        accept_self_signed=True
+    )
+    print(f'Valid: {valid}, Subject: {claims[\"sub\"]}')"
+```
+
+**Available Services** (7 total):
+- `BadgeService` - Sign, verify, parse, request badges; start badge keeper
+- `DIDService` - Parse did:web identifiers
+- `TrustStoreService` - Add trusted CA keys
+- `RevocationService` - Check revocation status
+- `ScoringService` - Score agent cards, validate rules
+- `SimpleGuardService` - Sign/verify payloads with JWS
+- `RegistryService` - Fetch agent cards
 
 ## 🔐 Trust Levels (RFC-002)
 
@@ -318,6 +352,58 @@ capiscio badge verify "$TOKEN" --offline
 *   `--audience`: Verifier's identity for audience validation.
 *   `--skip-revocation`: Skip revocation check (testing only).
 *   `--skip-agent-status`: Skip agent status check (testing only).
+
+### `badge keep`
+Run a daemon to keep a badge automatically renewed.
+
+```bash
+capiscio badge keep --key private.jwk --sub "did:web:registry.capisc.io:agents:my-agent" --out badge.jwt --exp 5m --renew-before 1m
+```
+
+**Flags:**
+*   `--key`: Path to private key file (JWK).
+*   `--sub`: Subject DID.
+*   `--out`: Output file path for the badge.
+*   `--exp`: Badge expiration duration. Default: 5m.
+*   `--renew-before`: Renew this duration before expiration. Default: 1m.
+*   `--ca-url`: CA URL for requesting new badges (optional).
+
+### `gateway start`
+Start the CapiscIO Gateway reverse proxy.
+
+```bash
+capiscio gateway start --port 8080 --target http://localhost:3000 --local-key public.jwk
+```
+
+**Flags:**
+*   `--port`: Gateway listen port. Default: 8080.
+*   `--target`: Backend agent URL.
+*   `--local-key`: Path to local public key file (for local mode).
+*   `--registry-url`: Registry URL (for cloud mode).
+*   `--offline`: Use trust store for verification.
+
+### `rpc`
+Start the gRPC server for SDK integration.
+
+```bash
+capiscio rpc --address localhost:50051
+```
+
+**Flags:**
+*   `--address`: TCP address to listen on (e.g., localhost:50051).
+*   `--socket`: Unix socket path. Default: ~/.capiscio/rpc.sock.
+
+### `key gen`
+Generate a new cryptographic key pair.
+
+```bash
+capiscio key gen --out-priv private.jwk --out-pub public.jwk
+```
+
+**Flags:**
+*   `--out-priv`: Output path for private key (JWK format).
+*   `--out-pub`: Output path for public key (JWK format).
+*   `--alg`: Algorithm (EdDSA or ES256). Default: EdDSA.
 
 ### `trust`
 Manage the local trust store.
