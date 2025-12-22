@@ -18,8 +18,12 @@ type KeeperMode string
 const (
 	// KeeperModeSelfSign generates self-signed badges locally.
 	KeeperModeSelfSign KeeperMode = "self-sign"
-	// KeeperModeCA requests badges from a Certificate Authority.
+	// KeeperModeCA requests badges from a Certificate Authority (IAL-0, deprecated).
+	// Deprecated: Use KeeperModePoP for production - IAL-0 lacks cryptographic key binding.
 	KeeperModeCA KeeperMode = "ca"
+	// KeeperModePoP requests badges using Proof of Possession (RFC-003 IAL-1).
+	// This is the recommended mode for production as it provides cryptographic key binding.
+	KeeperModePoP KeeperMode = "pop"
 )
 
 // KeeperEventType defines the type of event emitted by the keeper.
@@ -52,7 +56,7 @@ type KeeperEvent struct {
 
 // KeeperConfig holds configuration for the Badge Keeper.
 type KeeperConfig struct {
-	// Mode: self-sign or ca
+	// Mode: self-sign, ca (deprecated), or pop (recommended)
 	Mode KeeperMode
 
 	// Common settings
@@ -67,20 +71,28 @@ type KeeperConfig struct {
 	PrivateKey crypto.PrivateKey
 	Claims     Claims
 
-	// CA mode settings
+	// CA mode settings (IAL-0, deprecated)
 	CAURL   string
 	APIKey  string
 	AgentID string
+
+	// PoP mode settings (IAL-1, recommended)
+	// AgentDID is the DID of the agent (e.g., did:key:z6Mk...)
+	AgentDID string
+	// Audience is the optional audience restrictions for the badge
+	Audience []string
 }
 
 // Keeper manages the lifecycle of a Trust Badge file.
 type Keeper struct {
-	config KeeperConfig
-	client *Client // HTTP client for CA mode
+	config    KeeperConfig
+	client    *Client    // HTTP client for CA mode (deprecated)
+	popClient *PoPClient // HTTP client for PoP mode
 }
 
 // NewKeeper creates a new Keeper.
-func NewKeeper(config KeeperConfig) *Keeper {
+// Returns an error if an unsupported mode is specified.
+func NewKeeper(config KeeperConfig) (*Keeper, error) {
 	if config.CheckInterval == 0 {
 		config.CheckInterval = 30 * time.Second
 	}
@@ -96,12 +108,19 @@ func NewKeeper(config KeeperConfig) *Keeper {
 
 	k := &Keeper{config: config}
 
-	// Initialize CA client if in CA mode
-	if config.Mode == KeeperModeCA {
+	// Initialize client based on mode
+	switch config.Mode {
+	case KeeperModeCA:
 		k.client = NewClient(config.CAURL, config.APIKey)
+	case KeeperModePoP:
+		k.popClient = NewPoPClient(config.CAURL, config.APIKey)
+	case KeeperModeSelfSign:
+		// Self-sign mode doesn't need a client
+	default:
+		return nil, fmt.Errorf("unsupported keeper mode: %s", config.Mode)
 	}
 
-	return k
+	return k, nil
 }
 
 // Run starts the keeper loop.
@@ -217,13 +236,20 @@ type RenewalResult struct {
 
 // renewAndGetResult performs renewal and returns the result.
 func (k *Keeper) renewAndGetResult() (*RenewalResult, error) {
-	if k.config.Mode == KeeperModeCA {
+	switch k.config.Mode {
+	case KeeperModeCA:
 		return k.renewFromCA()
+	case KeeperModePoP:
+		return k.renewFromPoP()
+	case KeeperModeSelfSign:
+		return k.renewSelfSign()
+	default:
+		return nil, fmt.Errorf("unsupported keeper mode: %s", k.config.Mode)
 	}
-	return k.renewSelfSign()
 }
 
-// renewFromCA requests a new badge from the CA.
+// renewFromCA requests a new badge from the CA (IAL-0, deprecated).
+// Deprecated: Use renewFromPoP for production - IAL-0 lacks cryptographic key binding.
 func (k *Keeper) renewFromCA() (*RenewalResult, error) {
 	result, err := k.client.RequestBadge(context.Background(), RequestBadgeOptions{
 		AgentID:    k.config.AgentID,
@@ -276,6 +302,45 @@ func (k *Keeper) renewSelfSign() (*RenewalResult, error) {
 		TrustLevel: newClaims.TrustLevel(),
 		ExpiresAt:  time.Unix(newClaims.Expiry, 0),
 		Token:      token,
+	}, nil
+}
+
+// renewFromPoP requests a new badge using Proof of Possession (RFC-003 IAL-1).
+// This is the recommended mode for production as it provides cryptographic key binding.
+func (k *Keeper) renewFromPoP() (*RenewalResult, error) {
+	if k.popClient == nil {
+		return nil, fmt.Errorf("PoP client is not initialized; ensure Keeper was created with KeeperModePoP")
+	}
+	if k.config.PrivateKey == nil {
+		return nil, fmt.Errorf("PrivateKey is required for PoP mode")
+	}
+	if k.config.AgentDID == "" {
+		return nil, fmt.Errorf("AgentDID is required for PoP mode")
+	}
+
+	result, err := k.popClient.RequestPoPBadge(context.Background(), RequestPoPBadgeOptions{
+		AgentDID:   k.config.AgentDID,
+		PrivateKey: k.config.PrivateKey,
+		TTL:        k.config.Expiry,
+		Audience:   k.config.Audience,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Write to file
+	if k.config.OutputFile != "" {
+		if err := os.WriteFile(k.config.OutputFile, []byte(result.Token), 0600); err != nil {
+			return nil, fmt.Errorf("failed to write badge file: %w", err)
+		}
+	}
+
+	return &RenewalResult{
+		JTI:        result.JTI,
+		Subject:    result.Subject,
+		TrustLevel: result.TrustLevel,
+		ExpiresAt:  result.ExpiresAt,
+		Token:      result.Token,
 	}, nil
 }
 
