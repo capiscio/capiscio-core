@@ -1,0 +1,22 @@
+FROM golang:1.21-alpine
+
+# Install dependencies
+RUN apk add --no-cache git make curl
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source
+COPY . .
+
+# Build the capiscio binary
+RUN make build-cli
+
+# Set the binary in PATH
+ENV PATH="/workspace/bin:${PATH}"
+
+CMD ["go", "test", "-v", "./tests/integration/..."]
