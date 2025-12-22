@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-jose/go-jose/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -34,10 +35,10 @@ func TestNewPoPClient(t *testing.T) {
 			wantURL: "https://custom.example.com",
 		},
 		{
-			name:    "with multiple trailing slashes uses TrimRight",
+			name:    "with multiple trailing slashes removes only one (TrimSuffix behavior)",
 			caURL:   "https://custom.example.com///",
 			apiKey:  "test-key",
-			wantURL: "https://custom.example.com",
+			wantURL: "https://custom.example.com//",
 		},
 		{
 			name:    "empty URL uses default",
@@ -312,6 +313,39 @@ func TestSignProof(t *testing.T) {
 		}
 	}
 	assert.Equal(t, 2, parts, "JWS should have 3 parts (2 dots)")
+}
+
+func TestSignProof_DidWebKeyID(t *testing.T) {
+	_, privateKey, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+
+	client := NewPoPClient("https://example.com", "test-key")
+
+	claims := PoPProofClaims{
+		CID:   "challenge-123",
+		Nonce: "nonce-456",
+		Sub:   "did:web:example.com:agents:my-agent",
+		Aud:   "https://registry.capisc.io",
+		HTU:   "https://registry.capisc.io/v1/agents/did%3Aweb%3Aexample.com%3Aagents%3Amy-agent/badge/pop",
+		HTM:   "POST",
+		IAT:   time.Now().Unix(),
+		Exp:   time.Now().Add(60 * time.Second).Unix(),
+		JTI:   "proof-jti-789",
+	}
+
+	// did:web should get #key-1 fragment (CapiscIO convention)
+	jws, err := client.signProof(claims, privateKey, "did:web:example.com:agents:my-agent")
+	require.NoError(t, err)
+	assert.NotEmpty(t, jws)
+
+	// Parse the JWS to verify the kid header contains #key-1
+	parsedJWS, err := jose.ParseSigned(jws, []jose.SignatureAlgorithm{jose.EdDSA})
+	require.NoError(t, err)
+	require.Len(t, parsedJWS.Signatures, 1)
+
+	// KeyID is the standard kid header in go-jose v4
+	kid := parsedJWS.Signatures[0].Header.KeyID
+	assert.Equal(t, "did:web:example.com:agents:my-agent#key-1", kid)
 }
 
 func TestSignProof_UnsupportedKeyType(t *testing.T) {

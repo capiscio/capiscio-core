@@ -43,8 +43,8 @@ func NewPoPClientWithHTTPClient(caURL, apiKey string, httpClient *http.Client) *
 			Timeout: 30 * time.Second,
 		}
 	}
-	// Trim trailing slashes (may be multiple)
-	caURL = strings.TrimRight(caURL, "/")
+	// Trim trailing slash for consistency with Client in client.go
+	caURL = strings.TrimSuffix(caURL, "/")
 	return &PoPClient{
 		CAURL:      caURL,
 		APIKey:     apiKey,
@@ -253,13 +253,20 @@ func (c *PoPClient) submitProof(ctx context.Context, opts RequestPoPBadgeOptions
 func (c *PoPClient) signProof(claims PoPProofClaims, privateKey crypto.PrivateKey, agentDID string) (string, error) {
 	// Determine key ID from DID
 	// For did:key, the fragment is the multibase identifier (everything after "did:key:")
+	// For did:web, the key ID should reference a verification method ID from the DID Document.
 	keyID := agentDID
 	const didKeyPrefix = "did:key:"
+	const didWebPrefix = "did:web:"
 	if strings.HasPrefix(agentDID, didKeyPrefix) {
 		multibaseID := agentDID[len(didKeyPrefix):]
 		if multibaseID != "" {
 			keyID = agentDID + "#" + multibaseID
 		}
+	} else if strings.HasPrefix(agentDID, didWebPrefix) {
+		// For did:web DIDs, default to the primary verification method ID ("#key-1").
+		// This assumes the DID Document exposes a verification method with this fragment,
+		// which is the convention used by CapiscIO's DID documents.
+		keyID = agentDID + "#key-1"
 	}
 
 	// Create signer based on key type
