@@ -87,8 +87,9 @@ func (c *Client) createBadgeRequest(ctx context.Context, agentID string, body []
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.APIKey)
-	req.Header.Set("User-Agent", "capiscio-core/1.0")
+	// RFC-003 §3.1: Registry API keys MUST use X-Capiscio-Registry-Key, NOT Authorization: Bearer
+	req.Header.Set("X-Capiscio-Registry-Key", c.APIKey)
+	req.Header.Set("User-Agent", "capiscio-core/2.2.0")
 
 	return req, nil
 }
