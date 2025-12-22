@@ -28,7 +28,7 @@ func TestBadgeVerification(t *testing.T) {
 	t.Logf("Issued badge: JTI=%s", result.JTI)
 
 	// Step 2: Verify the badge
-	reg := registry.NewHTTPRegistry(API_BASE_URL, nil)
+	reg := registry.NewCloudRegistry(API_BASE_URL + "/.well-known/jwks.json")
 	verifier := badge.NewVerifier(reg)
 
 	claims, err := verifier.Verify(ctx, result.Token)
@@ -58,7 +58,7 @@ func TestBadgeVerificationWithOptions(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	reg := registry.NewHTTPRegistry(API_BASE_URL, nil)
+	reg := registry.NewCloudRegistry(API_BASE_URL + "/.well-known/jwks.json")
 	verifier := badge.NewVerifier(reg)
 
 	tests := []struct {
@@ -148,7 +148,7 @@ func TestBadgeVerificationOfflineMode(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	reg := registry.NewHTTPRegistry(API_BASE_URL, nil)
+	reg := registry.NewCloudRegistry(API_BASE_URL + "/.well-known/jwks.json")
 	verifier := badge.NewVerifier(reg)
 
 	// Online verification (warms cache)

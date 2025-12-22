@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/capiscio/capiscio-core/v2/pkg/badge"
-	"github.com/capiscio/capiscio-core/v2/pkg/registry"
+	"github.com/go-jose/go-jose/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -81,7 +81,7 @@ func TestBadgeIssuance(t *testing.T) {
 			assert.NotZero(t, result.ExpiresAt, "badge expiry should be set")
 
 			// Verify token can be parsed
-			_, err = badge.ParseAndValidateJWS(result.Token)
+			_, err = jose.ParseSigned(result.Token, []jose.SignatureAlgorithm{jose.EdDSA})
 			require.NoError(t, err, "badge token should be valid JWS")
 
 			// Log success for debugging

@@ -9,6 +9,7 @@ import (
 
 	"github.com/capiscio/capiscio-core/v2/pkg/badge"
 	"github.com/capiscio/capiscio-core/v2/pkg/did"
+	"github.com/go-jose/go-jose/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,8 +23,7 @@ func TestPoPChallengeFlow(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create did:key from public key
-	agentDID, err := did.NewDIDKey(pubKey)
-	require.NoError(t, err)
+	agentDID := did.NewKeyDID(pubKey)
 
 	t.Logf("Generated test DID: %s", agentDID)
 
@@ -55,7 +55,7 @@ func TestPoPChallengeFlow(t *testing.T) {
 	t.Logf("✓ PoP badge issued: JTI=%s, IAL=%s", result.JTI, result.AssuranceLevel)
 
 	// Step 5: Verify the badge signature
-	_, err = badge.ParseAndValidateJWS(result.Token)
+	_, err = jose.ParseSigned(result.Token, []jose.SignatureAlgorithm{jose.EdDSA})
 	require.NoError(t, err, "badge should be valid JWS")
 }
 
@@ -89,8 +89,7 @@ func TestPoPWithInvalidSignature(t *testing.T) {
 	_, privKey2, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
-	agentDID, err := did.NewDIDKey(pubKey1)
-	require.NoError(t, err)
+	agentDID := did.NewKeyDID(pubKey1)
 
 	popClient := badge.NewPoPClient(API_BASE_URL, getTestAPIKey())
 
@@ -172,8 +171,7 @@ func TestPoPWithCustomAudience(t *testing.T) {
 	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
-	agentDID, err := did.NewDIDKey(pubKey)
-	require.NoError(t, err)
+	agentDID := did.NewKeyDID(pubKey)
 
 	popClient := badge.NewPoPClient(API_BASE_URL, getTestAPIKey())
 

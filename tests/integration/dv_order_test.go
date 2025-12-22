@@ -3,16 +3,15 @@ package integration
 import (
 	"bytes"
 	"context"
+	"crypto"
 	"crypto/ed25519"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/go-jose/go-jose/v4"
 	"github.com/stretchr/testify/assert"
@@ -195,8 +194,8 @@ func createDVOrder(t *testing.T, ctx context.Context, url string, reqBody map[st
 
 // computeJWKThumbprint computes RFC 7638 JWK thumbprint
 func computeJWKThumbprint(jwk *jose.JSONWebKey) (string, error) {
-	// Create canonical JSON representation
-	thumbprint, err := jwk.Thumbprint(sha256.New())
+	// Use crypto.SHA256 constant, not sha256.New function
+	thumbprint, err := jwk.Thumbprint(crypto.SHA256)
 	if err != nil {
 		return "", err
 	}
