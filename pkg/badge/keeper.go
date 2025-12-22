@@ -91,7 +91,8 @@ type Keeper struct {
 }
 
 // NewKeeper creates a new Keeper.
-func NewKeeper(config KeeperConfig) *Keeper {
+// Returns an error if an unsupported mode is specified.
+func NewKeeper(config KeeperConfig) (*Keeper, error) {
 	if config.CheckInterval == 0 {
 		config.CheckInterval = 30 * time.Second
 	}
@@ -113,9 +114,13 @@ func NewKeeper(config KeeperConfig) *Keeper {
 		k.client = NewClient(config.CAURL, config.APIKey)
 	case KeeperModePoP:
 		k.popClient = NewPoPClient(config.CAURL, config.APIKey)
+	case KeeperModeSelfSign:
+		// Self-sign mode doesn't need a client
+	default:
+		return nil, fmt.Errorf("unsupported keeper mode: %s", config.Mode)
 	}
 
-	return k
+	return k, nil
 }
 
 // Run starts the keeper loop.
@@ -236,8 +241,10 @@ func (k *Keeper) renewAndGetResult() (*RenewalResult, error) {
 		return k.renewFromCA()
 	case KeeperModePoP:
 		return k.renewFromPoP()
-	default:
+	case KeeperModeSelfSign:
 		return k.renewSelfSign()
+	default:
+		return nil, fmt.Errorf("unsupported keeper mode: %s", k.config.Mode)
 	}
 }
 
@@ -302,7 +309,7 @@ func (k *Keeper) renewSelfSign() (*RenewalResult, error) {
 // This is the recommended mode for production as it provides cryptographic key binding.
 func (k *Keeper) renewFromPoP() (*RenewalResult, error) {
 	if k.popClient == nil {
-		return nil, fmt.Errorf("popClient is not initialized; ensure Keeper was created with KeeperModePoP")
+		return nil, fmt.Errorf("PoP client is not initialized; ensure Keeper was created with KeeperModePoP")
 	}
 	if k.config.PrivateKey == nil {
 		return nil, fmt.Errorf("PrivateKey is required for PoP mode")

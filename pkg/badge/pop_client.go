@@ -43,8 +43,10 @@ func NewPoPClientWithHTTPClient(caURL, apiKey string, httpClient *http.Client) *
 			Timeout: 30 * time.Second,
 		}
 	}
+	// Trim trailing slashes (may be multiple)
+	caURL = strings.TrimRight(caURL, "/")
 	return &PoPClient{
-		CAURL:      strings.TrimRight(caURL, "/"),
+		CAURL:      caURL,
 		APIKey:     apiKey,
 		HTTPClient: httpClient,
 	}
@@ -174,12 +176,14 @@ func (c *PoPClient) requestChallenge(ctx context.Context, opts RequestPoPBadgeOp
 
 // submitProof performs Phase 2: Sign the challenge and submit proof for badge issuance.
 func (c *PoPClient) submitProof(ctx context.Context, opts RequestPoPBadgeOptions, challenge *ChallengeResponse) (*RequestPoPBadgeResult, error) {
-	// Validate challenge hasn't expired before signing
+	// Validate challenge hasn't expired before signing.
+	// Add 5-second buffer to account for signing time and network latency.
 	now := time.Now()
-	if !challenge.ExpiresAt.IsZero() && now.After(challenge.ExpiresAt) {
+	const expiryBuffer = 5 * time.Second
+	if !challenge.ExpiresAt.IsZero() && now.Add(expiryBuffer).After(challenge.ExpiresAt) {
 		return nil, &ClientError{
 			Code:    "CHALLENGE_EXPIRED",
-			Message: "challenge expired before proof could be submitted",
+			Message: "challenge expired or expiring too soon to safely submit proof",
 		}
 	}
 
@@ -223,7 +227,8 @@ func (c *PoPClient) submitProof(ctx context.Context, opts RequestPoPBadgeOptions
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	// RFC-003 §5.2.1: Phase 2 for IAL-1 does NOT require API key - proof authenticates
+	// RFC-003 §5.2.1: Phase 2 (PoP submission) is self-authenticating via the signed proof;
+	// Phase 1 (challenge request) still requires the API key.
 	req.Header.Set("User-Agent", "capiscio-core/2.2.0")
 
 	resp, err := c.HTTPClient.Do(req)
@@ -259,7 +264,6 @@ func (c *PoPClient) signProof(claims PoPProofClaims, privateKey crypto.PrivateKe
 
 	// Create signer based on key type
 	var signer jose.Signer
-	var err error
 
 	switch k := privateKey.(type) {
 	case ed25519.PrivateKey:
@@ -268,18 +272,18 @@ func (c *PoPClient) signProof(claims PoPProofClaims, privateKey crypto.PrivateKe
 			Key:       k,
 		}
 		// RFC-003 §6.2: Use capiscio-pop-proof+jwt to distinguish from badge JWTs
+		var err error
 		signer, err = jose.NewSigner(signerKey, &jose.SignerOptions{
 			ExtraHeaders: map[jose.HeaderKey]interface{}{
 				jose.HeaderKey("kid"): keyID,
 				jose.HeaderKey("typ"): "capiscio-pop-proof+jwt",
 			},
 		})
+		if err != nil {
+			return "", fmt.Errorf("failed to create signer: %w", err)
+		}
 	default:
 		return "", fmt.Errorf("unsupported key type: %T", privateKey)
-	}
-
-	if err != nil {
-		return "", fmt.Errorf("failed to create signer: %w", err)
 	}
 
 	// Marshal claims to JSON

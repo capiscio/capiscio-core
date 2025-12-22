@@ -34,7 +34,7 @@ func TestNewPoPClient(t *testing.T) {
 			wantURL: "https://custom.example.com",
 		},
 		{
-			name:    "with multiple trailing slashes",
+			name:    "with multiple trailing slashes uses TrimRight",
 			caURL:   "https://custom.example.com///",
 			apiKey:  "test-key",
 			wantURL: "https://custom.example.com",
@@ -112,14 +112,15 @@ func TestRequestPoPBadge_ChallengePhase(t *testing.T) {
 
 	// Create mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Use RawPath or RequestURI to check URL-encoded path
-		// The DID "did:key:z6MkTest" is URL-encoded as "did%3Akey%3Az6MkTest"
+		// Note: Go's http.Request.URL.Path is automatically decoded by httptest.
+		// The client does use url.PathEscape to encode the DID, but we can only
+		// verify correct routing here (which proves the encoding is working).
 		if r.URL.Path == "/v1/agents/did:key:z6MkTest/badge/challenge" {
 			assert.Equal(t, "POST", r.Method)
 			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 			assert.Equal(t, "test-api-key", r.Header.Get("X-Capiscio-Registry-Key"))
 
-			// Return challenge response
+			// Return challenge response with properly encoded HTU
 			resp := ChallengeResponse{
 				ChallengeID: "test-challenge-id",
 				Nonce:       "test-nonce-12345",
@@ -133,7 +134,7 @@ func TestRequestPoPBadge_ChallengePhase(t *testing.T) {
 			return
 		}
 
-		// Handle PoP submission (Go decodes the path automatically)
+		// Handle PoP submission
 		if r.URL.Path == "/v1/agents/did:key:z6MkTest/badge/pop" {
 			assert.Equal(t, "POST", r.Method)
 			
@@ -208,11 +209,11 @@ func TestRequestPoPBadge_ChallengeExpired(t *testing.T) {
 	require.NoError(t, err)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Return an already-expired challenge
+		// Return a challenge that expires in 2 seconds (less than 5s buffer)
 		resp := ChallengeResponse{
 			ChallengeID: "test-challenge-id",
 			Nonce:       "test-nonce",
-			ExpiresAt:   time.Now().Add(-10 * time.Second), // Expired 10 seconds ago
+			ExpiresAt:   time.Now().Add(2 * time.Second), // Expires too soon (< 5s buffer)
 			Aud:         "https://registry.capisc.io",
 			HTU:         "https://registry.capisc.io/v1/agents/did:key:z6MkTest/badge/pop",
 			HTM:         "POST",
@@ -233,6 +234,7 @@ func TestRequestPoPBadge_ChallengeExpired(t *testing.T) {
 	clientErr, ok := err.(*ClientError)
 	require.True(t, ok, "expected ClientError")
 	assert.Equal(t, "CHALLENGE_EXPIRED", clientErr.Code)
+	assert.Contains(t, clientErr.Message, "expiring too soon")
 }
 
 func TestRequestPoPBadge_PoPError(t *testing.T) {

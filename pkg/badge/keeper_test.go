@@ -35,7 +35,8 @@ func TestKeeper(t *testing.T) {
 		CheckInterval: 100 * time.Millisecond,
 	}
 
-	keeper := badge.NewKeeper(config)
+	keeper, err := badge.NewKeeper(config)
+	require.NoError(t, err)
 
 	// 2. Test Initial Creation
 	err = keeper.CheckAndRenew()
@@ -66,11 +67,84 @@ func TestKeeper(t *testing.T) {
 	forceConfig := config
 	forceConfig.RenewBefore = 2 * time.Hour
 
-	keeper2 := badge.NewKeeper(forceConfig)
+	keeper2, err := badge.NewKeeper(forceConfig)
+	require.NoError(t, err)
 	err = keeper2.CheckAndRenew() // Should overwrite
 	require.NoError(t, err)
 
 	data3, _ := os.ReadFile(badgeFile)
 	token3 := string(data3)
 	assert.NotEqual(t, token1, token3, "Should have renewed")
+}
+
+func TestKeeperModePoP_Initialization(t *testing.T) {
+	_, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	config := badge.KeeperConfig{
+		Mode:          badge.KeeperModePoP,
+		PrivateKey:    priv,
+		AgentDID:      "did:key:z6MkTest",
+		CAURL:         "https://registry.capisc.io",
+		APIKey:        "test-key",
+		OutputFile:    "/tmp/badge.jwt",
+		Expiry:        1 * time.Hour,
+		CheckInterval: 1 * time.Second,
+	}
+
+	keeper, err := badge.NewKeeper(config)
+	require.NoError(t, err)
+	assert.NotNil(t, keeper)
+}
+
+func TestKeeperModePoP_MissingPrivateKey(t *testing.T) {
+	config := badge.KeeperConfig{
+		Mode:          badge.KeeperModePoP,
+		AgentDID:      "did:key:z6MkTest",
+		CAURL:         "https://registry.capisc.io",
+		APIKey:        "test-key",
+		Expiry:        1 * time.Hour,
+		CheckInterval: 1 * time.Second,
+	}
+
+	keeper, err := badge.NewKeeper(config)
+	require.NoError(t, err)
+
+	// Should fail when trying to renew due to missing private key
+	err = keeper.CheckAndRenew()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "PrivateKey is required")
+}
+
+func TestKeeperModePoP_MissingAgentDID(t *testing.T) {
+	_, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	config := badge.KeeperConfig{
+		Mode:          badge.KeeperModePoP,
+		PrivateKey:    priv,
+		CAURL:         "https://registry.capisc.io",
+		APIKey:        "test-key",
+		Expiry:        1 * time.Hour,
+		CheckInterval: 1 * time.Second,
+	}
+
+	keeper, err := badge.NewKeeper(config)
+	require.NoError(t, err)
+
+	// Should fail when trying to renew due to missing AgentDID
+	err = keeper.CheckAndRenew()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "AgentDID is required")
+}
+
+func TestKeeper_UnsupportedMode(t *testing.T) {
+	config := badge.KeeperConfig{
+		Mode: "invalid-mode",
+	}
+
+	keeper, err := badge.NewKeeper(config)
+	require.Error(t, err)
+	assert.Nil(t, keeper)
+	assert.Contains(t, err.Error(), "unsupported keeper mode")
 }

@@ -625,7 +625,10 @@ func (s *BadgeService) StartKeeper(req *pb.StartKeeperRequest, stream pb.BadgeSe
 	}
 
 	// Create keeper
-	keeper := badge.NewKeeper(config)
+	keeper, err := badge.NewKeeper(config)
+	if err != nil {
+		return err
+	}
 
 	// Create event channel
 	events := make(chan badge.KeeperEvent, 10)
