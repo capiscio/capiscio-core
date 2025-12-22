@@ -58,24 +58,20 @@ func TestNewPoPClient(t *testing.T) {
 	}
 }
 
-func TestTrimTrailingSlash(t *testing.T) {
-	tests := []struct {
-		input string
-		want  string
-	}{
-		{"https://example.com", "https://example.com"},
-		{"https://example.com/", "https://example.com"},
-		{"https://example.com///", "https://example.com"},
-		{"", ""},
-		{"/", ""},
-	}
+func TestNewPoPClientWithHTTPClient(t *testing.T) {
+	customClient := &http.Client{Timeout: 60 * time.Second}
 
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			got := trimTrailingSlash(tt.input)
-			assert.Equal(t, tt.want, got)
-		})
-	}
+	t.Run("with custom HTTP client", func(t *testing.T) {
+		client := NewPoPClientWithHTTPClient("https://example.com", "key", customClient)
+		assert.Equal(t, customClient, client.HTTPClient)
+		assert.Equal(t, 60*time.Second, client.HTTPClient.Timeout)
+	})
+
+	t.Run("with nil HTTP client uses default", func(t *testing.T) {
+		client := NewPoPClientWithHTTPClient("https://example.com", "key", nil)
+		assert.NotNil(t, client.HTTPClient)
+		assert.Equal(t, 30*time.Second, client.HTTPClient.Timeout)
+	})
 }
 
 func TestRequestPoPBadge_ValidationErrors(t *testing.T) {
@@ -89,14 +85,14 @@ func TestRequestPoPBadge_ValidationErrors(t *testing.T) {
 		{
 			name:    "missing agent DID",
 			opts:    RequestPoPBadgeOptions{},
-			wantErr: "agent_did is required",
+			wantErr: "AgentDID is required",
 		},
 		{
 			name: "missing private key",
 			opts: RequestPoPBadgeOptions{
 				AgentDID: "did:key:z6MkTest",
 			},
-			wantErr: "private_key is required for PoP",
+			wantErr: "PrivateKey is required for PoP",
 		},
 	}
 
@@ -205,6 +201,38 @@ func TestRequestPoPBadge_ChallengeError(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "challenge")
+}
+
+func TestRequestPoPBadge_ChallengeExpired(t *testing.T) {
+	_, privateKey, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Return an already-expired challenge
+		resp := ChallengeResponse{
+			ChallengeID: "test-challenge-id",
+			Nonce:       "test-nonce",
+			ExpiresAt:   time.Now().Add(-10 * time.Second), // Expired 10 seconds ago
+			Aud:         "https://registry.capisc.io",
+			HTU:         "https://registry.capisc.io/v1/agents/did:key:z6MkTest/badge/pop",
+			HTM:         "POST",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	client := NewPoPClient(server.URL, "test-key")
+
+	_, err = client.RequestPoPBadge(context.Background(), RequestPoPBadgeOptions{
+		AgentDID:   "did:key:z6MkTest",
+		PrivateKey: privateKey,
+	})
+
+	require.Error(t, err)
+	clientErr, ok := err.(*ClientError)
+	require.True(t, ok, "expected ClientError")
+	assert.Equal(t, "CHALLENGE_EXPIRED", clientErr.Code)
 }
 
 func TestRequestPoPBadge_PoPError(t *testing.T) {

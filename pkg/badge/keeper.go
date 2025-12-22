@@ -301,11 +301,14 @@ func (k *Keeper) renewSelfSign() (*RenewalResult, error) {
 // renewFromPoP requests a new badge using Proof of Possession (RFC-003 IAL-1).
 // This is the recommended mode for production as it provides cryptographic key binding.
 func (k *Keeper) renewFromPoP() (*RenewalResult, error) {
+	if k.popClient == nil {
+		return nil, fmt.Errorf("popClient is not initialized; ensure Keeper was created with KeeperModePoP")
+	}
 	if k.config.PrivateKey == nil {
-		return nil, fmt.Errorf("private_key is required for PoP mode")
+		return nil, fmt.Errorf("PrivateKey is required for PoP mode")
 	}
 	if k.config.AgentDID == "" {
-		return nil, fmt.Errorf("agent_did is required for PoP mode")
+		return nil, fmt.Errorf("AgentDID is required for PoP mode")
 	}
 
 	result, err := k.popClient.RequestPoPBadge(context.Background(), RequestPoPBadgeOptions{

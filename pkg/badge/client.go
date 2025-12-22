@@ -87,7 +87,10 @@ func (c *Client) createBadgeRequest(ctx context.Context, agentID string, body []
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	// RFC-003 §3.1: Registry API keys MUST use X-Capiscio-Registry-Key, NOT Authorization: Bearer
+	// RFC-003 §3.1: Registry API keys MUST use X-Capiscio-Registry-Key, NOT Authorization: Bearer.
+	// NOTE: Earlier IAL-0 clients (pre-v2.2.0) used Authorization: Bearer for registry API keys.
+	// This client always sends X-Capiscio-Registry-Key. Ensure the Registry is configured to
+	// accept this header as documented in RFC-003.
 	req.Header.Set("X-Capiscio-Registry-Key", c.APIKey)
 	req.Header.Set("User-Agent", "capiscio-core/2.2.0")
 

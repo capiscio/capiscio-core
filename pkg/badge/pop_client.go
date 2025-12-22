@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/go-jose/go-jose/v4"
@@ -25,25 +26,28 @@ type PoPClient struct {
 	HTTPClient *http.Client
 }
 
-// NewPoPClient creates a new PoP badge client.
+// NewPoPClient creates a new PoP badge client with a default HTTP client.
+// The default HTTP client uses a 30-second timeout.
 func NewPoPClient(caURL, apiKey string) *PoPClient {
+	return NewPoPClientWithHTTPClient(caURL, apiKey, nil)
+}
+
+// NewPoPClientWithHTTPClient creates a new PoP badge client with a custom HTTP client.
+// If httpClient is nil, a default client with 30-second timeout is used.
+func NewPoPClientWithHTTPClient(caURL, apiKey string, httpClient *http.Client) *PoPClient {
 	if caURL == "" {
 		caURL = DefaultCAURL
 	}
-	return &PoPClient{
-		CAURL:  trimTrailingSlash(caURL),
-		APIKey: apiKey,
-		HTTPClient: &http.Client{
+	if httpClient == nil {
+		httpClient = &http.Client{
 			Timeout: 30 * time.Second,
-		},
+		}
 	}
-}
-
-func trimTrailingSlash(s string) string {
-	for len(s) > 0 && s[len(s)-1] == '/' {
-		s = s[:len(s)-1]
+	return &PoPClient{
+		CAURL:      strings.TrimRight(caURL, "/"),
+		APIKey:     apiKey,
+		HTTPClient: httpClient,
 	}
-	return s
 }
 
 // RequestPoPBadgeOptions contains options for PoP badge request.
@@ -99,10 +103,10 @@ type PoPProofClaims struct {
 // This provides cryptographic proof that the requester controls the DID's private key.
 func (c *PoPClient) RequestPoPBadge(ctx context.Context, opts RequestPoPBadgeOptions) (*RequestPoPBadgeResult, error) {
 	if opts.AgentDID == "" {
-		return nil, fmt.Errorf("agent_did is required")
+		return nil, fmt.Errorf("AgentDID is required")
 	}
 	if opts.PrivateKey == nil {
-		return nil, fmt.Errorf("private_key is required for PoP")
+		return nil, fmt.Errorf("PrivateKey is required for PoP")
 	}
 
 	// Phase 1: Request challenge
@@ -170,8 +174,16 @@ func (c *PoPClient) requestChallenge(ctx context.Context, opts RequestPoPBadgeOp
 
 // submitProof performs Phase 2: Sign the challenge and submit proof for badge issuance.
 func (c *PoPClient) submitProof(ctx context.Context, opts RequestPoPBadgeOptions, challenge *ChallengeResponse) (*RequestPoPBadgeResult, error) {
-	// Build proof claims per RFC-003 §6.2
+	// Validate challenge hasn't expired before signing
 	now := time.Now()
+	if !challenge.ExpiresAt.IsZero() && now.After(challenge.ExpiresAt) {
+		return nil, &ClientError{
+			Code:    "CHALLENGE_EXPIRED",
+			Message: "challenge expired before proof could be submitted",
+		}
+	}
+
+	// Build proof claims per RFC-003 §6.2
 	proofClaims := PoPProofClaims{
 		CID:   challenge.ChallengeID,
 		Nonce: challenge.Nonce,
@@ -235,10 +247,14 @@ func (c *PoPClient) submitProof(ctx context.Context, opts RequestPoPBadgeOptions
 // signProof signs the proof claims with the agent's private key.
 func (c *PoPClient) signProof(claims PoPProofClaims, privateKey crypto.PrivateKey, agentDID string) (string, error) {
 	// Determine key ID from DID
+	// For did:key, the fragment is the multibase identifier (everything after "did:key:")
 	keyID := agentDID
-	if len(agentDID) > 8 && agentDID[:8] == "did:key:" {
-		// For did:key, the key ID is the DID with fragment
-		keyID = agentDID + "#" + agentDID[8:]
+	const didKeyPrefix = "did:key:"
+	if strings.HasPrefix(agentDID, didKeyPrefix) {
+		multibaseID := agentDID[len(didKeyPrefix):]
+		if multibaseID != "" {
+			keyID = agentDID + "#" + multibaseID
+		}
 	}
 
 	// Create signer based on key type
@@ -251,10 +267,11 @@ func (c *PoPClient) signProof(claims PoPProofClaims, privateKey crypto.PrivateKe
 			Algorithm: jose.EdDSA,
 			Key:       k,
 		}
+		// RFC-003 §6.2: Use capiscio-pop-proof+jwt to distinguish from badge JWTs
 		signer, err = jose.NewSigner(signerKey, &jose.SignerOptions{
 			ExtraHeaders: map[jose.HeaderKey]interface{}{
 				jose.HeaderKey("kid"): keyID,
-				jose.HeaderKey("typ"): "JWT",
+				jose.HeaderKey("typ"): "capiscio-pop-proof+jwt",
 			},
 		})
 	default:
@@ -294,21 +311,30 @@ func (c *PoPClient) parseErrorResponse(statusCode int, respBody []byte, phase st
 		}
 	}
 
+	// Sanitize response body to avoid leaking sensitive information in logs
+	sanitizedBody := string(respBody)
+	const maxBodyLen = 256
+	if len(sanitizedBody) > maxBodyLen {
+		sanitizedBody = sanitizedBody[:maxBodyLen] + "...(truncated)"
+	}
+
 	switch statusCode {
 	case http.StatusUnauthorized:
 		return &ClientError{Code: "AUTH_INVALID", Message: fmt.Sprintf("%s phase: invalid or expired API key", phase)}
 	case http.StatusForbidden:
-		return &ClientError{Code: "FORBIDDEN", Message: fmt.Sprintf("%s phase: forbidden - %s", phase, string(respBody))}
+		return &ClientError{Code: "FORBIDDEN", Message: fmt.Sprintf("%s phase: forbidden - %s", phase, sanitizedBody)}
 	case http.StatusNotFound:
 		return &ClientError{Code: "NOT_FOUND", Message: fmt.Sprintf("%s phase: resource not found", phase)}
 	case http.StatusTooManyRequests:
 		return &ClientError{Code: "RATE_LIMITED", Message: fmt.Sprintf("%s phase: rate limit exceeded", phase)}
 	default:
-		return &ClientError{Code: "CA_ERROR", Message: fmt.Sprintf("%s phase: CA returned status %d: %s", phase, statusCode, string(respBody))}
+		return &ClientError{Code: "CA_ERROR", Message: fmt.Sprintf("%s phase: CA returned status %d: %s", phase, statusCode, sanitizedBody)}
 	}
 }
 
 // parsePoPResponse parses a successful PoP badge response.
+// Note: The server uses snake_case for JSON field names (trust_level, assurance_level)
+// as per the RFC-003 API specification. This differs from the IAL-0 endpoint.
 func (c *PoPClient) parsePoPResponse(respBody []byte) (*RequestPoPBadgeResult, error) {
 	var caResp struct {
 		Success bool `json:"success"`
