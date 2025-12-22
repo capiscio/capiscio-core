@@ -366,7 +366,10 @@ func runSelfSignKeeper(ctx context.Context) error {
 	}
 
 	// Run Keeper
-	keeper := badge.NewKeeper(config)
+	keeper, err := badge.NewKeeper(config)
+	if err != nil {
+		return err
+	}
 	fmt.Printf("🔄 Starting Badge Keeper (Self-Sign Mode)\n")
 	fmt.Printf("   DID: %s\n", didKey)
 	fmt.Printf("   Output: %s\n", keepOutFile)
