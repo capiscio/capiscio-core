@@ -776,3 +776,150 @@ func keeperEventTypeToPB(t badge.KeeperEventType) pb.KeeperEventType {
 		return pb.KeeperEventType_KEEPER_EVENT_UNSPECIFIED
 	}
 }
+
+// ============================================================================
+// Domain Validated (DV) Badge Orders (RFC-002 v1.2)
+// ============================================================================
+
+// CreateDVOrder creates a new DV badge order.
+func (s *BadgeService) CreateDVOrder(ctx context.Context, req *pb.CreateDVOrderRequest) (*pb.CreateDVOrderResponse, error) {
+	if req.Domain == "" {
+		return &pb.CreateDVOrderResponse{
+			Success:   false,
+			Error:     "domain is required",
+			ErrorCode: "INVALID_INPUT",
+		}, nil
+	}
+
+	if req.ChallengeType != "http-01" && req.ChallengeType != "dns-01" {
+		return &pb.CreateDVOrderResponse{
+			Success:   false,
+			Error:     fmt.Sprintf("invalid challenge_type: %s (must be 'http-01' or 'dns-01')", req.ChallengeType),
+			ErrorCode: "INVALID_INPUT",
+		}, nil
+	}
+
+	if req.Jwk == "" {
+		return &pb.CreateDVOrderResponse{
+			Success:   false,
+			Error:     "jwk is required",
+			ErrorCode: "INVALID_INPUT",
+		}, nil
+	}
+
+	// Parse JWK
+	var jwk jose.JSONWebKey
+	if err := json.Unmarshal([]byte(req.Jwk), &jwk); err != nil {
+		return &pb.CreateDVOrderResponse{
+			Success:   false,
+			Error:     fmt.Sprintf("failed to parse JWK: %v", err),
+			ErrorCode: "INVALID_KEY",
+		}, nil
+	}
+
+	// Make HTTP request to server
+	caURL := req.CaUrl
+	if caURL == "" {
+		caURL = badge.DefaultCAURL
+	}
+
+	client := badge.NewDVClient(caURL)
+	order, err := client.CreateOrder(ctx, req.Domain, req.ChallengeType, &jwk)
+	if err != nil {
+		return &pb.CreateDVOrderResponse{
+			Success:   false,
+			Error:     err.Error(),
+			ErrorCode: "CA_ERROR",
+		}, nil
+	}
+
+	return &pb.CreateDVOrderResponse{
+		Success:        true,
+		OrderId:        order.ID,
+		Domain:         order.Domain,
+		ChallengeType:  order.ChallengeType,
+		ChallengeToken: order.ChallengeToken,
+		Status:         order.Status,
+		ValidationUrl:  order.ValidationURL,
+		DnsRecord:      order.DNSRecord,
+		ExpiresAt:      order.ExpiresAt.Unix(),
+	}, nil
+}
+
+// GetDVOrder gets the status of a DV badge order.
+func (s *BadgeService) GetDVOrder(ctx context.Context, req *pb.GetDVOrderRequest) (*pb.GetDVOrderResponse, error) {
+	if req.OrderId == "" {
+		return &pb.GetDVOrderResponse{
+			Success:   false,
+			Error:     "order_id is required",
+			ErrorCode: "INVALID_INPUT",
+		}, nil
+	}
+
+	// Make HTTP request to server
+	caURL := req.CaUrl
+	if caURL == "" {
+		caURL = badge.DefaultCAURL
+	}
+
+	client := badge.NewDVClient(caURL)
+	order, err := client.GetOrder(ctx, req.OrderId)
+	if err != nil {
+		return &pb.GetDVOrderResponse{
+			Success:   false,
+			Error:     err.Error(),
+			ErrorCode: "CA_ERROR",
+		}, nil
+	}
+
+	resp := &pb.GetDVOrderResponse{
+		Success:        true,
+		OrderId:        order.ID,
+		Domain:         order.Domain,
+		ChallengeType:  order.ChallengeType,
+		ChallengeToken: order.ChallengeToken,
+		Status:         order.Status,
+		ValidationUrl:  order.ValidationURL,
+		DnsRecord:      order.DNSRecord,
+		ExpiresAt:      order.ExpiresAt.Unix(),
+	}
+
+	if order.FinalizedAt != nil {
+		resp.FinalizedAt = order.FinalizedAt.Unix()
+	}
+
+	return resp, nil
+}
+
+// FinalizeDVOrder finalizes a DV badge order and receives a grant.
+func (s *BadgeService) FinalizeDVOrder(ctx context.Context, req *pb.FinalizeDVOrderRequest) (*pb.FinalizeDVOrderResponse, error) {
+	if req.OrderId == "" {
+		return &pb.FinalizeDVOrderResponse{
+			Success:   false,
+			Error:     "order_id is required",
+			ErrorCode: "INVALID_INPUT",
+		}, nil
+	}
+
+	// Make HTTP request to server
+	caURL := req.CaUrl
+	if caURL == "" {
+		caURL = badge.DefaultCAURL
+	}
+
+	client := badge.NewDVClient(caURL)
+	grant, err := client.FinalizeOrder(ctx, req.OrderId)
+	if err != nil {
+		return &pb.FinalizeDVOrderResponse{
+			Success:   false,
+			Error:     err.Error(),
+			ErrorCode: "CA_ERROR",
+		}, nil
+	}
+
+	return &pb.FinalizeDVOrderResponse{
+		Success:   true,
+		Grant:     grant.Grant,
+		ExpiresAt: grant.ExpiresAt.Unix(),
+	}, nil
+}

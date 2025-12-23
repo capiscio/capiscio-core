@@ -27,6 +27,15 @@ service BadgeService {
   // This provides IAL-1 assurance with cryptographic key binding
   rpc RequestPoPBadge(RequestPoPBadgeRequest) returns (RequestPoPBadgeResponse);
   
+  // Create a Domain Validated (DV) badge order (RFC-002 v1.2)
+  rpc CreateDVOrder(CreateDVOrderRequest) returns (CreateDVOrderResponse);
+  
+  // Get DV order status
+  rpc GetDVOrder(GetDVOrderRequest) returns (GetDVOrderResponse);
+  
+  // Finalize DV order and receive grant
+  rpc FinalizeDVOrder(FinalizeDVOrderRequest) returns (FinalizeDVOrderResponse);
+  
   // Start a badge keeper that automatically renews badges (RFC-002 §7.3)
   // Returns a stream of keeper events (started, renewed, error, stopped)
   rpc StartKeeper(StartKeeperRequest) returns (stream KeeperEvent);
@@ -323,4 +332,134 @@ message KeeperEvent {
   
   // The badge token itself (for RENEWED events, optional)
   string token = 9;
+}
+
+// ============================================================================
+// Domain Validated (DV) Badge Orders (RFC-002 v1.2)
+// ============================================================================
+
+// Request to create a DV badge order
+message CreateDVOrderRequest {
+  // Domain to validate (e.g., "example.com")
+  string domain = 1;
+  
+  // Challenge type: "http-01" or "dns-01"
+  string challenge_type = 2;
+  
+  // Public key in JWK format (JSON string)
+  string jwk = 3;
+  
+  // CA URL (default: https://registry.capisc.io)
+  string ca_url = 4;
+}
+
+// Response from DV order creation
+message CreateDVOrderResponse {
+  // Whether the request succeeded
+  bool success = 1;
+  
+  // Order ID (UUID)
+  string order_id = 2;
+  
+  // Domain
+  string domain = 3;
+  
+  // Challenge type
+  string challenge_type = 4;
+  
+  // Challenge token
+  string challenge_token = 5;
+  
+  // Order status ("pending", "valid", "invalid")
+  string status = 6;
+  
+  // Validation URL (for HTTP-01)
+  string validation_url = 7;
+  
+  // DNS record value (for DNS-01)
+  string dns_record = 8;
+  
+  // When the order expires (Unix timestamp)
+  int64 expires_at = 9;
+  
+  // Error message if success=false
+  string error = 10;
+  
+  // Error code
+  string error_code = 11;
+}
+
+// Request to get DV order status
+message GetDVOrderRequest {
+  // Order ID (UUID)
+  string order_id = 1;
+  
+  // CA URL (default: https://registry.capisc.io)
+  string ca_url = 2;
+}
+
+// Response with DV order status
+message GetDVOrderResponse {
+  // Whether the request succeeded
+  bool success = 1;
+  
+  // Order ID (UUID)
+  string order_id = 2;
+  
+  // Domain
+  string domain = 3;
+  
+  // Challenge type
+  string challenge_type = 4;
+  
+  // Challenge token
+  string challenge_token = 5;
+  
+  // Order status
+  string status = 6;
+  
+  // Validation URL (for HTTP-01)
+  string validation_url = 7;
+  
+  // DNS record value (for DNS-01)
+  string dns_record = 8;
+  
+  // When the order expires (Unix timestamp)
+  int64 expires_at = 9;
+  
+  // When the order was finalized (Unix timestamp, optional)
+  int64 finalized_at = 10;
+  
+  // Error message if success=false
+  string error = 11;
+  
+  // Error code
+  string error_code = 12;
+}
+
+// Request to finalize DV order
+message FinalizeDVOrderRequest {
+  // Order ID (UUID)
+  string order_id = 1;
+  
+  // CA URL (default: https://registry.capisc.io)
+  string ca_url = 2;
+}
+
+// Response from DV order finalization
+message FinalizeDVOrderResponse {
+  // Whether the request succeeded
+  bool success = 1;
+  
+  // DV grant JWT
+  string grant = 2;
+  
+  // When the grant expires (Unix timestamp)
+  int64 expires_at = 3;
+  
+  // Error message if success=false
+  string error = 4;
+  
+  // Error code
+  string error_code = 5;
 }

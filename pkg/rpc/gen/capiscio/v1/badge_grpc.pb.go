@@ -27,6 +27,9 @@ const (
 	BadgeService_ParseBadge_FullMethodName             = "/capiscio.v1.BadgeService/ParseBadge"
 	BadgeService_RequestBadge_FullMethodName           = "/capiscio.v1.BadgeService/RequestBadge"
 	BadgeService_RequestPoPBadge_FullMethodName        = "/capiscio.v1.BadgeService/RequestPoPBadge"
+	BadgeService_CreateDVOrder_FullMethodName          = "/capiscio.v1.BadgeService/CreateDVOrder"
+	BadgeService_GetDVOrder_FullMethodName             = "/capiscio.v1.BadgeService/GetDVOrder"
+	BadgeService_FinalizeDVOrder_FullMethodName        = "/capiscio.v1.BadgeService/FinalizeDVOrder"
 	BadgeService_StartKeeper_FullMethodName            = "/capiscio.v1.BadgeService/StartKeeper"
 )
 
@@ -50,6 +53,12 @@ type BadgeServiceClient interface {
 	// Request a badge using Proof of Possession (RFC-003)
 	// This provides IAL-1 assurance with cryptographic key binding
 	RequestPoPBadge(ctx context.Context, in *RequestPoPBadgeRequest, opts ...grpc.CallOption) (*RequestPoPBadgeResponse, error)
+	// Create a Domain Validated (DV) badge order (RFC-002 v1.2)
+	CreateDVOrder(ctx context.Context, in *CreateDVOrderRequest, opts ...grpc.CallOption) (*CreateDVOrderResponse, error)
+	// Get DV order status
+	GetDVOrder(ctx context.Context, in *GetDVOrderRequest, opts ...grpc.CallOption) (*GetDVOrderResponse, error)
+	// Finalize DV order and receive grant
+	FinalizeDVOrder(ctx context.Context, in *FinalizeDVOrderRequest, opts ...grpc.CallOption) (*FinalizeDVOrderResponse, error)
 	// Start a badge keeper that automatically renews badges (RFC-002 §7.3)
 	// Returns a stream of keeper events (started, renewed, error, stopped)
 	StartKeeper(ctx context.Context, in *StartKeeperRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[KeeperEvent], error)
@@ -123,6 +132,36 @@ func (c *badgeServiceClient) RequestPoPBadge(ctx context.Context, in *RequestPoP
 	return out, nil
 }
 
+func (c *badgeServiceClient) CreateDVOrder(ctx context.Context, in *CreateDVOrderRequest, opts ...grpc.CallOption) (*CreateDVOrderResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateDVOrderResponse)
+	err := c.cc.Invoke(ctx, BadgeService_CreateDVOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *badgeServiceClient) GetDVOrder(ctx context.Context, in *GetDVOrderRequest, opts ...grpc.CallOption) (*GetDVOrderResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDVOrderResponse)
+	err := c.cc.Invoke(ctx, BadgeService_GetDVOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *badgeServiceClient) FinalizeDVOrder(ctx context.Context, in *FinalizeDVOrderRequest, opts ...grpc.CallOption) (*FinalizeDVOrderResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FinalizeDVOrderResponse)
+	err := c.cc.Invoke(ctx, BadgeService_FinalizeDVOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *badgeServiceClient) StartKeeper(ctx context.Context, in *StartKeeperRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[KeeperEvent], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &BadgeService_ServiceDesc.Streams[0], BadgeService_StartKeeper_FullMethodName, cOpts...)
@@ -162,6 +201,12 @@ type BadgeServiceServer interface {
 	// Request a badge using Proof of Possession (RFC-003)
 	// This provides IAL-1 assurance with cryptographic key binding
 	RequestPoPBadge(context.Context, *RequestPoPBadgeRequest) (*RequestPoPBadgeResponse, error)
+	// Create a Domain Validated (DV) badge order (RFC-002 v1.2)
+	CreateDVOrder(context.Context, *CreateDVOrderRequest) (*CreateDVOrderResponse, error)
+	// Get DV order status
+	GetDVOrder(context.Context, *GetDVOrderRequest) (*GetDVOrderResponse, error)
+	// Finalize DV order and receive grant
+	FinalizeDVOrder(context.Context, *FinalizeDVOrderRequest) (*FinalizeDVOrderResponse, error)
 	// Start a badge keeper that automatically renews badges (RFC-002 §7.3)
 	// Returns a stream of keeper events (started, renewed, error, stopped)
 	StartKeeper(*StartKeeperRequest, grpc.ServerStreamingServer[KeeperEvent]) error
@@ -192,6 +237,15 @@ func (UnimplementedBadgeServiceServer) RequestBadge(context.Context, *RequestBad
 }
 func (UnimplementedBadgeServiceServer) RequestPoPBadge(context.Context, *RequestPoPBadgeRequest) (*RequestPoPBadgeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RequestPoPBadge not implemented")
+}
+func (UnimplementedBadgeServiceServer) CreateDVOrder(context.Context, *CreateDVOrderRequest) (*CreateDVOrderResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateDVOrder not implemented")
+}
+func (UnimplementedBadgeServiceServer) GetDVOrder(context.Context, *GetDVOrderRequest) (*GetDVOrderResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDVOrder not implemented")
+}
+func (UnimplementedBadgeServiceServer) FinalizeDVOrder(context.Context, *FinalizeDVOrderRequest) (*FinalizeDVOrderResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method FinalizeDVOrder not implemented")
 }
 func (UnimplementedBadgeServiceServer) StartKeeper(*StartKeeperRequest, grpc.ServerStreamingServer[KeeperEvent]) error {
 	return status.Error(codes.Unimplemented, "method StartKeeper not implemented")
@@ -325,6 +379,60 @@ func _BadgeService_RequestPoPBadge_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BadgeService_CreateDVOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateDVOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BadgeServiceServer).CreateDVOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BadgeService_CreateDVOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BadgeServiceServer).CreateDVOrder(ctx, req.(*CreateDVOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BadgeService_GetDVOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDVOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BadgeServiceServer).GetDVOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BadgeService_GetDVOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BadgeServiceServer).GetDVOrder(ctx, req.(*GetDVOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BadgeService_FinalizeDVOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FinalizeDVOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BadgeServiceServer).FinalizeDVOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BadgeService_FinalizeDVOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BadgeServiceServer).FinalizeDVOrder(ctx, req.(*FinalizeDVOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _BadgeService_StartKeeper_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(StartKeeperRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -366,6 +474,18 @@ var BadgeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RequestPoPBadge",
 			Handler:    _BadgeService_RequestPoPBadge_Handler,
+		},
+		{
+			MethodName: "CreateDVOrder",
+			Handler:    _BadgeService_CreateDVOrder_Handler,
+		},
+		{
+			MethodName: "GetDVOrder",
+			Handler:    _BadgeService_GetDVOrder_Handler,
+		},
+		{
+			MethodName: "FinalizeDVOrder",
+			Handler:    _BadgeService_FinalizeDVOrder_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

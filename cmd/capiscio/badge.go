@@ -6,6 +6,7 @@ import (
 	"crypto"
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -918,12 +919,364 @@ Example:
 	},
 }
 
+// DV command variables
+var (
+	dvDomain        string
+	dvChallengeType string
+	dvKeyFile       string
+	dvCA            string
+	dvOrderID       string
+	dvOutFile       string
+)
+
+var dvCmd = &cobra.Command{
+	Use:   "dv",
+	Short: "Manage Domain Validated (DV) badge orders",
+	Long: `Manage Domain Validated (DV) badge orders using the ACME-Lite protocol.
+
+DV badges provide cryptographic proof of domain ownership (Trust Level 1).
+The process involves:
+1. Create an order for a domain with challenge type (HTTP-01 or DNS-01)
+2. Provision the challenge (create file or DNS record)
+3. Finalize the order to receive a DV grant (JWT)
+4. Use the grant to mint a DV badge
+
+Examples:
+  # Create HTTP-01 challenge order
+  capiscio badge dv create --domain example.com --challenge-type http-01 --key agent.jwk
+
+  # Check order status
+  capiscio badge dv status --order-id <uuid> --ca https://registry.capisc.io
+
+  # Finalize order after provisioning challenge
+  capiscio badge dv finalize --order-id <uuid> --ca https://registry.capisc.io --out grant.jwt`,
+}
+
+var dvCreateCmd = &cobra.Command{
+	Use:   "create",
+	Short: "Create a DV badge order",
+	Long: `Create a Domain Validated badge order with specified challenge type.
+
+Challenge Types:
+  http-01: Place a file at http://<domain>/.well-known/capiscio-challenge/<token>
+  dns-01:  Create DNS TXT record at _capiscio-challenge.<domain>
+
+The command generates a JWK thumbprint from your key and creates an order.
+Anonymous DV orders are supported (no API key required per RFC-002 v1.2).
+
+Example:
+  capiscio badge dv create \
+    --domain example.com \
+    --challenge-type http-01 \
+    --key agent.jwk \
+    --ca https://registry.capisc.io`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := cmd.Context()
+
+		// Validate inputs
+		if dvDomain == "" {
+			return fmt.Errorf("--domain is required")
+		}
+		if dvChallengeType != "http-01" && dvChallengeType != "dns-01" {
+			return fmt.Errorf("--challenge-type must be 'http-01' or 'dns-01' (got: %s)", dvChallengeType)
+		}
+		if dvKeyFile == "" {
+			return fmt.Errorf("--key is required (path to JWK file)")
+		}
+
+		// Load key and compute thumbprint
+		keyData, err := os.ReadFile(dvKeyFile)
+		if err != nil {
+			return fmt.Errorf("failed to read key file: %w", err)
+		}
+
+		var jwk jose.JSONWebKey
+		if err := json.Unmarshal(keyData, &jwk); err != nil {
+			return fmt.Errorf("failed to parse JWK: %w", err)
+		}
+
+		// Compute JWK thumbprint
+		thumbprint, err := jwk.Thumbprint(crypto.SHA256)
+		if err != nil {
+			return fmt.Errorf("failed to compute JWK thumbprint: %w", err)
+		}
+		thumbprintB64 := base64.RawURLEncoding.EncodeToString(thumbprint)
+
+		// Build request
+		reqBody := map[string]interface{}{
+			"domain":         dvDomain,
+			"challenge_type": dvChallengeType,
+			"jwk":            jwk,
+		}
+
+		bodyBytes, err := json.Marshal(reqBody)
+		if err != nil {
+			return fmt.Errorf("failed to marshal request: %w", err)
+		}
+
+		// Create HTTP request (anonymous - no API key)
+		url := fmt.Sprintf("%s/v1/badges/dv/orders", strings.TrimSuffix(dvCA, "/"))
+		req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(bodyBytes))
+		if err != nil {
+			return fmt.Errorf("failed to create request: %w", err)
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("User-Agent", "capiscio-cli/2.3.0")
+
+		// Send request
+		client := &http.Client{Timeout: 30 * time.Second}
+		resp, err := client.Do(req)
+		if err != nil {
+			return fmt.Errorf("request failed: %w", err)
+		}
+		defer resp.Body.Close()
+
+		// Read response
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("failed to read response: %w", err)
+		}
+
+		// Parse response
+		var apiResp struct {
+			ID           string    `json:"id"`
+			Domain        string    `json:"domain"`
+			ChallengeType string    `json:"challenge_type"`
+			Status        string    `json:"status"`
+			Challenge struct {
+				Type   string `json:"type"`
+				URL    string `json:"url"`
+				Token  string `json:"token"`
+				Status string `json:"status"`
+			} `json:"challenge"`
+			ExpiresAt time.Time `json:"expires_at"`
+		}
+
+		if err := json.Unmarshal(respBody, &apiResp); err != nil {
+			return fmt.Errorf("failed to parse response: %w (status: %d, body: %s)", err, resp.StatusCode, string(respBody))
+		}
+		
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			return fmt.Errorf("order creation failed (status: %d, body: %s)", resp.StatusCode, string(respBody))
+		}
+
+		// Display result
+		fmt.Printf("✅ DV Order Created!\n\n")
+		fmt.Printf("📋 Order Details:\n")
+		fmt.Printf("   Order ID: %s\n", apiResp.ID)
+		fmt.Printf("   Domain: %s\n", apiResp.Domain)
+		fmt.Printf("   Challenge Type: %s\n", apiResp.ChallengeType)
+		fmt.Printf("   Status: %s\n", apiResp.Status)
+		fmt.Printf("   Expires: %s\n", apiResp.ExpiresAt.Format(time.RFC3339))
+		fmt.Printf("   JWK Thumbprint: %s\n", thumbprintB64)
+
+		fmt.Printf("\n🔑 Challenge Provisioning:\n")
+		if dvChallengeType == "http-01" {
+			fmt.Printf("   1. Create file at:\n")
+			fmt.Printf("      %s\n", apiResp.Challenge.URL)
+			fmt.Printf("   2. File content:\n")
+			fmt.Printf("      %s\n", apiResp.Challenge.Token)
+			fmt.Printf("   3. Ensure accessible via HTTP (port 80)\n")
+		} else {
+			// For DNS-01, the token contains the TXT record value
+			fmt.Printf("   1. Create DNS TXT record:\n")
+			fmt.Printf("      Name: _capiscio-challenge.%s\n", dvDomain)
+			fmt.Printf("      Value: %s\n", apiResp.Challenge.Token)
+			fmt.Printf("   2. Wait for DNS propagation (check with: dig TXT _capiscio-challenge.%s)\n", dvDomain)
+		}
+
+		fmt.Printf("\n⏭️  Next Steps:\n")
+		fmt.Printf("   1. Provision the challenge as shown above\n")
+		fmt.Printf("   2. Finalize the order:\n")
+		fmt.Printf("      capiscio badge dv finalize --order-id %s --ca %s --out grant.jwt\n", apiResp.ID, dvCA)
+
+		return nil
+	},
+}
+
+var dvStatusCmd = &cobra.Command{
+	Use:   "status",
+	Short: "Check DV order status",
+	Long: `Check the status of a Domain Validated badge order.
+
+Example:
+  capiscio badge dv status \
+    --order-id <uuid> \
+    --ca https://registry.capisc.io`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := cmd.Context()
+
+		if dvOrderID == "" {
+			return fmt.Errorf("--order-id is required")
+		}
+
+		// Create HTTP request (anonymous)
+		url := fmt.Sprintf("%s/v1/badges/dv/orders/%s", strings.TrimSuffix(dvCA, "/"), dvOrderID)
+		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+		if err != nil {
+			return fmt.Errorf("failed to create request: %w", err)
+		}
+
+		req.Header.Set("User-Agent", "capiscio-cli/2.3.0")
+
+		// Send request
+		client := &http.Client{Timeout: 30 * time.Second}
+		resp, err := client.Do(req)
+		if err != nil {
+			return fmt.Errorf("request failed: %w", err)
+		}
+		defer resp.Body.Close()
+
+		// Read response
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("failed to read response: %w", err)
+		}
+
+		// Parse response
+		var apiResp struct {
+			ID           string    `json:"id"`
+			Domain        string    `json:"domain"`
+			ChallengeType string    `json:"challenge_type"`
+			Status        string    `json:"status"`
+			Challenge struct {
+				Type   string `json:"type"`
+				URL    string `json:"url"`
+				Token  string `json:"token"`
+				Status string `json:"status"`
+			} `json:"challenge"`
+			ExpiresAt   time.Time  `json:"expires_at"`
+			FinalizedAt *time.Time `json:"finalized_at,omitempty"`
+		}
+
+		if err := json.Unmarshal(respBody, &apiResp); err != nil {
+			return fmt.Errorf("failed to parse response: %w", err)
+		}
+
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			return fmt.Errorf("status check failed (status: %d, body: %s)", resp.StatusCode, string(respBody))
+		}
+
+		// Display result
+		fmt.Printf("📋 Order Status:\n")
+		fmt.Printf("   Order ID: %s\n", apiResp.ID)
+		fmt.Printf("   Domain: %s\n", apiResp.Domain)
+		fmt.Printf("   Challenge Type: %s\n", apiResp.ChallengeType)
+		fmt.Printf("   Status: %s\n", apiResp.Status)
+		fmt.Printf("   Expires: %s\n", apiResp.ExpiresAt.Format(time.RFC3339))
+		if apiResp.FinalizedAt != nil {
+			fmt.Printf("   Finalized: %s\n", apiResp.FinalizedAt.Format(time.RFC3339))
+		}
+
+		if apiResp.Status == "pending" {
+			fmt.Printf("\n🔑 Challenge Details:\n")
+			if apiResp.ChallengeType == "http-01" {
+				fmt.Printf("   URL: %s\n", apiResp.Challenge.URL)
+				fmt.Printf("   Token: %s\n", apiResp.Challenge.Token)
+			} else {
+				fmt.Printf("   DNS Record: %s\n", apiResp.Challenge.Token)
+			}
+		}
+
+		return nil
+	},
+}
+
+var dvFinalizeCmd = &cobra.Command{
+	Use:   "finalize",
+	Short: "Finalize DV order and receive grant",
+	Long: `Finalize a Domain Validated badge order after provisioning the challenge.
+
+This triggers domain validation and, if successful, issues a DV grant (JWT).
+The grant can then be used to mint a DV badge.
+
+Example:
+  capiscio badge dv finalize \
+    --order-id <uuid> \
+    --ca https://registry.capisc.io \
+    --out grant.jwt`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := cmd.Context()
+
+		if dvOrderID == "" {
+			return fmt.Errorf("--order-id is required")
+		}
+
+		// Create HTTP request (anonymous)
+		url := fmt.Sprintf("%s/v1/badges/dv/orders/%s/finalize", strings.TrimSuffix(dvCA, "/"), dvOrderID)
+		req, err := http.NewRequestWithContext(ctx, "POST", url, nil)
+		if err != nil {
+			return fmt.Errorf("failed to create request: %w", err)
+		}
+
+		req.Header.Set("User-Agent", "capiscio-cli/2.3.0")
+
+		// Send request
+		client := &http.Client{Timeout: 30 * time.Second}
+		resp, err := client.Do(req)
+		if err != nil {
+			return fmt.Errorf("request failed: %w", err)
+		}
+		defer resp.Body.Close()
+
+		// Read response
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("failed to read response: %w", err)
+		}
+
+		// Parse response
+		var apiResp struct {
+			Grant     string    `json:"grant"`
+			ExpiresAt time.Time `json:"expires_at"`
+		}
+
+		if err := json.Unmarshal(respBody, &apiResp); err != nil {
+			return fmt.Errorf("failed to parse response: %w", err)
+		}
+
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			return fmt.Errorf("finalization failed (status: %d, body: %s)", resp.StatusCode, string(respBody))
+		}
+
+		// Save grant to file if requested
+		if dvOutFile != "" {
+			if err := os.WriteFile(dvOutFile, []byte(apiResp.Grant), 0600); err != nil {
+				return fmt.Errorf("failed to write grant file: %w", err)
+			}
+		}
+
+		// Display result
+		fmt.Printf("✅ DV Grant Issued!\n\n")
+		fmt.Printf("📜 Grant Details:\n")
+		fmt.Printf("   Expires: %s\n", apiResp.ExpiresAt.Format(time.RFC3339))
+		
+		if dvOutFile != "" {
+			fmt.Printf("   Saved to: %s\n", dvOutFile)
+		} else {
+			fmt.Printf("\n📋 Grant Token:\n%s\n", apiResp.Grant)
+		}
+
+		fmt.Printf("\n⏭️  Next Steps:\n")
+		fmt.Printf("   Use this grant to mint a DV badge\n")
+
+		return nil
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(badgeCmd)
 	badgeCmd.AddCommand(issueCmd)
 	badgeCmd.AddCommand(verifyCmd)
 	badgeCmd.AddCommand(keepCmd)
 	badgeCmd.AddCommand(requestCmd)
+	badgeCmd.AddCommand(dvCmd)
+	
+	// DV subcommands
+	dvCmd.AddCommand(dvCreateCmd)
+	dvCmd.AddCommand(dvStatusCmd)
+	dvCmd.AddCommand(dvFinalizeCmd)
 
 	// Issue Flags
 	issueCmd.Flags().StringVar(&issueSubject, "sub", did.NewCapiscIOAgentDID("test"), "Subject DID (did:web format, auto-set for level 0)")
@@ -968,4 +1321,21 @@ func init() {
 	
 	requestCmd.MarkFlagRequired("did")
 	requestCmd.MarkFlagRequired("key")
+	
+	// DV Flags
+	dvCreateCmd.Flags().StringVar(&dvDomain, "domain", "", "Domain to validate")
+	dvCreateCmd.Flags().StringVar(&dvChallengeType, "challenge-type", "http-01", "Challenge type (http-01 or dns-01)")
+	dvCreateCmd.Flags().StringVar(&dvKeyFile, "key", "", "Path to private key file (JWK format)")
+	dvCreateCmd.Flags().StringVar(&dvCA, "ca", "https://registry.capisc.io", "CA URL")
+	dvCreateCmd.MarkFlagRequired("domain")
+	dvCreateCmd.MarkFlagRequired("key")
+	
+	dvStatusCmd.Flags().StringVar(&dvOrderID, "order-id", "", "DV order ID (UUID)")
+	dvStatusCmd.Flags().StringVar(&dvCA, "ca", "https://registry.capisc.io", "CA URL")
+	dvStatusCmd.MarkFlagRequired("order-id")
+	
+	dvFinalizeCmd.Flags().StringVar(&dvOrderID, "order-id", "", "DV order ID (UUID)")
+	dvFinalizeCmd.Flags().StringVar(&dvCA, "ca", "https://registry.capisc.io", "CA URL")
+	dvFinalizeCmd.Flags().StringVar(&dvOutFile, "out", "", "Output file path for grant (optional)")
+	dvFinalizeCmd.MarkFlagRequired("order-id")
 }
