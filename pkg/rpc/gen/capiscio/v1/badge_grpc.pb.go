@@ -26,6 +26,7 @@ const (
 	BadgeService_VerifyBadgeWithOptions_FullMethodName = "/capiscio.v1.BadgeService/VerifyBadgeWithOptions"
 	BadgeService_ParseBadge_FullMethodName             = "/capiscio.v1.BadgeService/ParseBadge"
 	BadgeService_RequestBadge_FullMethodName           = "/capiscio.v1.BadgeService/RequestBadge"
+	BadgeService_RequestPoPBadge_FullMethodName        = "/capiscio.v1.BadgeService/RequestPoPBadge"
 	BadgeService_StartKeeper_FullMethodName            = "/capiscio.v1.BadgeService/StartKeeper"
 )
 
@@ -46,6 +47,9 @@ type BadgeServiceClient interface {
 	// Request a badge from a Certificate Authority (RFC-002 §12.1)
 	// This is for production use where badges are issued by CapiscIO registry
 	RequestBadge(ctx context.Context, in *RequestBadgeRequest, opts ...grpc.CallOption) (*RequestBadgeResponse, error)
+	// Request a badge using Proof of Possession (RFC-003)
+	// This provides IAL-1 assurance with cryptographic key binding
+	RequestPoPBadge(ctx context.Context, in *RequestPoPBadgeRequest, opts ...grpc.CallOption) (*RequestPoPBadgeResponse, error)
 	// Start a badge keeper that automatically renews badges (RFC-002 §7.3)
 	// Returns a stream of keeper events (started, renewed, error, stopped)
 	StartKeeper(ctx context.Context, in *StartKeeperRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[KeeperEvent], error)
@@ -109,6 +113,16 @@ func (c *badgeServiceClient) RequestBadge(ctx context.Context, in *RequestBadgeR
 	return out, nil
 }
 
+func (c *badgeServiceClient) RequestPoPBadge(ctx context.Context, in *RequestPoPBadgeRequest, opts ...grpc.CallOption) (*RequestPoPBadgeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RequestPoPBadgeResponse)
+	err := c.cc.Invoke(ctx, BadgeService_RequestPoPBadge_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *badgeServiceClient) StartKeeper(ctx context.Context, in *StartKeeperRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[KeeperEvent], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &BadgeService_ServiceDesc.Streams[0], BadgeService_StartKeeper_FullMethodName, cOpts...)
@@ -145,6 +159,9 @@ type BadgeServiceServer interface {
 	// Request a badge from a Certificate Authority (RFC-002 §12.1)
 	// This is for production use where badges are issued by CapiscIO registry
 	RequestBadge(context.Context, *RequestBadgeRequest) (*RequestBadgeResponse, error)
+	// Request a badge using Proof of Possession (RFC-003)
+	// This provides IAL-1 assurance with cryptographic key binding
+	RequestPoPBadge(context.Context, *RequestPoPBadgeRequest) (*RequestPoPBadgeResponse, error)
 	// Start a badge keeper that automatically renews badges (RFC-002 §7.3)
 	// Returns a stream of keeper events (started, renewed, error, stopped)
 	StartKeeper(*StartKeeperRequest, grpc.ServerStreamingServer[KeeperEvent]) error
@@ -172,6 +189,9 @@ func (UnimplementedBadgeServiceServer) ParseBadge(context.Context, *ParseBadgeRe
 }
 func (UnimplementedBadgeServiceServer) RequestBadge(context.Context, *RequestBadgeRequest) (*RequestBadgeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RequestBadge not implemented")
+}
+func (UnimplementedBadgeServiceServer) RequestPoPBadge(context.Context, *RequestPoPBadgeRequest) (*RequestPoPBadgeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RequestPoPBadge not implemented")
 }
 func (UnimplementedBadgeServiceServer) StartKeeper(*StartKeeperRequest, grpc.ServerStreamingServer[KeeperEvent]) error {
 	return status.Error(codes.Unimplemented, "method StartKeeper not implemented")
@@ -287,6 +307,24 @@ func _BadgeService_RequestBadge_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BadgeService_RequestPoPBadge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestPoPBadgeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BadgeServiceServer).RequestPoPBadge(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BadgeService_RequestPoPBadge_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BadgeServiceServer).RequestPoPBadge(ctx, req.(*RequestPoPBadgeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _BadgeService_StartKeeper_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(StartKeeperRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -324,6 +362,10 @@ var BadgeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RequestBadge",
 			Handler:    _BadgeService_RequestBadge_Handler,
+		},
+		{
+			MethodName: "RequestPoPBadge",
+			Handler:    _BadgeService_RequestPoPBadge_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

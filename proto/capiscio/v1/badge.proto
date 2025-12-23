@@ -23,6 +23,10 @@ service BadgeService {
   // This is for production use where badges are issued by CapiscIO registry
   rpc RequestBadge(RequestBadgeRequest) returns (RequestBadgeResponse);
   
+  // Request a badge using Proof of Possession (RFC-003)
+  // This provides IAL-1 assurance with cryptographic key binding
+  rpc RequestPoPBadge(RequestPoPBadgeRequest) returns (RequestPoPBadgeResponse);
+  
   // Start a badge keeper that automatically renews badges (RFC-002 §7.3)
   // Returns a stream of keeper events (started, renewed, error, stopped)
   rpc StartKeeper(StartKeeperRequest) returns (stream KeeperEvent);
@@ -175,6 +179,64 @@ message RequestBadgeResponse {
   
   // Error code (RFC-002 §8.4 codes)
   string error_code = 8;
+}
+
+// ============================================================================
+// Badge Request with Proof of Possession (RFC-003)
+// ============================================================================
+
+// Request to obtain a badge using the PoP protocol (RFC-003)
+message RequestPoPBadgeRequest {
+  // Agent DID (e.g., did:web:registry.capisc.io:agents:my-agent or did:key:z6Mk...)
+  string agent_did = 1;
+  
+  // Private key in JWK format (JSON string) for signing the PoP proof
+  string private_key_jwk = 2;
+  
+  // CA URL (default: https://registry.capisc.io)
+  string ca_url = 3;
+  
+  // API key for authentication with the CA
+  string api_key = 4;
+  
+  // Requested TTL in seconds (default: 300, per RFC-002)
+  int32 ttl_seconds = 5;
+  
+  // Optional audience restrictions for the issued badge
+  repeated string audience = 6;
+}
+
+// Response from PoP badge request
+message RequestPoPBadgeResponse {
+  // Whether the request succeeded
+  bool success = 1;
+  
+  // The signed badge token (JWS)
+  string token = 2;
+  
+  // Badge ID (jti)
+  string jti = 3;
+  
+  // Subject DID
+  string subject = 4;
+  
+  // Trust level assigned
+  string trust_level = 5;
+  
+  // Assurance level (always "IAL-1" for PoP badges)
+  string assurance_level = 6;
+  
+  // When the badge expires (Unix timestamp)
+  int64 expires_at = 7;
+  
+  // CNF claim (key binding)
+  map<string, string> cnf = 8;
+  
+  // Error message if success=false
+  string error = 9;
+  
+  // Error code
+  string error_code = 10;
 }
 
 // ============================================================================
