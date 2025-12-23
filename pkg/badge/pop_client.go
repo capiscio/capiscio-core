@@ -278,12 +278,12 @@ func (c *PoPClient) signProof(claims PoPProofClaims, privateKey crypto.PrivateKe
 			Algorithm: jose.EdDSA,
 			Key:       k,
 		}
-		// RFC-003 §6.2: Use capiscio-pop-proof+jwt to distinguish from badge JWTs
+		// RFC-003 §6.2: Use pop+jwt header for PoP proofs
 		var err error
 		signer, err = jose.NewSigner(signerKey, &jose.SignerOptions{
 			ExtraHeaders: map[jose.HeaderKey]interface{}{
 				jose.HeaderKey("kid"): keyID,
-				jose.HeaderKey("typ"): "capiscio-pop-proof+jwt",
+				jose.HeaderKey("typ"): "pop+jwt",
 			},
 		})
 		if err != nil {
