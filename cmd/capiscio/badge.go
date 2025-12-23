@@ -803,11 +803,127 @@ func (r *SelfSignedRegistry) SyncRevocations(_ context.Context, _ string, _ time
 	return nil, nil
 }
 
+// Request command for PoP badge issuance
+var (
+	requestDID       string
+	requestCA        string
+	requestAPIKey    string
+	requestTTL       int
+	requestAudience  string
+	requestKeyFile   string
+	requestOutFile   string
+)
+
+var requestCmd = &cobra.Command{
+	Use:   "request",
+	Short: "Request Trust Badge using Proof of Possession (PoP)",
+	Long: `Request a Trust Badge from a Certificate Authority using the 
+Proof of Possession (PoP) protocol (RFC-003).
+
+This command performs a 2-phase challenge-response flow:
+1. Request challenge from CA
+2. Sign challenge with private key
+3. Submit proof to CA
+4. Receive IAL-1 badge with key binding (cnf claim)
+
+Example:
+  capiscio badge request \
+    --did did:web:example.com:agents:my-agent \
+    --key ./agent-key.pem \
+    --ca https://registry.capisc.io \
+    --api-key sk_live_abc123 \
+    --out badge.jwt`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := cmd.Context()
+
+		// Validate required flags
+		if requestDID == "" {
+			return fmt.Errorf("--did is required")
+		}
+		if requestKeyFile == "" {
+			return fmt.Errorf("--key is required")
+		}
+		if requestAPIKey == "" {
+			// Try environment variable
+			requestAPIKey = os.Getenv("CAPISCIO_API_KEY")
+			if requestAPIKey == "" {
+				return fmt.Errorf("--api-key is required (or set CAPISCIO_API_KEY)")
+			}
+		}
+
+		// Load private key
+		keyData, err := os.ReadFile(requestKeyFile)
+		if err != nil {
+			return fmt.Errorf("failed to read key file: %w", err)
+		}
+
+		// Parse JWK
+		var jwk jose.JSONWebKey
+		if err := json.Unmarshal(keyData, &jwk); err != nil {
+			return fmt.Errorf("failed to parse JWK: %w", err)
+		}
+
+		// Extract Ed25519 private key
+		privateKey, ok := jwk.Key.(ed25519.PrivateKey)
+		if !ok {
+			return fmt.Errorf("key must be Ed25519 (got %T)", jwk.Key)
+		}
+
+		// Parse audience
+		var audience []string
+		if requestAudience != "" {
+			audience = strings.Split(requestAudience, ",")
+		}
+
+		// Create PoP client
+		client := badge.NewPoPClient(requestCA, requestAPIKey)
+
+		fmt.Printf("Requesting PoP badge for %s...\n", requestDID)
+
+		// Execute PoP flow
+		opts := badge.RequestPoPBadgeOptions{
+			AgentDID:   requestDID,
+			PrivateKey: privateKey,
+			TTL:        time.Duration(requestTTL) * time.Second,
+			Audience:   audience,
+		}
+
+		result, err := client.RequestPoPBadge(ctx, opts)
+		if err != nil {
+			return fmt.Errorf("PoP badge request failed: %w", err)
+		}
+
+		// Display result
+		fmt.Printf("\n✅ Badge issued successfully!\n\n")
+		fmt.Printf("Token: %s\n", result.Token)
+		fmt.Printf("JTI: %s\n", result.JTI)
+		fmt.Printf("Subject: %s\n", result.Subject)
+		fmt.Printf("Trust Level: %s\n", result.TrustLevel)
+		fmt.Printf("Assurance Level: %s\n", result.AssuranceLevel)
+		fmt.Printf("Expires At: %s\n", result.ExpiresAt.Format(time.RFC3339))
+		
+		if len(result.CNF) > 0 {
+			fmt.Printf("Key Binding (cnf): %v\n", result.CNF)
+		}
+
+		// Write to file if requested
+		if requestOutFile != "" {
+			if err := os.WriteFile(requestOutFile, []byte(result.Token), 0644); err != nil {
+				return fmt.Errorf("failed to write badge to file: %w", err)
+			}
+			fmt.Printf("\n📝 Badge saved to: %s\n", requestOutFile)
+		}
+
+		return nil
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(badgeCmd)
 	badgeCmd.AddCommand(issueCmd)
 	badgeCmd.AddCommand(verifyCmd)
 	badgeCmd.AddCommand(keepCmd)
+	badgeCmd.AddCommand(requestCmd)
 
 	// Issue Flags
 	issueCmd.Flags().StringVar(&issueSubject, "sub", did.NewCapiscIOAgentDID("test"), "Subject DID (did:web format, auto-set for level 0)")
@@ -840,4 +956,16 @@ func init() {
 	verifyCmd.Flags().BoolVar(&verifySkipRevocation, "skip-revocation", false, "Skip revocation check (testing only)")
 	verifyCmd.Flags().BoolVar(&verifySkipAgentStatus, "skip-agent-status", false, "Skip agent status check (testing only)")
 	verifyCmd.Flags().BoolVar(&verifyAcceptSelfSigned, "accept-self-signed", false, "Accept Level 0 self-signed badges (did:key issuers)")
+
+	// Request Flags (PoP)
+	requestCmd.Flags().StringVar(&requestDID, "did", "", "Agent DID (did:web or did:key)")
+	requestCmd.Flags().StringVar(&requestKeyFile, "key", "", "Path to private key file (JWK format)")
+	requestCmd.Flags().StringVar(&requestCA, "ca", "https://registry.capisc.io", "CA URL for PoP flow")
+	requestCmd.Flags().StringVar(&requestAPIKey, "api-key", "", "API key for CA authentication (or use CAPISCIO_API_KEY env)")
+	requestCmd.Flags().IntVar(&requestTTL, "ttl", 300, "Badge TTL in seconds (default 300 = 5 minutes)")
+	requestCmd.Flags().StringVar(&requestAudience, "audience", "", "Comma-separated list of audiences")
+	requestCmd.Flags().StringVar(&requestOutFile, "out", "", "Output file path for badge (optional)")
+	
+	requestCmd.MarkFlagRequired("did")
+	requestCmd.MarkFlagRequired("key")
 }
