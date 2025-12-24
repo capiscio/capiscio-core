@@ -41,7 +41,7 @@ func TestDVGrantRevocationWithoutPoP(t *testing.T) {
 	// 3. Should return 404 (not 401/403) for anti-enumeration
 }
 
-// TestDVGrantRevocationPreventsMin ting tests revocation blocks minting (Task 7)
+// TestDVGrantRevocationPreventsMinting tests revocation blocks minting (Task 7)
 func TestDVGrantRevocationPreventsMinting(t *testing.T) {
 	t.Skip("Requires full DV flow - implement after Tasks 5-6")
 

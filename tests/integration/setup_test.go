@@ -10,27 +10,30 @@ import (
 )
 
 var (
-	// API_BASE_URL is the base URL for the capiscio-server
-	API_BASE_URL string
+	// apiBaseURL is the base URL for the capiscio-server
+	apiBaseURL string
 )
 
 // TestMain sets up the test environment
 func TestMain(m *testing.M) {
 	// Get API URL from environment
-	API_BASE_URL = os.Getenv("API_BASE_URL")
-	if API_BASE_URL == "" {
-		API_BASE_URL = "http://localhost:8080"
+	apiBaseURL = os.Getenv("API_BASE_URL")
+	if apiBaseURL == "" {
+		apiBaseURL = "http://localhost:8080"
 	}
+
+	exitCode := 0
 
 	// Wait for server to be ready
-	if err := waitForServer(API_BASE_URL, 30*time.Second); err != nil {
+	if err := waitForServer(apiBaseURL, 30*time.Second); err != nil {
 		fmt.Fprintf(os.Stderr, "Server not ready: %v\n", err)
-		os.Exit(1)
+		exitCode = 1
+	} else {
+		// Run tests
+		exitCode = m.Run()
 	}
 
-	// Run tests
-	code := m.Run()
-	os.Exit(code)
+	os.Exit(exitCode)
 }
 
 // waitForServer waits for the server to be healthy

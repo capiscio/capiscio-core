@@ -187,7 +187,7 @@ func (d *DID) String() string {
 //	→ https://registry.capisc.io/agents/my-agent-001/did.json
 //
 // Returns empty string for did:key (no remote document).
-// Uses HTTP for localhost domains, HTTPS otherwise.
+// Uses HTTP when the hostname is "localhost" or "127.0.0.1", HTTPS otherwise.
 func (d *DID) DocumentURL() string {
 	if d.Method != "web" {
 		return "" // did:key doesn't have a remote document
@@ -198,16 +198,19 @@ func (d *DID) DocumentURL() string {
 		path = "/" + path
 	}
 	
-	// Domain should already be URL-decoded by parseWebDID, but ensure it's valid for URL construction
-	// In case it wasn't decoded (e.g., created manually), decode it here
+	// Domain is expected to be URL-decoded by parseWebDID (and any constructors).
+	// Do not decode here to avoid accidental double-decoding.
 	domain := d.Domain
-	if decoded, err := url.PathUnescape(domain); err == nil {
-		domain = decoded
+
+	// Determine scheme based on the hostname (strip any port if present).
+	// Use HTTP for localhost/127.0.0.1, HTTPS for everything else.
+	host := domain
+	if i := strings.Index(host, ":"); i != -1 {
+		host = host[:i]
 	}
-	
-	// Use HTTP for localhost, HTTPS for everything else
+
 	scheme := "https"
-	if strings.HasPrefix(domain, "localhost") || strings.HasPrefix(domain, "127.0.0.1") {
+	if host == "localhost" || host == "127.0.0.1" {
 		scheme = "http"
 	}
 	

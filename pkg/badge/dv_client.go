@@ -83,7 +83,7 @@ func (c *DVClient) CreateOrder(ctx context.Context, domain, challengeType string
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "capiscio-core/2.3.0")
+	req.Header.Set("User-Agent", "capiscio-core/2.2.0")
 
 	// Send request
 	resp, err := c.HTTPClient.Do(req)

@@ -29,7 +29,7 @@ func TestBadgeVerification(t *testing.T) {
 	ctx := context.Background()
 
 	// Step 1: Issue a badge
-	client := badge.NewClient(API_BASE_URL, getTestAPIKey())
+	client := badge.NewClient(apiBaseURL, getTestAPIKey())
 	result, err := client.RequestBadge(ctx, badge.RequestBadgeOptions{
 		AgentID: testAgentID,
 		Domain:  "verify.example.com",
@@ -41,7 +41,7 @@ func TestBadgeVerification(t *testing.T) {
 	t.Logf("Issued badge: JTI=%s", result.JTI)
 
 	// Step 2: Verify the badge
-	reg := registry.NewCloudRegistry(API_BASE_URL + "/.well-known/jwks.json")
+	reg := registry.NewCloudRegistry(apiBaseURL + "/.well-known/jwks.json")
 	verifier := badge.NewVerifier(reg)
 
 	claims, err := verifier.Verify(ctx, result.Token)
@@ -73,7 +73,7 @@ func TestBadgeVerificationWithOptions(t *testing.T) {
 	ctx := context.Background()
 
 	// Issue a badge first
-	client := badge.NewClient(API_BASE_URL, getTestAPIKey())
+	client := badge.NewClient(apiBaseURL, getTestAPIKey())
 	result, err := client.RequestBadge(ctx, badge.RequestBadgeOptions{
 		AgentID:  testAgentID,
 		Domain:   "options.example.com",
@@ -81,7 +81,7 @@ func TestBadgeVerificationWithOptions(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	reg := registry.NewCloudRegistry(API_BASE_URL + "/.well-known/jwks.json")
+	reg := registry.NewCloudRegistry(apiBaseURL + "/.well-known/jwks.json")
 	verifier := badge.NewVerifier(reg)
 
 	tests := []struct {
@@ -175,14 +175,14 @@ func TestBadgeVerificationOfflineMode(t *testing.T) {
 	ctx := context.Background()
 
 	// Step 1: Issue and verify online to cache JWKS
-	client := badge.NewClient(API_BASE_URL, getTestAPIKey())
+	client := badge.NewClient(apiBaseURL, getTestAPIKey())
 	result, err := client.RequestBadge(ctx, badge.RequestBadgeOptions{
 		AgentID: testAgentID,
 		Domain:  "offline.example.com",
 	})
 	require.NoError(t, err)
 
-	reg := registry.NewCloudRegistry(API_BASE_URL + "/.well-known/jwks.json")
+	reg := registry.NewCloudRegistry(apiBaseURL + "/.well-known/jwks.json")
 	verifier := badge.NewVerifier(reg)
 
 	// Online verification (warms cache)

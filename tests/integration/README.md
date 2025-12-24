@@ -41,7 +41,7 @@ docker-compose up --build --abort-on-container-exit
 
 2. Run integration tests:
    ```bash
-   cd /Users/beondenood/Development/CapiscIO/capiscio-core
+   cd /path/to/capiscio-core
    export API_BASE_URL=http://localhost:8080
    go test -v ./tests/integration/...
    ```

@@ -28,7 +28,7 @@ func TestPoPChallengeFlow(t *testing.T) {
 	t.Logf("Generated test DID: %s", agentDID)
 
 	// Step 2: Create PoP client
-	popClient := badge.NewPoPClient(API_BASE_URL, getTestAPIKey())
+	popClient := badge.NewPoPClient(apiBaseURL, getTestAPIKey())
 
 	// Step 3: Request IAL-1 badge using PoP
 	result, err := popClient.RequestPoPBadge(ctx, badge.RequestPoPBadgeOptions{
@@ -91,7 +91,7 @@ func TestPoPWithInvalidSignature(t *testing.T) {
 
 	agentDID := did.NewKeyDID(pubKey1)
 
-	popClient := badge.NewPoPClient(API_BASE_URL, getTestAPIKey())
+	popClient := badge.NewPoPClient(apiBaseURL, getTestAPIKey())
 
 	// Try to sign with wrong key
 	_, err = popClient.RequestPoPBadge(ctx, badge.RequestPoPBadgeOptions{
@@ -112,7 +112,7 @@ func TestPoPWithMalformedDID(t *testing.T) {
 	_, privKey, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
-	popClient := badge.NewPoPClient(API_BASE_URL, getTestAPIKey())
+	popClient := badge.NewPoPClient(apiBaseURL, getTestAPIKey())
 
 	tests := []struct {
 		name      string
@@ -173,7 +173,7 @@ func TestPoPWithCustomAudience(t *testing.T) {
 
 	agentDID := did.NewKeyDID(pubKey)
 
-	popClient := badge.NewPoPClient(API_BASE_URL, getTestAPIKey())
+	popClient := badge.NewPoPClient(apiBaseURL, getTestAPIKey())
 
 	// Request badge with audience restriction
 	result, err := popClient.RequestPoPBadge(ctx, badge.RequestPoPBadgeOptions{

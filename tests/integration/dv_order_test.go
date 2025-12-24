@@ -69,7 +69,7 @@ func TestDVOrderCreation(t *testing.T) {
 				"jwk":            jwk.Public(),
 			}
 
-			orderURL := fmt.Sprintf("%s/v1/badges/dv/orders", API_BASE_URL)
+			orderURL := fmt.Sprintf("%s/v1/badges/dv/orders", apiBaseURL)
 			orderID, statusCode := createDVOrder(t, ctx, orderURL, reqBody)
 
 			assert.Equal(t, tt.expectStatus, statusCode)
@@ -104,13 +104,13 @@ func TestDVOrderStatus(t *testing.T) {
 		"jwk":            jwk.Public(),
 	}
 
-	orderURL := fmt.Sprintf("%s/v1/badges/dv/orders", API_BASE_URL)
+	orderURL := fmt.Sprintf("%s/v1/badges/dv/orders", apiBaseURL)
 	orderID, statusCode := createDVOrder(t, ctx, orderURL, reqBody)
 	require.Equal(t, http.StatusCreated, statusCode)
 	require.NotEmpty(t, orderID)
 
 	// Get order status
-	statusURL := fmt.Sprintf("%s/v1/badges/dv/orders/%s", API_BASE_URL, orderID)
+	statusURL := fmt.Sprintf("%s/v1/badges/dv/orders/%s", apiBaseURL, orderID)
 	resp, err := http.Get(statusURL)
 	require.NoError(t, err)
 	defer resp.Body.Close()

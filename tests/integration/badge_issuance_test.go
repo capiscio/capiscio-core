@@ -63,7 +63,7 @@ func TestBadgeIssuance(t *testing.T) {
 
 			// Create badge client (requires API key - you'll need to set this up)
 			// For now, we'll test the happy path assuming agent exists
-			client := badge.NewClient(API_BASE_URL, getTestAPIKey())
+			client := badge.NewClient(apiBaseURL, getTestAPIKey())
 
 			// Request badge
 			result, err := client.RequestBadge(ctx, badge.RequestBadgeOptions{
@@ -160,7 +160,7 @@ func TestBadgeIssuanceEdgeCases(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			client := badge.NewClient(API_BASE_URL, tt.apiKey)
+			client := badge.NewClient(apiBaseURL, tt.apiKey)
 
 			_, err := client.RequestBadge(ctx, badge.RequestBadgeOptions{
 				AgentID: tt.agentID,
