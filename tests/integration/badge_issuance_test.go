@@ -2,6 +2,7 @@ package integration
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -12,7 +13,19 @@ import (
 )
 
 // TestBadgeIssuance tests badge issuance via server API (Task 2)
+// NOTE: These tests require Clerk authentication which is not available in local testing.
+// Use the DV flow (test_dv_badge_flow.py) for local integration tests.
 func TestBadgeIssuance(t *testing.T) {
+	// Skip in local testing - requires Clerk auth
+	if os.Getenv("CLERK_SECRET_KEY") == "" {
+		t.Skip("CLERK_SECRET_KEY not set - badge issuance tests require Clerk auth. Use DV flow for local testing.")
+	}
+	
+	testAgentID := getTestAgentID()
+	if testAgentID == "" {
+		t.Skip("TEST_AGENT_ID not set - skipping badge issuance tests")
+	}
+
 	tests := []struct {
 		name       string
 		agentID    string
@@ -23,21 +36,21 @@ func TestBadgeIssuance(t *testing.T) {
 	}{
 		{
 			name:       "successful_ial0_badge_issuance",
-			agentID:    "test-agent-001",
+			agentID:    testAgentID,
 			domain:     "example.com",
 			trustLevel: "",  // Default to Level 0
 			expectErr:  false,
 		},
 		{
 			name:       "badge_issuance_with_custom_ttl",
-			agentID:    "test-agent-002",
+			agentID:    testAgentID,
 			domain:     "api.example.com",
 			trustLevel: "",
 			expectErr:  false,
 		},
 		{
 			name:       "agent_not_found",
-			agentID:    "nonexistent-agent-999",
+			agentID:    "00000000-0000-0000-0000-000000000000",
 			domain:     "example.com",
 			expectErr:  true,
 			errCode:    "AGENT_NOT_FOUND",
@@ -103,7 +116,17 @@ func TestBadgeIssuanceWithPoP(t *testing.T) {
 }
 
 // TestBadgeIssuanceEdgeCases tests error conditions
+// NOTE: Requires Clerk authentication endpoint
 func TestBadgeIssuanceEdgeCases(t *testing.T) {
+	if os.Getenv("CLERK_SECRET_KEY") == "" {
+		t.Skip("CLERK_SECRET_KEY not set - edge case tests require Clerk auth endpoint")
+	}
+	
+	testAgentID := getTestAgentID()
+	if testAgentID == "" {
+		t.Skip("TEST_AGENT_ID not set - skipping edge case tests")
+	}
+
 	tests := []struct {
 		name      string
 		apiKey    string
@@ -114,14 +137,14 @@ func TestBadgeIssuanceEdgeCases(t *testing.T) {
 		{
 			name:      "invalid_api_key",
 			apiKey:    "invalid-key-12345",
-			agentID:   "test-agent-001",
+			agentID:   testAgentID,
 			expectErr: true,
 			errCode:   "AUTH_INVALID",
 		},
 		{
 			name:      "empty_api_key",
 			apiKey:    "",
-			agentID:   "test-agent-001",
+			agentID:   testAgentID,
 			expectErr: true,
 			errCode:   "AUTH_INVALID",
 		},
@@ -159,10 +182,15 @@ func TestBadgeIssuanceEdgeCases(t *testing.T) {
 	}
 }
 
-// getTestAPIKey returns test API key from environment or default
-// TODO: Set up test agent and API key in setup phase
+// getTestAPIKey returns test API key from environment
 func getTestAPIKey() string {
-	// For now, return empty - will be set up in Docker Compose
-	// or CI environment
+	if key := os.Getenv("TEST_API_KEY"); key != "" {
+		return key
+	}
 	return "test-api-key-placeholder"
+}
+
+// getTestAgentID returns test agent ID from environment
+func getTestAgentID() string {
+	return os.Getenv("TEST_AGENT_ID")
 }

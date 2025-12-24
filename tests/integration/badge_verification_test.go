@@ -2,6 +2,7 @@ package integration
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -12,13 +13,25 @@ import (
 )
 
 // TestBadgeVerification tests badge verification against live JWKS (Task 3)
+// NOTE: These tests require Clerk authentication to issue badges first.
+// Use the DV flow (test_dv_badge_flow.py) for local integration tests.
 func TestBadgeVerification(t *testing.T) {
+	// Skip in local testing - requires Clerk auth for badge issuance
+	if os.Getenv("CLERK_SECRET_KEY") == "" {
+		t.Skip("CLERK_SECRET_KEY not set - badge verification tests require badges from Clerk auth. Use DV flow for local testing.")
+	}
+	
+	testAgentID := getTestAgentID()
+	if testAgentID == "" {
+		t.Skip("TEST_AGENT_ID not set - skipping badge verification tests")
+	}
+
 	ctx := context.Background()
 
 	// Step 1: Issue a badge
 	client := badge.NewClient(API_BASE_URL, getTestAPIKey())
 	result, err := client.RequestBadge(ctx, badge.RequestBadgeOptions{
-		AgentID: "test-agent-verification",
+		AgentID: testAgentID,
 		Domain:  "verify.example.com",
 		TTL:     5 * time.Minute,
 	})
@@ -46,13 +59,23 @@ func TestBadgeVerification(t *testing.T) {
 }
 
 // TestBadgeVerificationWithOptions tests advanced verification options (Task 3)
+// NOTE: Requires Clerk authentication to issue badges first.
 func TestBadgeVerificationWithOptions(t *testing.T) {
+	if os.Getenv("CLERK_SECRET_KEY") == "" {
+		t.Skip("CLERK_SECRET_KEY not set - options tests require badges from Clerk auth")
+	}
+	
+	testAgentID := getTestAgentID()
+	if testAgentID == "" {
+		t.Skip("TEST_AGENT_ID not set - skipping options tests")
+	}
+
 	ctx := context.Background()
 
 	// Issue a badge first
 	client := badge.NewClient(API_BASE_URL, getTestAPIKey())
 	result, err := client.RequestBadge(ctx, badge.RequestBadgeOptions{
-		AgentID:  "test-agent-options",
+		AgentID:  testAgentID,
 		Domain:   "options.example.com",
 		Audience: []string{"did:web:verifier.example.com"},
 	})
@@ -137,13 +160,24 @@ func TestBadgeVerificationSelfSigned(t *testing.T) {
 }
 
 // TestBadgeVerificationOfflineMode tests offline verification (Task 3)
+// NOTE: Requires Clerk auth to issue badges first.
 func TestBadgeVerificationOfflineMode(t *testing.T) {
+	// Skip in local testing - requires Clerk auth for badge issuance
+	if os.Getenv("CLERK_SECRET_KEY") == "" {
+		t.Skip("CLERK_SECRET_KEY not set - offline verification tests require badges from Clerk auth.")
+	}
+	
+	testAgentID := getTestAgentID()
+	if testAgentID == "" {
+		t.Skip("TEST_AGENT_ID not set - skipping offline mode tests")
+	}
+
 	ctx := context.Background()
 
 	// Step 1: Issue and verify online to cache JWKS
 	client := badge.NewClient(API_BASE_URL, getTestAPIKey())
 	result, err := client.RequestBadge(ctx, badge.RequestBadgeOptions{
-		AgentID: "test-agent-offline",
+		AgentID: testAgentID,
 		Domain:  "offline.example.com",
 	})
 	require.NoError(t, err)
