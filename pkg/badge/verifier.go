@@ -422,74 +422,90 @@ func (v *Verifier) checkRevocation(ctx context.Context, claims *Claims, opts Ver
 
 	switch opts.Mode {
 	case VerifyModeOnline:
-		// Online: Check revocation via registry API
-		status, err := v.registry.GetBadgeStatus(ctx, claims.Issuer, claims.JTI)
-		if err != nil {
-			// RFC-002 v1.3: Fail closed if we can't check revocation online
-			return WrapError(ErrCodeRevoked, "failed to check revocation status", err)
+		return v.checkRevocationOnline(ctx, claims)
+	case VerifyModeOffline:
+		return v.checkRevocationOffline(claims, opts, levelInt, staleThreshold)
+	case VerifyModeHybrid:
+		return v.checkRevocationHybrid(ctx, claims, opts, levelInt, staleThreshold)
+	}
+
+	return nil
+}
+
+// checkRevocationOnline checks revocation via registry API.
+func (v *Verifier) checkRevocationOnline(ctx context.Context, claims *Claims) error {
+	status, err := v.registry.GetBadgeStatus(ctx, claims.Issuer, claims.JTI)
+	if err != nil {
+		// RFC-002 v1.3: Fail closed if we can't check revocation online
+		return WrapError(ErrCodeRevoked, "failed to check revocation status", err)
+	}
+	if status.Revoked {
+		return NewError(ErrCodeRevoked, fmt.Sprintf("badge %s has been revoked", claims.JTI))
+	}
+	return nil
+}
+
+// checkRevocationOffline checks revocation via local cache.
+func (v *Verifier) checkRevocationOffline(claims *Claims, opts VerifyOptions, levelInt int, staleThreshold time.Duration) error {
+	if opts.RevocationCache == nil {
+		// RFC-002 v1.3: No cache available in offline mode
+		// For IAL-2+, this is a fail-closed scenario unless FailOpen is set
+		if levelInt >= StaleFailClosedMinLevel && !opts.FailOpen {
+			return NewError(ErrCodeRevoked, "revocation cache required for offline verification of IAL-2+ badges")
 		}
+		// For IAL-0/1 or with FailOpen, allow without cache
+		return nil
+	}
+
+	// RFC-002 v1.3: Check cache staleness for IAL-2+ badges
+	if opts.RevocationCache.IsStale(staleThreshold) {
+		if levelInt >= StaleFailClosedMinLevel && !opts.FailOpen {
+			return NewError(ErrCodeRevoked, fmt.Sprintf("revocation cache is stale (>%v) - fail-closed for IAL-%d badge", staleThreshold, levelInt))
+		}
+		// IAL-0/1 or FailOpen: warn but continue
+	}
+
+	// Check if badge is in revocation cache
+	if opts.RevocationCache.IsRevoked(claims.JTI) {
+		return NewError(ErrCodeRevoked, fmt.Sprintf("badge %s is in revocation cache", claims.JTI))
+	}
+
+	return nil
+}
+
+// checkRevocationHybrid tries online first, falls back to cache.
+func (v *Verifier) checkRevocationHybrid(ctx context.Context, claims *Claims, opts VerifyOptions, levelInt int, staleThreshold time.Duration) error {
+	status, err := v.registry.GetBadgeStatus(ctx, claims.Issuer, claims.JTI)
+	if err == nil {
+		// Online check succeeded
 		if status.Revoked {
 			return NewError(ErrCodeRevoked, fmt.Sprintf("badge %s has been revoked", claims.JTI))
 		}
+		return nil
+	}
 
-	case VerifyModeOffline:
-		// Offline: Check local revocation cache
-		if opts.RevocationCache == nil {
-			// RFC-002 v1.3: No cache available in offline mode
-			// For IAL-2+, this is a fail-closed scenario unless FailOpen is set
-			if levelInt >= StaleFailClosedMinLevel && !opts.FailOpen {
-				return NewError(ErrCodeRevoked, "revocation cache required for offline verification of IAL-2+ badges")
-			}
-			// For IAL-0/1 or with FailOpen, allow without cache
-			return nil
+	// Online failed, try cache
+	if opts.RevocationCache == nil {
+		// RFC-002 v1.3: No cache and online failed
+		// For IAL-2+, fail-closed unless FailOpen is set
+		if levelInt >= StaleFailClosedMinLevel && !opts.FailOpen {
+			return WrapError(ErrCodeRevoked, "online check failed and no revocation cache available for IAL-2+ badge", err)
 		}
+		// IAL-0/1 or FailOpen: allow
+		return nil
+	}
 
-		// RFC-002 v1.3: Check cache staleness for IAL-2+ badges
-		if opts.RevocationCache.IsStale(staleThreshold) {
-			if levelInt >= StaleFailClosedMinLevel && !opts.FailOpen {
-				return NewError(ErrCodeRevoked, fmt.Sprintf("revocation cache is stale (>%v) - fail-closed for IAL-%d badge", staleThreshold, levelInt))
-			}
-			// IAL-0/1 or FailOpen: warn but continue
+	// RFC-002 v1.3: Check staleness when falling back to cache
+	if opts.RevocationCache.IsStale(staleThreshold) {
+		if levelInt >= StaleFailClosedMinLevel && !opts.FailOpen {
+			return NewError(ErrCodeRevoked, fmt.Sprintf("online check failed and revocation cache is stale (>%v) - fail-closed for IAL-%d badge", staleThreshold, levelInt))
 		}
+		// IAL-0/1 or FailOpen: continue with stale cache
+	}
 
-		// Check if badge is in revocation cache
-		if opts.RevocationCache.IsRevoked(claims.JTI) {
-			return NewError(ErrCodeRevoked, fmt.Sprintf("badge %s is in revocation cache", claims.JTI))
-		}
-
-	case VerifyModeHybrid:
-		// Hybrid: Try online first, fall back to cache
-		status, err := v.registry.GetBadgeStatus(ctx, claims.Issuer, claims.JTI)
-		if err == nil {
-			// Online check succeeded
-			if status.Revoked {
-				return NewError(ErrCodeRevoked, fmt.Sprintf("badge %s has been revoked", claims.JTI))
-			}
-		} else {
-			// Online failed, try cache
-			if opts.RevocationCache == nil {
-				// RFC-002 v1.3: No cache and online failed
-				// For IAL-2+, fail-closed unless FailOpen is set
-				if levelInt >= StaleFailClosedMinLevel && !opts.FailOpen {
-					return WrapError(ErrCodeRevoked, "online check failed and no revocation cache available for IAL-2+ badge", err)
-				}
-				// IAL-0/1 or FailOpen: allow
-				return nil
-			}
-
-			// RFC-002 v1.3: Check staleness when falling back to cache
-			if opts.RevocationCache.IsStale(staleThreshold) {
-				if levelInt >= StaleFailClosedMinLevel && !opts.FailOpen {
-					return NewError(ErrCodeRevoked, fmt.Sprintf("online check failed and revocation cache is stale (>%v) - fail-closed for IAL-%d badge", staleThreshold, levelInt))
-				}
-				// IAL-0/1 or FailOpen: continue with stale cache
-			}
-
-			// Fall back to cache
-			if opts.RevocationCache.IsRevoked(claims.JTI) {
-				return NewError(ErrCodeRevoked, fmt.Sprintf("badge %s is in revocation cache", claims.JTI))
-			}
-		}
+	// Fall back to cache
+	if opts.RevocationCache.IsRevoked(claims.JTI) {
+		return NewError(ErrCodeRevoked, fmt.Sprintf("badge %s is in revocation cache", claims.JTI))
 	}
 
 	return nil

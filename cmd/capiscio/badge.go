@@ -1318,24 +1318,24 @@ func init() {
 	requestCmd.Flags().IntVar(&requestTTL, "ttl", 300, "Badge TTL in seconds (default 300 = 5 minutes)")
 	requestCmd.Flags().StringVar(&requestAudience, "audience", "", "Comma-separated list of audiences")
 	requestCmd.Flags().StringVar(&requestOutFile, "out", "", "Output file path for badge (optional)")
-	
-	requestCmd.MarkFlagRequired("did")
-	requestCmd.MarkFlagRequired("key")
-	
+
+	_ = requestCmd.MarkFlagRequired("did")
+	_ = requestCmd.MarkFlagRequired("key")
+
 	// DV Flags
 	dvCreateCmd.Flags().StringVar(&dvDomain, "domain", "", "Domain to validate")
 	dvCreateCmd.Flags().StringVar(&dvChallengeType, "challenge-type", "http-01", "Challenge type (http-01 or dns-01)")
 	dvCreateCmd.Flags().StringVar(&dvKeyFile, "key", "", "Path to private key file (JWK format)")
 	dvCreateCmd.Flags().StringVar(&dvCA, "ca", "https://registry.capisc.io", "CA URL")
-	dvCreateCmd.MarkFlagRequired("domain")
-	dvCreateCmd.MarkFlagRequired("key")
-	
+	_ = dvCreateCmd.MarkFlagRequired("domain")
+	_ = dvCreateCmd.MarkFlagRequired("key")
+
 	dvStatusCmd.Flags().StringVar(&dvOrderID, "order-id", "", "DV order ID (UUID)")
 	dvStatusCmd.Flags().StringVar(&dvCA, "ca", "https://registry.capisc.io", "CA URL")
-	dvStatusCmd.MarkFlagRequired("order-id")
-	
+	_ = dvStatusCmd.MarkFlagRequired("order-id")
+
 	dvFinalizeCmd.Flags().StringVar(&dvOrderID, "order-id", "", "DV order ID (UUID)")
 	dvFinalizeCmd.Flags().StringVar(&dvCA, "ca", "https://registry.capisc.io", "CA URL")
 	dvFinalizeCmd.Flags().StringVar(&dvOutFile, "out", "", "Output file path for grant (optional)")
-	dvFinalizeCmd.MarkFlagRequired("order-id")
+	_ = dvFinalizeCmd.MarkFlagRequired("order-id")
 }
