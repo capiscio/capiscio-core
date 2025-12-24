@@ -1,0 +1,27 @@
+.PHONY: test-integration test-integration-docker test-integration-local clean
+
+# Run integration tests in Docker Compose
+test-integration: test-integration-docker
+
+test-integration-docker:
+	@echo "Starting integration tests in Docker Compose..."
+	cd tests/integration && docker-compose up --build --abort-on-container-exit --exit-code-from test-runner
+
+# Run integration tests locally (requires capiscio-server running)
+test-integration-local:
+	@echo "Running integration tests locally..."
+	@echo "Ensure capiscio-server is running at $$API_BASE_URL"
+	API_BASE_URL=$${API_BASE_URL:-http://localhost:8080} go test -v ./tests/integration/...
+
+# Clean up Docker resources
+clean:
+	cd tests/integration && docker-compose down -v
+	rm -rf tests/integration/.pytest_cache
+
+# Run specific test
+test-one:
+ifndef TEST
+	@echo "Usage: make test-one TEST=TestBadgeIssuance"
+	@exit 1
+endif
+	API_BASE_URL=$${API_BASE_URL:-http://localhost:8080} go test -v ./tests/integration/ -run $(TEST)

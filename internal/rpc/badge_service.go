@@ -498,6 +498,107 @@ func (s *BadgeService) RequestBadge(ctx context.Context, req *pb.RequestBadgeReq
 	}, nil
 }
 
+// RequestPoPBadge requests a badge using Proof of Possession (RFC-003).
+func (s *BadgeService) RequestPoPBadge(ctx context.Context, req *pb.RequestPoPBadgeRequest) (*pb.RequestPoPBadgeResponse, error) {
+	if req.AgentDid == "" {
+		return &pb.RequestPoPBadgeResponse{
+			Success:   false,
+			Error:     "agent_did is required",
+			ErrorCode: "INVALID_INPUT",
+		}, nil
+	}
+
+	if req.PrivateKeyJwk == "" {
+		return &pb.RequestPoPBadgeResponse{
+			Success:   false,
+			Error:     "private_key_jwk is required for PoP",
+			ErrorCode: "INVALID_INPUT",
+		}, nil
+	}
+
+	if req.ApiKey == "" {
+		return &pb.RequestPoPBadgeResponse{
+			Success:   false,
+			Error:     "api_key is required",
+			ErrorCode: "AUTH_REQUIRED",
+		}, nil
+	}
+
+	// Parse private key from JWK
+	var jwk jose.JSONWebKey
+	if err := json.Unmarshal([]byte(req.PrivateKeyJwk), &jwk); err != nil {
+		return &pb.RequestPoPBadgeResponse{
+			Success:   false,
+			Error:     fmt.Sprintf("failed to parse private key JWK: %v", err),
+			ErrorCode: "INVALID_KEY",
+		}, nil
+	}
+
+	// Extract the private key
+	privateKey, ok := jwk.Key.(ed25519.PrivateKey)
+	if !ok {
+		return &pb.RequestPoPBadgeResponse{
+			Success:   false,
+			Error:     "expected Ed25519 private key",
+			ErrorCode: "INVALID_KEY",
+		}, nil
+	}
+
+	// Build options
+	caURL := req.CaUrl
+	if caURL == "" {
+		caURL = badge.DefaultCAURL
+	}
+
+	ttl := time.Duration(req.TtlSeconds) * time.Second
+	if ttl == 0 {
+		ttl = badge.DefaultTTL
+	}
+
+	opts := badge.RequestPoPBadgeOptions{
+		AgentDID:   req.AgentDid,
+		PrivateKey: privateKey,
+		TTL:        ttl,
+		Audience:   req.Audience,
+	}
+
+	// Create PoP client and request badge
+	client := badge.NewPoPClient(caURL, req.ApiKey)
+	result, err := client.RequestPoPBadge(ctx, opts)
+	if err != nil {
+		// Check for specific error types
+		if clientErr, ok := err.(*badge.ClientError); ok {
+			return &pb.RequestPoPBadgeResponse{
+				Success:   false,
+				Error:     clientErr.Message,
+				ErrorCode: clientErr.Code,
+			}, nil
+		}
+		return &pb.RequestPoPBadgeResponse{
+			Success:   false,
+			Error:     err.Error(),
+			ErrorCode: "CA_ERROR",
+		}, nil
+	}
+
+	// Convert CNF map to proto map
+	cnfMap := make(map[string]string)
+	for k, v := range result.CNF {
+		cnfMap[k] = fmt.Sprintf("%v", v)
+	}
+
+	return &pb.RequestPoPBadgeResponse{
+		Success:        true,
+		Token:          result.Token,
+		Jti:            result.JTI,
+		Subject:        result.Subject,
+		TrustLevel:     result.TrustLevel,
+		AssuranceLevel: result.AssuranceLevel,
+		ExpiresAt:      result.ExpiresAt.Unix(),
+		Cnf:            cnfMap,
+	}, nil
+}
+
 // validateKeeperRequest validates the keeper request parameters.
 func (s *BadgeService) validateKeeperRequest(req *pb.StartKeeperRequest) error {
 	switch req.Mode {
@@ -674,4 +775,151 @@ func keeperEventTypeToPB(t badge.KeeperEventType) pb.KeeperEventType {
 	default:
 		return pb.KeeperEventType_KEEPER_EVENT_UNSPECIFIED
 	}
+}
+
+// ============================================================================
+// Domain Validated (DV) Badge Orders (RFC-002 v1.2)
+// ============================================================================
+
+// CreateDVOrder creates a new DV badge order.
+func (s *BadgeService) CreateDVOrder(ctx context.Context, req *pb.CreateDVOrderRequest) (*pb.CreateDVOrderResponse, error) {
+	if req.Domain == "" {
+		return &pb.CreateDVOrderResponse{
+			Success:   false,
+			Error:     "domain is required",
+			ErrorCode: "INVALID_INPUT",
+		}, nil
+	}
+
+	if req.ChallengeType != "http-01" && req.ChallengeType != "dns-01" {
+		return &pb.CreateDVOrderResponse{
+			Success:   false,
+			Error:     fmt.Sprintf("invalid challenge_type: %s (must be 'http-01' or 'dns-01')", req.ChallengeType),
+			ErrorCode: "INVALID_INPUT",
+		}, nil
+	}
+
+	if req.Jwk == "" {
+		return &pb.CreateDVOrderResponse{
+			Success:   false,
+			Error:     "jwk is required",
+			ErrorCode: "INVALID_INPUT",
+		}, nil
+	}
+
+	// Parse JWK
+	var jwk jose.JSONWebKey
+	if err := json.Unmarshal([]byte(req.Jwk), &jwk); err != nil {
+		return &pb.CreateDVOrderResponse{
+			Success:   false,
+			Error:     fmt.Sprintf("failed to parse JWK: %v", err),
+			ErrorCode: "INVALID_KEY",
+		}, nil
+	}
+
+	// Make HTTP request to server
+	caURL := req.CaUrl
+	if caURL == "" {
+		caURL = badge.DefaultCAURL
+	}
+
+	client := badge.NewDVClient(caURL)
+	order, err := client.CreateOrder(ctx, req.Domain, req.ChallengeType, &jwk)
+	if err != nil {
+		return &pb.CreateDVOrderResponse{
+			Success:   false,
+			Error:     err.Error(),
+			ErrorCode: "CA_ERROR",
+		}, nil
+	}
+
+	return &pb.CreateDVOrderResponse{
+		Success:        true,
+		OrderId:        order.ID,
+		Domain:         order.Domain,
+		ChallengeType:  order.ChallengeType,
+		ChallengeToken: order.ChallengeToken,
+		Status:         order.Status,
+		ValidationUrl:  order.ValidationURL,
+		DnsRecord:      order.DNSRecord,
+		ExpiresAt:      order.ExpiresAt.Unix(),
+	}, nil
+}
+
+// GetDVOrder gets the status of a DV badge order.
+func (s *BadgeService) GetDVOrder(ctx context.Context, req *pb.GetDVOrderRequest) (*pb.GetDVOrderResponse, error) {
+	if req.OrderId == "" {
+		return &pb.GetDVOrderResponse{
+			Success:   false,
+			Error:     "order_id is required",
+			ErrorCode: "INVALID_INPUT",
+		}, nil
+	}
+
+	// Make HTTP request to server
+	caURL := req.CaUrl
+	if caURL == "" {
+		caURL = badge.DefaultCAURL
+	}
+
+	client := badge.NewDVClient(caURL)
+	order, err := client.GetOrder(ctx, req.OrderId)
+	if err != nil {
+		return &pb.GetDVOrderResponse{
+			Success:   false,
+			Error:     err.Error(),
+			ErrorCode: "CA_ERROR",
+		}, nil
+	}
+
+	resp := &pb.GetDVOrderResponse{
+		Success:        true,
+		OrderId:        order.ID,
+		Domain:         order.Domain,
+		ChallengeType:  order.ChallengeType,
+		ChallengeToken: order.ChallengeToken,
+		Status:         order.Status,
+		ValidationUrl:  order.ValidationURL,
+		DnsRecord:      order.DNSRecord,
+		ExpiresAt:      order.ExpiresAt.Unix(),
+	}
+
+	if order.FinalizedAt != nil {
+		resp.FinalizedAt = order.FinalizedAt.Unix()
+	}
+
+	return resp, nil
+}
+
+// FinalizeDVOrder finalizes a DV badge order and receives a grant.
+func (s *BadgeService) FinalizeDVOrder(ctx context.Context, req *pb.FinalizeDVOrderRequest) (*pb.FinalizeDVOrderResponse, error) {
+	if req.OrderId == "" {
+		return &pb.FinalizeDVOrderResponse{
+			Success:   false,
+			Error:     "order_id is required",
+			ErrorCode: "INVALID_INPUT",
+		}, nil
+	}
+
+	// Make HTTP request to server
+	caURL := req.CaUrl
+	if caURL == "" {
+		caURL = badge.DefaultCAURL
+	}
+
+	client := badge.NewDVClient(caURL)
+	grant, err := client.FinalizeOrder(ctx, req.OrderId)
+	if err != nil {
+		return &pb.FinalizeDVOrderResponse{
+			Success:   false,
+			Error:     err.Error(),
+			ErrorCode: "CA_ERROR",
+		}, nil
+	}
+
+	return &pb.FinalizeDVOrderResponse{
+		Success:   true,
+		Grant:     grant.Grant,
+		ExpiresAt: grant.ExpiresAt.Unix(),
+	}, nil
 }

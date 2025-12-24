@@ -20,3 +20,5 @@ coverage.txt
 # Examples
 examples/**/client/client
 examples/**/server/server
+*.test
+*.log

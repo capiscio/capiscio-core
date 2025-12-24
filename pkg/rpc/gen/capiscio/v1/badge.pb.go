@@ -1082,6 +1082,224 @@ func (x *RequestBadgeResponse) GetErrorCode() string {
 	return ""
 }
 
+// Request to obtain a badge using the PoP protocol (RFC-003)
+type RequestPoPBadgeRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Agent DID (e.g., did:web:registry.capisc.io:agents:my-agent or did:key:z6Mk...)
+	AgentDid string `protobuf:"bytes,1,opt,name=agent_did,json=agentDid,proto3" json:"agent_did,omitempty"`
+	// Private key in JWK format (JSON string) for signing the PoP proof
+	PrivateKeyJwk string `protobuf:"bytes,2,opt,name=private_key_jwk,json=privateKeyJwk,proto3" json:"private_key_jwk,omitempty"`
+	// CA URL (default: https://registry.capisc.io)
+	CaUrl string `protobuf:"bytes,3,opt,name=ca_url,json=caUrl,proto3" json:"ca_url,omitempty"`
+	// API key for authentication with the CA
+	ApiKey string `protobuf:"bytes,4,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
+	// Requested TTL in seconds (default: 300, per RFC-002)
+	TtlSeconds int32 `protobuf:"varint,5,opt,name=ttl_seconds,json=ttlSeconds,proto3" json:"ttl_seconds,omitempty"`
+	// Optional audience restrictions for the issued badge
+	Audience      []string `protobuf:"bytes,6,rep,name=audience,proto3" json:"audience,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestPoPBadgeRequest) Reset() {
+	*x = RequestPoPBadgeRequest{}
+	mi := &file_capiscio_v1_badge_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestPoPBadgeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestPoPBadgeRequest) ProtoMessage() {}
+
+func (x *RequestPoPBadgeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_badge_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestPoPBadgeRequest.ProtoReflect.Descriptor instead.
+func (*RequestPoPBadgeRequest) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *RequestPoPBadgeRequest) GetAgentDid() string {
+	if x != nil {
+		return x.AgentDid
+	}
+	return ""
+}
+
+func (x *RequestPoPBadgeRequest) GetPrivateKeyJwk() string {
+	if x != nil {
+		return x.PrivateKeyJwk
+	}
+	return ""
+}
+
+func (x *RequestPoPBadgeRequest) GetCaUrl() string {
+	if x != nil {
+		return x.CaUrl
+	}
+	return ""
+}
+
+func (x *RequestPoPBadgeRequest) GetApiKey() string {
+	if x != nil {
+		return x.ApiKey
+	}
+	return ""
+}
+
+func (x *RequestPoPBadgeRequest) GetTtlSeconds() int32 {
+	if x != nil {
+		return x.TtlSeconds
+	}
+	return 0
+}
+
+func (x *RequestPoPBadgeRequest) GetAudience() []string {
+	if x != nil {
+		return x.Audience
+	}
+	return nil
+}
+
+// Response from PoP badge request
+type RequestPoPBadgeResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Whether the request succeeded
+	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	// The signed badge token (JWS)
+	Token string `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
+	// Badge ID (jti)
+	Jti string `protobuf:"bytes,3,opt,name=jti,proto3" json:"jti,omitempty"`
+	// Subject DID
+	Subject string `protobuf:"bytes,4,opt,name=subject,proto3" json:"subject,omitempty"`
+	// Trust level assigned
+	TrustLevel string `protobuf:"bytes,5,opt,name=trust_level,json=trustLevel,proto3" json:"trust_level,omitempty"`
+	// Assurance level (always "IAL-1" for PoP badges)
+	AssuranceLevel string `protobuf:"bytes,6,opt,name=assurance_level,json=assuranceLevel,proto3" json:"assurance_level,omitempty"`
+	// When the badge expires (Unix timestamp)
+	ExpiresAt int64 `protobuf:"varint,7,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	// CNF claim (key binding)
+	Cnf map[string]string `protobuf:"bytes,8,rep,name=cnf,proto3" json:"cnf,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Error message if success=false
+	Error string `protobuf:"bytes,9,opt,name=error,proto3" json:"error,omitempty"`
+	// Error code
+	ErrorCode     string `protobuf:"bytes,10,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestPoPBadgeResponse) Reset() {
+	*x = RequestPoPBadgeResponse{}
+	mi := &file_capiscio_v1_badge_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestPoPBadgeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestPoPBadgeResponse) ProtoMessage() {}
+
+func (x *RequestPoPBadgeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_badge_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestPoPBadgeResponse.ProtoReflect.Descriptor instead.
+func (*RequestPoPBadgeResponse) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *RequestPoPBadgeResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *RequestPoPBadgeResponse) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+func (x *RequestPoPBadgeResponse) GetJti() string {
+	if x != nil {
+		return x.Jti
+	}
+	return ""
+}
+
+func (x *RequestPoPBadgeResponse) GetSubject() string {
+	if x != nil {
+		return x.Subject
+	}
+	return ""
+}
+
+func (x *RequestPoPBadgeResponse) GetTrustLevel() string {
+	if x != nil {
+		return x.TrustLevel
+	}
+	return ""
+}
+
+func (x *RequestPoPBadgeResponse) GetAssuranceLevel() string {
+	if x != nil {
+		return x.AssuranceLevel
+	}
+	return ""
+}
+
+func (x *RequestPoPBadgeResponse) GetExpiresAt() int64 {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return 0
+}
+
+func (x *RequestPoPBadgeResponse) GetCnf() map[string]string {
+	if x != nil {
+		return x.Cnf
+	}
+	return nil
+}
+
+func (x *RequestPoPBadgeResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+func (x *RequestPoPBadgeResponse) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
 // Request to start a badge keeper daemon
 type StartKeeperRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1113,7 +1331,7 @@ type StartKeeperRequest struct {
 
 func (x *StartKeeperRequest) Reset() {
 	*x = StartKeeperRequest{}
-	mi := &file_capiscio_v1_badge_proto_msgTypes[11]
+	mi := &file_capiscio_v1_badge_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1125,7 +1343,7 @@ func (x *StartKeeperRequest) String() string {
 func (*StartKeeperRequest) ProtoMessage() {}
 
 func (x *StartKeeperRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capiscio_v1_badge_proto_msgTypes[11]
+	mi := &file_capiscio_v1_badge_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1138,7 +1356,7 @@ func (x *StartKeeperRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartKeeperRequest.ProtoReflect.Descriptor instead.
 func (*StartKeeperRequest) Descriptor() ([]byte, []int) {
-	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{11}
+	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *StartKeeperRequest) GetMode() KeeperMode {
@@ -1245,7 +1463,7 @@ type KeeperEvent struct {
 
 func (x *KeeperEvent) Reset() {
 	*x = KeeperEvent{}
-	mi := &file_capiscio_v1_badge_proto_msgTypes[12]
+	mi := &file_capiscio_v1_badge_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1257,7 +1475,7 @@ func (x *KeeperEvent) String() string {
 func (*KeeperEvent) ProtoMessage() {}
 
 func (x *KeeperEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_capiscio_v1_badge_proto_msgTypes[12]
+	mi := &file_capiscio_v1_badge_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1270,7 +1488,7 @@ func (x *KeeperEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KeeperEvent.ProtoReflect.Descriptor instead.
 func (*KeeperEvent) Descriptor() ([]byte, []int) {
-	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{12}
+	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *KeeperEvent) GetType() KeeperEventType {
@@ -1332,6 +1550,552 @@ func (x *KeeperEvent) GetTimestamp() int64 {
 func (x *KeeperEvent) GetToken() string {
 	if x != nil {
 		return x.Token
+	}
+	return ""
+}
+
+// Request to create a DV badge order
+type CreateDVOrderRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Domain to validate (e.g., "example.com")
+	Domain string `protobuf:"bytes,1,opt,name=domain,proto3" json:"domain,omitempty"`
+	// Challenge type: "http-01" or "dns-01"
+	ChallengeType string `protobuf:"bytes,2,opt,name=challenge_type,json=challengeType,proto3" json:"challenge_type,omitempty"`
+	// Public key in JWK format (JSON string)
+	Jwk string `protobuf:"bytes,3,opt,name=jwk,proto3" json:"jwk,omitempty"`
+	// CA URL (default: https://registry.capisc.io)
+	CaUrl         string `protobuf:"bytes,4,opt,name=ca_url,json=caUrl,proto3" json:"ca_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateDVOrderRequest) Reset() {
+	*x = CreateDVOrderRequest{}
+	mi := &file_capiscio_v1_badge_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateDVOrderRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateDVOrderRequest) ProtoMessage() {}
+
+func (x *CreateDVOrderRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_badge_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateDVOrderRequest.ProtoReflect.Descriptor instead.
+func (*CreateDVOrderRequest) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *CreateDVOrderRequest) GetDomain() string {
+	if x != nil {
+		return x.Domain
+	}
+	return ""
+}
+
+func (x *CreateDVOrderRequest) GetChallengeType() string {
+	if x != nil {
+		return x.ChallengeType
+	}
+	return ""
+}
+
+func (x *CreateDVOrderRequest) GetJwk() string {
+	if x != nil {
+		return x.Jwk
+	}
+	return ""
+}
+
+func (x *CreateDVOrderRequest) GetCaUrl() string {
+	if x != nil {
+		return x.CaUrl
+	}
+	return ""
+}
+
+// Response from DV order creation
+type CreateDVOrderResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Whether the request succeeded
+	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	// Order ID (UUID)
+	OrderId string `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	// Domain
+	Domain string `protobuf:"bytes,3,opt,name=domain,proto3" json:"domain,omitempty"`
+	// Challenge type
+	ChallengeType string `protobuf:"bytes,4,opt,name=challenge_type,json=challengeType,proto3" json:"challenge_type,omitempty"`
+	// Challenge token
+	ChallengeToken string `protobuf:"bytes,5,opt,name=challenge_token,json=challengeToken,proto3" json:"challenge_token,omitempty"`
+	// Order status ("pending", "valid", "invalid")
+	Status string `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
+	// Validation URL (for HTTP-01)
+	ValidationUrl string `protobuf:"bytes,7,opt,name=validation_url,json=validationUrl,proto3" json:"validation_url,omitempty"`
+	// DNS record value (for DNS-01)
+	DnsRecord string `protobuf:"bytes,8,opt,name=dns_record,json=dnsRecord,proto3" json:"dns_record,omitempty"`
+	// When the order expires (Unix timestamp)
+	ExpiresAt int64 `protobuf:"varint,9,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	// Error message if success=false
+	Error string `protobuf:"bytes,10,opt,name=error,proto3" json:"error,omitempty"`
+	// Error code
+	ErrorCode     string `protobuf:"bytes,11,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateDVOrderResponse) Reset() {
+	*x = CreateDVOrderResponse{}
+	mi := &file_capiscio_v1_badge_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateDVOrderResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateDVOrderResponse) ProtoMessage() {}
+
+func (x *CreateDVOrderResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_badge_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateDVOrderResponse.ProtoReflect.Descriptor instead.
+func (*CreateDVOrderResponse) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *CreateDVOrderResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *CreateDVOrderResponse) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *CreateDVOrderResponse) GetDomain() string {
+	if x != nil {
+		return x.Domain
+	}
+	return ""
+}
+
+func (x *CreateDVOrderResponse) GetChallengeType() string {
+	if x != nil {
+		return x.ChallengeType
+	}
+	return ""
+}
+
+func (x *CreateDVOrderResponse) GetChallengeToken() string {
+	if x != nil {
+		return x.ChallengeToken
+	}
+	return ""
+}
+
+func (x *CreateDVOrderResponse) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *CreateDVOrderResponse) GetValidationUrl() string {
+	if x != nil {
+		return x.ValidationUrl
+	}
+	return ""
+}
+
+func (x *CreateDVOrderResponse) GetDnsRecord() string {
+	if x != nil {
+		return x.DnsRecord
+	}
+	return ""
+}
+
+func (x *CreateDVOrderResponse) GetExpiresAt() int64 {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return 0
+}
+
+func (x *CreateDVOrderResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+func (x *CreateDVOrderResponse) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
+// Request to get DV order status
+type GetDVOrderRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Order ID (UUID)
+	OrderId string `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	// CA URL (default: https://registry.capisc.io)
+	CaUrl         string `protobuf:"bytes,2,opt,name=ca_url,json=caUrl,proto3" json:"ca_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDVOrderRequest) Reset() {
+	*x = GetDVOrderRequest{}
+	mi := &file_capiscio_v1_badge_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDVOrderRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDVOrderRequest) ProtoMessage() {}
+
+func (x *GetDVOrderRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_badge_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDVOrderRequest.ProtoReflect.Descriptor instead.
+func (*GetDVOrderRequest) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *GetDVOrderRequest) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *GetDVOrderRequest) GetCaUrl() string {
+	if x != nil {
+		return x.CaUrl
+	}
+	return ""
+}
+
+// Response with DV order status
+type GetDVOrderResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Whether the request succeeded
+	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	// Order ID (UUID)
+	OrderId string `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	// Domain
+	Domain string `protobuf:"bytes,3,opt,name=domain,proto3" json:"domain,omitempty"`
+	// Challenge type
+	ChallengeType string `protobuf:"bytes,4,opt,name=challenge_type,json=challengeType,proto3" json:"challenge_type,omitempty"`
+	// Challenge token
+	ChallengeToken string `protobuf:"bytes,5,opt,name=challenge_token,json=challengeToken,proto3" json:"challenge_token,omitempty"`
+	// Order status
+	Status string `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
+	// Validation URL (for HTTP-01)
+	ValidationUrl string `protobuf:"bytes,7,opt,name=validation_url,json=validationUrl,proto3" json:"validation_url,omitempty"`
+	// DNS record value (for DNS-01)
+	DnsRecord string `protobuf:"bytes,8,opt,name=dns_record,json=dnsRecord,proto3" json:"dns_record,omitempty"`
+	// When the order expires (Unix timestamp)
+	ExpiresAt int64 `protobuf:"varint,9,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	// When the order was finalized (Unix timestamp, optional)
+	FinalizedAt int64 `protobuf:"varint,10,opt,name=finalized_at,json=finalizedAt,proto3" json:"finalized_at,omitempty"`
+	// Error message if success=false
+	Error string `protobuf:"bytes,11,opt,name=error,proto3" json:"error,omitempty"`
+	// Error code
+	ErrorCode     string `protobuf:"bytes,12,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDVOrderResponse) Reset() {
+	*x = GetDVOrderResponse{}
+	mi := &file_capiscio_v1_badge_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDVOrderResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDVOrderResponse) ProtoMessage() {}
+
+func (x *GetDVOrderResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_badge_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDVOrderResponse.ProtoReflect.Descriptor instead.
+func (*GetDVOrderResponse) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *GetDVOrderResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *GetDVOrderResponse) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *GetDVOrderResponse) GetDomain() string {
+	if x != nil {
+		return x.Domain
+	}
+	return ""
+}
+
+func (x *GetDVOrderResponse) GetChallengeType() string {
+	if x != nil {
+		return x.ChallengeType
+	}
+	return ""
+}
+
+func (x *GetDVOrderResponse) GetChallengeToken() string {
+	if x != nil {
+		return x.ChallengeToken
+	}
+	return ""
+}
+
+func (x *GetDVOrderResponse) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *GetDVOrderResponse) GetValidationUrl() string {
+	if x != nil {
+		return x.ValidationUrl
+	}
+	return ""
+}
+
+func (x *GetDVOrderResponse) GetDnsRecord() string {
+	if x != nil {
+		return x.DnsRecord
+	}
+	return ""
+}
+
+func (x *GetDVOrderResponse) GetExpiresAt() int64 {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return 0
+}
+
+func (x *GetDVOrderResponse) GetFinalizedAt() int64 {
+	if x != nil {
+		return x.FinalizedAt
+	}
+	return 0
+}
+
+func (x *GetDVOrderResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+func (x *GetDVOrderResponse) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
+// Request to finalize DV order
+type FinalizeDVOrderRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Order ID (UUID)
+	OrderId string `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	// CA URL (default: https://registry.capisc.io)
+	CaUrl         string `protobuf:"bytes,2,opt,name=ca_url,json=caUrl,proto3" json:"ca_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FinalizeDVOrderRequest) Reset() {
+	*x = FinalizeDVOrderRequest{}
+	mi := &file_capiscio_v1_badge_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FinalizeDVOrderRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FinalizeDVOrderRequest) ProtoMessage() {}
+
+func (x *FinalizeDVOrderRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_badge_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FinalizeDVOrderRequest.ProtoReflect.Descriptor instead.
+func (*FinalizeDVOrderRequest) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *FinalizeDVOrderRequest) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *FinalizeDVOrderRequest) GetCaUrl() string {
+	if x != nil {
+		return x.CaUrl
+	}
+	return ""
+}
+
+// Response from DV order finalization
+type FinalizeDVOrderResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Whether the request succeeded
+	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	// DV grant JWT
+	Grant string `protobuf:"bytes,2,opt,name=grant,proto3" json:"grant,omitempty"`
+	// When the grant expires (Unix timestamp)
+	ExpiresAt int64 `protobuf:"varint,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	// Error message if success=false
+	Error string `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
+	// Error code
+	ErrorCode     string `protobuf:"bytes,5,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FinalizeDVOrderResponse) Reset() {
+	*x = FinalizeDVOrderResponse{}
+	mi := &file_capiscio_v1_badge_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FinalizeDVOrderResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FinalizeDVOrderResponse) ProtoMessage() {}
+
+func (x *FinalizeDVOrderResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_badge_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FinalizeDVOrderResponse.ProtoReflect.Descriptor instead.
+func (*FinalizeDVOrderResponse) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_badge_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *FinalizeDVOrderResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *FinalizeDVOrderResponse) GetGrant() string {
+	if x != nil {
+		return x.Grant
+	}
+	return ""
+}
+
+func (x *FinalizeDVOrderResponse) GetExpiresAt() int64 {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return 0
+}
+
+func (x *FinalizeDVOrderResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+func (x *FinalizeDVOrderResponse) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
 	}
 	return ""
 }
@@ -1412,7 +2176,33 @@ const file_capiscio_v1_badge_proto_rawDesc = "" +
 	"expires_at\x18\x06 \x01(\x03R\texpiresAt\x12\x14\n" +
 	"\x05error\x18\a \x01(\tR\x05error\x12\x1d\n" +
 	"\n" +
-	"error_code\x18\b \x01(\tR\terrorCode\"\xb2\x03\n" +
+	"error_code\x18\b \x01(\tR\terrorCode\"\xca\x01\n" +
+	"\x16RequestPoPBadgeRequest\x12\x1b\n" +
+	"\tagent_did\x18\x01 \x01(\tR\bagentDid\x12&\n" +
+	"\x0fprivate_key_jwk\x18\x02 \x01(\tR\rprivateKeyJwk\x12\x15\n" +
+	"\x06ca_url\x18\x03 \x01(\tR\x05caUrl\x12\x17\n" +
+	"\aapi_key\x18\x04 \x01(\tR\x06apiKey\x12\x1f\n" +
+	"\vttl_seconds\x18\x05 \x01(\x05R\n" +
+	"ttlSeconds\x12\x1a\n" +
+	"\baudience\x18\x06 \x03(\tR\baudience\"\x8c\x03\n" +
+	"\x17RequestPoPBadgeResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
+	"\x05token\x18\x02 \x01(\tR\x05token\x12\x10\n" +
+	"\x03jti\x18\x03 \x01(\tR\x03jti\x12\x18\n" +
+	"\asubject\x18\x04 \x01(\tR\asubject\x12\x1f\n" +
+	"\vtrust_level\x18\x05 \x01(\tR\n" +
+	"trustLevel\x12'\n" +
+	"\x0fassurance_level\x18\x06 \x01(\tR\x0eassuranceLevel\x12\x1d\n" +
+	"\n" +
+	"expires_at\x18\a \x01(\x03R\texpiresAt\x12?\n" +
+	"\x03cnf\x18\b \x03(\v2-.capiscio.v1.RequestPoPBadgeResponse.CnfEntryR\x03cnf\x12\x14\n" +
+	"\x05error\x18\t \x01(\tR\x05error\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\n" +
+	" \x01(\tR\terrorCode\x1a6\n" +
+	"\bCnfEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xb2\x03\n" +
 	"\x12StartKeeperRequest\x12+\n" +
 	"\x04mode\x18\x01 \x01(\x0e2\x17.capiscio.v1.KeeperModeR\x04mode\x12\x19\n" +
 	"\bagent_id\x18\x02 \x01(\tR\aagentId\x12\x15\n" +
@@ -1441,7 +2231,59 @@ const file_capiscio_v1_badge_proto_rawDesc = "" +
 	"\n" +
 	"error_code\x18\a \x01(\tR\terrorCode\x12\x1c\n" +
 	"\ttimestamp\x18\b \x01(\x03R\ttimestamp\x12\x14\n" +
-	"\x05token\x18\t \x01(\tR\x05token*\x96\x01\n" +
+	"\x05token\x18\t \x01(\tR\x05token\"~\n" +
+	"\x14CreateDVOrderRequest\x12\x16\n" +
+	"\x06domain\x18\x01 \x01(\tR\x06domain\x12%\n" +
+	"\x0echallenge_type\x18\x02 \x01(\tR\rchallengeType\x12\x10\n" +
+	"\x03jwk\x18\x03 \x01(\tR\x03jwk\x12\x15\n" +
+	"\x06ca_url\x18\x04 \x01(\tR\x05caUrl\"\xe6\x02\n" +
+	"\x15CreateDVOrderResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x19\n" +
+	"\border_id\x18\x02 \x01(\tR\aorderId\x12\x16\n" +
+	"\x06domain\x18\x03 \x01(\tR\x06domain\x12%\n" +
+	"\x0echallenge_type\x18\x04 \x01(\tR\rchallengeType\x12'\n" +
+	"\x0fchallenge_token\x18\x05 \x01(\tR\x0echallengeToken\x12\x16\n" +
+	"\x06status\x18\x06 \x01(\tR\x06status\x12%\n" +
+	"\x0evalidation_url\x18\a \x01(\tR\rvalidationUrl\x12\x1d\n" +
+	"\n" +
+	"dns_record\x18\b \x01(\tR\tdnsRecord\x12\x1d\n" +
+	"\n" +
+	"expires_at\x18\t \x01(\x03R\texpiresAt\x12\x14\n" +
+	"\x05error\x18\n" +
+	" \x01(\tR\x05error\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\v \x01(\tR\terrorCode\"E\n" +
+	"\x11GetDVOrderRequest\x12\x19\n" +
+	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x15\n" +
+	"\x06ca_url\x18\x02 \x01(\tR\x05caUrl\"\x86\x03\n" +
+	"\x12GetDVOrderResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x19\n" +
+	"\border_id\x18\x02 \x01(\tR\aorderId\x12\x16\n" +
+	"\x06domain\x18\x03 \x01(\tR\x06domain\x12%\n" +
+	"\x0echallenge_type\x18\x04 \x01(\tR\rchallengeType\x12'\n" +
+	"\x0fchallenge_token\x18\x05 \x01(\tR\x0echallengeToken\x12\x16\n" +
+	"\x06status\x18\x06 \x01(\tR\x06status\x12%\n" +
+	"\x0evalidation_url\x18\a \x01(\tR\rvalidationUrl\x12\x1d\n" +
+	"\n" +
+	"dns_record\x18\b \x01(\tR\tdnsRecord\x12\x1d\n" +
+	"\n" +
+	"expires_at\x18\t \x01(\x03R\texpiresAt\x12!\n" +
+	"\ffinalized_at\x18\n" +
+	" \x01(\x03R\vfinalizedAt\x12\x14\n" +
+	"\x05error\x18\v \x01(\tR\x05error\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\f \x01(\tR\terrorCode\"J\n" +
+	"\x16FinalizeDVOrderRequest\x12\x19\n" +
+	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x15\n" +
+	"\x06ca_url\x18\x02 \x01(\tR\x05caUrl\"\x9d\x01\n" +
+	"\x17FinalizeDVOrderResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
+	"\x05grant\x18\x02 \x01(\tR\x05grant\x12\x1d\n" +
+	"\n" +
+	"expires_at\x18\x03 \x01(\x03R\texpiresAt\x12\x14\n" +
+	"\x05error\x18\x04 \x01(\tR\x05error\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\x05 \x01(\tR\terrorCode*\x96\x01\n" +
 	"\n" +
 	"TrustLevel\x12\x1b\n" +
 	"\x17TRUST_LEVEL_UNSPECIFIED\x10\x00\x12\x1b\n" +
@@ -1466,14 +2308,19 @@ const file_capiscio_v1_badge_proto_rawDesc = "" +
 	"\x14KEEPER_EVENT_STARTED\x10\x01\x12\x18\n" +
 	"\x14KEEPER_EVENT_RENEWED\x10\x02\x12\x16\n" +
 	"\x12KEEPER_EVENT_ERROR\x10\x03\x12\x18\n" +
-	"\x14KEEPER_EVENT_STOPPED\x10\x042\x84\x04\n" +
+	"\x14KEEPER_EVENT_STOPPED\x10\x042\xe7\x06\n" +
 	"\fBadgeService\x12J\n" +
 	"\tSignBadge\x12\x1d.capiscio.v1.SignBadgeRequest\x1a\x1e.capiscio.v1.SignBadgeResponse\x12P\n" +
 	"\vVerifyBadge\x12\x1f.capiscio.v1.VerifyBadgeRequest\x1a .capiscio.v1.VerifyBadgeResponse\x12f\n" +
 	"\x16VerifyBadgeWithOptions\x12*.capiscio.v1.VerifyBadgeWithOptionsRequest\x1a .capiscio.v1.VerifyBadgeResponse\x12M\n" +
 	"\n" +
 	"ParseBadge\x12\x1e.capiscio.v1.ParseBadgeRequest\x1a\x1f.capiscio.v1.ParseBadgeResponse\x12S\n" +
-	"\fRequestBadge\x12 .capiscio.v1.RequestBadgeRequest\x1a!.capiscio.v1.RequestBadgeResponse\x12J\n" +
+	"\fRequestBadge\x12 .capiscio.v1.RequestBadgeRequest\x1a!.capiscio.v1.RequestBadgeResponse\x12\\\n" +
+	"\x0fRequestPoPBadge\x12#.capiscio.v1.RequestPoPBadgeRequest\x1a$.capiscio.v1.RequestPoPBadgeResponse\x12V\n" +
+	"\rCreateDVOrder\x12!.capiscio.v1.CreateDVOrderRequest\x1a\".capiscio.v1.CreateDVOrderResponse\x12M\n" +
+	"\n" +
+	"GetDVOrder\x12\x1e.capiscio.v1.GetDVOrderRequest\x1a\x1f.capiscio.v1.GetDVOrderResponse\x12\\\n" +
+	"\x0fFinalizeDVOrder\x12#.capiscio.v1.FinalizeDVOrderRequest\x1a$.capiscio.v1.FinalizeDVOrderResponse\x12J\n" +
 	"\vStartKeeper\x12\x1f.capiscio.v1.StartKeeperRequest\x1a\x18.capiscio.v1.KeeperEvent0\x01B\xb0\x01\n" +
 	"\x0fcom.capiscio.v1B\n" +
 	"BadgeProtoP\x01ZDgithub.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1;capisciov1\xa2\x02\x03CXX\xaa\x02\vCapiscio.V1\xca\x02\vCapiscio\\V1\xe2\x02\x17Capiscio\\V1\\GPBMetadata\xea\x02\fCapiscio::V1b\x06proto3"
@@ -1491,7 +2338,7 @@ func file_capiscio_v1_badge_proto_rawDescGZIP() []byte {
 }
 
 var file_capiscio_v1_badge_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_capiscio_v1_badge_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_capiscio_v1_badge_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_capiscio_v1_badge_proto_goTypes = []any{
 	(TrustLevel)(0),                       // 0: capiscio.v1.TrustLevel
 	(VerifyMode)(0),                       // 1: capiscio.v1.VerifyMode
@@ -1508,8 +2355,17 @@ var file_capiscio_v1_badge_proto_goTypes = []any{
 	(*ParseBadgeResponse)(nil),            // 12: capiscio.v1.ParseBadgeResponse
 	(*RequestBadgeRequest)(nil),           // 13: capiscio.v1.RequestBadgeRequest
 	(*RequestBadgeResponse)(nil),          // 14: capiscio.v1.RequestBadgeResponse
-	(*StartKeeperRequest)(nil),            // 15: capiscio.v1.StartKeeperRequest
-	(*KeeperEvent)(nil),                   // 16: capiscio.v1.KeeperEvent
+	(*RequestPoPBadgeRequest)(nil),        // 15: capiscio.v1.RequestPoPBadgeRequest
+	(*RequestPoPBadgeResponse)(nil),       // 16: capiscio.v1.RequestPoPBadgeResponse
+	(*StartKeeperRequest)(nil),            // 17: capiscio.v1.StartKeeperRequest
+	(*KeeperEvent)(nil),                   // 18: capiscio.v1.KeeperEvent
+	(*CreateDVOrderRequest)(nil),          // 19: capiscio.v1.CreateDVOrderRequest
+	(*CreateDVOrderResponse)(nil),         // 20: capiscio.v1.CreateDVOrderResponse
+	(*GetDVOrderRequest)(nil),             // 21: capiscio.v1.GetDVOrderRequest
+	(*GetDVOrderResponse)(nil),            // 22: capiscio.v1.GetDVOrderResponse
+	(*FinalizeDVOrderRequest)(nil),        // 23: capiscio.v1.FinalizeDVOrderRequest
+	(*FinalizeDVOrderResponse)(nil),       // 24: capiscio.v1.FinalizeDVOrderResponse
+	nil,                                   // 25: capiscio.v1.RequestPoPBadgeResponse.CnfEntry
 }
 var file_capiscio_v1_badge_proto_depIdxs = []int32{
 	0,  // 0: capiscio.v1.BadgeClaims.trust_level:type_name -> capiscio.v1.TrustLevel
@@ -1522,27 +2378,36 @@ var file_capiscio_v1_badge_proto_depIdxs = []int32{
 	4,  // 7: capiscio.v1.ParseBadgeResponse.claims:type_name -> capiscio.v1.BadgeClaims
 	0,  // 8: capiscio.v1.RequestBadgeRequest.trust_level:type_name -> capiscio.v1.TrustLevel
 	0,  // 9: capiscio.v1.RequestBadgeResponse.trust_level:type_name -> capiscio.v1.TrustLevel
-	2,  // 10: capiscio.v1.StartKeeperRequest.mode:type_name -> capiscio.v1.KeeperMode
-	0,  // 11: capiscio.v1.StartKeeperRequest.trust_level:type_name -> capiscio.v1.TrustLevel
-	3,  // 12: capiscio.v1.KeeperEvent.type:type_name -> capiscio.v1.KeeperEventType
-	0,  // 13: capiscio.v1.KeeperEvent.trust_level:type_name -> capiscio.v1.TrustLevel
-	5,  // 14: capiscio.v1.BadgeService.SignBadge:input_type -> capiscio.v1.SignBadgeRequest
-	7,  // 15: capiscio.v1.BadgeService.VerifyBadge:input_type -> capiscio.v1.VerifyBadgeRequest
-	9,  // 16: capiscio.v1.BadgeService.VerifyBadgeWithOptions:input_type -> capiscio.v1.VerifyBadgeWithOptionsRequest
-	11, // 17: capiscio.v1.BadgeService.ParseBadge:input_type -> capiscio.v1.ParseBadgeRequest
-	13, // 18: capiscio.v1.BadgeService.RequestBadge:input_type -> capiscio.v1.RequestBadgeRequest
-	15, // 19: capiscio.v1.BadgeService.StartKeeper:input_type -> capiscio.v1.StartKeeperRequest
-	6,  // 20: capiscio.v1.BadgeService.SignBadge:output_type -> capiscio.v1.SignBadgeResponse
-	10, // 21: capiscio.v1.BadgeService.VerifyBadge:output_type -> capiscio.v1.VerifyBadgeResponse
-	10, // 22: capiscio.v1.BadgeService.VerifyBadgeWithOptions:output_type -> capiscio.v1.VerifyBadgeResponse
-	12, // 23: capiscio.v1.BadgeService.ParseBadge:output_type -> capiscio.v1.ParseBadgeResponse
-	14, // 24: capiscio.v1.BadgeService.RequestBadge:output_type -> capiscio.v1.RequestBadgeResponse
-	16, // 25: capiscio.v1.BadgeService.StartKeeper:output_type -> capiscio.v1.KeeperEvent
-	20, // [20:26] is the sub-list for method output_type
-	14, // [14:20] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	25, // 10: capiscio.v1.RequestPoPBadgeResponse.cnf:type_name -> capiscio.v1.RequestPoPBadgeResponse.CnfEntry
+	2,  // 11: capiscio.v1.StartKeeperRequest.mode:type_name -> capiscio.v1.KeeperMode
+	0,  // 12: capiscio.v1.StartKeeperRequest.trust_level:type_name -> capiscio.v1.TrustLevel
+	3,  // 13: capiscio.v1.KeeperEvent.type:type_name -> capiscio.v1.KeeperEventType
+	0,  // 14: capiscio.v1.KeeperEvent.trust_level:type_name -> capiscio.v1.TrustLevel
+	5,  // 15: capiscio.v1.BadgeService.SignBadge:input_type -> capiscio.v1.SignBadgeRequest
+	7,  // 16: capiscio.v1.BadgeService.VerifyBadge:input_type -> capiscio.v1.VerifyBadgeRequest
+	9,  // 17: capiscio.v1.BadgeService.VerifyBadgeWithOptions:input_type -> capiscio.v1.VerifyBadgeWithOptionsRequest
+	11, // 18: capiscio.v1.BadgeService.ParseBadge:input_type -> capiscio.v1.ParseBadgeRequest
+	13, // 19: capiscio.v1.BadgeService.RequestBadge:input_type -> capiscio.v1.RequestBadgeRequest
+	15, // 20: capiscio.v1.BadgeService.RequestPoPBadge:input_type -> capiscio.v1.RequestPoPBadgeRequest
+	19, // 21: capiscio.v1.BadgeService.CreateDVOrder:input_type -> capiscio.v1.CreateDVOrderRequest
+	21, // 22: capiscio.v1.BadgeService.GetDVOrder:input_type -> capiscio.v1.GetDVOrderRequest
+	23, // 23: capiscio.v1.BadgeService.FinalizeDVOrder:input_type -> capiscio.v1.FinalizeDVOrderRequest
+	17, // 24: capiscio.v1.BadgeService.StartKeeper:input_type -> capiscio.v1.StartKeeperRequest
+	6,  // 25: capiscio.v1.BadgeService.SignBadge:output_type -> capiscio.v1.SignBadgeResponse
+	10, // 26: capiscio.v1.BadgeService.VerifyBadge:output_type -> capiscio.v1.VerifyBadgeResponse
+	10, // 27: capiscio.v1.BadgeService.VerifyBadgeWithOptions:output_type -> capiscio.v1.VerifyBadgeResponse
+	12, // 28: capiscio.v1.BadgeService.ParseBadge:output_type -> capiscio.v1.ParseBadgeResponse
+	14, // 29: capiscio.v1.BadgeService.RequestBadge:output_type -> capiscio.v1.RequestBadgeResponse
+	16, // 30: capiscio.v1.BadgeService.RequestPoPBadge:output_type -> capiscio.v1.RequestPoPBadgeResponse
+	20, // 31: capiscio.v1.BadgeService.CreateDVOrder:output_type -> capiscio.v1.CreateDVOrderResponse
+	22, // 32: capiscio.v1.BadgeService.GetDVOrder:output_type -> capiscio.v1.GetDVOrderResponse
+	24, // 33: capiscio.v1.BadgeService.FinalizeDVOrder:output_type -> capiscio.v1.FinalizeDVOrderResponse
+	18, // 34: capiscio.v1.BadgeService.StartKeeper:output_type -> capiscio.v1.KeeperEvent
+	25, // [25:35] is the sub-list for method output_type
+	15, // [15:25] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_capiscio_v1_badge_proto_init() }
@@ -1556,7 +2421,7 @@ func file_capiscio_v1_badge_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capiscio_v1_badge_proto_rawDesc), len(file_capiscio_v1_badge_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   13,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -52,8 +52,8 @@ jobs:
           COVERAGE=$(go tool cover -func=coverage.txt | grep total | awk '{print $3}' | sed 's/%//')
           echo "Total coverage: $COVERAGE%"
           
-          # Check minimum threshold (70% for library code)
-          THRESHOLD=70
+          # Check minimum threshold (65% for library code - RPC layer has integration test coverage)
+          THRESHOLD=65
           if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
             echo "❌ Coverage $COVERAGE% is below minimum threshold of $THRESHOLD%"
             exit 1
