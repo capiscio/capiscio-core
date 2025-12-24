@@ -445,6 +445,47 @@ go test ./pkg/...
 go build ./cmd/capiscio
 ```
 
+### Working with capiscio-server
+
+If you're developing `capiscio-core` alongside `capiscio-server`, use Go workspaces:
+
+```bash
+# In capiscio-server directory, create go.work (gitignored)
+cd ../capiscio-server
+cat > go.work << 'EOF'
+go 1.24.0
+
+use .
+use ../capiscio-core
+EOF
+```
+
+This allows `capiscio-server` to use your local `capiscio-core` changes without publishing.
+
+### Publishing a Release
+
+When your changes are ready for `capiscio-server` CI/CD:
+
+```bash
+# 1. Commit your changes
+git add -A && git commit -m "feat: your changes"
+
+# 2. Tag with semantic version
+git tag v2.2.4
+
+# 3. Push commit and tag
+git push origin main v2.2.4
+
+# 4. Update capiscio-server to use the new version
+cd ../capiscio-server
+go get github.com/capiscio/capiscio-core/v2@v2.2.4
+```
+
+**Version Guidelines:**
+- Patch (`v2.2.x`): Bug fixes, internal refactors
+- Minor (`v2.x.0`): New features, backward-compatible API additions
+- Major (`vX.0.0`): Breaking API changes (requires updating import path)
+
 ## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
