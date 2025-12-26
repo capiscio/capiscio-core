@@ -32,7 +32,7 @@ const (
 const (
 	// REVOCATION_CACHE_MAX_STALENESS is the default maximum age for cached data.
 	// RFC-002 v1.3 §7.5: 300 seconds (5 minutes) - revocation cache older than
-	// this is considered stale and triggers fail-closed for levels 2-4.
+	// this is considered stale and triggers fail-closed for levels 2+.
 	REVOCATION_CACHE_MAX_STALENESS = 5 * time.Minute
 
 	// DefaultStaleThreshold is an alias for backward compatibility.
@@ -40,7 +40,7 @@ const (
 	DefaultStaleThreshold = REVOCATION_CACHE_MAX_STALENESS
 
 	// StaleFailClosedMinLevel is the minimum trust level that enforces fail-closed
-	// on stale data. RFC-002 v1.3 §7.5: Levels 2-4 MUST fail on stale cache.
+	// on stale data. RFC-002 v1.3 §7.5: Levels 2+ MUST fail on stale cache.
 	StaleFailClosedMinLevel = 2
 )
 
@@ -454,9 +454,9 @@ func (v *Verifier) checkRevocationOnline(ctx context.Context, claims *Claims) er
 func (v *Verifier) checkRevocationOffline(claims *Claims, opts VerifyOptions, levelInt int, staleThreshold time.Duration) error {
 	if opts.RevocationCache == nil {
 		// RFC-002 v1.3 §7.5: No cache available in offline mode
-		// For levels 2-4, this is a fail-closed scenario unless FailOpen is set
+		// For levels 2+, this is a fail-closed scenario unless FailOpen is set
 		if levelInt >= StaleFailClosedMinLevel && !opts.FailOpen {
-			return NewError(ErrCodeRevocationCheckFailed, "revocation cache required for offline verification of level 2-4 badges")
+			return NewError(ErrCodeRevocationCheckFailed, "revocation cache required for offline verification of level 2+ badges")
 		}
 		// For levels 0-1 or with FailOpen, allow without cache
 		return nil
@@ -492,9 +492,9 @@ func (v *Verifier) checkRevocationHybrid(ctx context.Context, claims *Claims, op
 	// Online failed, try cache
 	if opts.RevocationCache == nil {
 		// RFC-002 v1.3 §7.5: No cache and online failed
-		// For levels 2-4, fail-closed unless FailOpen is set
+		// For levels 2+, fail-closed unless FailOpen is set
 		if levelInt >= StaleFailClosedMinLevel && !opts.FailOpen {
-			return WrapError(ErrCodeRevocationCheckFailed, "online check failed and no revocation cache available for level 2-4 badge", err)
+			return WrapError(ErrCodeRevocationCheckFailed, "online check failed and no revocation cache available for level 2+ badge", err)
 		}
 		// Levels 0-1 or FailOpen: allow
 		return nil

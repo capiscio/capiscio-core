@@ -36,7 +36,7 @@ const (
 	ErrCodeAgentDisabled = "BADGE_AGENT_DISABLED"
 
 	// ErrCodeRevocationCheckFailed indicates revocation check failed.
-	// RFC-002 v1.3 §7.5: Used when sync fails AND cache stale for levels 2-4.
+	// RFC-002 v1.3 §7.5: Used when sync fails AND cache stale for levels 2+.
 	ErrCodeRevocationCheckFailed = "REVOCATION_CHECK_FAILED"
 )
 
@@ -122,7 +122,7 @@ var (
 	ErrAgentDisabled = NewError(ErrCodeAgentDisabled, "agent has been disabled")
 
 	// ErrRevocationCheckFailed is returned when revocation check fails with stale cache.
-	// RFC-002 v1.3 §7.5: Used for fail-closed on stale cache for levels 2-4.
+	// RFC-002 v1.3 §7.5: Used for fail-closed on stale cache for levels 2+.
 	ErrRevocationCheckFailed = NewError(ErrCodeRevocationCheckFailed, "revocation check failed")
 )
 
