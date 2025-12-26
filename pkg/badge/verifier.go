@@ -30,12 +30,17 @@ const (
 )
 
 const (
-	// DefaultStaleThreshold is the default maximum age for cached data.
-	// RFC-002 v1.3: Revocation cache older than this is considered stale.
-	DefaultStaleThreshold = 24 * time.Hour
+	// REVOCATION_CACHE_MAX_STALENESS is the default maximum age for cached data.
+	// RFC-002 v1.3 §7.5: 300 seconds (5 minutes) - revocation cache older than
+	// this is considered stale and triggers fail-closed for levels 2+.
+	REVOCATION_CACHE_MAX_STALENESS = 5 * time.Minute
 
-	// StaleFailClosedMinLevel is the minimum IAL level that enforces fail-closed
-	// on stale data. RFC-002 v1.3: IAL-2 and above MUST fail on stale cache.
+	// DefaultStaleThreshold is an alias for backward compatibility.
+	// Deprecated: Use REVOCATION_CACHE_MAX_STALENESS instead.
+	DefaultStaleThreshold = REVOCATION_CACHE_MAX_STALENESS
+
+	// StaleFailClosedMinLevel is the minimum trust level that enforces fail-closed
+	// on stale data. RFC-002 v1.3 §7.5: Levels 2+ MUST fail on stale cache.
 	StaleFailClosedMinLevel = 2
 )
 
@@ -448,21 +453,21 @@ func (v *Verifier) checkRevocationOnline(ctx context.Context, claims *Claims) er
 // checkRevocationOffline checks revocation via local cache.
 func (v *Verifier) checkRevocationOffline(claims *Claims, opts VerifyOptions, levelInt int, staleThreshold time.Duration) error {
 	if opts.RevocationCache == nil {
-		// RFC-002 v1.3: No cache available in offline mode
-		// For IAL-2+, this is a fail-closed scenario unless FailOpen is set
+		// RFC-002 v1.3 §7.5: No cache available in offline mode
+		// For levels 2+, this is a fail-closed scenario unless FailOpen is set
 		if levelInt >= StaleFailClosedMinLevel && !opts.FailOpen {
-			return NewError(ErrCodeRevoked, "revocation cache required for offline verification of IAL-2+ badges")
+			return NewError(ErrCodeRevocationCheckFailed, "revocation cache required for offline verification of level 2+ badges")
 		}
-		// For IAL-0/1 or with FailOpen, allow without cache
+		// For levels 0-1 or with FailOpen, allow without cache
 		return nil
 	}
 
-	// RFC-002 v1.3: Check cache staleness for IAL-2+ badges
+	// RFC-002 v1.3 §7.5: Check cache staleness for levels 2-4
 	if opts.RevocationCache.IsStale(staleThreshold) {
 		if levelInt >= StaleFailClosedMinLevel && !opts.FailOpen {
-			return NewError(ErrCodeRevoked, fmt.Sprintf("revocation cache is stale (>%v) - fail-closed for IAL-%d badge", staleThreshold, levelInt))
+			return NewError(ErrCodeRevocationCheckFailed, fmt.Sprintf("revocation cache is stale (>%v) - fail-closed for level %d badge", staleThreshold, levelInt))
 		}
-		// IAL-0/1 or FailOpen: warn but continue
+		// Levels 0-1 or FailOpen: warn but continue
 	}
 
 	// Check if badge is in revocation cache
@@ -486,21 +491,21 @@ func (v *Verifier) checkRevocationHybrid(ctx context.Context, claims *Claims, op
 
 	// Online failed, try cache
 	if opts.RevocationCache == nil {
-		// RFC-002 v1.3: No cache and online failed
-		// For IAL-2+, fail-closed unless FailOpen is set
+		// RFC-002 v1.3 §7.5: No cache and online failed
+		// For levels 2+, fail-closed unless FailOpen is set
 		if levelInt >= StaleFailClosedMinLevel && !opts.FailOpen {
-			return WrapError(ErrCodeRevoked, "online check failed and no revocation cache available for IAL-2+ badge", err)
+			return WrapError(ErrCodeRevocationCheckFailed, "online check failed and no revocation cache available for level 2+ badge", err)
 		}
-		// IAL-0/1 or FailOpen: allow
+		// Levels 0-1 or FailOpen: allow
 		return nil
 	}
 
-	// RFC-002 v1.3: Check staleness when falling back to cache
+	// RFC-002 v1.3 §7.5: Check staleness when falling back to cache
 	if opts.RevocationCache.IsStale(staleThreshold) {
 		if levelInt >= StaleFailClosedMinLevel && !opts.FailOpen {
-			return NewError(ErrCodeRevoked, fmt.Sprintf("online check failed and revocation cache is stale (>%v) - fail-closed for IAL-%d badge", staleThreshold, levelInt))
+			return NewError(ErrCodeRevocationCheckFailed, fmt.Sprintf("online check failed and revocation cache is stale (>%v) - fail-closed for level %d badge", staleThreshold, levelInt))
 		}
-		// IAL-0/1 or FailOpen: continue with stale cache
+		// Levels 0-1 or FailOpen: continue with stale cache
 	}
 
 	// Fall back to cache

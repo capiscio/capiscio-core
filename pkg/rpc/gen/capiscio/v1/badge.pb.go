@@ -547,6 +547,9 @@ type VerifyOptions struct {
 	ClockToleranceSeconds int64                  `protobuf:"varint,6,opt,name=clock_tolerance_seconds,json=clockToleranceSeconds,proto3" json:"clock_tolerance_seconds,omitempty"`
 	RegistryUrl           string                 `protobuf:"bytes,7,opt,name=registry_url,json=registryUrl,proto3" json:"registry_url,omitempty"`
 	AcceptSelfSigned      bool                   `protobuf:"varint,8,opt,name=accept_self_signed,json=acceptSelfSigned,proto3" json:"accept_self_signed,omitempty"` // Accept Level 0 did:key badges
+	// RFC-002 v1.3 §7.5: Staleness fail-closed behavior
+	FailOpen              bool  `protobuf:"varint,9,opt,name=fail_open,json=failOpen,proto3" json:"fail_open,omitempty"`                                           // If true, allow verification when cache is stale (default: false)
+	StaleThresholdSeconds int64 `protobuf:"varint,10,opt,name=stale_threshold_seconds,json=staleThresholdSeconds,proto3" json:"stale_threshold_seconds,omitempty"` // Max staleness before fail-closed (default: 300 = 5 min)
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -635,6 +638,20 @@ func (x *VerifyOptions) GetAcceptSelfSigned() bool {
 		return x.AcceptSelfSigned
 	}
 	return false
+}
+
+func (x *VerifyOptions) GetFailOpen() bool {
+	if x != nil {
+		return x.FailOpen
+	}
+	return false
+}
+
+func (x *VerifyOptions) GetStaleThresholdSeconds() int64 {
+	if x != nil {
+		return x.StaleThresholdSeconds
+	}
+	return 0
 }
 
 // Request to verify with options
@@ -2129,7 +2146,7 @@ const file_capiscio_v1_badge_proto_rawDesc = "" +
 	"\x06claims\x18\x02 \x01(\v2\x18.capiscio.v1.BadgeClaimsR\x06claims\"P\n" +
 	"\x12VerifyBadgeRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12$\n" +
-	"\x0epublic_key_jwk\x18\x02 \x01(\tR\fpublicKeyJwk\"\xdf\x02\n" +
+	"\x0epublic_key_jwk\x18\x02 \x01(\tR\fpublicKeyJwk\"\xb4\x03\n" +
 	"\rVerifyOptions\x12+\n" +
 	"\x04mode\x18\x01 \x01(\x0e2\x17.capiscio.v1.VerifyModeR\x04mode\x12'\n" +
 	"\x0ftrusted_issuers\x18\x02 \x03(\tR\x0etrustedIssuers\x12\x1a\n" +
@@ -2138,7 +2155,10 @@ const file_capiscio_v1_badge_proto_rawDesc = "" +
 	"\x11skip_agent_status\x18\x05 \x01(\bR\x0fskipAgentStatus\x126\n" +
 	"\x17clock_tolerance_seconds\x18\x06 \x01(\x03R\x15clockToleranceSeconds\x12!\n" +
 	"\fregistry_url\x18\a \x01(\tR\vregistryUrl\x12,\n" +
-	"\x12accept_self_signed\x18\b \x01(\bR\x10acceptSelfSigned\"k\n" +
+	"\x12accept_self_signed\x18\b \x01(\bR\x10acceptSelfSigned\x12\x1b\n" +
+	"\tfail_open\x18\t \x01(\bR\bfailOpen\x126\n" +
+	"\x17stale_threshold_seconds\x18\n" +
+	" \x01(\x03R\x15staleThresholdSeconds\"k\n" +
 	"\x1dVerifyBadgeWithOptionsRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x124\n" +
 	"\aoptions\x18\x02 \x01(\v2\x1a.capiscio.v1.VerifyOptionsR\aoptions\"\xf3\x01\n" +
