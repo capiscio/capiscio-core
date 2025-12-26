@@ -34,6 +34,10 @@ const (
 
 	// ErrCodeAgentDisabled indicates the agent sub is disabled.
 	ErrCodeAgentDisabled = "BADGE_AGENT_DISABLED"
+
+	// ErrCodeRevocationCheckFailed indicates revocation check failed.
+	// RFC-002 v1.3 §7.5: Used when sync fails AND cache stale for levels 2-4.
+	ErrCodeRevocationCheckFailed = "REVOCATION_CHECK_FAILED"
 )
 
 // Error represents a badge verification error with an RFC-002 error code.
@@ -116,6 +120,10 @@ var (
 
 	// ErrAgentDisabled is returned when the agent has been disabled.
 	ErrAgentDisabled = NewError(ErrCodeAgentDisabled, "agent has been disabled")
+
+	// ErrRevocationCheckFailed is returned when revocation check fails with stale cache.
+	// RFC-002 v1.3 §7.5: Used for fail-closed on stale cache for levels 2-4.
+	ErrRevocationCheckFailed = NewError(ErrCodeRevocationCheckFailed, "revocation check failed")
 )
 
 // AsError checks if err is an Error and returns it if so.

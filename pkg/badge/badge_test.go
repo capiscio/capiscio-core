@@ -632,6 +632,8 @@ func TestStalenessFailClosed(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "stale")
 		assert.Contains(t, err.Error(), "fail-closed")
+		// RFC-002 v1.3 §7.5: MUST use REVOCATION_CHECK_FAILED error code
+		assert.Contains(t, err.Error(), badge.ErrCodeRevocationCheckFailed)
 	})
 
 	t.Run("stale cache allows IAL-1 in offline mode", func(t *testing.T) {
