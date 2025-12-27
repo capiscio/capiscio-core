@@ -54,22 +54,22 @@ capiscio badge issue [flags]
 ```
 
 **Options:**
-- `--self-sign`: Self-sign for development (explicit).
+- `--self-sign`: Self-sign for development (explicit, implies level 0).
 - `--sub <did>`: Subject DID (did:web format).
-- `--level <1-3>`: Trust level: 1 (DV), 2 (OV), or 3 (EV) (default "1").
+- `--level <0-4>`: Trust level: 0 (self-signed), 1 (DV), 2 (OV), 3 (EV), 4 (CV) (default "1").
 - `--exp <duration>`: Expiration duration (default 5m per RFC-002).
 - `--key <path>`: Path to private key file (optional).
 - `--domain <string>`: Agent domain.
-- `--iss <url>`: Issuer URL (default "https://registry.capisc.io").
+- `--iss <did>`: Issuer DID (default "did:web:registry.capisc.io").
 - `--aud <urls>`: Audience (comma-separated URLs).
 
 **Examples:**
 ```bash
-# Self-signed badge for development
+# Self-signed badge for development (Level 0)
 capiscio badge issue --self-sign --sub did:web:example.com:agents:my-agent
 
-# With specific trust level
-capiscio badge issue --self-sign --level 2 --domain example.com
+# CA-issued badge with specific trust level (Level 2 - OV)
+capiscio badge issue --key ca-private.jwk --level 2 --domain example.com
 
 # With audience restriction
 capiscio badge issue --self-sign --aud "https://api.example.com,https://backup.example.com"
@@ -86,10 +86,11 @@ capiscio badge verify [token] [flags]
 **Options:**
 - `--key <path>`: Path to public key file (JWK).
 - `--offline`: Offline mode (uses trust store).
-- `--audience <url>`: Verifier's identity for audience validation.
+- `--audience <url>`: Expected audience claim value (verifies the badge is intended for this URL).
 - `--skip-revocation`: Skip revocation check (testing only).
 - `--skip-agent-status`: Skip agent status check (testing only).
 - `--trusted-issuers <urls>`: Comma-separated list of trusted issuer URLs.
+- `--accept-self-signed`: Accept Level 0 self-signed badges with did:key issuers (development/testing only).
 
 **Examples:**
 ```bash
@@ -100,7 +101,10 @@ capiscio badge verify $TOKEN --key ca-public.jwk
 capiscio badge verify $TOKEN --offline
 
 # With audience check
-capiscio badge verify $TOKEN --key ca.jwk --audience https://api.example.com
+capiscio badge verify $TOKEN --key ca-public.jwk --audience https://api.example.com
+
+# Accept self-signed Level 0 badges (development only)
+capiscio badge verify $TOKEN --accept-self-signed
 ```
 
 #### `badge keep`
@@ -122,8 +126,8 @@ capiscio badge keep [flags]
 - `--ca <url>`: CA URL for badge requests (future).
 - `--api-key <string>`: API key for CA authentication (future).
 - `--domain <string>`: Agent domain.
-- `--iss <url>`: Issuer URL.
-- `--level <1-3>`: Trust level (default "1").
+- `--iss <did>`: Issuer DID (e.g. `did:web:registry.capisc.io`).
+- `--level <0-4>`: Trust level (0=self-signed, 1=DV, 2=OV, 3=EV, 4=CV; default "1").
 
 **Examples:**
 ```bash

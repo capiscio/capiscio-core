@@ -161,7 +161,7 @@ Trust Badges include a **Trust Level** claim that indicates the verification dep
 ```bash
 # Issue Level 0 (Self-Signed) - for development only
 capiscio badge issue --self-sign
-# Note: --self-sign issues a Level 1 badge but uses local keys
+# Note: --self-sign issues a Level 0 badge using local keys
 
 # Issue Level 2 (OV) - requires CA key
 capiscio badge issue --key ca-private.jwk --level 2 --domain example.com
@@ -373,7 +373,19 @@ capiscio gateway start --port 8080 --target http://localhost:3000 --local-key pu
 *   `--target`: Backend agent URL.
 *   `--local-key`: Path to local public key file (for local mode).
 *   `--registry-url`: Registry URL (for cloud mode).
-*   `--offline`: Use trust store for verification.
+
+### `rpc`
+Start the gRPC server for SDK integration.
+
+```bash
+capiscio rpc
+capiscio rpc --socket /tmp/capiscio.sock
+capiscio rpc --address localhost:50051
+```
+
+**Flags:**
+*   `--socket`: Unix socket path (default: ~/.capiscio/rpc.sock).
+*   `--address`: TCP address to listen on (e.g., localhost:50051).
 
 ### `key gen`
 Generate a new cryptographic key pair.
