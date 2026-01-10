@@ -1,5 +1,42 @@
 # capiscio-core - GitHub Copilot Instructions
 
+## � ABSOLUTE RULES - NO EXCEPTIONS
+
+These rules are non-negotiable. Violating them will cause production issues.
+
+### 1. ALL WORK VIA PULL REQUESTS
+- **NEVER commit directly to `main`.** All changes MUST go through PRs.
+- Create feature branches: `feature/`, `fix/`, `chore/`
+- PRs require CI to pass before merge consideration
+
+### 2. LOCAL CI VALIDATION BEFORE PUSH
+- **ALL tests MUST pass locally before pushing to a PR.**
+- Run: `make test` or `go test ./...`
+- If tests fail locally, fix them before pushing. Never push failing code.
+
+### 3. RFCs ARE READ-ONLY
+- **DO NOT modify RFCs without explicit team authorization.**
+- Implementation must conform to RFCs in `capiscio-rfcs/`
+
+### 4. NO WATCH/BLOCKING COMMANDS
+- **NEVER run blocking commands** without timeout
+- Use `timeout` wrapper for long-running commands
+
+---
+
+## �🚨 CRITICAL: Read First
+
+**Before starting work, read the workspace context files:**
+1. `../../.context/CURRENT_SPRINT.md` - Sprint goals and priorities
+2. `../../.context/ACTIVE_TASKS.md` - Active tasks (check for conflicts)
+3. `../../.context/SESSION_LOG.md` - Recent session history
+
+**After significant work, update:**
+- `../../.context/ACTIVE_TASKS.md` - Update task status
+- `../../.context/SESSION_LOG.md` - Log what was done
+
+---
+
 ## Repository Purpose
 
 **capiscio-core** is the canonical Go implementation of CapiscIO's validation engine and CLI. It provides:
