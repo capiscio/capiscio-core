@@ -19,7 +19,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.24'
+          go-version: '1.24.0'
 
       - name: Build Linux
         run: GOOS=linux GOARCH=amd64 go build -o capiscio-linux-amd64 ./cmd/capiscio
@@ -55,9 +55,9 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.24'
+          go-version: '1.24.0'
 
       - name: Run Tests
         run: |
           # Run unit tests only (exclude integration tests which require a running server)
-          go test -v -cover $(go list ./pkg/... ./internal/... | grep -v /gen/)
+          go test -v -race -cover $(go list ./pkg/... ./internal/... | grep -v /gen/)
