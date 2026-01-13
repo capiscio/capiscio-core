@@ -94,12 +94,9 @@ jobs:
         with:
           path: capiscio-core
       
-      - name: Checkout capiscio-server
-        uses: actions/checkout@v4
-        with:
-          repository: capiscio/capiscio-server
-          path: capiscio-server
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Clone capiscio-server
+        run: |
+          git clone --depth 1 https://github.com/capiscio/capiscio-server.git capiscio-server
       
       - name: Set up Go
         uses: actions/setup-go@v5
