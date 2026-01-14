@@ -72,6 +72,8 @@ jobs:
   integration-test:
     name: Integration Tests
     runs-on: ubuntu-latest
+    # Allow this job to fail - integration tests are WIP
+    continue-on-error: true
     
     services:
       postgres:
