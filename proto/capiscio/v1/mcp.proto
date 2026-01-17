@@ -1,0 +1,273 @@
+// MCP Service - Tool Authority and Server Identity (RFC-006, RFC-007)
+//
+// This service provides unified MCP security features:
+// - Tool access evaluation with trust badge verification (RFC-006)
+// - Server identity verification (RFC-007)
+// - Health check with version compatibility
+//
+// Key design principles:
+// - Single RPC for decision+evidence (atomic operation)
+// - params_hash only, never raw params (canonicalization in wrapper)
+// - oneof caller_credential (core derives DID/JTI/auth_level)
+
+syntax = "proto3";
+
+package capiscio.v1;
+
+option go_package = "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1";
+
+import "google/protobuf/timestamp.proto";
+
+// MCPService provides unified MCP security operations (RFC-006 + RFC-007)
+service MCPService {
+  // RFC-006: Evaluate tool access and emit evidence atomically
+  // Single RPC returns both decision and evidence to avoid partial failures
+  rpc EvaluateToolAccess(EvaluateToolAccessRequest) returns (EvaluateToolAccessResponse);
+  
+  // RFC-007: Verify server identity from disclosed DID + badge
+  rpc VerifyServerIdentity(VerifyServerIdentityRequest) returns (VerifyServerIdentityResponse);
+  
+  // RFC-007: Extract server identity from transport headers/meta
+  rpc ParseServerIdentity(ParseServerIdentityRequest) returns (ParseServerIdentityResponse);
+  
+  // Health check for client supervision and version handshake
+  rpc Health(MCPHealthRequest) returns (MCPHealthResponse);
+}
+
+// ============================================================================
+// RFC-006: Tool Access Evaluation
+// ============================================================================
+
+// Request to evaluate tool access
+message EvaluateToolAccessRequest {
+  // Tool name being invoked
+  string tool_name = 1;
+  
+  // SHA-256 hash of canonicalized params: "sha256:<base64url>"
+  // CRITICAL: Raw params never sent to core - canonicalization happens in wrapper
+  string params_hash = 2;
+  
+  // HTTP origin of the server (e.g., "https://api.example.com")
+  string server_origin = 3;
+  
+  // Caller identity - core derives agent_did, badge_jti, auth_level
+  oneof caller_credential {
+    string badge_jws = 4;    // Full badge JWT
+    string api_key = 5;      // API key
+    // If neither set: anonymous
+  }
+  
+  // Optional policy configuration
+  string policy_version = 6;
+  EvaluateConfig config = 7;
+}
+
+// Configuration for tool access evaluation
+message EvaluateConfig {
+  // List of trusted badge issuers
+  repeated string trusted_issuers = 1;
+  
+  // Minimum required trust level (0-4, default 0)
+  int32 min_trust_level = 2;
+  
+  // Accept self-signed did:key badges (Trust Level 0)
+  bool accept_level_zero = 3;
+  
+  // Allowed tool patterns (glob patterns, e.g., "read_*", "fs.*")
+  repeated string allowed_tools = 4;
+}
+
+// Response from tool access evaluation
+message EvaluateToolAccessResponse {
+  // Access decision
+  MCPDecision decision = 1;
+  
+  // Reason for denial (only set if decision = DENY)
+  MCPDenyReason deny_reason = 2;
+  
+  // Human-readable denial detail
+  string deny_detail = 3;
+  
+  // Derived identity (core extracts from credential)
+  string agent_did = 4;       // Extracted from badge/API key
+  string badge_jti = 5;       // Badge ID if present
+  MCPAuthLevel auth_level = 6; // ANONYMOUS, API_KEY, or BADGE
+  int32 trust_level = 7;       // Verified trust level (0-4)
+  
+  // Evidence (single source of truth - no separate EmitEvidence RPC)
+  // RFC-006 §7 compliant JSON
+  string evidence_json = 8;
+  
+  // Unique evidence record ID
+  string evidence_id = 9;
+  
+  // Timestamp of evaluation
+  google.protobuf.Timestamp timestamp = 10;
+}
+
+// Access decision enum
+enum MCPDecision {
+  MCP_DECISION_UNSPECIFIED = 0;
+  MCP_DECISION_ALLOW = 1;
+  MCP_DECISION_DENY = 2;
+}
+
+// Authentication level enum
+enum MCPAuthLevel {
+  MCP_AUTH_LEVEL_UNSPECIFIED = 0;
+  MCP_AUTH_LEVEL_ANONYMOUS = 1;
+  MCP_AUTH_LEVEL_API_KEY = 2;
+  MCP_AUTH_LEVEL_BADGE = 3;
+}
+
+// Denial reason enum (RFC-006 §6.4)
+enum MCPDenyReason {
+  MCP_DENY_REASON_UNSPECIFIED = 0;
+  MCP_DENY_REASON_BADGE_MISSING = 1;       // Required but not provided
+  MCP_DENY_REASON_BADGE_INVALID = 2;       // Malformed or unverifiable
+  MCP_DENY_REASON_BADGE_EXPIRED = 3;
+  MCP_DENY_REASON_BADGE_REVOKED = 4;
+  MCP_DENY_REASON_TRUST_INSUFFICIENT = 5;  // Trust level < min required
+  MCP_DENY_REASON_TOOL_NOT_ALLOWED = 6;    // Tool not in allowed list
+  MCP_DENY_REASON_ISSUER_UNTRUSTED = 7;
+  MCP_DENY_REASON_POLICY_DENIED = 8;       // Policy evaluation failed
+}
+
+// ============================================================================
+// RFC-007: Server Identity Verification
+// ============================================================================
+
+// Request to verify server identity
+message VerifyServerIdentityRequest {
+  // Disclosed server DID
+  string server_did = 1;
+  
+  // Server trust badge (JWS), optional
+  string server_badge = 2;
+  
+  // HTTP origin for origin binding (empty for stdio)
+  string transport_origin = 3;
+  
+  // URL path for did:web path binding
+  string endpoint_path = 4;
+  
+  // Verification configuration
+  MCPVerifyConfig config = 5;
+}
+
+// Configuration for server identity verification
+message MCPVerifyConfig {
+  // List of trusted badge issuers
+  repeated string trusted_issuers = 1;
+  
+  // Minimum required trust level (0-4, default 0)
+  int32 min_trust_level = 2;
+  
+  // Accept self-signed did:key badges (Trust Level 0)
+  bool accept_level_zero = 3;
+  
+  // Skip revocation checks (offline mode)
+  bool offline_mode = 4;
+  
+  // Skip origin binding checks (for trusted gateways)
+  bool skip_origin_binding = 5;
+}
+
+// Response from server identity verification
+message VerifyServerIdentityResponse {
+  // Server classification state (RFC-007 §5.2)
+  MCPServerState state = 1;
+  
+  // Trust level (only set for VERIFIED_PRINCIPAL)
+  int32 trust_level = 2;
+  
+  // Confirmed server DID
+  string server_did = 3;
+  
+  // Badge ID if present
+  string badge_jti = 4;
+  
+  // Error code (only set on verification failure)
+  MCPServerErrorCode error_code = 5;
+  
+  // Human-readable error detail
+  string error_detail = 6;
+}
+
+// Server classification state (RFC-007 §5.2)
+enum MCPServerState {
+  MCP_SERVER_STATE_UNSPECIFIED = 0;
+  MCP_SERVER_STATE_VERIFIED_PRINCIPAL = 1;   // Badge verified, trust level established
+  MCP_SERVER_STATE_DECLARED_PRINCIPAL = 2;   // DID present but no/invalid badge
+  MCP_SERVER_STATE_UNVERIFIED_ORIGIN = 3;    // No identity disclosed (distinct from Trust Level 0)
+}
+
+// Server verification error codes (RFC-007 §8)
+enum MCPServerErrorCode {
+  MCP_SERVER_ERROR_NONE = 0;
+  MCP_SERVER_ERROR_DID_INVALID = 1;
+  MCP_SERVER_ERROR_BADGE_INVALID = 2;
+  MCP_SERVER_ERROR_BADGE_EXPIRED = 3;
+  MCP_SERVER_ERROR_BADGE_REVOKED = 4;
+  MCP_SERVER_ERROR_TRUST_INSUFFICIENT = 5;
+  MCP_SERVER_ERROR_ORIGIN_MISMATCH = 6;
+  MCP_SERVER_ERROR_PATH_MISMATCH = 7;
+  MCP_SERVER_ERROR_ISSUER_UNTRUSTED = 8;
+}
+
+// Request to parse server identity from headers/meta
+message ParseServerIdentityRequest {
+  oneof source {
+    MCPHttpHeaders http_headers = 1;
+    MCPJsonRpcMeta jsonrpc_meta = 2;
+  }
+}
+
+// HTTP headers containing server identity
+message MCPHttpHeaders {
+  string capiscio_server_did = 1;
+  string capiscio_server_badge = 2;
+}
+
+// JSON-RPC _meta object containing server identity
+message MCPJsonRpcMeta {
+  // The _meta object as JSON string
+  string meta_json = 1;
+}
+
+// Response from parsing server identity
+message ParseServerIdentityResponse {
+  // Extracted server DID
+  string server_did = 1;
+  
+  // Extracted server badge
+  string server_badge = 2;
+  
+  // Whether any identity information was present
+  bool identity_present = 3;
+}
+
+// ============================================================================
+// Health Check
+// ============================================================================
+
+// Health check request
+message MCPHealthRequest {
+  // Client SDK version for compatibility check
+  string client_version = 1;
+}
+
+// Health check response
+message MCPHealthResponse {
+  // Whether the service is healthy
+  bool healthy = 1;
+  
+  // capiscio-core version
+  string core_version = 2;
+  
+  // Proto schema version
+  string proto_version = 3;
+  
+  // Whether client version is compatible with this core
+  bool version_compatible = 4;
+}
