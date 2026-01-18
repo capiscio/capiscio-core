@@ -12,8 +12,13 @@ plugins:
   - remote: buf.build/grpc/go
     out: ../pkg/rpc/gen
     opt: paths=source_relative
-  # Python
+  # Python (capiscio-sdk-python)
   - remote: buf.build/protocolbuffers/python
     out: ../../capiscio-sdk-python/capiscio_sdk/_rpc/gen
   - remote: buf.build/grpc/python
     out: ../../capiscio-sdk-python/capiscio_sdk/_rpc/gen
+  # Python (capiscio-mcp-python)
+  - remote: buf.build/protocolbuffers/python
+    out: ../../capiscio-mcp-python/capiscio_mcp/_proto/gen
+  - remote: buf.build/grpc/python
+    out: ../../capiscio-mcp-python/capiscio_mcp/_proto/gen

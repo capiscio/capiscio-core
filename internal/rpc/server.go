@@ -38,4 +38,7 @@ func RegisterServices(server *grpc.Server) {
 	pb.RegisterScoringServiceServer(server, NewScoringService())
 	pb.RegisterSimpleGuardServiceServer(server, NewSimpleGuardService())
 	pb.RegisterRegistryServiceServer(server, NewRegistryService())
+
+	// Register MCPService for RFC-006/007 MCP integration
+	pb.RegisterMCPServiceServer(server, NewMCPService())
 }

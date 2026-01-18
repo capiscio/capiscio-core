@@ -3,7 +3,7 @@
 # agentcard
 
 ```go
-import "github.com/capiscio/capiscio-core/pkg/agentcard"
+import "github.com/capiscio/capiscio-core/v2/pkg/agentcard"
 ```
 
 Package agentcard defines the data structures for the A2A Agent Card.
@@ -166,27 +166,204 @@ const (
 # badge
 
 ```go
-import "github.com/capiscio/capiscio-core/pkg/badge"
+import "github.com/capiscio/capiscio-core/v2/pkg/badge"
 ```
+
+Package badge provides badge client functionality for requesting badges from a CA.
 
 Package badge provides functionality for issuing and verifying Trust Badges.
 
+Package badge provides badge client functionality for requesting badges from a CA.
+
 ## Index
 
+- [Constants](<#constants>)
+- [Variables](<#variables>)
+- [func GetErrorCode\(err error\) string](<#GetErrorCode>)
 - [func SignBadge\(claims \*Claims, privateKey crypto.PrivateKey\) \(string, error\)](<#SignBadge>)
+- [type ChallengeResponse](<#ChallengeResponse>)
 - [type Claims](<#Claims>)
+  - [func \(c \*Claims\) AgentID\(\) string](<#Claims.AgentID>)
+  - [func \(c \*Claims\) AssuranceLevel\(\) string](<#Claims.AssuranceLevel>)
+  - [func \(c \*Claims\) Domain\(\) string](<#Claims.Domain>)
+  - [func \(c \*Claims\) ExpiresAt\(\) time.Time](<#Claims.ExpiresAt>)
+  - [func \(c \*Claims\) HasProofOfPossession\(\) bool](<#Claims.HasProofOfPossession>)
+  - [func \(c \*Claims\) IsExpired\(\) bool](<#Claims.IsExpired>)
+  - [func \(c \*Claims\) IsNotYetValid\(\) bool](<#Claims.IsNotYetValid>)
+  - [func \(c \*Claims\) IssuedAtTime\(\) time.Time](<#Claims.IssuedAtTime>)
+  - [func \(c \*Claims\) TrustLevel\(\) string](<#Claims.TrustLevel>)
+- [type Client](<#Client>)
+  - [func NewClient\(caURL, apiKey string\) \*Client](<#NewClient>)
+  - [func \(c \*Client\) RequestBadge\(ctx context.Context, opts RequestBadgeOptions\) \(\*RequestBadgeResult, error\)](<#Client.RequestBadge>)
+- [type ClientError](<#ClientError>)
+  - [func \(e \*ClientError\) Error\(\) string](<#ClientError.Error>)
+  - [func \(e \*ClientError\) IsAuthError\(\) bool](<#ClientError.IsAuthError>)
+  - [func \(e \*ClientError\) IsNotFoundError\(\) bool](<#ClientError.IsNotFoundError>)
+- [type ConfirmationClaim](<#ConfirmationClaim>)
 - [type CredentialSubject](<#CredentialSubject>)
+- [type DVClient](<#DVClient>)
+  - [func NewDVClient\(caURL string\) \*DVClient](<#NewDVClient>)
+  - [func NewDVClientWithHTTPClient\(caURL string, httpClient \*http.Client\) \*DVClient](<#NewDVClientWithHTTPClient>)
+  - [func \(c \*DVClient\) CreateOrder\(ctx context.Context, domain, challengeType string, jwk \*jose.JSONWebKey\) \(\*DVOrder, error\)](<#DVClient.CreateOrder>)
+  - [func \(c \*DVClient\) FinalizeOrder\(ctx context.Context, orderID string\) \(\*DVGrant, error\)](<#DVClient.FinalizeOrder>)
+  - [func \(c \*DVClient\) GetOrder\(ctx context.Context, orderID string\) \(\*DVOrder, error\)](<#DVClient.GetOrder>)
+- [type DVGrant](<#DVGrant>)
+- [type DVOrder](<#DVOrder>)
+- [type Error](<#Error>)
+  - [func AsError\(err error\) \(\*Error, bool\)](<#AsError>)
+  - [func NewError\(code, message string\) \*Error](<#NewError>)
+  - [func WrapError\(code, message string, cause error\) \*Error](<#WrapError>)
+  - [func \(e \*Error\) Error\(\) string](<#Error.Error>)
+  - [func \(e \*Error\) Is\(target error\) bool](<#Error.Is>)
+  - [func \(e \*Error\) Unwrap\(\) error](<#Error.Unwrap>)
 - [type Keeper](<#Keeper>)
-  - [func NewKeeper\(config KeeperConfig\) \*Keeper](<#NewKeeper>)
+  - [func NewKeeper\(config KeeperConfig\) \(\*Keeper, error\)](<#NewKeeper>)
   - [func \(k \*Keeper\) CheckAndRenew\(\) error](<#Keeper.CheckAndRenew>)
   - [func \(k \*Keeper\) Renew\(\) error](<#Keeper.Renew>)
   - [func \(k \*Keeper\) Run\(ctx context.Context\) error](<#Keeper.Run>)
+  - [func \(k \*Keeper\) RunWithEvents\(ctx context.Context, events chan\<\- KeeperEvent\) error](<#Keeper.RunWithEvents>)
 - [type KeeperConfig](<#KeeperConfig>)
+- [type KeeperEvent](<#KeeperEvent>)
+- [type KeeperEventType](<#KeeperEventType>)
+- [type KeeperMode](<#KeeperMode>)
+- [type PoPClient](<#PoPClient>)
+  - [func NewPoPClient\(caURL, apiKey string\) \*PoPClient](<#NewPoPClient>)
+  - [func NewPoPClientWithHTTPClient\(caURL, apiKey string, httpClient \*http.Client\) \*PoPClient](<#NewPoPClientWithHTTPClient>)
+  - [func \(c \*PoPClient\) RequestPoPBadge\(ctx context.Context, opts RequestPoPBadgeOptions\) \(\*RequestPoPBadgeResult, error\)](<#PoPClient.RequestPoPBadge>)
+- [type PoPProofClaims](<#PoPProofClaims>)
+- [type RenewalResult](<#RenewalResult>)
+- [type RequestBadgeOptions](<#RequestBadgeOptions>)
+- [type RequestBadgeResult](<#RequestBadgeResult>)
+- [type RequestPoPBadgeOptions](<#RequestPoPBadgeOptions>)
+- [type RequestPoPBadgeResult](<#RequestPoPBadgeResult>)
+- [type RevocationCache](<#RevocationCache>)
 - [type VerifiableCredential](<#VerifiableCredential>)
 - [type Verifier](<#Verifier>)
   - [func NewVerifier\(reg registry.Registry\) \*Verifier](<#NewVerifier>)
   - [func \(v \*Verifier\) Verify\(ctx context.Context, token string\) \(\*Claims, error\)](<#Verifier.Verify>)
+  - [func \(v \*Verifier\) VerifyWithOptions\(ctx context.Context, token string, opts VerifyOptions\) \(\*VerifyResult, error\)](<#Verifier.VerifyWithOptions>)
+- [type VerifyMode](<#VerifyMode>)
+- [type VerifyOptions](<#VerifyOptions>)
+- [type VerifyResult](<#VerifyResult>)
 
+
+## Constants
+
+<a name="ErrCodeMalformed"></a>Error codes as defined in RFC\-002 §8.4. These are spec\-level error codes, not HTTP status codes.
+
+```go
+const (
+    // ErrCodeMalformed indicates the JWS structure is invalid.
+    ErrCodeMalformed = "BADGE_MALFORMED"
+
+    // ErrCodeSignatureInvalid indicates signature verification failed.
+    ErrCodeSignatureInvalid = "BADGE_SIGNATURE_INVALID"
+
+    // ErrCodeExpired indicates current time >= exp.
+    ErrCodeExpired = "BADGE_EXPIRED"
+
+    // ErrCodeNotYetValid indicates current time < iat.
+    ErrCodeNotYetValid = "BADGE_NOT_YET_VALID"
+
+    // ErrCodeIssuerUntrusted indicates iss is not in the trusted issuer list.
+    ErrCodeIssuerUntrusted = "BADGE_ISSUER_UNTRUSTED"
+
+    // ErrCodeAudienceMismatch indicates the verifier is not in the aud claim.
+    ErrCodeAudienceMismatch = "BADGE_AUDIENCE_MISMATCH"
+
+    // ErrCodeRevoked indicates the badge jti is on the revocation list.
+    ErrCodeRevoked = "BADGE_REVOKED"
+
+    // ErrCodeClaimsInvalid indicates required claims are missing or malformed.
+    ErrCodeClaimsInvalid = "BADGE_CLAIMS_INVALID"
+
+    // ErrCodeAgentDisabled indicates the agent sub is disabled.
+    ErrCodeAgentDisabled = "BADGE_AGENT_DISABLED"
+
+    // ErrCodeRevocationCheckFailed indicates revocation check failed.
+    // RFC-002 v1.3 §7.5: Used when sync fails AND cache stale for levels 2+.
+    ErrCodeRevocationCheckFailed = "REVOCATION_CHECK_FAILED"
+)
+```
+
+<a name="REVOCATION_CACHE_MAX_STALENESS"></a>
+
+```go
+const (
+    // REVOCATION_CACHE_MAX_STALENESS is the default maximum age for cached data.
+    // RFC-002 v1.3 §7.5: 300 seconds (5 minutes) - revocation cache older than
+    // this is considered stale and triggers fail-closed for levels 2+.
+    REVOCATION_CACHE_MAX_STALENESS = 5 * time.Minute
+
+    // DefaultStaleThreshold is an alias for backward compatibility.
+    // Deprecated: Use REVOCATION_CACHE_MAX_STALENESS instead.
+    DefaultStaleThreshold = REVOCATION_CACHE_MAX_STALENESS
+
+    // StaleFailClosedMinLevel is the minimum trust level that enforces fail-closed
+    // on stale data. RFC-002 v1.3 §7.5: Levels 2+ MUST fail on stale cache.
+    StaleFailClosedMinLevel = 2
+)
+```
+
+<a name="DefaultCAURL"></a>DefaultCAURL is the default CapiscIO Registry URL.
+
+```go
+const DefaultCAURL = "https://registry.capisc.io"
+```
+
+<a name="DefaultTTL"></a>DefaultTTL is the default badge TTL per RFC\-002.
+
+```go
+const DefaultTTL = 5 * time.Minute
+```
+
+## Variables
+
+<a name="ErrMalformed"></a>Predefined sentinel errors for common cases. Use these with errors.Is\(\) for type\-safe error checking.
+
+```go
+var (
+    // ErrMalformed is returned when the JWS structure is invalid.
+    ErrMalformed = NewError(ErrCodeMalformed, "badge structure is invalid")
+
+    // ErrSignatureInvalid is returned when signature verification fails.
+    ErrSignatureInvalid = NewError(ErrCodeSignatureInvalid, "signature verification failed")
+
+    // ErrExpired is returned when the badge has expired.
+    ErrExpired = NewError(ErrCodeExpired, "badge has expired")
+
+    // ErrNotYetValid is returned when the badge is not yet valid (iat in future).
+    ErrNotYetValid = NewError(ErrCodeNotYetValid, "badge is not yet valid")
+
+    // ErrIssuerUntrusted is returned when the issuer is not trusted.
+    ErrIssuerUntrusted = NewError(ErrCodeIssuerUntrusted, "issuer is not trusted")
+
+    // ErrAudienceMismatch is returned when verifier is not in audience.
+    ErrAudienceMismatch = NewError(ErrCodeAudienceMismatch, "verifier not in badge audience")
+
+    // ErrRevoked is returned when the badge has been revoked.
+    ErrRevoked = NewError(ErrCodeRevoked, "badge has been revoked")
+
+    // ErrClaimsInvalid is returned when required claims are missing or malformed.
+    ErrClaimsInvalid = NewError(ErrCodeClaimsInvalid, "required claims missing or malformed")
+
+    // ErrAgentDisabled is returned when the agent has been disabled.
+    ErrAgentDisabled = NewError(ErrCodeAgentDisabled, "agent has been disabled")
+
+    // ErrRevocationCheckFailed is returned when revocation check fails with stale cache.
+    // RFC-002 v1.3 §7.5: Used for fail-closed on stale cache for levels 2+.
+    ErrRevocationCheckFailed = NewError(ErrCodeRevocationCheckFailed, "revocation check failed")
+)
+```
+
+<a name="GetErrorCode"></a>
+## func [GetErrorCode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/errors.go#L139>)
+
+```go
+func GetErrorCode(err error) string
+```
+
+GetErrorCode extracts the error code from an Error, or returns empty string.
 
 <a name="SignBadge"></a>
 ## func [SignBadge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/issuer.go#L14>)
@@ -197,18 +374,42 @@ func SignBadge(claims *Claims, privateKey crypto.PrivateKey) (string, error)
 
 SignBadge creates a signed JWS token from the given claims using the private key. It defaults to EdDSA \(Ed25519\) signing.
 
-<a name="Claims"></a>
-## type [Claims](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/schema.go#L7-L25>)
+<a name="ChallengeResponse"></a>
+## type [ChallengeResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/pop_client.go#L82-L89>)
 
-Claims represents the JWT claims payload for a CapiscIO Trust Badge. It follows the structure defined in the Minimal Authority Stack plan.
+ChallengeResponse represents the server's challenge response.
+
+```go
+type ChallengeResponse struct {
+    ChallengeID string    `json:"challenge_id"`
+    Nonce       string    `json:"nonce"`
+    ExpiresAt   time.Time `json:"expires_at"`
+    Aud         string    `json:"aud"`
+    HTU         string    `json:"htu"`
+    HTM         string    `json:"htm"`
+}
+```
+
+<a name="Claims"></a>
+## type [Claims](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/schema.go#L12-L64>)
+
+Claims represents the JWT claims payload for a CapiscIO Trust Badge. See RFC\-002: Trust Badge Specification.
 
 ```go
 type Claims struct {
-    // Issuer is the entity that issued the badge (e.g., "https://registry.capisc.io").
+    // JTI is the unique Badge ID (UUID v4). Used for revocation and audit.
+    JTI string `json:"jti"`
+
+    // Issuer is the CA that signed the Badge (e.g., "https://registry.capisc.io").
     Issuer string `json:"iss"`
 
-    // Subject is the unique identifier of the Agent (e.g., "did:capiscio:agent:12345").
+    // Subject is the agent's DID. MUST be a valid did:web identifier.
+    // Format: did:web:registry.capisc.io:agents:<agent-id>
     Subject string `json:"sub"`
+
+    // Audience is the list of trust domains/services where Badge is valid.
+    // Optional. If present, verifiers MUST check their identity is included.
+    Audience []string `json:"aud,omitempty"`
 
     // IssuedAt is the timestamp when the badge was issued (Unix timestamp).
     IssuedAt int64 `json:"iat"`
@@ -216,31 +417,388 @@ type Claims struct {
     // Expiry is the timestamp when the badge expires (Unix timestamp).
     Expiry int64 `json:"exp"`
 
+    // NotBefore is the timestamp before which the badge MUST NOT be accepted.
+    // Optional. Per RFC-002 §4.3.1.
+    NotBefore int64 `json:"nbf,omitempty"`
+
+    // IAL is the Identity Assurance Level. REQUIRED per RFC-002 §4.3.2.
+    // "0" = Account-attested (IAL-0), "1" = Proof of Possession (IAL-1).
+    IAL string `json:"ial"`
+
     // Key is the public key of the subject, embedded for offline verification.
+    // REQUIRED in production. MAY be omitted in non-production environments.
     Key *jose.JSONWebKey `json:"key,omitempty"`
+
+    // CNF is the confirmation claim per RFC 7800.
+    // When present, binds the badge to a specific key holder.
+    // Used for Proof of Possession (PoP) badges (RFC-002 §7.2.2, RFC-003).
+    CNF *ConfirmationClaim `json:"cnf,omitempty"`
+
+    // PoPChallengeID is a reference to the PoP challenge used during issuance.
+    // Optional. Provides audit trail for PoP-issued badges (RFC-002 §4.3.3).
+    PoPChallengeID string `json:"pop_challenge_id,omitempty"`
+
+    // AgentCardHash is the SHA-256 hash of the canonical AgentCard at issuance.
+    // Optional. Enables verifiers to detect AgentCard drift (RFC-002 §4.3.3).
+    AgentCardHash string `json:"agent_card_hash,omitempty"`
+
+    // DIDDocHash is the SHA-256 hash of the DID Document at issuance.
+    // Optional. Enables verifiers to detect key rotation (RFC-002 §4.3.3).
+    DIDDocHash string `json:"did_doc_hash,omitempty"`
 
     // VC contains the Verifiable Credential data.
     VC  VerifiableCredential `json:"vc"`
 }
 ```
 
+<a name="Claims.AgentID"></a>
+### func \(\*Claims\) [AgentID](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/schema.go#L83>)
+
+```go
+func (c *Claims) AgentID() string
+```
+
+AgentID extracts the agent ID from the Subject DID. For did:web:registry.capisc.io:agents:my\-agent\-001, returns "my\-agent\-001". Returns empty string if the DID format is invalid.
+
+<a name="Claims.AssuranceLevel"></a>
+### func \(\*Claims\) [AssuranceLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/schema.go#L131>)
+
+```go
+func (c *Claims) AssuranceLevel() string
+```
+
+AssuranceLevel returns the identity assurance level of the badge. Per RFC\-002 §7.2.1: \- IAL\-0: Account\-attested bearer badge \- IAL\-1: Proof of Possession badge The IAL claim is authoritative; cnf is supporting evidence.
+
+<a name="Claims.Domain"></a>
+### func \(\*Claims\) [Domain](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/schema.go#L122>)
+
+```go
+func (c *Claims) Domain() string
+```
+
+Domain returns the domain from the VC credential subject.
+
+<a name="Claims.ExpiresAt"></a>
+### func \(\*Claims\) [ExpiresAt](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/schema.go#L106>)
+
+```go
+func (c *Claims) ExpiresAt() time.Time
+```
+
+ExpiresAt returns the expiry time as a time.Time.
+
+<a name="Claims.HasProofOfPossession"></a>
+### func \(\*Claims\) [HasProofOfPossession](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/schema.go#L147>)
+
+```go
+func (c *Claims) HasProofOfPossession() bool
+```
+
+HasProofOfPossession returns true if this is a PoP\-issued badge.
+
+<a name="Claims.IsExpired"></a>
+### func \(\*Claims\) [IsExpired](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/schema.go#L96>)
+
+```go
+func (c *Claims) IsExpired() bool
+```
+
+IsExpired returns true if the badge has expired.
+
+<a name="Claims.IsNotYetValid"></a>
+### func \(\*Claims\) [IsNotYetValid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/schema.go#L101>)
+
+```go
+func (c *Claims) IsNotYetValid() bool
+```
+
+IsNotYetValid returns true if the badge's iat is in the future.
+
+<a name="Claims.IssuedAtTime"></a>
+### func \(\*Claims\) [IssuedAtTime](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/schema.go#L111>)
+
+```go
+func (c *Claims) IssuedAtTime() time.Time
+```
+
+IssuedAtTime returns the issued\-at time as a time.Time.
+
+<a name="Claims.TrustLevel"></a>
+### func \(\*Claims\) [TrustLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/schema.go#L117>)
+
+```go
+func (c *Claims) TrustLevel() string
+```
+
+TrustLevel returns the trust level from the VC credential subject. Returns "1", "2", or "3", or empty string if not set.
+
+<a name="Client"></a>
+## type [Client](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/client.go#L22-L26>)
+
+Client is an HTTP client for requesting badges from a CA.
+
+```go
+type Client struct {
+    CAURL      string
+    APIKey     string
+    HTTPClient *http.Client
+}
+```
+
+<a name="NewClient"></a>
+### func [NewClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/client.go#L29>)
+
+```go
+func NewClient(caURL, apiKey string) *Client
+```
+
+NewClient creates a new badge client.
+
+<a name="Client.RequestBadge"></a>
+### func \(\*Client\) [RequestBadge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/client.go#L159>)
+
+```go
+func (c *Client) RequestBadge(ctx context.Context, opts RequestBadgeOptions) (*RequestBadgeResult, error)
+```
+
+RequestBadge requests a new badge from the CA.
+
+<a name="ClientError"></a>
+## type [ClientError](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/client.go#L198-L201>)
+
+ClientError represents an error from the badge client.
+
+```go
+type ClientError struct {
+    Code    string
+    Message string
+}
+```
+
+<a name="ClientError.Error"></a>
+### func \(\*ClientError\) [Error](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/client.go#L203>)
+
+```go
+func (e *ClientError) Error() string
+```
+
+
+
+<a name="ClientError.IsAuthError"></a>
+### func \(\*ClientError\) [IsAuthError](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/client.go#L208>)
+
+```go
+func (e *ClientError) IsAuthError() bool
+```
+
+IsAuthError returns true if this is an authentication error.
+
+<a name="ClientError.IsNotFoundError"></a>
+### func \(\*ClientError\) [IsNotFoundError](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/client.go#L213>)
+
+```go
+func (e *ClientError) IsNotFoundError() bool
+```
+
+IsNotFoundError returns true if the agent was not found.
+
+<a name="ConfirmationClaim"></a>
+## type [ConfirmationClaim](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/schema.go#L68-L78>)
+
+ConfirmationClaim represents the cnf claim per RFC 7800. Used to bind a badge to a specific key for Proof of Possession.
+
+```go
+type ConfirmationClaim struct {
+    // KID is the key ID referencing the key in the DID Document.
+    // This is the primary mechanism for PoP badges.
+    KID string `json:"kid,omitempty"`
+
+    // JWK is the full JWK of the confirmation key (alternative to kid).
+    JWK *jose.JSONWebKey `json:"jwk,omitempty"`
+
+    // JKT is the JWK thumbprint (SHA-256) of the confirmation key.
+    JKT string `json:"jkt,omitempty"`
+}
+```
+
 <a name="CredentialSubject"></a>
-## type [CredentialSubject](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/schema.go#L37-L43>)
+## type [CredentialSubject](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/schema.go#L162-L169>)
 
 CredentialSubject contains the specific claims.
 
 ```go
 type CredentialSubject struct {
-    // Domain is the security domain of the agent (e.g., "finance.internal").
+    // Domain is the agent's home domain.
+    // MUST be validated according to the trust level's requirements.
     Domain string `json:"domain,omitempty"`
 
-    // Level indicates the trust level (e.g., "1" = Domain Validated).
+    // Level indicates the trust level: "1" (DV), "2" (OV), or "3" (EV).
     Level string `json:"level,omitempty"`
 }
 ```
 
+<a name="DVClient"></a>
+## type [DVClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/dv_client.go#L17-L20>)
+
+DVClient is an HTTP client for Domain Validated badge orders \(RFC\-002 v1.2\).
+
+```go
+type DVClient struct {
+    CAURL      string
+    HTTPClient *http.Client
+}
+```
+
+<a name="NewDVClient"></a>
+### func [NewDVClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/dv_client.go#L23>)
+
+```go
+func NewDVClient(caURL string) *DVClient
+```
+
+NewDVClient creates a new DV client with a default HTTP client.
+
+<a name="NewDVClientWithHTTPClient"></a>
+### func [NewDVClientWithHTTPClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/dv_client.go#L28>)
+
+```go
+func NewDVClientWithHTTPClient(caURL string, httpClient *http.Client) *DVClient
+```
+
+NewDVClientWithHTTPClient creates a new DV client with a custom HTTP client.
+
+<a name="DVClient.CreateOrder"></a>
+### func \(\*DVClient\) [CreateOrder](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/dv_client.go#L64>)
+
+```go
+func (c *DVClient) CreateOrder(ctx context.Context, domain, challengeType string, jwk *jose.JSONWebKey) (*DVOrder, error)
+```
+
+CreateOrder creates a new DV badge order.
+
+<a name="DVClient.FinalizeOrder"></a>
+### func \(\*DVClient\) [FinalizeOrder](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/dv_client.go#L211>)
+
+```go
+func (c *DVClient) FinalizeOrder(ctx context.Context, orderID string) (*DVGrant, error)
+```
+
+FinalizeOrder finalizes a DV badge order and receives a grant.
+
+<a name="DVClient.GetOrder"></a>
+### func \(\*DVClient\) [GetOrder](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/dv_client.go#L143>)
+
+```go
+func (c *DVClient) GetOrder(ctx context.Context, orderID string) (*DVOrder, error)
+```
+
+GetOrder gets the status of a DV badge order.
+
+<a name="DVGrant"></a>
+## type [DVGrant](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/dv_client.go#L58-L61>)
+
+DVGrant represents a DV grant JWT.
+
+```go
+type DVGrant struct {
+    Grant     string
+    ExpiresAt time.Time
+}
+```
+
+<a name="DVOrder"></a>
+## type [DVOrder](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/dv_client.go#L45-L55>)
+
+DVOrder represents a DV badge order.
+
+```go
+type DVOrder struct {
+    ID             string
+    Domain         string
+    ChallengeType  string
+    ChallengeToken string
+    Status         string
+    ValidationURL  string
+    DNSRecord      string
+    ExpiresAt      time.Time
+    FinalizedAt    *time.Time
+}
+```
+
+<a name="Error"></a>
+## type [Error](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/errors.go#L44-L53>)
+
+Error represents a badge verification error with an RFC\-002 error code.
+
+```go
+type Error struct {
+    // Code is one of the BADGE_* error codes.
+    Code string
+
+    // Message is a human-readable description.
+    Message string
+
+    // Cause is the underlying error, if any.
+    Cause error
+}
+```
+
+<a name="AsError"></a>
+### func [AsError](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/errors.go#L130>)
+
+```go
+func AsError(err error) (*Error, bool)
+```
+
+AsError checks if err is an Error and returns it if so.
+
+<a name="NewError"></a>
+### func [NewError](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/errors.go#L78>)
+
+```go
+func NewError(code, message string) *Error
+```
+
+NewError creates a new Error with the given code and message.
+
+<a name="WrapError"></a>
+### func [WrapError](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/errors.go#L86>)
+
+```go
+func WrapError(code, message string, cause error) *Error
+```
+
+WrapError creates a new Error that wraps an underlying error.
+
+<a name="Error.Error"></a>
+### func \(\*Error\) [Error](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/errors.go#L56>)
+
+```go
+func (e *Error) Error() string
+```
+
+Error implements the error interface.
+
+<a name="Error.Is"></a>
+### func \(\*Error\) [Is](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/errors.go#L69>)
+
+```go
+func (e *Error) Is(target error) bool
+```
+
+Is checks if the error matches a target error code.
+
+<a name="Error.Unwrap"></a>
+### func \(\*Error\) [Unwrap](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/errors.go#L64>)
+
+```go
+func (e *Error) Unwrap() error
+```
+
+Unwrap returns the underlying cause for errors.Is/errors.As.
+
 <a name="Keeper"></a>
-## type [Keeper](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/keeper.go#L26-L28>)
+## type [Keeper](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/keeper.go#L87-L91>)
 
 Keeper manages the lifecycle of a Trust Badge file.
 
@@ -251,34 +809,34 @@ type Keeper struct {
 ```
 
 <a name="NewKeeper"></a>
-### func [NewKeeper](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/keeper.go#L31>)
+### func [NewKeeper](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/keeper.go#L95>)
 
 ```go
-func NewKeeper(config KeeperConfig) *Keeper
+func NewKeeper(config KeeperConfig) (*Keeper, error)
 ```
 
-NewKeeper creates a new Keeper.
+NewKeeper creates a new Keeper. Returns an error if an unsupported mode is specified.
 
 <a name="Keeper.CheckAndRenew"></a>
-### func \(\*Keeper\) [CheckAndRenew](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/keeper.go#L65>)
+### func \(\*Keeper\) [CheckAndRenew](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/keeper.go#L378>)
 
 ```go
 func (k *Keeper) CheckAndRenew() error
 ```
 
-CheckAndRenew checks if the badge needs renewal and renews it if necessary.
+CheckAndRenew checks if the badge needs renewal and renews it if necessary. This is the legacy method for backward compatibility.
 
 <a name="Keeper.Renew"></a>
-### func \(\*Keeper\) [Renew](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/keeper.go#L104>)
+### func \(\*Keeper\) [Renew](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/keeper.go#L393>)
 
 ```go
 func (k *Keeper) Renew() error
 ```
 
-Renew generates a new badge and writes it to disk.
+Renew generates a new badge and writes it to disk. This is the legacy method for backward compatibility.
 
 <a name="Keeper.Run"></a>
-### func \(\*Keeper\) [Run](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/keeper.go#L42>)
+### func \(\*Keeper\) [Run](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/keeper.go#L127>)
 
 ```go
 func (k *Keeper) Run(ctx context.Context) error
@@ -286,30 +844,283 @@ func (k *Keeper) Run(ctx context.Context) error
 
 Run starts the keeper loop.
 
+<a name="Keeper.RunWithEvents"></a>
+### func \(\*Keeper\) [RunWithEvents](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/keeper.go#L151>)
+
+```go
+func (k *Keeper) RunWithEvents(ctx context.Context, events chan<- KeeperEvent) error
+```
+
+RunWithEvents starts the keeper loop and sends events to the provided channel. The channel is closed when the keeper stops.
+
 <a name="KeeperConfig"></a>
-## type [KeeperConfig](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/keeper.go#L16-L23>)
+## type [KeeperConfig](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/keeper.go#L58-L84>)
 
 KeeperConfig holds configuration for the Badge Keeper.
 
 ```go
 type KeeperConfig struct {
-    PrivateKey    crypto.PrivateKey
-    Claims        Claims
+    // Mode: self-sign, ca (deprecated), or pop (recommended)
+    Mode KeeperMode
+
+    // Common settings
     OutputFile    string
     Expiry        time.Duration
     RenewBefore   time.Duration
     CheckInterval time.Duration
+    Domain        string
+    TrustLevel    string
+
+    // Self-sign mode settings
+    PrivateKey crypto.PrivateKey
+    Claims     Claims
+
+    // CA mode settings (IAL-0, deprecated)
+    CAURL   string
+    APIKey  string
+    AgentID string
+
+    // PoP mode settings (IAL-1, recommended)
+    // AgentDID is the DID of the agent (e.g., did:key:z6Mk...)
+    AgentDID string
+    // Audience is the optional audience restrictions for the badge
+    Audience []string
+}
+```
+
+<a name="KeeperEvent"></a>
+## type [KeeperEvent](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/keeper.go#L45-L55>)
+
+KeeperEvent represents an event emitted by the badge keeper.
+
+```go
+type KeeperEvent struct {
+    Type       KeeperEventType
+    BadgeJTI   string
+    Subject    string
+    TrustLevel string
+    ExpiresAt  time.Time
+    Error      string
+    ErrorCode  string
+    Timestamp  time.Time
+    Token      string // The badge token (optional, for renewed events)
+}
+```
+
+<a name="KeeperEventType"></a>
+## type [KeeperEventType](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/keeper.go#L30>)
+
+KeeperEventType defines the type of event emitted by the keeper.
+
+```go
+type KeeperEventType string
+```
+
+<a name="KeeperEventStarted"></a>Keeper event types.
+
+```go
+const (
+    // KeeperEventStarted indicates the keeper has started.
+    KeeperEventStarted KeeperEventType = "started"
+    // KeeperEventRenewed indicates a badge was renewed.
+    KeeperEventRenewed KeeperEventType = "renewed"
+    // KeeperEventError indicates an error occurred.
+    KeeperEventError KeeperEventType = "error"
+    // KeeperEventStopped indicates the keeper has stopped.
+    KeeperEventStopped KeeperEventType = "stopped"
+)
+```
+
+<a name="KeeperMode"></a>
+## type [KeeperMode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/keeper.go#L16>)
+
+KeeperMode defines the mode of operation for the keeper.
+
+```go
+type KeeperMode string
+```
+
+<a name="KeeperModeSelfSign"></a>
+
+```go
+const (
+    // KeeperModeSelfSign generates self-signed badges locally.
+    KeeperModeSelfSign KeeperMode = "self-sign"
+    // KeeperModeCA requests badges from a Certificate Authority (IAL-0, deprecated).
+    // Deprecated: Use KeeperModePoP for production - IAL-0 lacks cryptographic key binding.
+    KeeperModeCA KeeperMode = "ca"
+    // KeeperModePoP requests badges using Proof of Possession (RFC-003 IAL-1).
+    // This is the recommended mode for production as it provides cryptographic key binding.
+    KeeperModePoP KeeperMode = "pop"
+)
+```
+
+<a name="PoPClient"></a>
+## type [PoPClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/pop_client.go#L23-L27>)
+
+PoPClient is an HTTP client for requesting badges using Proof of Possession \(RFC\-003\). This provides IAL\-1 badge issuance with cryptographic key binding.
+
+```go
+type PoPClient struct {
+    CAURL      string
+    APIKey     string
+    HTTPClient *http.Client
+}
+```
+
+<a name="NewPoPClient"></a>
+### func [NewPoPClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/pop_client.go#L31>)
+
+```go
+func NewPoPClient(caURL, apiKey string) *PoPClient
+```
+
+NewPoPClient creates a new PoP badge client with a default HTTP client. The default HTTP client uses a 30\-second timeout.
+
+<a name="NewPoPClientWithHTTPClient"></a>
+### func [NewPoPClientWithHTTPClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/pop_client.go#L37>)
+
+```go
+func NewPoPClientWithHTTPClient(caURL, apiKey string, httpClient *http.Client) *PoPClient
+```
+
+NewPoPClientWithHTTPClient creates a new PoP badge client with a custom HTTP client. If httpClient is nil, a default client with 30\-second timeout is used.
+
+<a name="PoPClient.RequestPoPBadge"></a>
+### func \(\*PoPClient\) [RequestPoPBadge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/pop_client.go#L106>)
+
+```go
+func (c *PoPClient) RequestPoPBadge(ctx context.Context, opts RequestPoPBadgeOptions) (*RequestPoPBadgeResult, error)
+```
+
+RequestPoPBadge requests a badge using the PoP protocol \(RFC\-003 IAL\-1\). This provides cryptographic proof that the requester controls the DID's private key.
+
+<a name="PoPProofClaims"></a>
+## type [PoPProofClaims](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/pop_client.go#L92-L102>)
+
+PoPProofClaims represents the claims in a PoP proof JWS.
+
+```go
+type PoPProofClaims struct {
+    CID   string `json:"cid"`   // Challenge ID
+    Nonce string `json:"nonce"` // Server nonce
+    Sub   string `json:"sub"`   // Subject (DID)
+    Aud   string `json:"aud"`   // Audience (registry)
+    HTU   string `json:"htu"`   // HTTP Target URI
+    HTM   string `json:"htm"`   // HTTP Method
+    IAT   int64  `json:"iat"`   // Issued at
+    Exp   int64  `json:"exp"`   // Expiration
+    JTI   string `json:"jti"`   // Proof JTI (unique)
+}
+```
+
+<a name="RenewalResult"></a>
+## type [RenewalResult](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/keeper.go#L229-L235>)
+
+RenewalResult contains details about a renewed badge.
+
+```go
+type RenewalResult struct {
+    JTI        string
+    Subject    string
+    TrustLevel string
+    ExpiresAt  time.Time
+    Token      string
+}
+```
+
+<a name="RequestBadgeOptions"></a>
+## type [RequestBadgeOptions](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/client.go#L43-L49>)
+
+RequestBadgeOptions contains options for badge request.
+
+```go
+type RequestBadgeOptions struct {
+    AgentID    string
+    Domain     string
+    TTL        time.Duration
+    TrustLevel string
+    Audience   []string
+}
+```
+
+<a name="RequestBadgeResult"></a>
+## type [RequestBadgeResult](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/client.go#L52-L58>)
+
+RequestBadgeResult contains the result of a badge request.
+
+```go
+type RequestBadgeResult struct {
+    Token      string
+    JTI        string
+    Subject    string
+    TrustLevel string
+    ExpiresAt  time.Time
+}
+```
+
+<a name="RequestPoPBadgeOptions"></a>
+## type [RequestPoPBadgeOptions](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/pop_client.go#L56-L68>)
+
+RequestPoPBadgeOptions contains options for PoP badge request.
+
+```go
+type RequestPoPBadgeOptions struct {
+    // AgentDID is the DID of the agent (e.g., did:key:z6Mk... or did:web:...)
+    AgentDID string
+
+    // PrivateKey is the agent's private key for signing the PoP proof
+    PrivateKey crypto.PrivateKey
+
+    // TTL is the requested badge TTL (optional, default 5 min)
+    TTL time.Duration
+
+    // Audience is the optional audience restrictions
+    Audience []string
+}
+```
+
+<a name="RequestPoPBadgeResult"></a>
+## type [RequestPoPBadgeResult](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/pop_client.go#L71-L79>)
+
+RequestPoPBadgeResult contains the result of a PoP badge request.
+
+```go
+type RequestPoPBadgeResult struct {
+    Token          string
+    JTI            string
+    Subject        string
+    TrustLevel     string
+    AssuranceLevel string // "IAL-1" for PoP badges
+    ExpiresAt      time.Time
+    CNF            map[string]interface{} // Confirmation claim with key binding
+}
+```
+
+<a name="RevocationCache"></a>
+## type [RevocationCache](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/verifier.go#L93-L99>)
+
+RevocationCache provides access to cached revocation data.
+
+```go
+type RevocationCache interface {
+    // IsRevoked checks if a badge jti is in the revocation cache.
+    IsRevoked(jti string) bool
+
+    // IsStale returns true if the cache is older than the threshold.
+    IsStale(threshold time.Duration) bool
 }
 ```
 
 <a name="VerifiableCredential"></a>
-## type [VerifiableCredential](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/schema.go#L28-L34>)
+## type [VerifiableCredential](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/schema.go#L152-L159>)
 
 VerifiableCredential represents the simplified VC object.
 
 ```go
 type VerifiableCredential struct {
     // Type is the JSON-LD type(s) of the credential.
+    // MUST include "VerifiableCredential" and "AgentIdentity".
     Type []string `json:"type"`
 
     // CredentialSubject contains the claims about the subject.
@@ -318,9 +1129,9 @@ type VerifiableCredential struct {
 ```
 
 <a name="Verifier"></a>
-## type [Verifier](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/verifier.go#L14-L16>)
+## type [Verifier](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/verifier.go#L114-L116>)
 
-Verifier validates TrustBadges.
+Verifier validates TrustBadges per RFC\-002.
 
 ```go
 type Verifier struct {
@@ -329,7 +1140,7 @@ type Verifier struct {
 ```
 
 <a name="NewVerifier"></a>
-### func [NewVerifier](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/verifier.go#L19>)
+### func [NewVerifier](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/verifier.go#L119>)
 
 ```go
 func NewVerifier(reg registry.Registry) *Verifier
@@ -338,18 +1149,129 @@ func NewVerifier(reg registry.Registry) *Verifier
 NewVerifier creates a new Badge Verifier.
 
 <a name="Verifier.Verify"></a>
-### func \(\*Verifier\) [Verify](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/verifier.go#L26>)
+### func \(\*Verifier\) [Verify](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/verifier.go#L127>)
 
 ```go
 func (v *Verifier) Verify(ctx context.Context, token string) (*Claims, error)
 ```
 
-Verify checks the validity of a TrustBadge JWS token.
+Verify checks the validity of a TrustBadge JWS token using default options. For more control, use VerifyWithOptions.
+
+<a name="Verifier.VerifyWithOptions"></a>
+### func \(\*Verifier\) [VerifyWithOptions](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/verifier.go#L211>)
+
+```go
+func (v *Verifier) VerifyWithOptions(ctx context.Context, token string, opts VerifyOptions) (*VerifyResult, error)
+```
+
+VerifyWithOptions performs badge verification with the specified options. Implements RFC\-002 §8.1 verification flow.
+
+For Level 0 self\-signed badges \(did:key issuer\):
+
+- Public key is extracted from the did:key identifier
+- Revocation check is skipped \(self\-signed badges not in registry\)
+- Agent status check is skipped \(no registry\)
+- iss must equal sub \(self\-assertion only\)
+
+<a name="VerifyMode"></a>
+## type [VerifyMode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/verifier.go#L17>)
+
+VerifyMode determines how verification is performed.
+
+```go
+type VerifyMode int
+```
+
+<a name="VerifyModeOnline"></a>
+
+```go
+const (
+    // VerifyModeOnline performs real-time checks against the registry.
+    // This includes revocation checks and agent status checks.
+    VerifyModeOnline VerifyMode = iota
+
+    // VerifyModeOffline uses only local trust store and revocation cache.
+    // Does not make network requests.
+    VerifyModeOffline
+
+    // VerifyModeHybrid uses online checks when available, falls back to cache.
+    VerifyModeHybrid
+)
+```
+
+<a name="VerifyOptions"></a>
+## type [VerifyOptions](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/verifier.go#L48-L90>)
+
+VerifyOptions configures badge verification behavior.
+
+```go
+type VerifyOptions struct {
+    // Mode determines online/offline verification behavior.
+    Mode VerifyMode
+
+    // TrustedIssuers is a list of allowed issuer DIDs (did:web or did:key).
+    // If empty, all issuers are accepted (not recommended for production).
+    // For Level 0 self-signed badges, the did:key issuer must be in this list
+    // or AcceptSelfSigned must be true.
+    TrustedIssuers []string
+
+    // AcceptSelfSigned allows Level 0 self-signed badges (did:key issuer).
+    // WARNING: Production verifiers SHOULD NOT accept self-signed badges
+    // unless explicitly required for specific use cases.
+    // Default: false (reject self-signed badges)
+    AcceptSelfSigned bool
+
+    // Audience is the verifier's identity for audience validation.
+    // If set and badge has aud claim, verifier must be in audience.
+    Audience string
+
+    // SkipRevocationCheck disables revocation checking (for testing only).
+    SkipRevocationCheck bool
+
+    // SkipAgentStatusCheck disables agent status checking (for testing only).
+    SkipAgentStatusCheck bool
+
+    // RevocationCache provides cached revocations for offline mode.
+    RevocationCache RevocationCache
+
+    // StaleThreshold is the maximum age of cached data before it's considered stale.
+    // RFC-002 v1.3: For IAL-2+ badges, stale cache causes verification to fail.
+    // Default: 24 hours if not set.
+    StaleThreshold time.Duration
+
+    // FailOpen allows verification to succeed even when staleness checks fail.
+    // WARNING: This is NOT recommended for production.
+    // RFC-002 v1.3 requires fail-closed behavior by default.
+    // Default: false (fail-closed)
+    FailOpen bool
+
+    // Now overrides the current time (for testing).
+    Now func() time.Time
+}
+```
+
+<a name="VerifyResult"></a>
+## type [VerifyResult](<https://github.com/capiscio/capiscio-core/blob/main/pkg/badge/verifier.go#L102-L111>)
+
+VerifyResult contains the result of badge verification.
+
+```go
+type VerifyResult struct {
+    // Claims contains the verified badge claims.
+    Claims *Claims
+
+    // Mode indicates which verification mode was used.
+    Mode VerifyMode
+
+    // Warnings contains non-fatal issues encountered.
+    Warnings []string
+}
+```
 
 # crypto
 
 ```go
-import "github.com/capiscio/capiscio-core/pkg/crypto"
+import "github.com/capiscio/capiscio-core/v2/pkg/crypto"
 ```
 
 Package crypto provides cryptographic utilities for CapiscIO.
@@ -521,10 +1443,224 @@ func (v *Verifier) VerifyAgentCardSignatures(ctx context.Context, card *agentcar
 
 VerifyAgentCardSignatures verifies all signatures in an Agent Card.
 
+# did
+
+```go
+import "github.com/capiscio/capiscio-core/v2/pkg/did"
+```
+
+Package did provides utilities for parsing and working with DID identifiers. Supports did:web \(RFC\-002 §6.1\) and did:key \(RFC\-002 §6.6\) methods. See RFC\-002: Trust Badge Specification v1.1.
+
+## Index
+
+- [Constants](<#constants>)
+- [Variables](<#variables>)
+- [func NewAgentDID\(domain, agentID string\) string](<#NewAgentDID>)
+- [func NewCapiscIOAgentDID\(agentID string\) string](<#NewCapiscIOAgentDID>)
+- [func NewKeyDID\(publicKey \[\]byte\) string](<#NewKeyDID>)
+- [func PublicKeyFromKeyDID\(didStr string\) \(ed25519.PublicKey, error\)](<#PublicKeyFromKeyDID>)
+- [type DID](<#DID>)
+  - [func Parse\(did string\) \(\*DID, error\)](<#Parse>)
+  - [func \(d \*DID\) DocumentURL\(\) string](<#DID.DocumentURL>)
+  - [func \(d \*DID\) GetPublicKey\(\) ed25519.PublicKey](<#DID.GetPublicKey>)
+  - [func \(d \*DID\) IsAgentDID\(\) bool](<#DID.IsAgentDID>)
+  - [func \(d \*DID\) IsKeyDID\(\) bool](<#DID.IsKeyDID>)
+  - [func \(d \*DID\) IsWebDID\(\) bool](<#DID.IsWebDID>)
+  - [func \(d \*DID\) String\(\) string](<#DID.String>)
+
+
+## Constants
+
+<a name="Ed25519MulticodecPrefix"></a>Multicodec constants for did:key
+
+```go
+const (
+    // Ed25519MulticodecPrefix is the multicodec prefix for Ed25519 public keys (0xed01)
+    Ed25519MulticodecPrefix = 0xed01
+
+    // Ed25519PublicKeySize is the size of an Ed25519 public key in bytes
+    Ed25519PublicKeySize = 32
+)
+```
+
+<a name="DefaultDomain"></a>DefaultDomain is the default domain for CapiscIO\-hosted agents.
+
+```go
+const DefaultDomain = "registry.capisc.io"
+```
+
+## Variables
+
+<a name="ErrInvalidDID"></a>Common errors returned by this package.
+
+```go
+var (
+    ErrInvalidDID         = errors.New("invalid DID format")
+    ErrUnsupportedMethod  = errors.New("unsupported DID method (only did:web and did:key supported)")
+    ErrMissingAgentID     = errors.New("missing agent ID in DID")
+    ErrInvalidKeyDID      = errors.New("invalid did:key format")
+    ErrUnsupportedKeyType = errors.New("unsupported key type in did:key (only Ed25519 supported)")
+)
+```
+
+<a name="NewAgentDID"></a>
+## func [NewAgentDID](<https://github.com/capiscio/capiscio-core/blob/main/pkg/did/did.go#L246>)
+
+```go
+func NewAgentDID(domain, agentID string) string
+```
+
+NewAgentDID constructs a did:web identifier for an agent.
+
+Parameters:
+
+- domain: The domain hosting the agent \(e.g., "registry.capisc.io"\)
+- agentID: The unique agent identifier \(e.g., "my\-agent\-001"\)
+
+Returns: did:web:\<domain\>:agents:\<agentID\>
+
+<a name="NewCapiscIOAgentDID"></a>
+## func [NewCapiscIOAgentDID](<https://github.com/capiscio/capiscio-core/blob/main/pkg/did/did.go#L268>)
+
+```go
+func NewCapiscIOAgentDID(agentID string) string
+```
+
+NewCapiscIOAgentDID constructs a did:web for an agent on the CapiscIO registry. Shorthand for NewAgentDID\(DefaultDomain, agentID\).
+
+<a name="NewKeyDID"></a>
+## func [NewKeyDID](<https://github.com/capiscio/capiscio-core/blob/main/pkg/did/did.go#L279>)
+
+```go
+func NewKeyDID(publicKey []byte) string
+```
+
+NewKeyDID constructs a did:key identifier from an Ed25519 public key. Format: did:key:z\<base58btc\(0xed01 || public\_key\)\>
+
+Parameters:
+
+- publicKey: Ed25519 public key \(32 bytes\)
+
+Returns: did:key:z6Mk... formatted DID string
+
+<a name="PublicKeyFromKeyDID"></a>
+## func [PublicKeyFromKeyDID](<https://github.com/capiscio/capiscio-core/blob/main/pkg/did/did.go#L298>)
+
+```go
+func PublicKeyFromKeyDID(didStr string) (ed25519.PublicKey, error)
+```
+
+PublicKeyFromKeyDID extracts the Ed25519 public key from a did:key identifier. Returns the 32\-byte public key or an error if the DID is invalid.
+
+<a name="DID"></a>
+## type [DID](<https://github.com/capiscio/capiscio-core/blob/main/pkg/did/did.go#L37-L55>)
+
+DID represents a parsed DID identifier. Supports both did:web and did:key methods.
+
+For did:web: did:web:\<domain\>:agents:\<agent\-id\> For did:key: did:key:z\<base58btc\(multicodec || public\_key\)\>
+
+```go
+type DID struct {
+    // Method is the DID method ("web" or "key").
+    Method string
+
+    // Domain is the domain hosting the DID Document (did:web only).
+    Domain string
+
+    // Path segments after the domain (did:web only, e.g., ["agents", "my-agent-001"]).
+    PathSegments []string
+
+    // AgentID is the agent identifier (did:web only, extracted from path).
+    AgentID string
+
+    // PublicKey is the Ed25519 public key (did:key only, 32 bytes).
+    PublicKey []byte
+
+    // Raw is the original DID string.
+    Raw string
+}
+```
+
+<a name="Parse"></a>
+### func [Parse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/did/did.go#L66>)
+
+```go
+func Parse(did string) (*DID, error)
+```
+
+Parse parses a DID identifier into its components. Supports both did:web and did:key methods.
+
+Returns ErrInvalidDID if the format is invalid. Returns ErrUnsupportedMethod if the method is not "web" or "key".
+
+Examples:
+
+- did:web:registry.capisc.io:agents:my\-agent\-001
+- did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK
+
+<a name="DID.DocumentURL"></a>
+### func \(\*DID\) [DocumentURL](<https://github.com/capiscio/capiscio-core/blob/main/pkg/did/did.go#L191>)
+
+```go
+func (d *DID) DocumentURL() string
+```
+
+DocumentURL returns the HTTPS URL for the DID Document per did:web spec. did:web:registry.capisc.io:agents:my\-agent\-001
+
+```
+→ https://registry.capisc.io/agents/my-agent-001/did.json
+```
+
+Returns empty string for did:key \(no remote document\). Uses HTTP when the hostname is "localhost" or "127.0.0.1", HTTPS otherwise.
+
+<a name="DID.GetPublicKey"></a>
+### func \(\*DID\) [GetPublicKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/did/did.go#L232>)
+
+```go
+func (d *DID) GetPublicKey() ed25519.PublicKey
+```
+
+GetPublicKey returns the Ed25519 public key for did:key identifiers. Returns nil for did:web identifiers.
+
+<a name="DID.IsAgentDID"></a>
+### func \(\*DID\) [IsAgentDID](<https://github.com/capiscio/capiscio-core/blob/main/pkg/did/did.go#L256>)
+
+```go
+func (d *DID) IsAgentDID() bool
+```
+
+IsAgentDID returns true if the DID follows the CapiscIO agent DID pattern. Pattern: did:web:\<domain\>:agents:\<id\>
+
+<a name="DID.IsKeyDID"></a>
+### func \(\*DID\) [IsKeyDID](<https://github.com/capiscio/capiscio-core/blob/main/pkg/did/did.go#L221>)
+
+```go
+func (d *DID) IsKeyDID() bool
+```
+
+IsKeyDID returns true if this is a did:key identifier.
+
+<a name="DID.IsWebDID"></a>
+### func \(\*DID\) [IsWebDID](<https://github.com/capiscio/capiscio-core/blob/main/pkg/did/did.go#L226>)
+
+```go
+func (d *DID) IsWebDID() bool
+```
+
+IsWebDID returns true if this is a did:web identifier.
+
+<a name="DID.String"></a>
+### func \(\*DID\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/did/did.go#L171>)
+
+```go
+func (d *DID) String() string
+```
+
+String returns the canonical DID string.
+
 # gateway
 
 ```go
-import "github.com/capiscio/capiscio-core/pkg/gateway"
+import "github.com/capiscio/capiscio-core/v2/pkg/gateway"
 ```
 
 Package gateway provides the HTTP middleware for the CapiscIO Security Sidecar.
@@ -553,10 +1689,1724 @@ func NewAuthMiddleware(verifier *badge.Verifier, next http.Handler) http.Handler
 
 NewAuthMiddleware creates a middleware that enforces Badge validity.
 
+# mcp
+
+```go
+import "github.com/capiscio/capiscio-core/v2/pkg/mcp"
+```
+
+Package mcp implements MCP security services for tool authority \(RFC\-006\) and server identity verification \(RFC\-007\).
+
+This package provides:
+
+- Tool access evaluation with trust badge verification
+- Evidence emission for audit trails
+- Server identity verification with did:web origin binding
+
+Usage as library:
+
+```
+import "github.com/capiscio/capiscio-core/pkg/mcp"
+
+service := mcp.NewService(mcp.Dependencies{...})
+result, err := service.EvaluateToolAccess(ctx, req)
+```
+
+The package also provides gRPC service handlers that can be registered with a gRPC server:
+
+```
+pb.RegisterMCPServiceServer(grpcServer, service)
+```
+
+Package mcp provides evidence storage implementations for RFC\-006.
+
+## Index
+
+- [Constants](<#constants>)
+- [Variables](<#variables>)
+- [func CheckVersionCompatibility\(clientVersion string\) \(bool, string\)](<#CheckVersionCompatibility>)
+- [func CreatePoPRequest\(\) \(\*pop.MCPPoPRequest, error\)](<#CreatePoPRequest>)
+- [func CreatePoPResponse\(clientNonce string, privateKey ed25519.PrivateKey, keyID string\) \(\*pop.MCPPoPResponse, error\)](<#CreatePoPResponse>)
+- [func ParsePoPFromMeta\(meta map\[string\]interface\{\}\) \(\*pop.MCPPoPRequest, \*pop.MCPPoPResponse\)](<#ParsePoPFromMeta>)
+- [type AuthLevel](<#AuthLevel>)
+  - [func \(a AuthLevel\) String\(\) string](<#AuthLevel.String>)
+- [type CallerCredential](<#CallerCredential>)
+  - [func NewAPIKeyCredential\(apiKey string\) CallerCredential](<#NewAPIKeyCredential>)
+  - [func NewAnonymousCredential\(\) CallerCredential](<#NewAnonymousCredential>)
+  - [func NewBadgeCredential\(badgeJWS string\) CallerCredential](<#NewBadgeCredential>)
+  - [func \(c CallerCredential\) GetAuthLevel\(\) AuthLevel](<#CallerCredential.GetAuthLevel>)
+- [type Decision](<#Decision>)
+  - [func \(d Decision\) String\(\) string](<#Decision.String>)
+- [type DenyReason](<#DenyReason>)
+  - [func ErrorToDenyReason\(err error\) DenyReason](<#ErrorToDenyReason>)
+  - [func \(r DenyReason\) String\(\) string](<#DenyReason.String>)
+- [type Dependencies](<#Dependencies>)
+- [type EvaluateConfig](<#EvaluateConfig>)
+- [type EvaluateResult](<#EvaluateResult>)
+- [type EvaluateToolAccessInput](<#EvaluateToolAccessInput>)
+- [type EvidenceRateLimiter](<#EvidenceRateLimiter>)
+  - [func NewEvidenceRateLimiter\(window time.Duration, maxPerWindow int\) \*EvidenceRateLimiter](<#NewEvidenceRateLimiter>)
+  - [func \(r \*EvidenceRateLimiter\) IsRateLimited\(record EvidenceRecord\) bool](<#EvidenceRateLimiter.IsRateLimited>)
+- [type EvidenceRecord](<#EvidenceRecord>)
+- [type EvidenceStore](<#EvidenceStore>)
+- [type EvidenceStoreMode](<#EvidenceStoreMode>)
+- [type Guard](<#Guard>)
+  - [func NewGuard\(badgeVerifier \*badge.Verifier, evidenceStore EvidenceStore\) \*Guard](<#NewGuard>)
+  - [func \(g \*Guard\) EvaluateToolAccess\(ctx context.Context, toolName string, paramsHash string, serverOrigin string, credential CallerCredential, config \*EvaluateConfig\) \(\*EvaluateResult, error\)](<#Guard.EvaluateToolAccess>)
+- [type HealthInput](<#HealthInput>)
+- [type HealthStatus](<#HealthStatus>)
+  - [func CheckHealth\(\) \*HealthStatus](<#CheckHealth>)
+- [type HybridEvidenceStore](<#HybridEvidenceStore>)
+  - [func NewHybridEvidenceStore\(localDir string, registryCfg RegistryEvidenceStoreConfig\) \(\*HybridEvidenceStore, error\)](<#NewHybridEvidenceStore>)
+  - [func \(s \*HybridEvidenceStore\) Close\(\) error](<#HybridEvidenceStore.Close>)
+  - [func \(s \*HybridEvidenceStore\) Store\(ctx context.Context, record EvidenceRecord\) error](<#HybridEvidenceStore.Store>)
+- [type LocalEvidenceStore](<#LocalEvidenceStore>)
+  - [func NewLocalEvidenceStore\(dir string\) \(\*LocalEvidenceStore, error\)](<#NewLocalEvidenceStore>)
+  - [func \(s \*LocalEvidenceStore\) Close\(\) error](<#LocalEvidenceStore.Close>)
+  - [func \(s \*LocalEvidenceStore\) Store\(ctx context.Context, record EvidenceRecord\) error](<#LocalEvidenceStore.Store>)
+- [type NoOpEvidenceStore](<#NoOpEvidenceStore>)
+  - [func \(n \*NoOpEvidenceStore\) Store\(ctx context.Context, record EvidenceRecord\) error](<#NoOpEvidenceStore.Store>)
+- [type ParsedIdentity](<#ParsedIdentity>)
+  - [func ParseHTTPHeaders\(headers map\[string\]string\) \*ParsedIdentity](<#ParseHTTPHeaders>)
+  - [func ParseJSONRPCMeta\(meta map\[string\]interface\{\}\) \*ParsedIdentity](<#ParseJSONRPCMeta>)
+- [type RegistryEvidenceStore](<#RegistryEvidenceStore>)
+  - [func NewRegistryEvidenceStore\(cfg RegistryEvidenceStoreConfig\) \*RegistryEvidenceStore](<#NewRegistryEvidenceStore>)
+  - [func \(s \*RegistryEvidenceStore\) Close\(\) error](<#RegistryEvidenceStore.Close>)
+  - [func \(s \*RegistryEvidenceStore\) Store\(ctx context.Context, record EvidenceRecord\) error](<#RegistryEvidenceStore.Store>)
+- [type RegistryEvidenceStoreConfig](<#RegistryEvidenceStoreConfig>)
+- [type ServerErrorCode](<#ServerErrorCode>)
+  - [func ErrorToServerErrorCode\(err error\) ServerErrorCode](<#ErrorToServerErrorCode>)
+  - [func \(c ServerErrorCode\) String\(\) string](<#ServerErrorCode.String>)
+- [type ServerIdentityVerifier](<#ServerIdentityVerifier>)
+  - [func NewServerIdentityVerifier\(badgeVerifier \*badge.Verifier\) \*ServerIdentityVerifier](<#NewServerIdentityVerifier>)
+  - [func NewServerIdentityVerifierWithConfig\(badgeVerifier \*badge.Verifier, cacheConfig \*pop.CacheConfig\) \*ServerIdentityVerifier](<#NewServerIdentityVerifierWithConfig>)
+  - [func \(v \*ServerIdentityVerifier\) GetCachedSession\(serverDID string\) \(\*pop.CacheEntry, bool\)](<#ServerIdentityVerifier.GetCachedSession>)
+  - [func \(v \*ServerIdentityVerifier\) InvalidateByTrustLevel\(minLevelStr string\)](<#ServerIdentityVerifier.InvalidateByTrustLevel>)
+  - [func \(v \*ServerIdentityVerifier\) InvalidateSession\(serverDID string\)](<#ServerIdentityVerifier.InvalidateSession>)
+  - [func \(v \*ServerIdentityVerifier\) VerifyPoP\(ctx context.Context, result \*VerifyResult, popRequest \*pop.MCPPoPRequest, popResponse \*pop.MCPPoPResponse, publicKey ed25519.PublicKey, maxAge time.Duration\) \(\*VerifyResult, error\)](<#ServerIdentityVerifier.VerifyPoP>)
+  - [func \(v \*ServerIdentityVerifier\) VerifyServerIdentity\(ctx context.Context, serverDID string, serverBadgeJWS string, transportOrigin string, config \*VerifyConfig\) \(\*VerifyResult, error\)](<#ServerIdentityVerifier.VerifyServerIdentity>)
+  - [func \(v \*ServerIdentityVerifier\) VerifyWithCache\(ctx context.Context, serverDID string, serverBadgeJWS string, transportOrigin string, popRequest \*pop.MCPPoPRequest, popResponse \*pop.MCPPoPResponse, publicKey ed25519.PublicKey, config \*VerifyConfig\) \(\*VerifyResult, error\)](<#ServerIdentityVerifier.VerifyWithCache>)
+- [type ServerState](<#ServerState>)
+  - [func \(s ServerState\) String\(\) string](<#ServerState.String>)
+- [type Service](<#Service>)
+  - [func NewService\(deps \*Dependencies\) \*Service](<#NewService>)
+  - [func \(s \*Service\) EvaluateToolAccess\(ctx context.Context, input \*EvaluateToolAccessInput\) \(\*EvaluateResult, error\)](<#Service.EvaluateToolAccess>)
+  - [func \(s \*Service\) Health\(ctx context.Context, input \*HealthInput\) \*HealthStatus](<#Service.Health>)
+  - [func \(s \*Service\) ParseServerIdentityFromHTTP\(headers map\[string\]string\) \*ParsedIdentity](<#Service.ParseServerIdentityFromHTTP>)
+  - [func \(s \*Service\) ParseServerIdentityFromJSONRPC\(meta map\[string\]interface\{\}\) \*ParsedIdentity](<#Service.ParseServerIdentityFromJSONRPC>)
+  - [func \(s \*Service\) VerifyServerIdentity\(ctx context.Context, input \*VerifyServerIdentityInput\) \(\*VerifyResult, error\)](<#Service.VerifyServerIdentity>)
+- [type VerifyConfig](<#VerifyConfig>)
+  - [func DefaultVerifyConfig\(\) \*VerifyConfig](<#DefaultVerifyConfig>)
+- [type VerifyResult](<#VerifyResult>)
+  - [func \(r \*VerifyResult\) GetServerID\(\) string](<#VerifyResult.GetServerID>)
+  - [func \(r \*VerifyResult\) HasIdentity\(\) bool](<#VerifyResult.HasIdentity>)
+  - [func \(r \*VerifyResult\) IsDeclared\(\) bool](<#VerifyResult.IsDeclared>)
+  - [func \(r \*VerifyResult\) IsVerified\(\) bool](<#VerifyResult.IsVerified>)
+  - [func \(r \*VerifyResult\) TrustLevel\(\) int](<#VerifyResult.TrustLevel>)
+- [type VerifyServerIdentityInput](<#VerifyServerIdentityInput>)
+
+
+## Constants
+
+<a name="CoreVersion"></a>
+
+```go
+const (
+    // CoreVersion is the capiscio-core version
+    CoreVersion = "2.5.0"
+
+    // ProtoVersion is the MCP proto schema version
+    ProtoVersion = "1.0"
+
+    // MinMCPVersion is the minimum compatible MCP SDK version (capiscio-mcp)
+    // The MCP SDK has independent versioning starting from 0.1.0
+    MinMCPVersion = "0.1.0"
+
+    // MinVersion is the minimum compatible client SDK version (legacy capiscio-sdk)
+    MinVersion = "2.5.0"
+
+    // MaxVersionConstraint is the constraint for maximum compatible version
+    MaxVersionConstraint = "< 3.0.0"
+)
+```
+
+## Variables
+
+<a name="ErrBadgeMissing"></a>Error codes for MCP operations
+
+```go
+var (
+    // ErrBadgeMissing indicates a badge was required but not provided
+    ErrBadgeMissing = errors.New("badge required but not provided")
+
+    // ErrBadgeInvalid indicates the badge is malformed or unverifiable
+    ErrBadgeInvalid = errors.New("badge is invalid or malformed")
+
+    // ErrBadgeExpired indicates the badge has expired
+    ErrBadgeExpired = errors.New("badge has expired")
+
+    // ErrBadgeRevoked indicates the badge has been revoked
+    ErrBadgeRevoked = errors.New("badge has been revoked")
+
+    // ErrTrustInsufficient indicates the trust level is below minimum required
+    ErrTrustInsufficient = errors.New("trust level insufficient")
+
+    // ErrToolNotAllowed indicates the tool is not in the allowed list
+    ErrToolNotAllowed = errors.New("tool not allowed")
+
+    // ErrIssuerUntrusted indicates the badge issuer is not trusted
+    ErrIssuerUntrusted = errors.New("badge issuer not trusted")
+
+    // ErrPolicyDenied indicates policy evaluation failed
+    ErrPolicyDenied = errors.New("policy denied access")
+
+    // ErrDIDInvalid indicates the DID is malformed
+    ErrDIDInvalid = errors.New("DID is invalid")
+
+    // ErrDIDMismatch indicates the badge subject doesn't match disclosed DID
+    ErrDIDMismatch = errors.New("badge subject does not match disclosed DID")
+
+    // ErrOriginMismatch indicates the transport origin doesn't match did:web host
+    ErrOriginMismatch = errors.New("transport origin does not match DID host")
+
+    // ErrPathMismatch indicates the endpoint path doesn't match did:web path
+    ErrPathMismatch = errors.New("endpoint path does not match DID path")
+
+    // ErrAPIKeyInvalid indicates the API key is invalid
+    ErrAPIKeyInvalid = errors.New("API key is invalid")
+)
+```
+
+<a name="CheckVersionCompatibility"></a>
+## func [CheckVersionCompatibility](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/health.go#L29>)
+
+```go
+func CheckVersionCompatibility(clientVersion string) (bool, string)
+```
+
+CheckVersionCompatibility validates client/core version compatibility Returns true if the client version is compatible with this core version
+
+<a name="CreatePoPRequest"></a>
+## func [CreatePoPRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/server_identity.go#L287>)
+
+```go
+func CreatePoPRequest() (*pop.MCPPoPRequest, error)
+```
+
+CreatePoPRequest creates a PoP request for embedding in MCP initialize \_meta Clients should call this before initialize and include result in request
+
+<a name="CreatePoPResponse"></a>
+## func [CreatePoPResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/server_identity.go#L293>)
+
+```go
+func CreatePoPResponse(clientNonce string, privateKey ed25519.PrivateKey, keyID string) (*pop.MCPPoPResponse, error)
+```
+
+CreatePoPResponse creates a PoP response for embedding in MCP initialize response \_meta Servers should call this when receiving a PoP request and include result in response
+
+<a name="ParsePoPFromMeta"></a>
+## func [ParsePoPFromMeta](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/server_identity.go#L374>)
+
+```go
+func ParsePoPFromMeta(meta map[string]interface{}) (*pop.MCPPoPRequest, *pop.MCPPoPResponse)
+```
+
+ParsePoPFromMeta extracts PoP request/response from \_meta Returns \(request, response\) where request is from client and response is from server
+
+<a name="AuthLevel"></a>
+## type [AuthLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L29>)
+
+AuthLevel represents the authentication level of the caller
+
+```go
+type AuthLevel int
+```
+
+<a name="AuthLevelUnspecified"></a>
+
+```go
+const (
+    AuthLevelUnspecified AuthLevel = iota
+    AuthLevelAnonymous
+    AuthLevelAPIKey
+    AuthLevelBadge
+)
+```
+
+<a name="AuthLevel.String"></a>
+### func \(AuthLevel\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L39>)
+
+```go
+func (a AuthLevel) String() string
+```
+
+String returns the string representation of the auth level
+
+<a name="CallerCredential"></a>
+## type [CallerCredential](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L96-L105>)
+
+CallerCredential represents the caller's authentication credential
+
+```go
+type CallerCredential struct {
+    // BadgeJWS is the full badge JWT (if badge auth)
+    BadgeJWS string
+
+    // APIKey is the API key (if API key auth)
+    APIKey string
+
+    // IsAnonymous is true if no credential was provided
+    IsAnonymous bool
+}
+```
+
+<a name="NewAPIKeyCredential"></a>
+### func [NewAPIKeyCredential](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L113>)
+
+```go
+func NewAPIKeyCredential(apiKey string) CallerCredential
+```
+
+NewAPIKeyCredential creates a credential from an API key
+
+<a name="NewAnonymousCredential"></a>
+### func [NewAnonymousCredential](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L118>)
+
+```go
+func NewAnonymousCredential() CallerCredential
+```
+
+NewAnonymousCredential creates an anonymous credential
+
+<a name="NewBadgeCredential"></a>
+### func [NewBadgeCredential](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L108>)
+
+```go
+func NewBadgeCredential(badgeJWS string) CallerCredential
+```
+
+NewBadgeCredential creates a credential from a badge JWS
+
+<a name="CallerCredential.GetAuthLevel"></a>
+### func \(CallerCredential\) [GetAuthLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L123>)
+
+```go
+func (c CallerCredential) GetAuthLevel() AuthLevel
+```
+
+GetAuthLevel returns the authentication level for this credential
+
+<a name="Decision"></a>
+## type [Decision](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L8>)
+
+Decision represents the access decision \(allow or deny\)
+
+```go
+type Decision int
+```
+
+<a name="DecisionUnspecified"></a>
+
+```go
+const (
+    DecisionUnspecified Decision = iota
+    DecisionAllow
+    DecisionDeny
+)
+```
+
+<a name="Decision.String"></a>
+### func \(Decision\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L17>)
+
+```go
+func (d Decision) String() string
+```
+
+String returns the string representation of the decision
+
+<a name="DenyReason"></a>
+## type [DenyReason](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/errors.go#L48>)
+
+DenyReason represents the reason for access denial \(RFC\-006 §6.4\)
+
+```go
+type DenyReason int
+```
+
+<a name="DenyReasonUnspecified"></a>
+
+```go
+const (
+    DenyReasonUnspecified DenyReason = iota
+    DenyReasonBadgeMissing
+    DenyReasonBadgeInvalid
+    DenyReasonBadgeExpired
+    DenyReasonBadgeRevoked
+    DenyReasonTrustInsufficient
+    DenyReasonToolNotAllowed
+    DenyReasonIssuerUntrusted
+    DenyReasonPolicyDenied
+)
+```
+
+<a name="ErrorToDenyReason"></a>
+### func [ErrorToDenyReason](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/errors.go#L87>)
+
+```go
+func ErrorToDenyReason(err error) DenyReason
+```
+
+ErrorToDenyReason converts an error to a DenyReason
+
+<a name="DenyReason.String"></a>
+### func \(DenyReason\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/errors.go#L63>)
+
+```go
+func (r DenyReason) String() string
+```
+
+String returns the RFC\-006 §10 compliant error code string
+
+<a name="Dependencies"></a>
+## type [Dependencies](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/service.go#L18-L21>)
+
+Dependencies holds the dependencies for the MCP service
+
+```go
+type Dependencies struct {
+    BadgeVerifier *badge.Verifier
+    EvidenceStore EvidenceStore
+}
+```
+
+<a name="EvaluateConfig"></a>
+## type [EvaluateConfig](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L135-L150>)
+
+EvaluateConfig holds configuration for tool access evaluation
+
+```go
+type EvaluateConfig struct {
+    // TrustedIssuers is a list of trusted badge issuers
+    TrustedIssuers []string
+
+    // MinTrustLevel is the minimum required trust level (0-4)
+    MinTrustLevel int
+
+    // AcceptLevelZero allows self-signed did:key badges (Trust Level 0)
+    AcceptLevelZero bool
+
+    // AllowedTools is a list of allowed tool patterns (glob patterns)
+    AllowedTools []string
+
+    // PolicyVersion is the version of the policy being applied (RFC-006 §7.2)
+    PolicyVersion string
+}
+```
+
+<a name="EvaluateResult"></a>
+## type [EvaluateResult](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L153-L183>)
+
+EvaluateResult holds the result of tool access evaluation
+
+```go
+type EvaluateResult struct {
+    // Decision is the access decision (allow or deny)
+    Decision Decision
+
+    // DenyReason is the reason for denial (only set if Decision == DecisionDeny)
+    DenyReason DenyReason
+
+    // DenyDetail is a human-readable denial detail
+    DenyDetail string
+
+    // AgentDID is the extracted agent DID
+    AgentDID string
+
+    // BadgeJTI is the badge ID (if present)
+    BadgeJTI string
+
+    // AuthLevel is the authentication level
+    AuthLevel AuthLevel
+
+    // TrustLevel is the verified trust level (0-4)
+    TrustLevel int
+
+    // EvidenceJSON is the RFC-006 §7 compliant evidence JSON
+    EvidenceJSON string
+
+    // EvidenceID is the unique evidence record ID
+    EvidenceID string
+
+    // Timestamp is when the evaluation occurred
+    Timestamp time.Time
+}
+```
+
+<a name="EvaluateToolAccessInput"></a>
+## type [EvaluateToolAccessInput](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/service.go#L35-L41>)
+
+EvaluateToolAccessInput represents the input for tool access evaluation
+
+```go
+type EvaluateToolAccessInput struct {
+    ToolName   string
+    ParamsHash string
+    Origin     string
+    Credential CallerCredential
+    Config     *EvaluateConfig
+}
+```
+
+<a name="EvidenceRateLimiter"></a>
+## type [EvidenceRateLimiter](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/evidence_store.go#L323-L328>)
+
+EvidenceRateLimiter prevents repetitive log flooding. It deduplicates evidence by fingerprint \(tool \+ agent \+ decision\).
+
+```go
+type EvidenceRateLimiter struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewEvidenceRateLimiter"></a>
+### func [NewEvidenceRateLimiter](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/evidence_store.go#L336>)
+
+```go
+func NewEvidenceRateLimiter(window time.Duration, maxPerWindow int) *EvidenceRateLimiter
+```
+
+NewEvidenceRateLimiter creates a new rate limiter.
+
+<a name="EvidenceRateLimiter.IsRateLimited"></a>
+### func \(\*EvidenceRateLimiter\) [IsRateLimited](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/evidence_store.go#L345>)
+
+```go
+func (r *EvidenceRateLimiter) IsRateLimited(record EvidenceRecord) bool
+```
+
+IsRateLimited checks if an evidence record should be rate\-limited.
+
+<a name="EvidenceRecord"></a>
+## type [EvidenceRecord](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L288-L321>)
+
+EvidenceRecord represents an RFC\-006 §7 compliant evidence record. Field names use dot notation per RFC\-006 §7.2 JSON schema.
+
+```go
+type EvidenceRecord struct {
+    // EventName MUST be "capiscio.tool_invocation" per RFC-006 §7.2
+    EventName string `json:"event.name"`
+
+    // AgentDID is the agent DID or equivalent principal
+    AgentDID string `json:"capiscio.agent.did"`
+
+    // BadgeJTI is the badge identifier, if present
+    BadgeJTI string `json:"capiscio.badge.jti,omitempty"`
+
+    // AuthLevel is "badge", "apikey", or "anonymous"
+    AuthLevel string `json:"capiscio.auth.level"`
+
+    // Target is the tool identifier
+    Target string `json:"capiscio.target"`
+
+    // PolicyVersion is the policy version used
+    PolicyVersion string `json:"capiscio.policy_version"`
+
+    // Decision is "ALLOW" or "DENY"
+    Decision string `json:"capiscio.decision"`
+
+    // ParamsHash is the SHA-256 hash of canonicalized tool parameters (optional)
+    ParamsHash string `json:"capiscio.tool.params_hash,omitempty"`
+
+    // DenyReason is the error code when decision is DENY (optional)
+    DenyReason string `json:"capiscio.deny_reason,omitempty"`
+
+    // Non-RFC fields for internal use
+    ID           string    `json:"id"`
+    Timestamp    time.Time `json:"timestamp"`
+    TrustLevel   int       `json:"trust_level"`
+    ServerOrigin string    `json:"server_origin,omitempty"`
+}
+```
+
+<a name="EvidenceStore"></a>
+## type [EvidenceStore](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/guard.go#L22-L25>)
+
+EvidenceStore is the interface for storing evidence records
+
+```go
+type EvidenceStore interface {
+    // Store saves an evidence record
+    Store(ctx context.Context, record EvidenceRecord) error
+}
+```
+
+<a name="EvidenceStoreMode"></a>
+## type [EvidenceStoreMode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/evidence_store.go#L23>)
+
+EvidenceStoreMode determines the storage backend
+
+```go
+type EvidenceStoreMode string
+```
+
+<a name="EvidenceStoreModeLocal"></a>
+
+```go
+const (
+    // EvidenceStoreModeLocal stores evidence to local files
+    EvidenceStoreModeLocal EvidenceStoreMode = "local"
+
+    // EvidenceStoreModeRegistry streams evidence to registry server
+    EvidenceStoreModeRegistry EvidenceStoreMode = "registry"
+
+    // EvidenceStoreModeHybrid stores locally AND streams to registry
+    EvidenceStoreModeHybrid EvidenceStoreMode = "hybrid"
+)
+```
+
+<a name="Guard"></a>
+## type [Guard](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/guard.go#L16-L19>)
+
+Guard implements RFC\-006 tool access evaluation with atomic evidence emission.
+
+```go
+type Guard struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewGuard"></a>
+### func [NewGuard](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/guard.go#L35>)
+
+```go
+func NewGuard(badgeVerifier *badge.Verifier, evidenceStore EvidenceStore) *Guard
+```
+
+NewGuard creates a new Guard instance
+
+<a name="Guard.EvaluateToolAccess"></a>
+### func \(\*Guard\) [EvaluateToolAccess](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/guard.go#L50-L57>)
+
+```go
+func (g *Guard) EvaluateToolAccess(ctx context.Context, toolName string, paramsHash string, serverOrigin string, credential CallerCredential, config *EvaluateConfig) (*EvaluateResult, error)
+```
+
+EvaluateToolAccess evaluates tool access and emits evidence atomically. This implements RFC\-006 §6.2\-6.4.
+
+Key design principle: Single operation returns both decision and evidence to avoid partial failures.
+
+<a name="HealthInput"></a>
+## type [HealthInput](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/service.go#L91-L93>)
+
+HealthInput represents the input for health checks
+
+```go
+type HealthInput struct {
+    ClientVersion string
+}
+```
+
+<a name="HealthStatus"></a>
+## type [HealthStatus](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/health.go#L112-L124>)
+
+HealthStatus represents the health status of the MCP service
+
+```go
+type HealthStatus struct {
+    // Healthy indicates if the service is healthy
+    Healthy bool
+
+    // CoreVersion is the capiscio-core version
+    CoreVersion string
+
+    // ProtoVersion is the proto schema version
+    ProtoVersion string
+
+    // Compatible indicates if the client version is compatible
+    Compatible bool
+}
+```
+
+<a name="CheckHealth"></a>
+### func [CheckHealth](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/health.go#L127>)
+
+```go
+func CheckHealth() *HealthStatus
+```
+
+CheckHealth performs a health check and returns the status
+
+<a name="HybridEvidenceStore"></a>
+## type [HybridEvidenceStore](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/evidence_store.go#L389-L392>)
+
+HybridEvidenceStore stores evidence both locally and to registry.
+
+```go
+type HybridEvidenceStore struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewHybridEvidenceStore"></a>
+### func [NewHybridEvidenceStore](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/evidence_store.go#L395>)
+
+```go
+func NewHybridEvidenceStore(localDir string, registryCfg RegistryEvidenceStoreConfig) (*HybridEvidenceStore, error)
+```
+
+NewHybridEvidenceStore creates a store that writes to both local and registry.
+
+<a name="HybridEvidenceStore.Close"></a>
+### func \(\*HybridEvidenceStore\) [Close](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/evidence_store.go#L423>)
+
+```go
+func (s *HybridEvidenceStore) Close() error
+```
+
+Close closes both stores.
+
+<a name="HybridEvidenceStore.Store"></a>
+### func \(\*HybridEvidenceStore\) [Store](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/evidence_store.go#L410>)
+
+```go
+func (s *HybridEvidenceStore) Store(ctx context.Context, record EvidenceRecord) error
+```
+
+Store writes to both local and registry stores.
+
+<a name="LocalEvidenceStore"></a>
+## type [LocalEvidenceStore](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/evidence_store.go#L42-L47>)
+
+LocalEvidenceStore stores evidence records to local JSON files. Each file is named by date \(YYYY\-MM\-DD.jsonl\) in JSONL format.
+
+```go
+type LocalEvidenceStore struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewLocalEvidenceStore"></a>
+### func [NewLocalEvidenceStore](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/evidence_store.go#L51>)
+
+```go
+func NewLocalEvidenceStore(dir string) (*LocalEvidenceStore, error)
+```
+
+NewLocalEvidenceStore creates a new local evidence store. If dir is empty, uses \~/.capiscio/evidence/
+
+<a name="LocalEvidenceStore.Close"></a>
+### func \(\*LocalEvidenceStore\) [Close](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/evidence_store.go#L103>)
+
+```go
+func (s *LocalEvidenceStore) Close() error
+```
+
+Close closes the local evidence store.
+
+<a name="LocalEvidenceStore.Store"></a>
+### func \(\*LocalEvidenceStore\) [Store](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/evidence_store.go#L68>)
+
+```go
+func (s *LocalEvidenceStore) Store(ctx context.Context, record EvidenceRecord) error
+```
+
+Store writes an evidence record to the local file.
+
+<a name="NoOpEvidenceStore"></a>
+## type [NoOpEvidenceStore](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/guard.go#L28>)
+
+NoOpEvidenceStore is a no\-op evidence store for testing
+
+```go
+type NoOpEvidenceStore struct{}
+```
+
+<a name="NoOpEvidenceStore.Store"></a>
+### func \(\*NoOpEvidenceStore\) [Store](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/guard.go#L30>)
+
+```go
+func (n *NoOpEvidenceStore) Store(ctx context.Context, record EvidenceRecord) error
+```
+
+
+
+<a name="ParsedIdentity"></a>
+## type [ParsedIdentity](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L278-L284>)
+
+ParsedIdentity holds parsed server identity information \(RFC\-007 §6\)
+
+```go
+type ParsedIdentity struct {
+    // ServerDID is the extracted server DID
+    ServerDID string
+
+    // ServerBadgeJWS is the extracted server Trust Badge (JWS)
+    ServerBadgeJWS string
+}
+```
+
+<a name="ParseHTTPHeaders"></a>
+### func [ParseHTTPHeaders](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/server_identity.go#L342>)
+
+```go
+func ParseHTTPHeaders(headers map[string]string) *ParsedIdentity
+```
+
+ParseHTTPHeaders extracts server identity from HTTP headers \(RFC\-007 §6.1\) Standard headers: \- Capiscio\-Server\-DID: The server's DID \- Capiscio\-Server\-Badge: The server's Trust Badge \(JWS\)
+
+<a name="ParseJSONRPCMeta"></a>
+### func [ParseJSONRPCMeta](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/server_identity.go#L355>)
+
+```go
+func ParseJSONRPCMeta(meta map[string]interface{}) *ParsedIdentity
+```
+
+ParseJSONRPCMeta extracts server identity from JSON\-RPC \_meta object \(RFC\-007 §6.2\) Standard fields: \- capiscio\_server\_did: The server's DID \- capiscio\_server\_badge: The server's Trust Badge \(JWS\) \- capiscio\_pop\_nonce: Client's PoP challenge \(in request\) \- capiscio\_pop\_signature: Server's PoP response \(in response\)
+
+<a name="RegistryEvidenceStore"></a>
+## type [RegistryEvidenceStore](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/evidence_store.go#L118-L135>)
+
+RegistryEvidenceStore streams evidence to the registry server's events endpoint. It implements batching and rate limiting to avoid overwhelming the server.
+
+```go
+type RegistryEvidenceStore struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewRegistryEvidenceStore"></a>
+### func [NewRegistryEvidenceStore](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/evidence_store.go#L159>)
+
+```go
+func NewRegistryEvidenceStore(cfg RegistryEvidenceStoreConfig) *RegistryEvidenceStore
+```
+
+NewRegistryEvidenceStore creates a new registry streaming evidence store.
+
+<a name="RegistryEvidenceStore.Close"></a>
+### func \(\*RegistryEvidenceStore\) [Close](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/evidence_store.go#L311>)
+
+```go
+func (s *RegistryEvidenceStore) Close() error
+```
+
+Close stops the registry evidence store.
+
+<a name="RegistryEvidenceStore.Store"></a>
+### func \(\*RegistryEvidenceStore\) [Store](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/evidence_store.go#L192>)
+
+```go
+func (s *RegistryEvidenceStore) Store(ctx context.Context, record EvidenceRecord) error
+```
+
+Store adds an evidence record to the buffer for streaming.
+
+<a name="RegistryEvidenceStoreConfig"></a>
+## type [RegistryEvidenceStoreConfig](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/evidence_store.go#L138-L156>)
+
+RegistryEvidenceStoreConfig configures the registry evidence store
+
+```go
+type RegistryEvidenceStoreConfig struct {
+    // Endpoint is the registry events endpoint URL
+    Endpoint string
+
+    // APIKey for authentication
+    APIKey string
+
+    // BatchSize is the number of records to batch before flushing (default: 100)
+    BatchSize int
+
+    // FlushInterval is the max time between flushes (default: 5s)
+    FlushInterval time.Duration
+
+    // RateLimitWindow is the deduplication window (default: 60s)
+    RateLimitWindow time.Duration
+
+    // RateLimitMaxPerWindow is max events per fingerprint per window (default: 10)
+    RateLimitMaxPerWindow int
+}
+```
+
+<a name="ServerErrorCode"></a>
+## type [ServerErrorCode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/errors.go#L112>)
+
+ServerErrorCode represents server verification error codes \(RFC\-007 §8\) These codes align with RFC\-006 error conventions for consistency.
+
+```go
+type ServerErrorCode int
+```
+
+<a name="ServerErrorNone"></a>
+
+```go
+const (
+    ServerErrorNone ServerErrorCode = iota
+    // SERVER_IDENTITY_MISSING - No server identity disclosed (UNVERIFIED_ORIGIN)
+    ServerErrorCodeDIDMissing
+    // SERVER_BADGE_MISSING - DID disclosed but no badge (DECLARED_PRINCIPAL)
+    ServerErrorCodeBadgeMissing
+    // SERVER_BADGE_INVALID - Badge signature or expiry verification failed
+    ServerErrorCodeBadgeInvalid
+    // SERVER_BADGE_REVOKED - Server badge has been revoked
+    ServerErrorCodeBadgeRevoked
+    // SERVER_TRUST_INSUFFICIENT - Trust level below required min_trust_level
+    ServerErrorCodeTrustInsufficient
+    // SERVER_DID_MISMATCH - Badge subject does not match disclosed DID
+    ServerErrorCodeDIDMismatch
+    // SERVER_ISSUER_UNTRUSTED - Badge issuer not in trusted_issuers
+    ServerErrorCodeIssuerUntrusted
+    // SERVER_DOMAIN_MISMATCH - did:web host does not match transport origin
+    ServerErrorCodeOriginMismatch
+    // SERVER_PATH_MISMATCH - did:web path does not match MCP endpoint path
+    ServerErrorCodePathMismatch
+    // SERVER_DID_RESOLUTION_FAILED - Could not resolve DID document
+    ServerErrorCodeDIDResolutionFailed
+    // SERVER_POP_FAILED - Proof of Possession verification failed
+    ServerErrorCodePoPFailed
+    // SERVER_POP_EXPIRED - PoP challenge expired
+    ServerErrorCodePoPExpired
+    // SERVER_KEY_FETCH_FAILED - Could not fetch server public key
+    ServerErrorCodeKeyFetchFailed
+)
+```
+
+<a name="ErrorToServerErrorCode"></a>
+### func [ErrorToServerErrorCode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/errors.go#L180>)
+
+```go
+func ErrorToServerErrorCode(err error) ServerErrorCode
+```
+
+ErrorToServerErrorCode converts an error to a ServerErrorCode
+
+<a name="ServerErrorCode.String"></a>
+### func \(ServerErrorCode\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/errors.go#L146>)
+
+```go
+func (c ServerErrorCode) String() string
+```
+
+String returns the string representation of the server error code These match the RFC\-007 §8 error code names
+
+<a name="ServerIdentityVerifier"></a>
+## type [ServerIdentityVerifier](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/server_identity.go#L33-L36>)
+
+ServerIdentityVerifier implements RFC\-007 server identity verification. It uses the same badge.Verifier as agent identity verification for consistency.
+
+Per RFC\-007 §3: A Server Badge is a Trust Badge \(RFC\-002\) issued for a server DID. This means MCP servers use the SAME identity infrastructure as agents: \- Same DID patterns \(did:web:domain:servers:id vs did:web:domain:agents:id\) \- Same Trust Badge format \- Same verification workflow via badge.Verifier
+
+The verification has two phases: 1. Badge verification: Verify the badge is valid and signed by trusted CA 2. PoP verification: Verify the server controls the DID's private key
+
+RFC\-007 PoP is embedded in the MCP handshake \(initialize\), NOT via CA endpoints: \- Client sends nonce in initialize request \_meta \- Server returns signature in initialize response \_meta \- No dependency on /badge/challenge endpoints
+
+```go
+type ServerIdentityVerifier struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewServerIdentityVerifier"></a>
+### func [NewServerIdentityVerifier](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/server_identity.go#L41>)
+
+```go
+func NewServerIdentityVerifier(badgeVerifier *badge.Verifier) *ServerIdentityVerifier
+```
+
+NewServerIdentityVerifier creates a new server identity verifier. The badgeVerifier is the same verifier used for agent badges \- this ensures consistent identity verification across both agents and MCP servers.
+
+<a name="NewServerIdentityVerifierWithConfig"></a>
+### func [NewServerIdentityVerifierWithConfig](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/server_identity.go#L49>)
+
+```go
+func NewServerIdentityVerifierWithConfig(badgeVerifier *badge.Verifier, cacheConfig *pop.CacheConfig) *ServerIdentityVerifier
+```
+
+NewServerIdentityVerifierWithConfig creates a verifier with custom cache config
+
+<a name="ServerIdentityVerifier.GetCachedSession"></a>
+### func \(\*ServerIdentityVerifier\) [GetCachedSession](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/server_identity.go#L268>)
+
+```go
+func (v *ServerIdentityVerifier) GetCachedSession(serverDID string) (*pop.CacheEntry, bool)
+```
+
+GetCachedSession retrieves a previously verified session Use this to avoid re\-verifying on every request within a session
+
+<a name="ServerIdentityVerifier.InvalidateByTrustLevel"></a>
+### func \(\*ServerIdentityVerifier\) [InvalidateByTrustLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/server_identity.go#L281>)
+
+```go
+func (v *ServerIdentityVerifier) InvalidateByTrustLevel(minLevelStr string)
+```
+
+InvalidateByTrustLevel removes all sessions below a trust level Use when trust requirements increase minLevelStr should be "0", "1", "2", "3", or "4" per RFC\-002 §5
+
+<a name="ServerIdentityVerifier.InvalidateSession"></a>
+### func \(\*ServerIdentityVerifier\) [InvalidateSession](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/server_identity.go#L274>)
+
+```go
+func (v *ServerIdentityVerifier) InvalidateSession(serverDID string)
+```
+
+InvalidateSession removes a cached session \(e.g., on disconnect\)
+
+<a name="ServerIdentityVerifier.VerifyPoP"></a>
+### func \(\*ServerIdentityVerifier\) [VerifyPoP](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/server_identity.go#L168-L175>)
+
+```go
+func (v *ServerIdentityVerifier) VerifyPoP(ctx context.Context, result *VerifyResult, popRequest *pop.MCPPoPRequest, popResponse *pop.MCPPoPResponse, publicKey ed25519.PublicKey, maxAge time.Duration) (*VerifyResult, error)
+```
+
+VerifyPoP verifies a server's Proof of Possession response.
+
+This is called AFTER VerifyServerIdentity succeeds \(returns DECLARED\_PRINCIPAL\). The PoP data comes from the MCP initialize handshake: \- Client sent nonce in request \_meta \(capiscio\_pop\_nonce\) \- Server returned signature in response \_meta \(capiscio\_pop\_signature\)
+
+Returns updated result with VERIFIED\_PRINCIPAL if PoP succeeds.
+
+<a name="ServerIdentityVerifier.VerifyServerIdentity"></a>
+### func \(\*ServerIdentityVerifier\) [VerifyServerIdentity](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/server_identity.go#L67-L73>)
+
+```go
+func (v *ServerIdentityVerifier) VerifyServerIdentity(ctx context.Context, serverDID string, serverBadgeJWS string, transportOrigin string, config *VerifyConfig) (*VerifyResult, error)
+```
+
+VerifyServerIdentity implements RFC\-007 §7.2 server identity verification algorithm.
+
+RFC\-007 defines Server Badges as Trust Badges where sub = server DID. This method verifies the server badge using the same badge.Verifier as agents.
+
+The algorithm classifies servers into THREE states: \- VERIFIED\_PRINCIPAL: DID \+ badge verified \+ PoP verified \(full trust\) \- DECLARED\_PRINCIPAL: DID \+ badge verified, PoP not performed \(partial trust\) \- UNVERIFIED\_ORIGIN: Missing DID, missing badge, or verification failed
+
+For VERIFIED\_PRINCIPAL, also call VerifyPoP with the PoP data from initialize.
+
+<a name="ServerIdentityVerifier.VerifyWithCache"></a>
+### func \(\*ServerIdentityVerifier\) [VerifyWithCache](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/server_identity.go#L210-L219>)
+
+```go
+func (v *ServerIdentityVerifier) VerifyWithCache(ctx context.Context, serverDID string, serverBadgeJWS string, transportOrigin string, popRequest *pop.MCPPoPRequest, popResponse *pop.MCPPoPResponse, publicKey ed25519.PublicKey, config *VerifyConfig) (*VerifyResult, error)
+```
+
+VerifyWithCache checks cache first, then performs full verification if needed. This is the recommended entry point for verifying server identity.
+
+<a name="ServerState"></a>
+## type [ServerState](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L57>)
+
+ServerState represents the server classification state \(RFC\-007 §5.2\) Three distinct states reflect the verification depth: \- VERIFIED\_PRINCIPAL: Badge \+ PoP verified \(full trust\) \- DECLARED\_PRINCIPAL: Badge verified, PoP not performed \(partial trust\) \- UNVERIFIED\_ORIGIN: No identity disclosed or verification failed
+
+```go
+type ServerState int
+```
+
+<a name="ServerStateUnspecified"></a>
+
+```go
+const (
+    ServerStateUnspecified ServerState = iota
+    // ServerStateVerifiedPrincipal indicates full verification:
+    // - Server DID disclosed
+    // - Server badge verified by trusted CA
+    // - PoP verified (server proved key ownership)
+    ServerStateVerifiedPrincipal
+
+    // ServerStateDeclaredPrincipal indicates partial verification:
+    // - Server DID disclosed
+    // - Server badge verified by trusted CA
+    // - PoP NOT performed (key ownership not proven)
+    ServerStateDeclaredPrincipal
+
+    // ServerStateUnverifiedOrigin indicates no verification:
+    // - No DID disclosed, OR
+    // - No badge provided, OR
+    // - Badge verification failed
+    // Note: This is distinct from Trust Level 0 (self-signed did:key)
+    ServerStateUnverifiedOrigin
+)
+```
+
+<a name="ServerState.String"></a>
+### func \(ServerState\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L82>)
+
+```go
+func (s ServerState) String() string
+```
+
+String returns the string representation of the server state
+
+<a name="Service"></a>
+## type [Service](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/service.go#L12-L15>)
+
+Service implements the MCP service logic Note: gRPC integration requires running \`make proto\` first to generate pkg/rpc/gen/capiscio/v1/mcp.pb.go and mcp\_grpc.pb.go
+
+```go
+type Service struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewService"></a>
+### func [NewService](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/service.go#L24>)
+
+```go
+func NewService(deps *Dependencies) *Service
+```
+
+NewService creates a new MCP service instance
+
+<a name="Service.EvaluateToolAccess"></a>
+### func \(\*Service\) [EvaluateToolAccess](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/service.go#L44-L47>)
+
+```go
+func (s *Service) EvaluateToolAccess(ctx context.Context, input *EvaluateToolAccessInput) (*EvaluateResult, error)
+```
+
+EvaluateToolAccess evaluates tool access using RFC\-006 §6.2\-6.4
+
+<a name="Service.Health"></a>
+### func \(\*Service\) [Health](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/service.go#L96>)
+
+```go
+func (s *Service) Health(ctx context.Context, input *HealthInput) *HealthStatus
+```
+
+Health performs a health check
+
+<a name="Service.ParseServerIdentityFromHTTP"></a>
+### func \(\*Service\) [ParseServerIdentityFromHTTP](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/service.go#L81>)
+
+```go
+func (s *Service) ParseServerIdentityFromHTTP(headers map[string]string) *ParsedIdentity
+```
+
+ParseServerIdentityFromHTTP parses server identity from HTTP headers
+
+<a name="Service.ParseServerIdentityFromJSONRPC"></a>
+### func \(\*Service\) [ParseServerIdentityFromJSONRPC](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/service.go#L86>)
+
+```go
+func (s *Service) ParseServerIdentityFromJSONRPC(meta map[string]interface{}) *ParsedIdentity
+```
+
+ParseServerIdentityFromJSONRPC parses server identity from JSON\-RPC \_meta
+
+<a name="Service.VerifyServerIdentity"></a>
+### func \(\*Service\) [VerifyServerIdentity](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/service.go#L67-L70>)
+
+```go
+func (s *Service) VerifyServerIdentity(ctx context.Context, input *VerifyServerIdentityInput) (*VerifyResult, error)
+```
+
+VerifyServerIdentity verifies server identity using RFC\-007 §7.2
+
+<a name="VerifyConfig"></a>
+## type [VerifyConfig](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L186-L195>)
+
+VerifyConfig holds configuration for server identity verification
+
+```go
+type VerifyConfig struct {
+    // AllowedDIDMethods is a list of allowed DID methods (e.g., "web", "key")
+    AllowedDIDMethods []string
+
+    // RequireOriginBinding enforces origin binding for did:web
+    RequireOriginBinding bool
+
+    // PoPMaxAge is the maximum age of a PoP nonce (default: 30 seconds)
+    PoPMaxAge time.Duration
+}
+```
+
+<a name="DefaultVerifyConfig"></a>
+### func [DefaultVerifyConfig](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L198>)
+
+```go
+func DefaultVerifyConfig() *VerifyConfig
+```
+
+DefaultVerifyConfig returns the default verification configuration
+
+<a name="VerifyResult"></a>
+## type [VerifyResult](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L207-L236>)
+
+VerifyResult holds the result of server identity verification
+
+```go
+type VerifyResult struct {
+    // State is the server classification state (RFC-007 §5.2)
+    // VERIFIED_PRINCIPAL, DECLARED_PRINCIPAL, or UNVERIFIED_ORIGIN
+    State ServerState
+
+    // ServerID is the confirmed server DID
+    ServerID string
+
+    // TrustLevelStr is the verified trust level from the server badge ("0"-"4")
+    // Per RFC-002 §5, trust levels are strings to avoid falsiness bugs
+    TrustLevelStr string
+
+    // BadgeJTI is the badge identifier for correlation
+    BadgeJTI string
+
+    // BadgeExpiresAt is when the server badge expires
+    BadgeExpiresAt time.Time
+
+    // PoPVerified is true if PoP verification succeeded
+    PoPVerified bool
+
+    // PoPRequired is true if PoP should be performed (badge valid, PoP not done)
+    PoPRequired bool
+
+    // ErrorCode is the error code (only set on failure)
+    ErrorCode ServerErrorCode
+
+    // ErrorDetail is a human-readable error detail
+    ErrorDetail string
+}
+```
+
+<a name="VerifyResult.GetServerID"></a>
+### func \(\*VerifyResult\) [GetServerID](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L273>)
+
+```go
+func (r *VerifyResult) GetServerID() string
+```
+
+GetServerID returns the server's DID
+
+<a name="VerifyResult.HasIdentity"></a>
+### func \(\*VerifyResult\) [HasIdentity](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L268>)
+
+```go
+func (r *VerifyResult) HasIdentity() bool
+```
+
+HasIdentity returns true if any identity was verified \(not UNVERIFIED\_ORIGIN\)
+
+<a name="VerifyResult.IsDeclared"></a>
+### func \(\*VerifyResult\) [IsDeclared](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L263>)
+
+```go
+func (r *VerifyResult) IsDeclared() bool
+```
+
+IsDeclared returns true if the server is partially verified \(DECLARED\_PRINCIPAL\)
+
+<a name="VerifyResult.IsVerified"></a>
+### func \(\*VerifyResult\) [IsVerified](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L258>)
+
+```go
+func (r *VerifyResult) IsVerified() bool
+```
+
+IsVerified returns true if the server is fully verified \(VERIFIED\_PRINCIPAL\)
+
+<a name="VerifyResult.TrustLevel"></a>
+### func \(\*VerifyResult\) [TrustLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/types.go#L240>)
+
+```go
+func (r *VerifyResult) TrustLevel() int
+```
+
+TrustLevel returns the trust level as an int \(for convenience\) Returns 0 if the trust level string is empty or invalid
+
+<a name="VerifyServerIdentityInput"></a>
+## type [VerifyServerIdentityInput](<https://github.com/capiscio/capiscio-core/blob/main/pkg/mcp/service.go#L59-L64>)
+
+VerifyServerIdentityInput represents the input for server identity verification
+
+```go
+type VerifyServerIdentityInput struct {
+    ServerDID      string
+    ServerBadgeJWS string
+    Origin         string
+    Config         *VerifyConfig
+}
+```
+
+# pop
+
+```go
+import "github.com/capiscio/capiscio-core/v2/pkg/pop"
+```
+
+Package pop provides shared Proof of Possession cryptographic primitives.
+
+These primitives are used by: \- RFC\-003: Badge issuance PoP \(agent proves key to CA\) \- RFC\-007: MCP server identity PoP \(server proves key to client\)
+
+The package extracts common operations to avoid duplication: \- Nonce generation \- JWS proof signing \- Proof verification \- DID document key extraction
+
+Package pop provides shared Proof of Possession cryptographic primitives. This file implements session caching for verified PoP results.
+
+Session caching avoids re\-verifying on every request within a session. Per team guidance, session definitions: \- HTTP: per connection or per TTL window \(configurable\) \- MCP stdio: per process lifetime or per initialize session
+
+Cache invalidation occurs on: \- Badge expiry \- TTL expiry \(configurable, default: sync with badge TTL\) \- Explicit invalidation \(key rotation, trust level change\)
+
+## Index
+
+- [Constants](<#constants>)
+- [Variables](<#variables>)
+- [func DecodeJWKPublicKey\(jwk \*JWK\) \(ed25519.PublicKey, error\)](<#DecodeJWKPublicKey>)
+- [func DecodeMultibaseKey\(multibase string\) \(ed25519.PublicKey, error\)](<#DecodeMultibaseKey>)
+- [func GenerateNonce\(size int\) \(string, error\)](<#GenerateNonce>)
+- [func SignNonce\(nonce string, privateKey ed25519.PrivateKey, keyID string\) \(string, error\)](<#SignNonce>)
+- [func VerifyMCPPoPResponse\(request \*MCPPoPRequest, response \*MCPPoPResponse, publicKey ed25519.PublicKey, maxAge time.Duration\) error](<#VerifyMCPPoPResponse>)
+- [func VerifyResponse\(challenge \*Challenge, response \*Response, publicKey ed25519.PublicKey\) error](<#VerifyResponse>)
+- [func VerifySignature\(signatureJWS string, expectedNonce string, publicKey ed25519.PublicKey\) error](<#VerifySignature>)
+- [type CacheConfig](<#CacheConfig>)
+  - [func DefaultCacheConfig\(\) \*CacheConfig](<#DefaultCacheConfig>)
+- [type CacheEntry](<#CacheEntry>)
+- [type Challenge](<#Challenge>)
+  - [func NewChallenge\(subjectDID string, ttl time.Duration\) \(\*Challenge, error\)](<#NewChallenge>)
+  - [func \(c \*Challenge\) IsExpired\(\) bool](<#Challenge.IsExpired>)
+  - [func \(c \*Challenge\) MarshalJSON\(\) \(\[\]byte, error\)](<#Challenge.MarshalJSON>)
+  - [func \(c \*Challenge\) UnmarshalJSON\(data \[\]byte\) error](<#Challenge.UnmarshalJSON>)
+- [type JWK](<#JWK>)
+  - [func EncodeJWKPublicKey\(publicKey ed25519.PublicKey, keyID string\) \*JWK](<#EncodeJWKPublicKey>)
+- [type MCPPoPRequest](<#MCPPoPRequest>)
+  - [func NewMCPPoPRequest\(\) \(\*MCPPoPRequest, error\)](<#NewMCPPoPRequest>)
+  - [func ParseMCPPoPRequestFromMeta\(meta map\[string\]interface\{\}\) \*MCPPoPRequest](<#ParseMCPPoPRequestFromMeta>)
+  - [func \(r \*MCPPoPRequest\) ToMeta\(\) map\[string\]interface\{\}](<#MCPPoPRequest.ToMeta>)
+- [type MCPPoPResponse](<#MCPPoPResponse>)
+  - [func CreateMCPPoPResponse\(clientNonce string, privateKey ed25519.PrivateKey, keyID string\) \(\*MCPPoPResponse, error\)](<#CreateMCPPoPResponse>)
+  - [func ParseMCPPoPResponseFromMeta\(meta map\[string\]interface\{\}\) \*MCPPoPResponse](<#ParseMCPPoPResponseFromMeta>)
+  - [func \(r \*MCPPoPResponse\) ToMeta\(\) map\[string\]interface\{\}](<#MCPPoPResponse.ToMeta>)
+- [type Response](<#Response>)
+  - [func CreateResponse\(challenge \*Challenge, privateKey ed25519.PrivateKey, keyID string\) \(\*Response, error\)](<#CreateResponse>)
+- [type SessionCache](<#SessionCache>)
+  - [func NewSessionCache\(config \*CacheConfig\) \*SessionCache](<#NewSessionCache>)
+  - [func \(c \*SessionCache\) Clear\(\)](<#SessionCache.Clear>)
+  - [func \(c \*SessionCache\) Delete\(key string\)](<#SessionCache.Delete>)
+  - [func \(c \*SessionCache\) Get\(key string\) \*CacheEntry](<#SessionCache.Get>)
+  - [func \(c \*SessionCache\) InvalidateBySession\(sessionID string\)](<#SessionCache.InvalidateBySession>)
+  - [func \(c \*SessionCache\) InvalidateByTrustLevel\(minLevelStr string\)](<#SessionCache.InvalidateByTrustLevel>)
+  - [func \(c \*SessionCache\) Size\(\) int](<#SessionCache.Size>)
+  - [func \(c \*SessionCache\) Store\(key string, entry \*CacheEntry\)](<#SessionCache.Store>)
+
+
+## Constants
+
+<a name="DefaultNonceSize"></a>DefaultNonceSize is 32 bytes \(256 bits of entropy\)
+
+```go
+const DefaultNonceSize = 32
+```
+
+## Variables
+
+<a name="ErrNonceGeneration"></a>
+
+```go
+var (
+    ErrNonceGeneration    = errors.New("failed to generate nonce")
+    ErrNonceMismatch      = errors.New("nonce does not match")
+    ErrSignatureInvalid   = errors.New("signature verification failed")
+    ErrChallengeExpired   = errors.New("challenge has expired")
+    ErrInvalidPrivateKey  = errors.New("invalid private key")
+    ErrUnsupportedKeyType = errors.New("unsupported key type")
+)
+```
+
+<a name="DecodeJWKPublicKey"></a>
+## func [DecodeJWKPublicKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L217>)
+
+```go
+func DecodeJWKPublicKey(jwk *JWK) (ed25519.PublicKey, error)
+```
+
+DecodeJWKPublicKey decodes an Ed25519 public key from JWK format
+
+<a name="DecodeMultibaseKey"></a>
+## func [DecodeMultibaseKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L246>)
+
+```go
+func DecodeMultibaseKey(multibase string) (ed25519.PublicKey, error)
+```
+
+DecodeMultibaseKey decodes a multibase\-encoded public key Supports 'z' \(base58btc\) prefix for Ed25519VerificationKey2020
+
+<a name="GenerateNonce"></a>
+## func [GenerateNonce](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L80>)
+
+```go
+func GenerateNonce(size int) (string, error)
+```
+
+GenerateNonce creates a cryptographically secure random nonce Returns base64url\-encoded string \(no padding per RFC\-003 §6.2\)
+
+<a name="SignNonce"></a>
+## func [SignNonce](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L124>)
+
+```go
+func SignNonce(nonce string, privateKey ed25519.PrivateKey, keyID string) (string, error)
+```
+
+SignNonce signs a nonce with an Ed25519 private key Returns JWS compact serialization
+
+This is used by: \- RFC\-003: Agent signing PoP proof for CA \- RFC\-007: MCP server signing nonce for client verification
+
+<a name="VerifyMCPPoPResponse"></a>
+## func [VerifyMCPPoPResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L327>)
+
+```go
+func VerifyMCPPoPResponse(request *MCPPoPRequest, response *MCPPoPResponse, publicKey ed25519.PublicKey, maxAge time.Duration) error
+```
+
+VerifyMCPPoPResponse verifies MCP server's PoP response Used by clients to verify server identity within handshake
+
+<a name="VerifyResponse"></a>
+## func [VerifyResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L189>)
+
+```go
+func VerifyResponse(challenge *Challenge, response *Response, publicKey ed25519.PublicKey) error
+```
+
+VerifyResponse verifies a PoP response against a challenge
+
+<a name="VerifySignature"></a>
+## func [VerifySignature](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L170>)
+
+```go
+func VerifySignature(signatureJWS string, expectedNonce string, publicKey ed25519.PublicKey) error
+```
+
+VerifySignature verifies a JWS signature over a nonce using an Ed25519 public key
+
+This is used by: \- RFC\-003: CA verifying agent PoP proof \- RFC\-007: Client verifying MCP server PoP response
+
+<a name="CacheConfig"></a>
+## type [CacheConfig](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/session_cache.go#L28-L38>)
+
+CacheConfig configures session cache behavior
+
+```go
+type CacheConfig struct {
+    // DefaultTTL is the default cache entry lifetime
+    // Should generally match badge TTL (default: 5 minutes)
+    DefaultTTL time.Duration
+
+    // MaxEntries limits cache size (0 = unlimited)
+    MaxEntries int
+
+    // CleanupInterval is how often to purge expired entries (0 = no background cleanup)
+    CleanupInterval time.Duration
+}
+```
+
+<a name="DefaultCacheConfig"></a>
+### func [DefaultCacheConfig](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/session_cache.go#L41>)
+
+```go
+func DefaultCacheConfig() *CacheConfig
+```
+
+DefaultCacheConfig returns sensible defaults
+
+<a name="CacheEntry"></a>
+## type [CacheEntry](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/session_cache.go#L50-L71>)
+
+CacheEntry represents a cached verification result
+
+```go
+type CacheEntry struct {
+    // SubjectDID is the verified DID
+    SubjectDID string
+
+    // TrustLevelStr from verified badge (string per RFC-002 §5)
+    TrustLevelStr string
+
+    // BadgeJTI for correlation
+    BadgeJTI string
+
+    // BadgeExpiresAt is when the badge expires
+    BadgeExpiresAt time.Time
+
+    // VerifiedAt is when PoP was verified
+    VerifiedAt time.Time
+
+    // ExpiresAt is when this cache entry expires
+    ExpiresAt time.Time
+
+    // SessionID for MCP session correlation (optional)
+    SessionID string
+}
+```
+
+<a name="Challenge"></a>
+## type [Challenge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L45-L57>)
+
+Challenge represents a PoP challenge \(nonce \+ metadata\) Used by both RFC\-003 and RFC\-007
+
+```go
+type Challenge struct {
+    // Nonce is the random challenge value (base64url encoded, no padding)
+    Nonce string `json:"nonce"`
+
+    // CreatedAt is when the challenge was created
+    CreatedAt time.Time `json:"created_at"`
+
+    // ExpiresAt is when the challenge expires
+    ExpiresAt time.Time `json:"expires_at"`
+
+    // SubjectDID is the DID being challenged to prove key ownership
+    SubjectDID string `json:"subject_did"`
+}
+```
+
+<a name="NewChallenge"></a>
+### func [NewChallenge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L94>)
+
+```go
+func NewChallenge(subjectDID string, ttl time.Duration) (*Challenge, error)
+```
+
+NewChallenge creates a PoP challenge with the given TTL
+
+<a name="Challenge.IsExpired"></a>
+### func \(\*Challenge\) [IsExpired](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L110>)
+
+```go
+func (c *Challenge) IsExpired() bool
+```
+
+IsExpired checks if the challenge has expired
+
+<a name="Challenge.MarshalJSON"></a>
+### func \(\*Challenge\) [MarshalJSON](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L466>)
+
+```go
+func (c *Challenge) MarshalJSON() ([]byte, error)
+```
+
+MarshalJSON implements json.Marshaler
+
+<a name="Challenge.UnmarshalJSON"></a>
+### func \(\*Challenge\) [UnmarshalJSON](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L472>)
+
+```go
+func (c *Challenge) UnmarshalJSON(data []byte) error
+```
+
+UnmarshalJSON implements json.Unmarshaler
+
+<a name="JWK"></a>
+## type [JWK](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L209-L214>)
+
+JWK represents a JSON Web Key \(minimal for Ed25519\)
+
+```go
+type JWK struct {
+    Kty string `json:"kty"`
+    Crv string `json:"crv"`
+    X   string `json:"x"`
+    Kid string `json:"kid,omitempty"`
+}
+```
+
+<a name="EncodeJWKPublicKey"></a>
+### func [EncodeJWKPublicKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L235>)
+
+```go
+func EncodeJWKPublicKey(publicKey ed25519.PublicKey, keyID string) *JWK
+```
+
+EncodeJWKPublicKey encodes an Ed25519 public key to JWK format
+
+<a name="MCPPoPRequest"></a>
+## type [MCPPoPRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L280-L286>)
+
+MCPPoPRequest represents PoP data sent by client in initialize request \_meta RFC\-007: Embedded in MCP handshake, not separate endpoint
+
+```go
+type MCPPoPRequest struct {
+    // ClientNonce is the challenge nonce for server to sign
+    ClientNonce string `json:"client_nonce"`
+
+    // CreatedAt is when the nonce was generated
+    CreatedAt time.Time `json:"created_at"`
+}
+```
+
+<a name="NewMCPPoPRequest"></a>
+### func [NewMCPPoPRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L299>)
+
+```go
+func NewMCPPoPRequest() (*MCPPoPRequest, error)
+```
+
+NewMCPPoPRequest creates a PoP request for MCP initialize
+
+<a name="ParseMCPPoPRequestFromMeta"></a>
+### func [ParseMCPPoPRequestFromMeta](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L408>)
+
+```go
+func ParseMCPPoPRequestFromMeta(meta map[string]interface{}) *MCPPoPRequest
+```
+
+ParseMCPPoPRequestFromMeta extracts PoP request from MCP \_meta
+
+<a name="MCPPoPRequest.ToMeta"></a>
+### func \(\*MCPPoPRequest\) [ToMeta](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L400>)
+
+```go
+func (r *MCPPoPRequest) ToMeta() map[string]interface{}
+```
+
+ToMeta serializes PoP request for MCP \_meta
+
+<a name="MCPPoPResponse"></a>
+## type [MCPPoPResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L290-L296>)
+
+MCPPoPResponse represents PoP data returned by server in initialize response \_meta RFC\-007: Server proves key ownership within handshake
+
+```go
+type MCPPoPResponse struct {
+    // NonceSignature is JWS over client_nonce, signed with server's DID key
+    NonceSignature string `json:"nonce_signature"`
+
+    // SignedAt is when the signature was created
+    SignedAt time.Time `json:"signed_at"`
+}
+```
+
+<a name="CreateMCPPoPResponse"></a>
+### func [CreateMCPPoPResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L313>)
+
+```go
+func CreateMCPPoPResponse(clientNonce string, privateKey ed25519.PrivateKey, keyID string) (*MCPPoPResponse, error)
+```
+
+CreateMCPPoPResponse creates a PoP response for MCP initialize Used by MCP servers to prove key ownership
+
+<a name="ParseMCPPoPResponseFromMeta"></a>
+### func [ParseMCPPoPResponseFromMeta](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L439>)
+
+```go
+func ParseMCPPoPResponseFromMeta(meta map[string]interface{}) *MCPPoPResponse
+```
+
+ParseMCPPoPResponseFromMeta extracts PoP response from MCP \_meta
+
+<a name="MCPPoPResponse.ToMeta"></a>
+### func \(\*MCPPoPResponse\) [ToMeta](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L431>)
+
+```go
+func (r *MCPPoPResponse) ToMeta() map[string]interface{}
+```
+
+ToMeta serializes PoP response for MCP \_meta
+
+<a name="Response"></a>
+## type [Response](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L60-L69>)
+
+Response represents a PoP response \(signature over nonce\)
+
+```go
+type Response struct {
+    // Nonce echoed from challenge
+    Nonce string `json:"nonce"`
+
+    // Signature is JWS compact serialization over nonce
+    Signature string `json:"signature"`
+
+    // SubjectDID is the responder's DID
+    SubjectDID string `json:"subject_did"`
+}
+```
+
+<a name="CreateResponse"></a>
+### func [CreateResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/primitives.go#L148>)
+
+```go
+func CreateResponse(challenge *Challenge, privateKey ed25519.PrivateKey, keyID string) (*Response, error)
+```
+
+CreateResponse creates a complete PoP response by signing the challenge nonce
+
+<a name="SessionCache"></a>
+## type [SessionCache](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/session_cache.go#L21-L25>)
+
+SessionCache provides thread\-safe caching of PoP verification results
+
+```go
+type SessionCache struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewSessionCache"></a>
+### func [NewSessionCache](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/session_cache.go#L74>)
+
+```go
+func NewSessionCache(config *CacheConfig) *SessionCache
+```
+
+NewSessionCache creates a new session cache
+
+<a name="SessionCache.Clear"></a>
+### func \(\*SessionCache\) [Clear](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/session_cache.go#L187>)
+
+```go
+func (c *SessionCache) Clear()
+```
+
+Clear removes all entries
+
+<a name="SessionCache.Delete"></a>
+### func \(\*SessionCache\) [Delete](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/session_cache.go#L153>)
+
+```go
+func (c *SessionCache) Delete(key string)
+```
+
+Delete removes a cached entry
+
+<a name="SessionCache.Get"></a>
+### func \(\*SessionCache\) [Get](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/session_cache.go#L128>)
+
+```go
+func (c *SessionCache) Get(key string) *CacheEntry
+```
+
+Get retrieves a cached entry if valid Returns nil if not found or expired
+
+<a name="SessionCache.InvalidateBySession"></a>
+### func \(\*SessionCache\) [InvalidateBySession](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/session_cache.go#L160>)
+
+```go
+func (c *SessionCache) InvalidateBySession(sessionID string)
+```
+
+InvalidateBySession removes all entries for a session
+
+<a name="SessionCache.InvalidateByTrustLevel"></a>
+### func \(\*SessionCache\) [InvalidateByTrustLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/session_cache.go#L174>)
+
+```go
+func (c *SessionCache) InvalidateByTrustLevel(minLevelStr string)
+```
+
+InvalidateByTrustLevel removes entries below a trust level Use when trust requirements increase mid\-session minLevelStr should be "0", "1", "2", "3", or "4"
+
+<a name="SessionCache.Size"></a>
+### func \(\*SessionCache\) [Size](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/session_cache.go#L194>)
+
+```go
+func (c *SessionCache) Size() int
+```
+
+Size returns the number of cached entries
+
+<a name="SessionCache.Store"></a>
+### func \(\*SessionCache\) [Store](<https://github.com/capiscio/capiscio-core/blob/main/pkg/pop/session_cache.go#L94>)
+
+```go
+func (c *SessionCache) Store(key string, entry *CacheEntry)
+```
+
+Store caches a verification result Key is typically the server DID
+
 # protocol
 
 ```go
-import "github.com/capiscio/capiscio-core/pkg/protocol"
+import "github.com/capiscio/capiscio-core/v2/pkg/protocol"
 ```
 
 Package protocol defines the interfaces and implementations for communicating with A2A agents.
@@ -669,26 +3519,114 @@ Ping sends a standard JSON\-RPC request to check availability. It attempts to ca
 # registry
 
 ```go
-import "github.com/capiscio/capiscio-core/pkg/registry"
+import "github.com/capiscio/capiscio-core/v2/pkg/registry"
 ```
 
 Package registry implements the Trust Registry interface for key retrieval.
 
 ## Index
 
+- [Constants](<#constants>)
+- [type AgentStatus](<#AgentStatus>)
+  - [func \(s \*AgentStatus\) IsActive\(\) bool](<#AgentStatus.IsActive>)
+- [type BadgeStatus](<#BadgeStatus>)
 - [type CloudRegistry](<#CloudRegistry>)
   - [func NewCloudRegistry\(url string\) \*CloudRegistry](<#NewCloudRegistry>)
+  - [func \(r \*CloudRegistry\) GetAgentStatus\(ctx context.Context, issuerURL string, agentID string\) \(\*AgentStatus, error\)](<#CloudRegistry.GetAgentStatus>)
+  - [func \(r \*CloudRegistry\) GetBadgeStatus\(ctx context.Context, issuerURL string, jti string\) \(\*BadgeStatus, error\)](<#CloudRegistry.GetBadgeStatus>)
   - [func \(r \*CloudRegistry\) GetPublicKey\(ctx context.Context, issuer string\) \(crypto.PublicKey, error\)](<#CloudRegistry.GetPublicKey>)
   - [func \(r \*CloudRegistry\) IsRevoked\(\_ context.Context, \_ string\) \(bool, error\)](<#CloudRegistry.IsRevoked>)
+  - [func \(r \*CloudRegistry\) SyncRevocations\(ctx context.Context, issuerURL string, since time.Time\) \(\[\]Revocation, error\)](<#CloudRegistry.SyncRevocations>)
 - [type LocalRegistry](<#LocalRegistry>)
   - [func NewLocalRegistry\(path string\) \*LocalRegistry](<#NewLocalRegistry>)
+  - [func \(r \*LocalRegistry\) GetAgentStatus\(\_ context.Context, \_ string, \_ string\) \(\*AgentStatus, error\)](<#LocalRegistry.GetAgentStatus>)
+  - [func \(r \*LocalRegistry\) GetBadgeStatus\(\_ context.Context, \_ string, \_ string\) \(\*BadgeStatus, error\)](<#LocalRegistry.GetBadgeStatus>)
   - [func \(r \*LocalRegistry\) GetPublicKey\(\_ context.Context, \_ string\) \(crypto.PublicKey, error\)](<#LocalRegistry.GetPublicKey>)
   - [func \(r \*LocalRegistry\) IsRevoked\(\_ context.Context, \_ string\) \(bool, error\)](<#LocalRegistry.IsRevoked>)
+  - [func \(r \*LocalRegistry\) SyncRevocations\(\_ context.Context, \_ string, \_ time.Time\) \(\[\]Revocation, error\)](<#LocalRegistry.SyncRevocations>)
 - [type Registry](<#Registry>)
+- [type Revocation](<#Revocation>)
 
+
+## Constants
+
+<a name="AgentStatusActive"></a>AgentStatusActive is the status for an active agent.
+
+```go
+const AgentStatusActive = "active"
+```
+
+<a name="AgentStatusDisabled"></a>AgentStatusDisabled is the status for a disabled agent.
+
+```go
+const AgentStatusDisabled = "disabled"
+```
+
+<a name="AgentStatusSuspended"></a>AgentStatusSuspended is the status for a suspended agent.
+
+```go
+const AgentStatusSuspended = "suspended"
+```
+
+<a name="AgentStatus"></a>
+## type [AgentStatus](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/interface.go#L57-L69>)
+
+AgentStatus represents the status of an agent.
+
+```go
+type AgentStatus struct {
+    // ID is the agent identifier.
+    ID  string `json:"id"`
+
+    // Status is the agent status: "active", "disabled", or "suspended".
+    Status string `json:"status"`
+
+    // DisabledAt is the timestamp when the agent was disabled.
+    DisabledAt *time.Time `json:"disabledAt,omitempty"`
+
+    // Reason is the reason for disabling (if disabled).
+    Reason string `json:"reason,omitempty"`
+}
+```
+
+<a name="AgentStatus.IsActive"></a>
+### func \(\*AgentStatus\) [IsActive](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/interface.go#L81>)
+
+```go
+func (s *AgentStatus) IsActive() bool
+```
+
+IsActive returns true if the agent status is active.
+
+<a name="BadgeStatus"></a>
+## type [BadgeStatus](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/interface.go#L36-L54>)
+
+BadgeStatus represents the status of a badge.
+
+```go
+type BadgeStatus struct {
+    // JTI is the badge ID.
+    JTI string `json:"jti"`
+
+    // Subject is the agent DID (sub claim).
+    Subject string `json:"sub,omitempty"`
+
+    // Revoked indicates if the badge has been revoked.
+    Revoked bool `json:"revoked"`
+
+    // Reason is the revocation reason (if revoked).
+    Reason string `json:"reason,omitempty"`
+
+    // RevokedAt is the timestamp when the badge was revoked.
+    RevokedAt *time.Time `json:"revokedAt,omitempty"`
+
+    // ExpiresAt is the badge expiry time.
+    ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+}
+```
 
 <a name="CloudRegistry"></a>
-## type [CloudRegistry](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/cloud.go#L17-L24>)
+## type [CloudRegistry](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/cloud.go#L18-L25>)
 
 CloudRegistry implements Registry by fetching keys from a URL.
 
@@ -701,7 +3639,7 @@ type CloudRegistry struct {
 ```
 
 <a name="NewCloudRegistry"></a>
-### func [NewCloudRegistry](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/cloud.go#L27>)
+### func [NewCloudRegistry](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/cloud.go#L28>)
 
 ```go
 func NewCloudRegistry(url string) *CloudRegistry
@@ -709,8 +3647,26 @@ func NewCloudRegistry(url string) *CloudRegistry
 
 NewCloudRegistry creates a new CloudRegistry.
 
+<a name="CloudRegistry.GetAgentStatus"></a>
+### func \(\*CloudRegistry\) [GetAgentStatus](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/cloud.go#L120>)
+
+```go
+func (r *CloudRegistry) GetAgentStatus(ctx context.Context, issuerURL string, agentID string) (*AgentStatus, error)
+```
+
+GetAgentStatus retrieves the status of an agent from the registry. Endpoint: GET \{issuerURL\}/v1/agents/\{agentID\}/status
+
+<a name="CloudRegistry.GetBadgeStatus"></a>
+### func \(\*CloudRegistry\) [GetBadgeStatus](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/cloud.go#L88>)
+
+```go
+func (r *CloudRegistry) GetBadgeStatus(ctx context.Context, issuerURL string, jti string) (*BadgeStatus, error)
+```
+
+GetBadgeStatus retrieves the status of a badge from the registry. Endpoint: GET \{issuerURL\}/v1/badges/\{jti\}/status
+
 <a name="CloudRegistry.GetPublicKey"></a>
-### func \(\*CloudRegistry\) [GetPublicKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/cloud.go#L38>)
+### func \(\*CloudRegistry\) [GetPublicKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/cloud.go#L39>)
 
 ```go
 func (r *CloudRegistry) GetPublicKey(ctx context.Context, issuer string) (crypto.PublicKey, error)
@@ -719,16 +3675,25 @@ func (r *CloudRegistry) GetPublicKey(ctx context.Context, issuer string) (crypto
 GetPublicKey fetches the key from the Registry URL. It assumes the URL returns a single JWK for now \(MVP\).
 
 <a name="CloudRegistry.IsRevoked"></a>
-### func \(\*CloudRegistry\) [IsRevoked](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/cloud.go#L80>)
+### func \(\*CloudRegistry\) [IsRevoked](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/cloud.go#L82>)
 
 ```go
 func (r *CloudRegistry) IsRevoked(_ context.Context, _ string) (bool, error)
 ```
 
-IsRevoked checks revocation \(not implemented for MVP\).
+IsRevoked checks revocation \(not implemented for MVP\). Deprecated: Use GetBadgeStatus instead.
+
+<a name="CloudRegistry.SyncRevocations"></a>
+### func \(\*CloudRegistry\) [SyncRevocations](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/cloud.go#L152>)
+
+```go
+func (r *CloudRegistry) SyncRevocations(ctx context.Context, issuerURL string, since time.Time) ([]Revocation, error)
+```
+
+SyncRevocations fetches revocations from the registry since the given time. Endpoint: GET \{issuerURL\}/v1/revocations?since=\{ISO8601\}
 
 <a name="LocalRegistry"></a>
-## type [LocalRegistry](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/local.go#L15-L20>)
+## type [LocalRegistry](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/local.go#L16-L21>)
 
 LocalRegistry implements Registry using a local file.
 
@@ -740,7 +3705,7 @@ type LocalRegistry struct {
 ```
 
 <a name="NewLocalRegistry"></a>
-### func [NewLocalRegistry](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/local.go#L23>)
+### func [NewLocalRegistry](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/local.go#L24>)
 
 ```go
 func NewLocalRegistry(path string) *LocalRegistry
@@ -748,8 +3713,26 @@ func NewLocalRegistry(path string) *LocalRegistry
 
 NewLocalRegistry creates a new LocalRegistry.
 
+<a name="LocalRegistry.GetAgentStatus"></a>
+### func \(\*LocalRegistry\) [GetAgentStatus](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/local.go#L75>)
+
+```go
+func (r *LocalRegistry) GetAgentStatus(_ context.Context, _ string, _ string) (*AgentStatus, error)
+```
+
+GetAgentStatus is not supported for local registry. Returns an error indicating online verification is not available.
+
+<a name="LocalRegistry.GetBadgeStatus"></a>
+### func \(\*LocalRegistry\) [GetBadgeStatus](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/local.go#L69>)
+
+```go
+func (r *LocalRegistry) GetBadgeStatus(_ context.Context, _ string, _ string) (*BadgeStatus, error)
+```
+
+GetBadgeStatus is not supported for local registry. Returns an error indicating online verification is not available.
+
 <a name="LocalRegistry.GetPublicKey"></a>
-### func \(\*LocalRegistry\) [GetPublicKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/local.go#L29>)
+### func \(\*LocalRegistry\) [GetPublicKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/local.go#L30>)
 
 ```go
 func (r *LocalRegistry) GetPublicKey(_ context.Context, _ string) (crypto.PublicKey, error)
@@ -758,18 +3741,27 @@ func (r *LocalRegistry) GetPublicKey(_ context.Context, _ string) (crypto.Public
 GetPublicKey reads the key from the local file. It ignores the issuer argument for the MVP \(trusts the local key for all\).
 
 <a name="LocalRegistry.IsRevoked"></a>
-### func \(\*LocalRegistry\) [IsRevoked](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/local.go#L61>)
+### func \(\*LocalRegistry\) [IsRevoked](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/local.go#L63>)
 
 ```go
 func (r *LocalRegistry) IsRevoked(_ context.Context, _ string) (bool, error)
 ```
 
-IsRevoked checks if the ID is in the local blocklist \(not implemented yet\).
+IsRevoked checks if the ID is in the local blocklist \(not implemented yet\). Deprecated: Use GetBadgeStatus instead.
+
+<a name="LocalRegistry.SyncRevocations"></a>
+### func \(\*LocalRegistry\) [SyncRevocations](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/local.go#L81>)
+
+```go
+func (r *LocalRegistry) SyncRevocations(_ context.Context, _ string, _ time.Time) ([]Revocation, error)
+```
+
+SyncRevocations is not supported for local registry. Returns an error indicating online sync is not available.
 
 <a name="Registry"></a>
-## type [Registry](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/interface.go#L10-L17>)
+## type [Registry](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/interface.go#L13-L33>)
 
-Registry defines the interface for the CapiscIO Trust Registry. It is responsible for resolving trusted public keys for Issuers.
+Registry defines the interface for the CapiscIO Trust Registry. It is responsible for resolving trusted public keys for Issuers, checking revocation status, and agent status. See RFC\-002: Trust Badge Specification.
 
 ```go
 type Registry interface {
@@ -777,15 +3769,46 @@ type Registry interface {
     // Returns the public key and any error encountered.
     GetPublicKey(ctx context.Context, issuerDID string) (crypto.PublicKey, error)
 
-    // IsRevoked checks if a specific Badge ID (or Subject) has been revoked.
+    // IsRevoked checks if a specific Badge ID (jti) has been revoked.
+    // Deprecated: Use GetBadgeStatus for richer information.
     IsRevoked(ctx context.Context, badgeID string) (bool, error)
+
+    // GetBadgeStatus retrieves the status of a badge by jti.
+    // Returns BadgeStatus or error if the badge is not found.
+    GetBadgeStatus(ctx context.Context, issuerURL string, jti string) (*BadgeStatus, error)
+
+    // GetAgentStatus retrieves the status of an agent by ID.
+    // Returns AgentStatus or error if the agent is not found.
+    GetAgentStatus(ctx context.Context, issuerURL string, agentID string) (*AgentStatus, error)
+
+    // SyncRevocations fetches revocations since the given timestamp.
+    // Used for bulk sync of revocation lists for offline verification.
+    SyncRevocations(ctx context.Context, issuerURL string, since time.Time) ([]Revocation, error)
+}
+```
+
+<a name="Revocation"></a>
+## type [Revocation](<https://github.com/capiscio/capiscio-core/blob/main/pkg/registry/interface.go#L86-L95>)
+
+Revocation represents a single badge revocation entry.
+
+```go
+type Revocation struct {
+    // JTI is the revoked badge ID.
+    JTI string `json:"jti"`
+
+    // RevokedAt is when the badge was revoked.
+    RevokedAt time.Time `json:"revokedAt"`
+
+    // Reason is the optional revocation reason.
+    Reason string `json:"reason,omitempty"`
 }
 ```
 
 # report
 
 ```go
-import "github.com/capiscio/capiscio-core/pkg/report"
+import "github.com/capiscio/capiscio-core/v2/pkg/report"
 ```
 
 Package report defines the structures for validation and scoring reports.
@@ -862,10 +3885,274 @@ func (r *ValidationResult) AddWarning(code, message, field string)
 
 AddWarning adds a warning issue to the result.
 
+# revocation
+
+```go
+import "github.com/capiscio/capiscio-core/v2/pkg/revocation"
+```
+
+Package revocation provides a local cache for badge revocations. This enables offline and semi\-connected verification modes. See RFC\-002 §7.4 Cache Staleness Guidance.
+
+## Index
+
+- [Constants](<#constants>)
+- [Variables](<#variables>)
+- [func DefaultCacheDir\(\) string](<#DefaultCacheDir>)
+- [type Cache](<#Cache>)
+- [type FileCache](<#FileCache>)
+  - [func NewFileCache\(path string\) \(\*FileCache, error\)](<#NewFileCache>)
+  - [func \(c \*FileCache\) Add\(jti string, revokedAt time.Time\) error](<#FileCache.Add>)
+  - [func \(c \*FileCache\) Clear\(\) error](<#FileCache.Clear>)
+  - [func \(c \*FileCache\) Count\(\) int](<#FileCache.Count>)
+  - [func \(c \*FileCache\) IsRevoked\(jti string\) bool](<#FileCache.IsRevoked>)
+  - [func \(c \*FileCache\) IsStale\(threshold time.Duration\) bool](<#FileCache.IsStale>)
+  - [func \(c \*FileCache\) LastSynced\(\) time.Time](<#FileCache.LastSynced>)
+  - [func \(c \*FileCache\) Sync\(revocations \[\]Revocation\) error](<#FileCache.Sync>)
+- [type MemoryCache](<#MemoryCache>)
+  - [func NewMemoryCache\(\) \*MemoryCache](<#NewMemoryCache>)
+  - [func \(c \*MemoryCache\) Add\(jti string, revokedAt time.Time\) error](<#MemoryCache.Add>)
+  - [func \(c \*MemoryCache\) Clear\(\) error](<#MemoryCache.Clear>)
+  - [func \(c \*MemoryCache\) IsRevoked\(jti string\) bool](<#MemoryCache.IsRevoked>)
+  - [func \(c \*MemoryCache\) IsStale\(threshold time.Duration\) bool](<#MemoryCache.IsStale>)
+  - [func \(c \*MemoryCache\) LastSynced\(\) time.Time](<#MemoryCache.LastSynced>)
+  - [func \(c \*MemoryCache\) Sync\(revocations \[\]Revocation\) error](<#MemoryCache.Sync>)
+- [type Revocation](<#Revocation>)
+
+
+## Constants
+
+<a name="DefaultStaleThreshold"></a>DefaultStaleThreshold is the default time after which cache is considered stale. Per RFC\-002 §7.4, default is 5 minutes.
+
+```go
+const DefaultStaleThreshold = 5 * time.Minute
+```
+
+## Variables
+
+<a name="ErrCacheNotFound"></a>Common errors returned by this package.
+
+```go
+var (
+    ErrCacheNotFound = errors.New("revocation cache not found")
+    ErrCacheCorrupt  = errors.New("revocation cache is corrupt")
+)
+```
+
+<a name="DefaultCacheDir"></a>
+## func [DefaultCacheDir](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L76>)
+
+```go
+func DefaultCacheDir() string
+```
+
+DefaultCacheDir returns the default revocation cache directory.
+
+<a name="Cache"></a>
+## type [Cache](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L27-L45>)
+
+Cache is the interface for a revocation cache.
+
+```go
+type Cache interface {
+    // IsRevoked checks if a badge jti is in the revocation cache.
+    IsRevoked(jti string) bool
+
+    // Add adds a revocation to the cache.
+    Add(jti string, revokedAt time.Time) error
+
+    // Sync updates the cache with new revocations.
+    Sync(revocations []Revocation) error
+
+    // LastSynced returns when the cache was last synced.
+    LastSynced() time.Time
+
+    // IsStale returns true if the cache is older than the threshold.
+    IsStale(threshold time.Duration) bool
+
+    // Clear clears all revocations from the cache.
+    Clear() error
+}
+```
+
+<a name="FileCache"></a>
+## type [FileCache](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L66-L73>)
+
+FileCache implements Cache using a JSON file.
+
+```go
+type FileCache struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewFileCache"></a>
+### func [NewFileCache](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L89>)
+
+```go
+func NewFileCache(path string) (*FileCache, error)
+```
+
+NewFileCache creates a new file\-based revocation cache. If path is empty, uses default location.
+
+<a name="FileCache.Add"></a>
+### func \(\*FileCache\) [Add](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L123>)
+
+```go
+func (c *FileCache) Add(jti string, revokedAt time.Time) error
+```
+
+Add adds a single revocation to the cache.
+
+<a name="FileCache.Clear"></a>
+### func \(\*FileCache\) [Clear](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L192>)
+
+```go
+func (c *FileCache) Clear() error
+```
+
+Clear removes all revocations from the cache.
+
+<a name="FileCache.Count"></a>
+### func \(\*FileCache\) [Count](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L208>)
+
+```go
+func (c *FileCache) Count() int
+```
+
+Count returns the number of revocations in the cache.
+
+<a name="FileCache.IsRevoked"></a>
+### func \(\*FileCache\) [IsRevoked](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L115>)
+
+```go
+func (c *FileCache) IsRevoked(jti string) bool
+```
+
+IsRevoked checks if a badge jti is in the revocation cache.
+
+<a name="FileCache.IsStale"></a>
+### func \(\*FileCache\) [IsStale](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L180>)
+
+```go
+func (c *FileCache) IsStale(threshold time.Duration) bool
+```
+
+IsStale returns true if the cache is older than the threshold. Per RFC\-002, default threshold is 5 minutes.
+
+<a name="FileCache.LastSynced"></a>
+### func \(\*FileCache\) [LastSynced](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L168>)
+
+```go
+func (c *FileCache) LastSynced() time.Time
+```
+
+LastSynced returns when the cache was last synced.
+
+<a name="FileCache.Sync"></a>
+### func \(\*FileCache\) [Sync](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L147>)
+
+```go
+func (c *FileCache) Sync(revocations []Revocation) error
+```
+
+Sync updates the cache with new revocations from the registry.
+
+<a name="MemoryCache"></a>
+## type [MemoryCache](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L260-L264>)
+
+MemoryCache is an in\-memory only cache for testing.
+
+```go
+type MemoryCache struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewMemoryCache"></a>
+### func [NewMemoryCache](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L267>)
+
+```go
+func NewMemoryCache() *MemoryCache
+```
+
+NewMemoryCache creates a new in\-memory revocation cache.
+
+<a name="MemoryCache.Add"></a>
+### func \(\*MemoryCache\) [Add](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L282>)
+
+```go
+func (c *MemoryCache) Add(jti string, revokedAt time.Time) error
+```
+
+Add adds a revoked badge to the cache.
+
+<a name="MemoryCache.Clear"></a>
+### func \(\*MemoryCache\) [Clear](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L318>)
+
+```go
+func (c *MemoryCache) Clear() error
+```
+
+
+
+<a name="MemoryCache.IsRevoked"></a>
+### func \(\*MemoryCache\) [IsRevoked](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L274>)
+
+```go
+func (c *MemoryCache) IsRevoked(jti string) bool
+```
+
+IsRevoked checks if a badge JTI has been revoked.
+
+<a name="MemoryCache.IsStale"></a>
+### func \(\*MemoryCache\) [IsStale](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L309>)
+
+```go
+func (c *MemoryCache) IsStale(threshold time.Duration) bool
+```
+
+IsStale returns true if the cache hasn't been synced within the threshold.
+
+<a name="MemoryCache.LastSynced"></a>
+### func \(\*MemoryCache\) [LastSynced](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L302>)
+
+```go
+func (c *MemoryCache) LastSynced() time.Time
+```
+
+LastSynced returns the time of the last cache sync.
+
+<a name="MemoryCache.Sync"></a>
+### func \(\*MemoryCache\) [Sync](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L291>)
+
+```go
+func (c *MemoryCache) Sync(revocations []Revocation) error
+```
+
+Sync synchronizes the cache with a list of revocations.
+
+<a name="Revocation"></a>
+## type [Revocation](<https://github.com/capiscio/capiscio-core/blob/main/pkg/revocation/cache.go#L48-L57>)
+
+Revocation represents a single revocation entry.
+
+```go
+type Revocation struct {
+    // JTI is the revoked badge ID.
+    JTI string `json:"jti"`
+
+    // RevokedAt is when the badge was revoked.
+    RevokedAt time.Time `json:"revokedAt"`
+
+    // Reason is the optional revocation reason.
+    Reason string `json:"reason,omitempty"`
+}
+```
+
 # scoring
 
 ```go
-import "github.com/capiscio/capiscio-core/pkg/scoring"
+import "github.com/capiscio/capiscio-core/v2/pkg/scoring"
 ```
 
 Package scoring implements the validation and scoring logic for Agent Cards.
@@ -1111,5 +4398,17908 @@ const (
     ModeStrict ValidationMode = "strict"
 )
 ```
+
+# simpleguard
+
+```go
+import "github.com/capiscio/capiscio-core/v2/pkg/simpleguard"
+```
+
+## Index
+
+- [Constants](<#constants>)
+- [Variables](<#variables>)
+- [func Middleware\(guard \*SimpleGuard\) func\(http.Handler\) http.Handler](<#Middleware>)
+- [func SubjectFromContext\(ctx context.Context\) string](<#SubjectFromContext>)
+- [type Claims](<#Claims>)
+  - [func ClaimsFromContext\(ctx context.Context\) \*Claims](<#ClaimsFromContext>)
+- [type Config](<#Config>)
+- [type SimpleGuard](<#SimpleGuard>)
+  - [func New\(cfg Config\) \(\*SimpleGuard, error\)](<#New>)
+  - [func \(g \*SimpleGuard\) SignOutbound\(claims Claims, body \[\]byte\) \(string, error\)](<#SimpleGuard.SignOutbound>)
+  - [func \(g \*SimpleGuard\) VerifyInbound\(token string, body \[\]byte\) \(\*Claims, error\)](<#SimpleGuard.VerifyInbound>)
+
+
+## Constants
+
+<a name="DefaultMaxTokenAge"></a>Default configuration values.
+
+```go
+const (
+    // DefaultMaxTokenAge is the default token validity window (60 seconds).
+    // This can be overridden via Config.MaxTokenAge.
+    DefaultMaxTokenAge = 60 * time.Second
+
+    // DefaultClockSkewTolerance is the allowed clock drift between parties (5 seconds).
+    // This accounts for minor time synchronization differences between systems.
+    DefaultClockSkewTolerance = 5 * time.Second
+
+    // DefaultMaxBodySize is the maximum request body size for middleware (10MB).
+    // Requests larger than this will be rejected to prevent memory exhaustion.
+    DefaultMaxBodySize = 10 << 20 // 10MB
+)
+```
+
+<a name="MaxTokenAge"></a>MaxTokenAge is kept for backward compatibility. Use Config.MaxTokenAge instead. Deprecated: Use DefaultMaxTokenAge or Config.MaxTokenAge.
+
+```go
+const MaxTokenAge = 60 * time.Second
+```
+
+## Variables
+
+<a name="ErrMissingHeader"></a>
+
+```go
+var (
+    ErrMissingHeader    = errors.New("missing X-Capiscio-Badge header")
+    ErrInvalidToken     = errors.New("invalid token format")
+    ErrTokenExpired     = errors.New("token expired")
+    ErrTokenFuture      = errors.New("token issued in the future")
+    ErrIntegrityFailed  = errors.New("integrity check failed (body hash mismatch)")
+    ErrMissingKeyID     = errors.New("missing kid header")
+    ErrUntrustedKey     = errors.New("untrusted key ID")
+    ErrSignatureInvalid = errors.New("signature verification failed")
+)
+```
+
+<a name="Middleware"></a>
+## func [Middleware](<https://github.com/capiscio/capiscio-core/blob/main/pkg/simpleguard/middleware.go#L21>)
+
+```go
+func Middleware(guard *SimpleGuard) func(http.Handler) http.Handler
+```
+
+Middleware creates a net/http middleware for SimpleGuard.
+
+<a name="SubjectFromContext"></a>
+## func [SubjectFromContext](<https://github.com/capiscio/capiscio-core/blob/main/pkg/simpleguard/middleware.go#L77>)
+
+```go
+func SubjectFromContext(ctx context.Context) string
+```
+
+SubjectFromContext retrieves the verified subject from the request context. Returns empty string if not found.
+
+<a name="Claims"></a>
+## type [Claims](<https://github.com/capiscio/capiscio-core/blob/main/pkg/simpleguard/types.go#L25-L32>)
+
+Claims represents the JWT claims for SimpleGuard.
+
+```go
+type Claims struct {
+    Subject   string `json:"sub"`
+    Issuer    string `json:"iss"`
+    IssuedAt  int64  `json:"iat"`
+    Expiry    int64  `json:"exp"`
+    BodyHash  string `json:"bh,omitempty"`
+    MessageID string `json:"jti,omitempty"`
+}
+```
+
+<a name="ClaimsFromContext"></a>
+### func [ClaimsFromContext](<https://github.com/capiscio/capiscio-core/blob/main/pkg/simpleguard/middleware.go#L88>)
+
+```go
+func ClaimsFromContext(ctx context.Context) *Claims
+```
+
+ClaimsFromContext retrieves the verified claims from the request context. Returns nil if not found.
+
+<a name="Config"></a>
+## type [Config](<https://github.com/capiscio/capiscio-core/blob/main/pkg/simpleguard/types.go#L35-L50>)
+
+Config holds configuration for SimpleGuard.
+
+```go
+type Config struct {
+    AgentID    string
+    PrivateKey crypto.PrivateKey
+    PublicKey  crypto.PublicKey
+    KeyID      string // kid for the header
+    DevMode    bool   // If true, allows self-signed/generated keys
+
+    // MaxTokenAge is the token validity window. Defaults to DefaultMaxTokenAge (60s).
+    MaxTokenAge time.Duration
+
+    // ClockSkewTolerance is the allowed clock drift. Defaults to DefaultClockSkewTolerance (5s).
+    ClockSkewTolerance time.Duration
+
+    // MaxBodySize is the maximum request body size for middleware. Defaults to DefaultMaxBodySize (10MB).
+    MaxBodySize int64
+}
+```
+
+<a name="SimpleGuard"></a>
+## type [SimpleGuard](<https://github.com/capiscio/capiscio-core/blob/main/pkg/simpleguard/guard.go#L20-L23>)
+
+SimpleGuard handles A2A security enforcement.
+
+```go
+type SimpleGuard struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="New"></a>
+### func [New](<https://github.com/capiscio/capiscio-core/blob/main/pkg/simpleguard/guard.go#L26>)
+
+```go
+func New(cfg Config) (*SimpleGuard, error)
+```
+
+New creates a new SimpleGuard instance.
+
+<a name="SimpleGuard.SignOutbound"></a>
+### func \(\*SimpleGuard\) [SignOutbound](<https://github.com/capiscio/capiscio-core/blob/main/pkg/simpleguard/guard.go#L80>)
+
+```go
+func (g *SimpleGuard) SignOutbound(claims Claims, body []byte) (string, error)
+```
+
+SignOutbound creates a signed JWS for the given payload and body. It enforces iat and exp to prevent backdating.
+
+<a name="SimpleGuard.VerifyInbound"></a>
+### func \(\*SimpleGuard\) [VerifyInbound](<https://github.com/capiscio/capiscio-core/blob/main/pkg/simpleguard/guard.go#L110>)
+
+```go
+func (g *SimpleGuard) VerifyInbound(token string, body []byte) (*Claims, error)
+```
+
+VerifyInbound validates a received JWS token.
+
+# trust
+
+```go
+import "github.com/capiscio/capiscio-core/v2/pkg/trust"
+```
+
+Package trust provides a local trust store for CA public keys. This enables offline badge verification without network access. See RFC\-002 §13.1.
+
+## Index
+
+- [Variables](<#variables>)
+- [func DefaultTrustDir\(\) string](<#DefaultTrustDir>)
+- [type FileStore](<#FileStore>)
+  - [func NewFileStore\(dir string\) \(\*FileStore, error\)](<#NewFileStore>)
+  - [func \(s \*FileStore\) Add\(key jose.JSONWebKey\) error](<#FileStore.Add>)
+  - [func \(s \*FileStore\) AddFromJWKS\(jwks \*jose.JSONWebKeySet, issuerURL string\) error](<#FileStore.AddFromJWKS>)
+  - [func \(s \*FileStore\) AddIssuerMapping\(issuerURL, kid string\) error](<#FileStore.AddIssuerMapping>)
+  - [func \(s \*FileStore\) Get\(kid string\) \(\*jose.JSONWebKey, error\)](<#FileStore.Get>)
+  - [func \(s \*FileStore\) GetByIssuer\(issuerURL string\) \(\[\]jose.JSONWebKey, error\)](<#FileStore.GetByIssuer>)
+  - [func \(s \*FileStore\) List\(\) \(\[\]jose.JSONWebKey, error\)](<#FileStore.List>)
+  - [func \(s \*FileStore\) Remove\(kid string\) error](<#FileStore.Remove>)
+- [type Store](<#Store>)
+
+
+## Variables
+
+<a name="ErrKeyNotFound"></a>Common errors returned by this package.
+
+```go
+var (
+    ErrKeyNotFound    = errors.New("key not found in trust store")
+    ErrIssuerNotFound = errors.New("issuer not found in trust store")
+    ErrInvalidKey     = errors.New("invalid key format")
+)
+```
+
+<a name="DefaultTrustDir"></a>
+## func [DefaultTrustDir](<https://github.com/capiscio/capiscio-core/blob/main/pkg/trust/store.go#L53>)
+
+```go
+func DefaultTrustDir() string
+```
+
+DefaultTrustDir returns the default trust store directory.
+
+<a name="FileStore"></a>
+## type [FileStore](<https://github.com/capiscio/capiscio-core/blob/main/pkg/trust/store.go#L47-L50>)
+
+FileStore implements Store using the filesystem. Default location: \~/.capiscio/trust/
+
+```go
+type FileStore struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewFileStore"></a>
+### func [NewFileStore](<https://github.com/capiscio/capiscio-core/blob/main/pkg/trust/store.go#L65>)
+
+```go
+func NewFileStore(dir string) (*FileStore, error)
+```
+
+NewFileStore creates a new file\-based trust store.
+
+<a name="FileStore.Add"></a>
+### func \(\*FileStore\) [Add](<https://github.com/capiscio/capiscio-core/blob/main/pkg/trust/store.go#L91>)
+
+```go
+func (s *FileStore) Add(key jose.JSONWebKey) error
+```
+
+Add adds a key to the trust store.
+
+<a name="FileStore.AddFromJWKS"></a>
+### func \(\*FileStore\) [AddFromJWKS](<https://github.com/capiscio/capiscio-core/blob/main/pkg/trust/store.go#L307>)
+
+```go
+func (s *FileStore) AddFromJWKS(jwks *jose.JSONWebKeySet, issuerURL string) error
+```
+
+AddFromJWKS adds all keys from a JWKS and optionally maps them to an issuer.
+
+<a name="FileStore.AddIssuerMapping"></a>
+### func \(\*FileStore\) [AddIssuerMapping](<https://github.com/capiscio/capiscio-core/blob/main/pkg/trust/store.go#L238>)
+
+```go
+func (s *FileStore) AddIssuerMapping(issuerURL, kid string) error
+```
+
+AddIssuerMapping maps an issuer URL to a key kid.
+
+<a name="FileStore.Get"></a>
+### func \(\*FileStore\) [Get](<https://github.com/capiscio/capiscio-core/blob/main/pkg/trust/store.go#L115>)
+
+```go
+func (s *FileStore) Get(kid string) (*jose.JSONWebKey, error)
+```
+
+Get retrieves a key by kid.
+
+<a name="FileStore.GetByIssuer"></a>
+### func \(\*FileStore\) [GetByIssuer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/trust/store.go#L137>)
+
+```go
+func (s *FileStore) GetByIssuer(issuerURL string) ([]jose.JSONWebKey, error)
+```
+
+GetByIssuer retrieves all keys for an issuer URL.
+
+<a name="FileStore.List"></a>
+### func \(\*FileStore\) [List](<https://github.com/capiscio/capiscio-core/blob/main/pkg/trust/store.go#L175>)
+
+```go
+func (s *FileStore) List() ([]jose.JSONWebKey, error)
+```
+
+List returns all keys in the store.
+
+<a name="FileStore.Remove"></a>
+### func \(\*FileStore\) [Remove](<https://github.com/capiscio/capiscio-core/blob/main/pkg/trust/store.go#L207>)
+
+```go
+func (s *FileStore) Remove(kid string) error
+```
+
+Remove removes a key by kid.
+
+<a name="Store"></a>
+## type [Store](<https://github.com/capiscio/capiscio-core/blob/main/pkg/trust/store.go#L25-L43>)
+
+Store is the interface for a trust store.
+
+```go
+type Store interface {
+    // Add adds a key to the trust store.
+    Add(key jose.JSONWebKey) error
+
+    // Get retrieves a key by kid.
+    Get(kid string) (*jose.JSONWebKey, error)
+
+    // GetByIssuer retrieves all keys for an issuer URL.
+    GetByIssuer(issuerURL string) ([]jose.JSONWebKey, error)
+
+    // List returns all keys in the store.
+    List() ([]jose.JSONWebKey, error)
+
+    // Remove removes a key by kid.
+    Remove(kid string) error
+
+    // AddIssuerMapping maps an issuer URL to a key kid.
+    AddIssuerMapping(issuerURL, kid string) error
+}
+```
+
+# capisciov1
+
+```go
+import "github.com/capiscio/capiscio-core/v2/pkg/rpc/gen/capiscio/v1"
+```
+
+## Index
+
+- [Constants](<#constants>)
+- [Variables](<#variables>)
+- [func RegisterBadgeServiceServer\(s grpc.ServiceRegistrar, srv BadgeServiceServer\)](<#RegisterBadgeServiceServer>)
+- [func RegisterDIDServiceServer\(s grpc.ServiceRegistrar, srv DIDServiceServer\)](<#RegisterDIDServiceServer>)
+- [func RegisterMCPServiceServer\(s grpc.ServiceRegistrar, srv MCPServiceServer\)](<#RegisterMCPServiceServer>)
+- [func RegisterRegistryServiceServer\(s grpc.ServiceRegistrar, srv RegistryServiceServer\)](<#RegisterRegistryServiceServer>)
+- [func RegisterRevocationServiceServer\(s grpc.ServiceRegistrar, srv RevocationServiceServer\)](<#RegisterRevocationServiceServer>)
+- [func RegisterScoringServiceServer\(s grpc.ServiceRegistrar, srv ScoringServiceServer\)](<#RegisterScoringServiceServer>)
+- [func RegisterSimpleGuardServiceServer\(s grpc.ServiceRegistrar, srv SimpleGuardServiceServer\)](<#RegisterSimpleGuardServiceServer>)
+- [func RegisterTrustStoreServiceServer\(s grpc.ServiceRegistrar, srv TrustStoreServiceServer\)](<#RegisterTrustStoreServiceServer>)
+- [type AddKeyRequest](<#AddKeyRequest>)
+  - [func \(\*AddKeyRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#AddKeyRequest.Descriptor>)
+  - [func \(x \*AddKeyRequest\) GetDid\(\) string](<#AddKeyRequest.GetDid>)
+  - [func \(x \*AddKeyRequest\) GetFormat\(\) KeyFormat](<#AddKeyRequest.GetFormat>)
+  - [func \(x \*AddKeyRequest\) GetMetadata\(\) map\[string\]string](<#AddKeyRequest.GetMetadata>)
+  - [func \(x \*AddKeyRequest\) GetPublicKey\(\) \[\]byte](<#AddKeyRequest.GetPublicKey>)
+  - [func \(\*AddKeyRequest\) ProtoMessage\(\)](<#AddKeyRequest.ProtoMessage>)
+  - [func \(x \*AddKeyRequest\) ProtoReflect\(\) protoreflect.Message](<#AddKeyRequest.ProtoReflect>)
+  - [func \(x \*AddKeyRequest\) Reset\(\)](<#AddKeyRequest.Reset>)
+  - [func \(x \*AddKeyRequest\) String\(\) string](<#AddKeyRequest.String>)
+- [type AddKeyResponse](<#AddKeyResponse>)
+  - [func \(\*AddKeyResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#AddKeyResponse.Descriptor>)
+  - [func \(x \*AddKeyResponse\) GetErrorMessage\(\) string](<#AddKeyResponse.GetErrorMessage>)
+  - [func \(x \*AddKeyResponse\) GetKeyId\(\) string](<#AddKeyResponse.GetKeyId>)
+  - [func \(\*AddKeyResponse\) ProtoMessage\(\)](<#AddKeyResponse.ProtoMessage>)
+  - [func \(x \*AddKeyResponse\) ProtoReflect\(\) protoreflect.Message](<#AddKeyResponse.ProtoReflect>)
+  - [func \(x \*AddKeyResponse\) Reset\(\)](<#AddKeyResponse.Reset>)
+  - [func \(x \*AddKeyResponse\) String\(\) string](<#AddKeyResponse.String>)
+- [type AgentStatus](<#AgentStatus>)
+  - [func \(AgentStatus\) Descriptor\(\) protoreflect.EnumDescriptor](<#AgentStatus.Descriptor>)
+  - [func \(x AgentStatus\) Enum\(\) \*AgentStatus](<#AgentStatus.Enum>)
+  - [func \(AgentStatus\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#AgentStatus.EnumDescriptor>)
+  - [func \(x AgentStatus\) Number\(\) protoreflect.EnumNumber](<#AgentStatus.Number>)
+  - [func \(x AgentStatus\) String\(\) string](<#AgentStatus.String>)
+  - [func \(AgentStatus\) Type\(\) protoreflect.EnumType](<#AgentStatus.Type>)
+- [type AggregateScoresRequest](<#AggregateScoresRequest>)
+  - [func \(\*AggregateScoresRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#AggregateScoresRequest.Descriptor>)
+  - [func \(x \*AggregateScoresRequest\) GetAggregationMethod\(\) string](<#AggregateScoresRequest.GetAggregationMethod>)
+  - [func \(x \*AggregateScoresRequest\) GetResults\(\) \[\]\*ScoringResult](<#AggregateScoresRequest.GetResults>)
+  - [func \(\*AggregateScoresRequest\) ProtoMessage\(\)](<#AggregateScoresRequest.ProtoMessage>)
+  - [func \(x \*AggregateScoresRequest\) ProtoReflect\(\) protoreflect.Message](<#AggregateScoresRequest.ProtoReflect>)
+  - [func \(x \*AggregateScoresRequest\) Reset\(\)](<#AggregateScoresRequest.Reset>)
+  - [func \(x \*AggregateScoresRequest\) String\(\) string](<#AggregateScoresRequest.String>)
+- [type AggregateScoresResponse](<#AggregateScoresResponse>)
+  - [func \(\*AggregateScoresResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#AggregateScoresResponse.Descriptor>)
+  - [func \(x \*AggregateScoresResponse\) GetAggregateRating\(\) Rating](<#AggregateScoresResponse.GetAggregateRating>)
+  - [func \(x \*AggregateScoresResponse\) GetAggregateScore\(\) float64](<#AggregateScoresResponse.GetAggregateScore>)
+  - [func \(x \*AggregateScoresResponse\) GetCategoryAggregates\(\) map\[string\]float64](<#AggregateScoresResponse.GetCategoryAggregates>)
+  - [func \(\*AggregateScoresResponse\) ProtoMessage\(\)](<#AggregateScoresResponse.ProtoMessage>)
+  - [func \(x \*AggregateScoresResponse\) ProtoReflect\(\) protoreflect.Message](<#AggregateScoresResponse.ProtoReflect>)
+  - [func \(x \*AggregateScoresResponse\) Reset\(\)](<#AggregateScoresResponse.Reset>)
+  - [func \(x \*AggregateScoresResponse\) String\(\) string](<#AggregateScoresResponse.String>)
+- [type BadgeClaims](<#BadgeClaims>)
+  - [func \(\*BadgeClaims\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#BadgeClaims.Descriptor>)
+  - [func \(x \*BadgeClaims\) GetAgentName\(\) string](<#BadgeClaims.GetAgentName>)
+  - [func \(x \*BadgeClaims\) GetAud\(\) \[\]string](<#BadgeClaims.GetAud>)
+  - [func \(x \*BadgeClaims\) GetDomain\(\) string](<#BadgeClaims.GetDomain>)
+  - [func \(x \*BadgeClaims\) GetExp\(\) int64](<#BadgeClaims.GetExp>)
+  - [func \(x \*BadgeClaims\) GetIat\(\) int64](<#BadgeClaims.GetIat>)
+  - [func \(x \*BadgeClaims\) GetIss\(\) string](<#BadgeClaims.GetIss>)
+  - [func \(x \*BadgeClaims\) GetJti\(\) string](<#BadgeClaims.GetJti>)
+  - [func \(x \*BadgeClaims\) GetNbf\(\) int64](<#BadgeClaims.GetNbf>)
+  - [func \(x \*BadgeClaims\) GetScope\(\) string](<#BadgeClaims.GetScope>)
+  - [func \(x \*BadgeClaims\) GetSub\(\) string](<#BadgeClaims.GetSub>)
+  - [func \(x \*BadgeClaims\) GetTrustLevel\(\) TrustLevel](<#BadgeClaims.GetTrustLevel>)
+  - [func \(\*BadgeClaims\) ProtoMessage\(\)](<#BadgeClaims.ProtoMessage>)
+  - [func \(x \*BadgeClaims\) ProtoReflect\(\) protoreflect.Message](<#BadgeClaims.ProtoReflect>)
+  - [func \(x \*BadgeClaims\) Reset\(\)](<#BadgeClaims.Reset>)
+  - [func \(x \*BadgeClaims\) String\(\) string](<#BadgeClaims.String>)
+- [type BadgeServiceClient](<#BadgeServiceClient>)
+  - [func NewBadgeServiceClient\(cc grpc.ClientConnInterface\) BadgeServiceClient](<#NewBadgeServiceClient>)
+- [type BadgeServiceServer](<#BadgeServiceServer>)
+- [type BadgeService\_StartKeeperClient](<#BadgeService_StartKeeperClient>)
+- [type BadgeService\_StartKeeperServer](<#BadgeService_StartKeeperServer>)
+- [type CategoryScore](<#CategoryScore>)
+  - [func \(\*CategoryScore\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#CategoryScore.Descriptor>)
+  - [func \(x \*CategoryScore\) GetCategory\(\) ScoreCategory](<#CategoryScore.GetCategory>)
+  - [func \(x \*CategoryScore\) GetResults\(\) \[\]\*RuleResult](<#CategoryScore.GetResults>)
+  - [func \(x \*CategoryScore\) GetRulesFailed\(\) int32](<#CategoryScore.GetRulesFailed>)
+  - [func \(x \*CategoryScore\) GetRulesPassed\(\) int32](<#CategoryScore.GetRulesPassed>)
+  - [func \(x \*CategoryScore\) GetScore\(\) float64](<#CategoryScore.GetScore>)
+  - [func \(\*CategoryScore\) ProtoMessage\(\)](<#CategoryScore.ProtoMessage>)
+  - [func \(x \*CategoryScore\) ProtoReflect\(\) protoreflect.Message](<#CategoryScore.ProtoReflect>)
+  - [func \(x \*CategoryScore\) Reset\(\)](<#CategoryScore.Reset>)
+  - [func \(x \*CategoryScore\) String\(\) string](<#CategoryScore.String>)
+- [type ClearCacheRequest](<#ClearCacheRequest>)
+  - [func \(\*ClearCacheRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ClearCacheRequest.Descriptor>)
+  - [func \(x \*ClearCacheRequest\) GetSourceFilter\(\) string](<#ClearCacheRequest.GetSourceFilter>)
+  - [func \(\*ClearCacheRequest\) ProtoMessage\(\)](<#ClearCacheRequest.ProtoMessage>)
+  - [func \(x \*ClearCacheRequest\) ProtoReflect\(\) protoreflect.Message](<#ClearCacheRequest.ProtoReflect>)
+  - [func \(x \*ClearCacheRequest\) Reset\(\)](<#ClearCacheRequest.Reset>)
+  - [func \(x \*ClearCacheRequest\) String\(\) string](<#ClearCacheRequest.String>)
+- [type ClearCacheResponse](<#ClearCacheResponse>)
+  - [func \(\*ClearCacheResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ClearCacheResponse.Descriptor>)
+  - [func \(x \*ClearCacheResponse\) GetEntriesCleared\(\) int32](<#ClearCacheResponse.GetEntriesCleared>)
+  - [func \(\*ClearCacheResponse\) ProtoMessage\(\)](<#ClearCacheResponse.ProtoMessage>)
+  - [func \(x \*ClearCacheResponse\) ProtoReflect\(\) protoreflect.Message](<#ClearCacheResponse.ProtoReflect>)
+  - [func \(x \*ClearCacheResponse\) Reset\(\)](<#ClearCacheResponse.Reset>)
+  - [func \(x \*ClearCacheResponse\) String\(\) string](<#ClearCacheResponse.String>)
+- [type ClearKeysRequest](<#ClearKeysRequest>)
+  - [func \(\*ClearKeysRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ClearKeysRequest.Descriptor>)
+  - [func \(x \*ClearKeysRequest\) GetConfirm\(\) bool](<#ClearKeysRequest.GetConfirm>)
+  - [func \(\*ClearKeysRequest\) ProtoMessage\(\)](<#ClearKeysRequest.ProtoMessage>)
+  - [func \(x \*ClearKeysRequest\) ProtoReflect\(\) protoreflect.Message](<#ClearKeysRequest.ProtoReflect>)
+  - [func \(x \*ClearKeysRequest\) Reset\(\)](<#ClearKeysRequest.Reset>)
+  - [func \(x \*ClearKeysRequest\) String\(\) string](<#ClearKeysRequest.String>)
+- [type ClearKeysResponse](<#ClearKeysResponse>)
+  - [func \(\*ClearKeysResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ClearKeysResponse.Descriptor>)
+  - [func \(x \*ClearKeysResponse\) GetKeysCleared\(\) int32](<#ClearKeysResponse.GetKeysCleared>)
+  - [func \(\*ClearKeysResponse\) ProtoMessage\(\)](<#ClearKeysResponse.ProtoMessage>)
+  - [func \(x \*ClearKeysResponse\) ProtoReflect\(\) protoreflect.Message](<#ClearKeysResponse.ProtoReflect>)
+  - [func \(x \*ClearKeysResponse\) Reset\(\)](<#ClearKeysResponse.Reset>)
+  - [func \(x \*ClearKeysResponse\) String\(\) string](<#ClearKeysResponse.String>)
+- [type CreateDVOrderRequest](<#CreateDVOrderRequest>)
+  - [func \(\*CreateDVOrderRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#CreateDVOrderRequest.Descriptor>)
+  - [func \(x \*CreateDVOrderRequest\) GetCaUrl\(\) string](<#CreateDVOrderRequest.GetCaUrl>)
+  - [func \(x \*CreateDVOrderRequest\) GetChallengeType\(\) string](<#CreateDVOrderRequest.GetChallengeType>)
+  - [func \(x \*CreateDVOrderRequest\) GetDomain\(\) string](<#CreateDVOrderRequest.GetDomain>)
+  - [func \(x \*CreateDVOrderRequest\) GetJwk\(\) string](<#CreateDVOrderRequest.GetJwk>)
+  - [func \(\*CreateDVOrderRequest\) ProtoMessage\(\)](<#CreateDVOrderRequest.ProtoMessage>)
+  - [func \(x \*CreateDVOrderRequest\) ProtoReflect\(\) protoreflect.Message](<#CreateDVOrderRequest.ProtoReflect>)
+  - [func \(x \*CreateDVOrderRequest\) Reset\(\)](<#CreateDVOrderRequest.Reset>)
+  - [func \(x \*CreateDVOrderRequest\) String\(\) string](<#CreateDVOrderRequest.String>)
+- [type CreateDVOrderResponse](<#CreateDVOrderResponse>)
+  - [func \(\*CreateDVOrderResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#CreateDVOrderResponse.Descriptor>)
+  - [func \(x \*CreateDVOrderResponse\) GetChallengeToken\(\) string](<#CreateDVOrderResponse.GetChallengeToken>)
+  - [func \(x \*CreateDVOrderResponse\) GetChallengeType\(\) string](<#CreateDVOrderResponse.GetChallengeType>)
+  - [func \(x \*CreateDVOrderResponse\) GetDnsRecord\(\) string](<#CreateDVOrderResponse.GetDnsRecord>)
+  - [func \(x \*CreateDVOrderResponse\) GetDomain\(\) string](<#CreateDVOrderResponse.GetDomain>)
+  - [func \(x \*CreateDVOrderResponse\) GetError\(\) string](<#CreateDVOrderResponse.GetError>)
+  - [func \(x \*CreateDVOrderResponse\) GetErrorCode\(\) string](<#CreateDVOrderResponse.GetErrorCode>)
+  - [func \(x \*CreateDVOrderResponse\) GetExpiresAt\(\) int64](<#CreateDVOrderResponse.GetExpiresAt>)
+  - [func \(x \*CreateDVOrderResponse\) GetOrderId\(\) string](<#CreateDVOrderResponse.GetOrderId>)
+  - [func \(x \*CreateDVOrderResponse\) GetStatus\(\) string](<#CreateDVOrderResponse.GetStatus>)
+  - [func \(x \*CreateDVOrderResponse\) GetSuccess\(\) bool](<#CreateDVOrderResponse.GetSuccess>)
+  - [func \(x \*CreateDVOrderResponse\) GetValidationUrl\(\) string](<#CreateDVOrderResponse.GetValidationUrl>)
+  - [func \(\*CreateDVOrderResponse\) ProtoMessage\(\)](<#CreateDVOrderResponse.ProtoMessage>)
+  - [func \(x \*CreateDVOrderResponse\) ProtoReflect\(\) protoreflect.Message](<#CreateDVOrderResponse.ProtoReflect>)
+  - [func \(x \*CreateDVOrderResponse\) Reset\(\)](<#CreateDVOrderResponse.Reset>)
+  - [func \(x \*CreateDVOrderResponse\) String\(\) string](<#CreateDVOrderResponse.String>)
+- [type DID](<#DID>)
+  - [func \(\*DID\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#DID.Descriptor>)
+  - [func \(x \*DID\) GetDomain\(\) string](<#DID.GetDomain>)
+  - [func \(x \*DID\) GetFragment\(\) string](<#DID.GetFragment>)
+  - [func \(x \*DID\) GetMethod\(\) string](<#DID.GetMethod>)
+  - [func \(x \*DID\) GetPath\(\) \[\]string](<#DID.GetPath>)
+  - [func \(x \*DID\) GetRaw\(\) string](<#DID.GetRaw>)
+  - [func \(\*DID\) ProtoMessage\(\)](<#DID.ProtoMessage>)
+  - [func \(x \*DID\) ProtoReflect\(\) protoreflect.Message](<#DID.ProtoReflect>)
+  - [func \(x \*DID\) Reset\(\)](<#DID.Reset>)
+  - [func \(x \*DID\) String\(\) string](<#DID.String>)
+- [type DIDServiceClient](<#DIDServiceClient>)
+  - [func NewDIDServiceClient\(cc grpc.ClientConnInterface\) DIDServiceClient](<#NewDIDServiceClient>)
+- [type DIDServiceServer](<#DIDServiceServer>)
+- [type DeregisterAgentRequest](<#DeregisterAgentRequest>)
+  - [func \(\*DeregisterAgentRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#DeregisterAgentRequest.Descriptor>)
+  - [func \(x \*DeregisterAgentRequest\) GetDid\(\) string](<#DeregisterAgentRequest.GetDid>)
+  - [func \(x \*DeregisterAgentRequest\) GetReason\(\) string](<#DeregisterAgentRequest.GetReason>)
+  - [func \(\*DeregisterAgentRequest\) ProtoMessage\(\)](<#DeregisterAgentRequest.ProtoMessage>)
+  - [func \(x \*DeregisterAgentRequest\) ProtoReflect\(\) protoreflect.Message](<#DeregisterAgentRequest.ProtoReflect>)
+  - [func \(x \*DeregisterAgentRequest\) Reset\(\)](<#DeregisterAgentRequest.Reset>)
+  - [func \(x \*DeregisterAgentRequest\) String\(\) string](<#DeregisterAgentRequest.String>)
+- [type DeregisterAgentResponse](<#DeregisterAgentResponse>)
+  - [func \(\*DeregisterAgentResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#DeregisterAgentResponse.Descriptor>)
+  - [func \(x \*DeregisterAgentResponse\) GetErrorMessage\(\) string](<#DeregisterAgentResponse.GetErrorMessage>)
+  - [func \(x \*DeregisterAgentResponse\) GetSuccess\(\) bool](<#DeregisterAgentResponse.GetSuccess>)
+  - [func \(\*DeregisterAgentResponse\) ProtoMessage\(\)](<#DeregisterAgentResponse.ProtoMessage>)
+  - [func \(x \*DeregisterAgentResponse\) ProtoReflect\(\) protoreflect.Message](<#DeregisterAgentResponse.ProtoReflect>)
+  - [func \(x \*DeregisterAgentResponse\) Reset\(\)](<#DeregisterAgentResponse.Reset>)
+  - [func \(x \*DeregisterAgentResponse\) String\(\) string](<#DeregisterAgentResponse.String>)
+- [type DocumentURLRequest](<#DocumentURLRequest>)
+  - [func \(\*DocumentURLRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#DocumentURLRequest.Descriptor>)
+  - [func \(x \*DocumentURLRequest\) GetDid\(\) string](<#DocumentURLRequest.GetDid>)
+  - [func \(\*DocumentURLRequest\) ProtoMessage\(\)](<#DocumentURLRequest.ProtoMessage>)
+  - [func \(x \*DocumentURLRequest\) ProtoReflect\(\) protoreflect.Message](<#DocumentURLRequest.ProtoReflect>)
+  - [func \(x \*DocumentURLRequest\) Reset\(\)](<#DocumentURLRequest.Reset>)
+  - [func \(x \*DocumentURLRequest\) String\(\) string](<#DocumentURLRequest.String>)
+- [type DocumentURLResponse](<#DocumentURLResponse>)
+  - [func \(\*DocumentURLResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#DocumentURLResponse.Descriptor>)
+  - [func \(x \*DocumentURLResponse\) GetErrorMessage\(\) string](<#DocumentURLResponse.GetErrorMessage>)
+  - [func \(x \*DocumentURLResponse\) GetUrl\(\) string](<#DocumentURLResponse.GetUrl>)
+  - [func \(\*DocumentURLResponse\) ProtoMessage\(\)](<#DocumentURLResponse.ProtoMessage>)
+  - [func \(x \*DocumentURLResponse\) ProtoReflect\(\) protoreflect.Message](<#DocumentURLResponse.ProtoReflect>)
+  - [func \(x \*DocumentURLResponse\) Reset\(\)](<#DocumentURLResponse.Reset>)
+  - [func \(x \*DocumentURLResponse\) String\(\) string](<#DocumentURLResponse.String>)
+- [type Duration](<#Duration>)
+  - [func \(\*Duration\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#Duration.Descriptor>)
+  - [func \(x \*Duration\) GetSeconds\(\) int64](<#Duration.GetSeconds>)
+  - [func \(\*Duration\) ProtoMessage\(\)](<#Duration.ProtoMessage>)
+  - [func \(x \*Duration\) ProtoReflect\(\) protoreflect.Message](<#Duration.ProtoReflect>)
+  - [func \(x \*Duration\) Reset\(\)](<#Duration.Reset>)
+  - [func \(x \*Duration\) String\(\) string](<#Duration.String>)
+- [type ErrorDetail](<#ErrorDetail>)
+  - [func \(\*ErrorDetail\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ErrorDetail.Descriptor>)
+  - [func \(x \*ErrorDetail\) GetCode\(\) string](<#ErrorDetail.GetCode>)
+  - [func \(x \*ErrorDetail\) GetMessage\(\) string](<#ErrorDetail.GetMessage>)
+  - [func \(x \*ErrorDetail\) GetMetadata\(\) map\[string\]string](<#ErrorDetail.GetMetadata>)
+  - [func \(\*ErrorDetail\) ProtoMessage\(\)](<#ErrorDetail.ProtoMessage>)
+  - [func \(x \*ErrorDetail\) ProtoReflect\(\) protoreflect.Message](<#ErrorDetail.ProtoReflect>)
+  - [func \(x \*ErrorDetail\) Reset\(\)](<#ErrorDetail.Reset>)
+  - [func \(x \*ErrorDetail\) String\(\) string](<#ErrorDetail.String>)
+- [type EvaluateConfig](<#EvaluateConfig>)
+  - [func \(\*EvaluateConfig\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#EvaluateConfig.Descriptor>)
+  - [func \(x \*EvaluateConfig\) GetAcceptLevelZero\(\) bool](<#EvaluateConfig.GetAcceptLevelZero>)
+  - [func \(x \*EvaluateConfig\) GetAllowedTools\(\) \[\]string](<#EvaluateConfig.GetAllowedTools>)
+  - [func \(x \*EvaluateConfig\) GetMinTrustLevel\(\) int32](<#EvaluateConfig.GetMinTrustLevel>)
+  - [func \(x \*EvaluateConfig\) GetTrustedIssuers\(\) \[\]string](<#EvaluateConfig.GetTrustedIssuers>)
+  - [func \(\*EvaluateConfig\) ProtoMessage\(\)](<#EvaluateConfig.ProtoMessage>)
+  - [func \(x \*EvaluateConfig\) ProtoReflect\(\) protoreflect.Message](<#EvaluateConfig.ProtoReflect>)
+  - [func \(x \*EvaluateConfig\) Reset\(\)](<#EvaluateConfig.Reset>)
+  - [func \(x \*EvaluateConfig\) String\(\) string](<#EvaluateConfig.String>)
+- [type EvaluateToolAccessRequest](<#EvaluateToolAccessRequest>)
+  - [func \(\*EvaluateToolAccessRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#EvaluateToolAccessRequest.Descriptor>)
+  - [func \(x \*EvaluateToolAccessRequest\) GetApiKey\(\) string](<#EvaluateToolAccessRequest.GetApiKey>)
+  - [func \(x \*EvaluateToolAccessRequest\) GetBadgeJws\(\) string](<#EvaluateToolAccessRequest.GetBadgeJws>)
+  - [func \(x \*EvaluateToolAccessRequest\) GetCallerCredential\(\) isEvaluateToolAccessRequest\_CallerCredential](<#EvaluateToolAccessRequest.GetCallerCredential>)
+  - [func \(x \*EvaluateToolAccessRequest\) GetConfig\(\) \*EvaluateConfig](<#EvaluateToolAccessRequest.GetConfig>)
+  - [func \(x \*EvaluateToolAccessRequest\) GetParamsHash\(\) string](<#EvaluateToolAccessRequest.GetParamsHash>)
+  - [func \(x \*EvaluateToolAccessRequest\) GetPolicyVersion\(\) string](<#EvaluateToolAccessRequest.GetPolicyVersion>)
+  - [func \(x \*EvaluateToolAccessRequest\) GetServerOrigin\(\) string](<#EvaluateToolAccessRequest.GetServerOrigin>)
+  - [func \(x \*EvaluateToolAccessRequest\) GetToolName\(\) string](<#EvaluateToolAccessRequest.GetToolName>)
+  - [func \(\*EvaluateToolAccessRequest\) ProtoMessage\(\)](<#EvaluateToolAccessRequest.ProtoMessage>)
+  - [func \(x \*EvaluateToolAccessRequest\) ProtoReflect\(\) protoreflect.Message](<#EvaluateToolAccessRequest.ProtoReflect>)
+  - [func \(x \*EvaluateToolAccessRequest\) Reset\(\)](<#EvaluateToolAccessRequest.Reset>)
+  - [func \(x \*EvaluateToolAccessRequest\) String\(\) string](<#EvaluateToolAccessRequest.String>)
+- [type EvaluateToolAccessRequest\_ApiKey](<#EvaluateToolAccessRequest_ApiKey>)
+- [type EvaluateToolAccessRequest\_BadgeJws](<#EvaluateToolAccessRequest_BadgeJws>)
+- [type EvaluateToolAccessResponse](<#EvaluateToolAccessResponse>)
+  - [func \(\*EvaluateToolAccessResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#EvaluateToolAccessResponse.Descriptor>)
+  - [func \(x \*EvaluateToolAccessResponse\) GetAgentDid\(\) string](<#EvaluateToolAccessResponse.GetAgentDid>)
+  - [func \(x \*EvaluateToolAccessResponse\) GetAuthLevel\(\) MCPAuthLevel](<#EvaluateToolAccessResponse.GetAuthLevel>)
+  - [func \(x \*EvaluateToolAccessResponse\) GetBadgeJti\(\) string](<#EvaluateToolAccessResponse.GetBadgeJti>)
+  - [func \(x \*EvaluateToolAccessResponse\) GetDecision\(\) MCPDecision](<#EvaluateToolAccessResponse.GetDecision>)
+  - [func \(x \*EvaluateToolAccessResponse\) GetDenyDetail\(\) string](<#EvaluateToolAccessResponse.GetDenyDetail>)
+  - [func \(x \*EvaluateToolAccessResponse\) GetDenyReason\(\) MCPDenyReason](<#EvaluateToolAccessResponse.GetDenyReason>)
+  - [func \(x \*EvaluateToolAccessResponse\) GetEvidenceId\(\) string](<#EvaluateToolAccessResponse.GetEvidenceId>)
+  - [func \(x \*EvaluateToolAccessResponse\) GetEvidenceJson\(\) string](<#EvaluateToolAccessResponse.GetEvidenceJson>)
+  - [func \(x \*EvaluateToolAccessResponse\) GetTimestamp\(\) \*timestamppb.Timestamp](<#EvaluateToolAccessResponse.GetTimestamp>)
+  - [func \(x \*EvaluateToolAccessResponse\) GetTrustLevel\(\) int32](<#EvaluateToolAccessResponse.GetTrustLevel>)
+  - [func \(\*EvaluateToolAccessResponse\) ProtoMessage\(\)](<#EvaluateToolAccessResponse.ProtoMessage>)
+  - [func \(x \*EvaluateToolAccessResponse\) ProtoReflect\(\) protoreflect.Message](<#EvaluateToolAccessResponse.ProtoReflect>)
+  - [func \(x \*EvaluateToolAccessResponse\) Reset\(\)](<#EvaluateToolAccessResponse.Reset>)
+  - [func \(x \*EvaluateToolAccessResponse\) String\(\) string](<#EvaluateToolAccessResponse.String>)
+- [type ExportKeyRequest](<#ExportKeyRequest>)
+  - [func \(\*ExportKeyRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ExportKeyRequest.Descriptor>)
+  - [func \(x \*ExportKeyRequest\) GetFilePath\(\) string](<#ExportKeyRequest.GetFilePath>)
+  - [func \(x \*ExportKeyRequest\) GetFormat\(\) KeyFormat](<#ExportKeyRequest.GetFormat>)
+  - [func \(x \*ExportKeyRequest\) GetIncludePrivate\(\) bool](<#ExportKeyRequest.GetIncludePrivate>)
+  - [func \(x \*ExportKeyRequest\) GetKeyId\(\) string](<#ExportKeyRequest.GetKeyId>)
+  - [func \(x \*ExportKeyRequest\) GetPassphrase\(\) string](<#ExportKeyRequest.GetPassphrase>)
+  - [func \(\*ExportKeyRequest\) ProtoMessage\(\)](<#ExportKeyRequest.ProtoMessage>)
+  - [func \(x \*ExportKeyRequest\) ProtoReflect\(\) protoreflect.Message](<#ExportKeyRequest.ProtoReflect>)
+  - [func \(x \*ExportKeyRequest\) Reset\(\)](<#ExportKeyRequest.Reset>)
+  - [func \(x \*ExportKeyRequest\) String\(\) string](<#ExportKeyRequest.String>)
+- [type ExportKeyResponse](<#ExportKeyResponse>)
+  - [func \(\*ExportKeyResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ExportKeyResponse.Descriptor>)
+  - [func \(x \*ExportKeyResponse\) GetErrorMessage\(\) string](<#ExportKeyResponse.GetErrorMessage>)
+  - [func \(x \*ExportKeyResponse\) GetFilePath\(\) string](<#ExportKeyResponse.GetFilePath>)
+  - [func \(\*ExportKeyResponse\) ProtoMessage\(\)](<#ExportKeyResponse.ProtoMessage>)
+  - [func \(x \*ExportKeyResponse\) ProtoReflect\(\) protoreflect.Message](<#ExportKeyResponse.ProtoReflect>)
+  - [func \(x \*ExportKeyResponse\) Reset\(\)](<#ExportKeyResponse.Reset>)
+  - [func \(x \*ExportKeyResponse\) String\(\) string](<#ExportKeyResponse.String>)
+- [type ExportToDirectoryRequest](<#ExportToDirectoryRequest>)
+  - [func \(\*ExportToDirectoryRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ExportToDirectoryRequest.Descriptor>)
+  - [func \(x \*ExportToDirectoryRequest\) GetDirectoryPath\(\) string](<#ExportToDirectoryRequest.GetDirectoryPath>)
+  - [func \(x \*ExportToDirectoryRequest\) GetFormat\(\) KeyFormat](<#ExportToDirectoryRequest.GetFormat>)
+  - [func \(\*ExportToDirectoryRequest\) ProtoMessage\(\)](<#ExportToDirectoryRequest.ProtoMessage>)
+  - [func \(x \*ExportToDirectoryRequest\) ProtoReflect\(\) protoreflect.Message](<#ExportToDirectoryRequest.ProtoReflect>)
+  - [func \(x \*ExportToDirectoryRequest\) Reset\(\)](<#ExportToDirectoryRequest.Reset>)
+  - [func \(x \*ExportToDirectoryRequest\) String\(\) string](<#ExportToDirectoryRequest.String>)
+- [type ExportToDirectoryResponse](<#ExportToDirectoryResponse>)
+  - [func \(\*ExportToDirectoryResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ExportToDirectoryResponse.Descriptor>)
+  - [func \(x \*ExportToDirectoryResponse\) GetErrorMessage\(\) string](<#ExportToDirectoryResponse.GetErrorMessage>)
+  - [func \(x \*ExportToDirectoryResponse\) GetKeysExported\(\) int32](<#ExportToDirectoryResponse.GetKeysExported>)
+  - [func \(\*ExportToDirectoryResponse\) ProtoMessage\(\)](<#ExportToDirectoryResponse.ProtoMessage>)
+  - [func \(x \*ExportToDirectoryResponse\) ProtoReflect\(\) protoreflect.Message](<#ExportToDirectoryResponse.ProtoReflect>)
+  - [func \(x \*ExportToDirectoryResponse\) Reset\(\)](<#ExportToDirectoryResponse.Reset>)
+  - [func \(x \*ExportToDirectoryResponse\) String\(\) string](<#ExportToDirectoryResponse.String>)
+- [type FetchRevocationListRequest](<#FetchRevocationListRequest>)
+  - [func \(\*FetchRevocationListRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#FetchRevocationListRequest.Descriptor>)
+  - [func \(x \*FetchRevocationListRequest\) GetTimeout\(\) \*Duration](<#FetchRevocationListRequest.GetTimeout>)
+  - [func \(x \*FetchRevocationListRequest\) GetUrl\(\) string](<#FetchRevocationListRequest.GetUrl>)
+  - [func \(\*FetchRevocationListRequest\) ProtoMessage\(\)](<#FetchRevocationListRequest.ProtoMessage>)
+  - [func \(x \*FetchRevocationListRequest\) ProtoReflect\(\) protoreflect.Message](<#FetchRevocationListRequest.ProtoReflect>)
+  - [func \(x \*FetchRevocationListRequest\) Reset\(\)](<#FetchRevocationListRequest.Reset>)
+  - [func \(x \*FetchRevocationListRequest\) String\(\) string](<#FetchRevocationListRequest.String>)
+- [type FetchRevocationListResponse](<#FetchRevocationListResponse>)
+  - [func \(\*FetchRevocationListResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#FetchRevocationListResponse.Descriptor>)
+  - [func \(x \*FetchRevocationListResponse\) GetEntriesAdded\(\) int32](<#FetchRevocationListResponse.GetEntriesAdded>)
+  - [func \(x \*FetchRevocationListResponse\) GetEntriesUpdated\(\) int32](<#FetchRevocationListResponse.GetEntriesUpdated>)
+  - [func \(x \*FetchRevocationListResponse\) GetErrorMessage\(\) string](<#FetchRevocationListResponse.GetErrorMessage>)
+  - [func \(x \*FetchRevocationListResponse\) GetFetchedAt\(\) \*Timestamp](<#FetchRevocationListResponse.GetFetchedAt>)
+  - [func \(\*FetchRevocationListResponse\) ProtoMessage\(\)](<#FetchRevocationListResponse.ProtoMessage>)
+  - [func \(x \*FetchRevocationListResponse\) ProtoReflect\(\) protoreflect.Message](<#FetchRevocationListResponse.ProtoReflect>)
+  - [func \(x \*FetchRevocationListResponse\) Reset\(\)](<#FetchRevocationListResponse.Reset>)
+  - [func \(x \*FetchRevocationListResponse\) String\(\) string](<#FetchRevocationListResponse.String>)
+- [type FinalizeDVOrderRequest](<#FinalizeDVOrderRequest>)
+  - [func \(\*FinalizeDVOrderRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#FinalizeDVOrderRequest.Descriptor>)
+  - [func \(x \*FinalizeDVOrderRequest\) GetCaUrl\(\) string](<#FinalizeDVOrderRequest.GetCaUrl>)
+  - [func \(x \*FinalizeDVOrderRequest\) GetOrderId\(\) string](<#FinalizeDVOrderRequest.GetOrderId>)
+  - [func \(\*FinalizeDVOrderRequest\) ProtoMessage\(\)](<#FinalizeDVOrderRequest.ProtoMessage>)
+  - [func \(x \*FinalizeDVOrderRequest\) ProtoReflect\(\) protoreflect.Message](<#FinalizeDVOrderRequest.ProtoReflect>)
+  - [func \(x \*FinalizeDVOrderRequest\) Reset\(\)](<#FinalizeDVOrderRequest.Reset>)
+  - [func \(x \*FinalizeDVOrderRequest\) String\(\) string](<#FinalizeDVOrderRequest.String>)
+- [type FinalizeDVOrderResponse](<#FinalizeDVOrderResponse>)
+  - [func \(\*FinalizeDVOrderResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#FinalizeDVOrderResponse.Descriptor>)
+  - [func \(x \*FinalizeDVOrderResponse\) GetError\(\) string](<#FinalizeDVOrderResponse.GetError>)
+  - [func \(x \*FinalizeDVOrderResponse\) GetErrorCode\(\) string](<#FinalizeDVOrderResponse.GetErrorCode>)
+  - [func \(x \*FinalizeDVOrderResponse\) GetExpiresAt\(\) int64](<#FinalizeDVOrderResponse.GetExpiresAt>)
+  - [func \(x \*FinalizeDVOrderResponse\) GetGrant\(\) string](<#FinalizeDVOrderResponse.GetGrant>)
+  - [func \(x \*FinalizeDVOrderResponse\) GetSuccess\(\) bool](<#FinalizeDVOrderResponse.GetSuccess>)
+  - [func \(\*FinalizeDVOrderResponse\) ProtoMessage\(\)](<#FinalizeDVOrderResponse.ProtoMessage>)
+  - [func \(x \*FinalizeDVOrderResponse\) ProtoReflect\(\) protoreflect.Message](<#FinalizeDVOrderResponse.ProtoReflect>)
+  - [func \(x \*FinalizeDVOrderResponse\) Reset\(\)](<#FinalizeDVOrderResponse.Reset>)
+  - [func \(x \*FinalizeDVOrderResponse\) String\(\) string](<#FinalizeDVOrderResponse.String>)
+- [type GenerateKeyPairRequest](<#GenerateKeyPairRequest>)
+  - [func \(\*GenerateKeyPairRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#GenerateKeyPairRequest.Descriptor>)
+  - [func \(x \*GenerateKeyPairRequest\) GetAlgorithm\(\) KeyAlgorithm](<#GenerateKeyPairRequest.GetAlgorithm>)
+  - [func \(x \*GenerateKeyPairRequest\) GetKeyId\(\) string](<#GenerateKeyPairRequest.GetKeyId>)
+  - [func \(x \*GenerateKeyPairRequest\) GetMetadata\(\) map\[string\]string](<#GenerateKeyPairRequest.GetMetadata>)
+  - [func \(\*GenerateKeyPairRequest\) ProtoMessage\(\)](<#GenerateKeyPairRequest.ProtoMessage>)
+  - [func \(x \*GenerateKeyPairRequest\) ProtoReflect\(\) protoreflect.Message](<#GenerateKeyPairRequest.ProtoReflect>)
+  - [func \(x \*GenerateKeyPairRequest\) Reset\(\)](<#GenerateKeyPairRequest.Reset>)
+  - [func \(x \*GenerateKeyPairRequest\) String\(\) string](<#GenerateKeyPairRequest.String>)
+- [type GenerateKeyPairResponse](<#GenerateKeyPairResponse>)
+  - [func \(\*GenerateKeyPairResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#GenerateKeyPairResponse.Descriptor>)
+  - [func \(x \*GenerateKeyPairResponse\) GetAlgorithm\(\) KeyAlgorithm](<#GenerateKeyPairResponse.GetAlgorithm>)
+  - [func \(x \*GenerateKeyPairResponse\) GetDidKey\(\) string](<#GenerateKeyPairResponse.GetDidKey>)
+  - [func \(x \*GenerateKeyPairResponse\) GetErrorMessage\(\) string](<#GenerateKeyPairResponse.GetErrorMessage>)
+  - [func \(x \*GenerateKeyPairResponse\) GetKeyId\(\) string](<#GenerateKeyPairResponse.GetKeyId>)
+  - [func \(x \*GenerateKeyPairResponse\) GetPrivateKey\(\) \[\]byte](<#GenerateKeyPairResponse.GetPrivateKey>)
+  - [func \(x \*GenerateKeyPairResponse\) GetPrivateKeyPem\(\) string](<#GenerateKeyPairResponse.GetPrivateKeyPem>)
+  - [func \(x \*GenerateKeyPairResponse\) GetPublicKey\(\) \[\]byte](<#GenerateKeyPairResponse.GetPublicKey>)
+  - [func \(x \*GenerateKeyPairResponse\) GetPublicKeyPem\(\) string](<#GenerateKeyPairResponse.GetPublicKeyPem>)
+  - [func \(\*GenerateKeyPairResponse\) ProtoMessage\(\)](<#GenerateKeyPairResponse.ProtoMessage>)
+  - [func \(x \*GenerateKeyPairResponse\) ProtoReflect\(\) protoreflect.Message](<#GenerateKeyPairResponse.ProtoReflect>)
+  - [func \(x \*GenerateKeyPairResponse\) Reset\(\)](<#GenerateKeyPairResponse.Reset>)
+  - [func \(x \*GenerateKeyPairResponse\) String\(\) string](<#GenerateKeyPairResponse.String>)
+- [type GetAgentRequest](<#GetAgentRequest>)
+  - [func \(\*GetAgentRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#GetAgentRequest.Descriptor>)
+  - [func \(x \*GetAgentRequest\) GetDid\(\) string](<#GetAgentRequest.GetDid>)
+  - [func \(x \*GetAgentRequest\) GetIncludeBadge\(\) bool](<#GetAgentRequest.GetIncludeBadge>)
+  - [func \(x \*GetAgentRequest\) GetVerifyBadge\(\) bool](<#GetAgentRequest.GetVerifyBadge>)
+  - [func \(\*GetAgentRequest\) ProtoMessage\(\)](<#GetAgentRequest.ProtoMessage>)
+  - [func \(x \*GetAgentRequest\) ProtoReflect\(\) protoreflect.Message](<#GetAgentRequest.ProtoReflect>)
+  - [func \(x \*GetAgentRequest\) Reset\(\)](<#GetAgentRequest.Reset>)
+  - [func \(x \*GetAgentRequest\) String\(\) string](<#GetAgentRequest.String>)
+- [type GetAgentResponse](<#GetAgentResponse>)
+  - [func \(\*GetAgentResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#GetAgentResponse.Descriptor>)
+  - [func \(x \*GetAgentResponse\) GetAgent\(\) \*RegisteredAgent](<#GetAgentResponse.GetAgent>)
+  - [func \(x \*GetAgentResponse\) GetBadgeValid\(\) bool](<#GetAgentResponse.GetBadgeValid>)
+  - [func \(x \*GetAgentResponse\) GetErrorMessage\(\) string](<#GetAgentResponse.GetErrorMessage>)
+  - [func \(\*GetAgentResponse\) ProtoMessage\(\)](<#GetAgentResponse.ProtoMessage>)
+  - [func \(x \*GetAgentResponse\) ProtoReflect\(\) protoreflect.Message](<#GetAgentResponse.ProtoReflect>)
+  - [func \(x \*GetAgentResponse\) Reset\(\)](<#GetAgentResponse.Reset>)
+  - [func \(x \*GetAgentResponse\) String\(\) string](<#GetAgentResponse.String>)
+- [type GetCacheStatsRequest](<#GetCacheStatsRequest>)
+  - [func \(\*GetCacheStatsRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#GetCacheStatsRequest.Descriptor>)
+  - [func \(\*GetCacheStatsRequest\) ProtoMessage\(\)](<#GetCacheStatsRequest.ProtoMessage>)
+  - [func \(x \*GetCacheStatsRequest\) ProtoReflect\(\) protoreflect.Message](<#GetCacheStatsRequest.ProtoReflect>)
+  - [func \(x \*GetCacheStatsRequest\) Reset\(\)](<#GetCacheStatsRequest.Reset>)
+  - [func \(x \*GetCacheStatsRequest\) String\(\) string](<#GetCacheStatsRequest.String>)
+- [type GetCacheStatsResponse](<#GetCacheStatsResponse>)
+  - [func \(\*GetCacheStatsResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#GetCacheStatsResponse.Descriptor>)
+  - [func \(x \*GetCacheStatsResponse\) GetCacheTtl\(\) \*Duration](<#GetCacheStatsResponse.GetCacheTtl>)
+  - [func \(x \*GetCacheStatsResponse\) GetEntriesBySource\(\) map\[string\]int32](<#GetCacheStatsResponse.GetEntriesBySource>)
+  - [func \(x \*GetCacheStatsResponse\) GetLastRemoteFetch\(\) \*Timestamp](<#GetCacheStatsResponse.GetLastRemoteFetch>)
+  - [func \(x \*GetCacheStatsResponse\) GetLocalEntries\(\) int32](<#GetCacheStatsResponse.GetLocalEntries>)
+  - [func \(x \*GetCacheStatsResponse\) GetRemoteEntries\(\) int32](<#GetCacheStatsResponse.GetRemoteEntries>)
+  - [func \(x \*GetCacheStatsResponse\) GetTotalEntries\(\) int32](<#GetCacheStatsResponse.GetTotalEntries>)
+  - [func \(\*GetCacheStatsResponse\) ProtoMessage\(\)](<#GetCacheStatsResponse.ProtoMessage>)
+  - [func \(x \*GetCacheStatsResponse\) ProtoReflect\(\) protoreflect.Message](<#GetCacheStatsResponse.ProtoReflect>)
+  - [func \(x \*GetCacheStatsResponse\) Reset\(\)](<#GetCacheStatsResponse.Reset>)
+  - [func \(x \*GetCacheStatsResponse\) String\(\) string](<#GetCacheStatsResponse.String>)
+- [type GetDVOrderRequest](<#GetDVOrderRequest>)
+  - [func \(\*GetDVOrderRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#GetDVOrderRequest.Descriptor>)
+  - [func \(x \*GetDVOrderRequest\) GetCaUrl\(\) string](<#GetDVOrderRequest.GetCaUrl>)
+  - [func \(x \*GetDVOrderRequest\) GetOrderId\(\) string](<#GetDVOrderRequest.GetOrderId>)
+  - [func \(\*GetDVOrderRequest\) ProtoMessage\(\)](<#GetDVOrderRequest.ProtoMessage>)
+  - [func \(x \*GetDVOrderRequest\) ProtoReflect\(\) protoreflect.Message](<#GetDVOrderRequest.ProtoReflect>)
+  - [func \(x \*GetDVOrderRequest\) Reset\(\)](<#GetDVOrderRequest.Reset>)
+  - [func \(x \*GetDVOrderRequest\) String\(\) string](<#GetDVOrderRequest.String>)
+- [type GetDVOrderResponse](<#GetDVOrderResponse>)
+  - [func \(\*GetDVOrderResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#GetDVOrderResponse.Descriptor>)
+  - [func \(x \*GetDVOrderResponse\) GetChallengeToken\(\) string](<#GetDVOrderResponse.GetChallengeToken>)
+  - [func \(x \*GetDVOrderResponse\) GetChallengeType\(\) string](<#GetDVOrderResponse.GetChallengeType>)
+  - [func \(x \*GetDVOrderResponse\) GetDnsRecord\(\) string](<#GetDVOrderResponse.GetDnsRecord>)
+  - [func \(x \*GetDVOrderResponse\) GetDomain\(\) string](<#GetDVOrderResponse.GetDomain>)
+  - [func \(x \*GetDVOrderResponse\) GetError\(\) string](<#GetDVOrderResponse.GetError>)
+  - [func \(x \*GetDVOrderResponse\) GetErrorCode\(\) string](<#GetDVOrderResponse.GetErrorCode>)
+  - [func \(x \*GetDVOrderResponse\) GetExpiresAt\(\) int64](<#GetDVOrderResponse.GetExpiresAt>)
+  - [func \(x \*GetDVOrderResponse\) GetFinalizedAt\(\) int64](<#GetDVOrderResponse.GetFinalizedAt>)
+  - [func \(x \*GetDVOrderResponse\) GetOrderId\(\) string](<#GetDVOrderResponse.GetOrderId>)
+  - [func \(x \*GetDVOrderResponse\) GetStatus\(\) string](<#GetDVOrderResponse.GetStatus>)
+  - [func \(x \*GetDVOrderResponse\) GetSuccess\(\) bool](<#GetDVOrderResponse.GetSuccess>)
+  - [func \(x \*GetDVOrderResponse\) GetValidationUrl\(\) string](<#GetDVOrderResponse.GetValidationUrl>)
+  - [func \(\*GetDVOrderResponse\) ProtoMessage\(\)](<#GetDVOrderResponse.ProtoMessage>)
+  - [func \(x \*GetDVOrderResponse\) ProtoReflect\(\) protoreflect.Message](<#GetDVOrderResponse.ProtoReflect>)
+  - [func \(x \*GetDVOrderResponse\) Reset\(\)](<#GetDVOrderResponse.Reset>)
+  - [func \(x \*GetDVOrderResponse\) String\(\) string](<#GetDVOrderResponse.String>)
+- [type GetKeyInfoRequest](<#GetKeyInfoRequest>)
+  - [func \(\*GetKeyInfoRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#GetKeyInfoRequest.Descriptor>)
+  - [func \(x \*GetKeyInfoRequest\) GetKeyId\(\) string](<#GetKeyInfoRequest.GetKeyId>)
+  - [func \(\*GetKeyInfoRequest\) ProtoMessage\(\)](<#GetKeyInfoRequest.ProtoMessage>)
+  - [func \(x \*GetKeyInfoRequest\) ProtoReflect\(\) protoreflect.Message](<#GetKeyInfoRequest.ProtoReflect>)
+  - [func \(x \*GetKeyInfoRequest\) Reset\(\)](<#GetKeyInfoRequest.Reset>)
+  - [func \(x \*GetKeyInfoRequest\) String\(\) string](<#GetKeyInfoRequest.String>)
+- [type GetKeyInfoResponse](<#GetKeyInfoResponse>)
+  - [func \(\*GetKeyInfoResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#GetKeyInfoResponse.Descriptor>)
+  - [func \(x \*GetKeyInfoResponse\) GetAlgorithm\(\) KeyAlgorithm](<#GetKeyInfoResponse.GetAlgorithm>)
+  - [func \(x \*GetKeyInfoResponse\) GetCreatedAt\(\) \*Timestamp](<#GetKeyInfoResponse.GetCreatedAt>)
+  - [func \(x \*GetKeyInfoResponse\) GetErrorMessage\(\) string](<#GetKeyInfoResponse.GetErrorMessage>)
+  - [func \(x \*GetKeyInfoResponse\) GetHasPrivateKey\(\) bool](<#GetKeyInfoResponse.GetHasPrivateKey>)
+  - [func \(x \*GetKeyInfoResponse\) GetKeyId\(\) string](<#GetKeyInfoResponse.GetKeyId>)
+  - [func \(x \*GetKeyInfoResponse\) GetMetadata\(\) map\[string\]string](<#GetKeyInfoResponse.GetMetadata>)
+  - [func \(x \*GetKeyInfoResponse\) GetPublicKey\(\) \[\]byte](<#GetKeyInfoResponse.GetPublicKey>)
+  - [func \(x \*GetKeyInfoResponse\) GetPublicKeyPem\(\) string](<#GetKeyInfoResponse.GetPublicKeyPem>)
+  - [func \(\*GetKeyInfoResponse\) ProtoMessage\(\)](<#GetKeyInfoResponse.ProtoMessage>)
+  - [func \(x \*GetKeyInfoResponse\) ProtoReflect\(\) protoreflect.Message](<#GetKeyInfoResponse.ProtoReflect>)
+  - [func \(x \*GetKeyInfoResponse\) Reset\(\)](<#GetKeyInfoResponse.Reset>)
+  - [func \(x \*GetKeyInfoResponse\) String\(\) string](<#GetKeyInfoResponse.String>)
+- [type GetKeyRequest](<#GetKeyRequest>)
+  - [func \(\*GetKeyRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#GetKeyRequest.Descriptor>)
+  - [func \(x \*GetKeyRequest\) GetDid\(\) string](<#GetKeyRequest.GetDid>)
+  - [func \(x \*GetKeyRequest\) GetKeyId\(\) string](<#GetKeyRequest.GetKeyId>)
+  - [func \(\*GetKeyRequest\) ProtoMessage\(\)](<#GetKeyRequest.ProtoMessage>)
+  - [func \(x \*GetKeyRequest\) ProtoReflect\(\) protoreflect.Message](<#GetKeyRequest.ProtoReflect>)
+  - [func \(x \*GetKeyRequest\) Reset\(\)](<#GetKeyRequest.Reset>)
+  - [func \(x \*GetKeyRequest\) String\(\) string](<#GetKeyRequest.String>)
+- [type GetKeyResponse](<#GetKeyResponse>)
+  - [func \(\*GetKeyResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#GetKeyResponse.Descriptor>)
+  - [func \(x \*GetKeyResponse\) GetErrorMessage\(\) string](<#GetKeyResponse.GetErrorMessage>)
+  - [func \(x \*GetKeyResponse\) GetKey\(\) \*TrustedKey](<#GetKeyResponse.GetKey>)
+  - [func \(\*GetKeyResponse\) ProtoMessage\(\)](<#GetKeyResponse.ProtoMessage>)
+  - [func \(x \*GetKeyResponse\) ProtoReflect\(\) protoreflect.Message](<#GetKeyResponse.ProtoReflect>)
+  - [func \(x \*GetKeyResponse\) Reset\(\)](<#GetKeyResponse.Reset>)
+  - [func \(x \*GetKeyResponse\) String\(\) string](<#GetKeyResponse.String>)
+- [type GetRuleSetRequest](<#GetRuleSetRequest>)
+  - [func \(\*GetRuleSetRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#GetRuleSetRequest.Descriptor>)
+  - [func \(x \*GetRuleSetRequest\) GetId\(\) string](<#GetRuleSetRequest.GetId>)
+  - [func \(x \*GetRuleSetRequest\) GetVersion\(\) string](<#GetRuleSetRequest.GetVersion>)
+  - [func \(\*GetRuleSetRequest\) ProtoMessage\(\)](<#GetRuleSetRequest.ProtoMessage>)
+  - [func \(x \*GetRuleSetRequest\) ProtoReflect\(\) protoreflect.Message](<#GetRuleSetRequest.ProtoReflect>)
+  - [func \(x \*GetRuleSetRequest\) Reset\(\)](<#GetRuleSetRequest.Reset>)
+  - [func \(x \*GetRuleSetRequest\) String\(\) string](<#GetRuleSetRequest.String>)
+- [type GetRuleSetResponse](<#GetRuleSetResponse>)
+  - [func \(\*GetRuleSetResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#GetRuleSetResponse.Descriptor>)
+  - [func \(x \*GetRuleSetResponse\) GetErrorMessage\(\) string](<#GetRuleSetResponse.GetErrorMessage>)
+  - [func \(x \*GetRuleSetResponse\) GetRuleSet\(\) \*RuleSet](<#GetRuleSetResponse.GetRuleSet>)
+  - [func \(\*GetRuleSetResponse\) ProtoMessage\(\)](<#GetRuleSetResponse.ProtoMessage>)
+  - [func \(x \*GetRuleSetResponse\) ProtoReflect\(\) protoreflect.Message](<#GetRuleSetResponse.ProtoReflect>)
+  - [func \(x \*GetRuleSetResponse\) Reset\(\)](<#GetRuleSetResponse.Reset>)
+  - [func \(x \*GetRuleSetResponse\) String\(\) string](<#GetRuleSetResponse.String>)
+- [type GetStatsRequest](<#GetStatsRequest>)
+  - [func \(\*GetStatsRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#GetStatsRequest.Descriptor>)
+  - [func \(\*GetStatsRequest\) ProtoMessage\(\)](<#GetStatsRequest.ProtoMessage>)
+  - [func \(x \*GetStatsRequest\) ProtoReflect\(\) protoreflect.Message](<#GetStatsRequest.ProtoReflect>)
+  - [func \(x \*GetStatsRequest\) Reset\(\)](<#GetStatsRequest.Reset>)
+  - [func \(x \*GetStatsRequest\) String\(\) string](<#GetStatsRequest.String>)
+- [type GetStatsResponse](<#GetStatsResponse>)
+  - [func \(\*GetStatsResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#GetStatsResponse.Descriptor>)
+  - [func \(x \*GetStatsResponse\) GetActiveAgents\(\) int32](<#GetStatsResponse.GetActiveAgents>)
+  - [func \(x \*GetStatsResponse\) GetAgentsByCapability\(\) map\[string\]int32](<#GetStatsResponse.GetAgentsByCapability>)
+  - [func \(x \*GetStatsResponse\) GetAgentsByRating\(\) map\[string\]int32](<#GetStatsResponse.GetAgentsByRating>)
+  - [func \(x \*GetStatsResponse\) GetBadgedAgents\(\) int32](<#GetStatsResponse.GetBadgedAgents>)
+  - [func \(x \*GetStatsResponse\) GetInactiveAgents\(\) int32](<#GetStatsResponse.GetInactiveAgents>)
+  - [func \(x \*GetStatsResponse\) GetLastUpdated\(\) \*Timestamp](<#GetStatsResponse.GetLastUpdated>)
+  - [func \(x \*GetStatsResponse\) GetPendingAgents\(\) int32](<#GetStatsResponse.GetPendingAgents>)
+  - [func \(x \*GetStatsResponse\) GetSuspendedAgents\(\) int32](<#GetStatsResponse.GetSuspendedAgents>)
+  - [func \(x \*GetStatsResponse\) GetTotalAgents\(\) int32](<#GetStatsResponse.GetTotalAgents>)
+  - [func \(\*GetStatsResponse\) ProtoMessage\(\)](<#GetStatsResponse.ProtoMessage>)
+  - [func \(x \*GetStatsResponse\) ProtoReflect\(\) protoreflect.Message](<#GetStatsResponse.ProtoReflect>)
+  - [func \(x \*GetStatsResponse\) Reset\(\)](<#GetStatsResponse.Reset>)
+  - [func \(x \*GetStatsResponse\) String\(\) string](<#GetStatsResponse.String>)
+- [type ImportFromDirectoryRequest](<#ImportFromDirectoryRequest>)
+  - [func \(\*ImportFromDirectoryRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ImportFromDirectoryRequest.Descriptor>)
+  - [func \(x \*ImportFromDirectoryRequest\) GetDirectoryPath\(\) string](<#ImportFromDirectoryRequest.GetDirectoryPath>)
+  - [func \(x \*ImportFromDirectoryRequest\) GetRecursive\(\) bool](<#ImportFromDirectoryRequest.GetRecursive>)
+  - [func \(\*ImportFromDirectoryRequest\) ProtoMessage\(\)](<#ImportFromDirectoryRequest.ProtoMessage>)
+  - [func \(x \*ImportFromDirectoryRequest\) ProtoReflect\(\) protoreflect.Message](<#ImportFromDirectoryRequest.ProtoReflect>)
+  - [func \(x \*ImportFromDirectoryRequest\) Reset\(\)](<#ImportFromDirectoryRequest.Reset>)
+  - [func \(x \*ImportFromDirectoryRequest\) String\(\) string](<#ImportFromDirectoryRequest.String>)
+- [type ImportFromDirectoryResponse](<#ImportFromDirectoryResponse>)
+  - [func \(\*ImportFromDirectoryResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ImportFromDirectoryResponse.Descriptor>)
+  - [func \(x \*ImportFromDirectoryResponse\) GetErrors\(\) \[\]string](<#ImportFromDirectoryResponse.GetErrors>)
+  - [func \(x \*ImportFromDirectoryResponse\) GetKeysImported\(\) int32](<#ImportFromDirectoryResponse.GetKeysImported>)
+  - [func \(x \*ImportFromDirectoryResponse\) GetKeysSkipped\(\) int32](<#ImportFromDirectoryResponse.GetKeysSkipped>)
+  - [func \(\*ImportFromDirectoryResponse\) ProtoMessage\(\)](<#ImportFromDirectoryResponse.ProtoMessage>)
+  - [func \(x \*ImportFromDirectoryResponse\) ProtoReflect\(\) protoreflect.Message](<#ImportFromDirectoryResponse.ProtoReflect>)
+  - [func \(x \*ImportFromDirectoryResponse\) Reset\(\)](<#ImportFromDirectoryResponse.Reset>)
+  - [func \(x \*ImportFromDirectoryResponse\) String\(\) string](<#ImportFromDirectoryResponse.String>)
+- [type IsAgentDIDRequest](<#IsAgentDIDRequest>)
+  - [func \(\*IsAgentDIDRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#IsAgentDIDRequest.Descriptor>)
+  - [func \(x \*IsAgentDIDRequest\) GetDid\(\) string](<#IsAgentDIDRequest.GetDid>)
+  - [func \(\*IsAgentDIDRequest\) ProtoMessage\(\)](<#IsAgentDIDRequest.ProtoMessage>)
+  - [func \(x \*IsAgentDIDRequest\) ProtoReflect\(\) protoreflect.Message](<#IsAgentDIDRequest.ProtoReflect>)
+  - [func \(x \*IsAgentDIDRequest\) Reset\(\)](<#IsAgentDIDRequest.Reset>)
+  - [func \(x \*IsAgentDIDRequest\) String\(\) string](<#IsAgentDIDRequest.String>)
+- [type IsAgentDIDResponse](<#IsAgentDIDResponse>)
+  - [func \(\*IsAgentDIDResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#IsAgentDIDResponse.Descriptor>)
+  - [func \(x \*IsAgentDIDResponse\) GetAgentId\(\) string](<#IsAgentDIDResponse.GetAgentId>)
+  - [func \(x \*IsAgentDIDResponse\) GetIsAgentDid\(\) bool](<#IsAgentDIDResponse.GetIsAgentDid>)
+  - [func \(\*IsAgentDIDResponse\) ProtoMessage\(\)](<#IsAgentDIDResponse.ProtoMessage>)
+  - [func \(x \*IsAgentDIDResponse\) ProtoReflect\(\) protoreflect.Message](<#IsAgentDIDResponse.ProtoReflect>)
+  - [func \(x \*IsAgentDIDResponse\) Reset\(\)](<#IsAgentDIDResponse.Reset>)
+  - [func \(x \*IsAgentDIDResponse\) String\(\) string](<#IsAgentDIDResponse.String>)
+- [type IsRevokedRequest](<#IsRevokedRequest>)
+  - [func \(\*IsRevokedRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#IsRevokedRequest.Descriptor>)
+  - [func \(x \*IsRevokedRequest\) GetAtTime\(\) \*Timestamp](<#IsRevokedRequest.GetAtTime>)
+  - [func \(x \*IsRevokedRequest\) GetCheckRemote\(\) bool](<#IsRevokedRequest.GetCheckRemote>)
+  - [func \(x \*IsRevokedRequest\) GetSubject\(\) string](<#IsRevokedRequest.GetSubject>)
+  - [func \(\*IsRevokedRequest\) ProtoMessage\(\)](<#IsRevokedRequest.ProtoMessage>)
+  - [func \(x \*IsRevokedRequest\) ProtoReflect\(\) protoreflect.Message](<#IsRevokedRequest.ProtoReflect>)
+  - [func \(x \*IsRevokedRequest\) Reset\(\)](<#IsRevokedRequest.Reset>)
+  - [func \(x \*IsRevokedRequest\) String\(\) string](<#IsRevokedRequest.String>)
+- [type IsRevokedResponse](<#IsRevokedResponse>)
+  - [func \(\*IsRevokedResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#IsRevokedResponse.Descriptor>)
+  - [func \(x \*IsRevokedResponse\) GetEntry\(\) \*RevocationEntry](<#IsRevokedResponse.GetEntry>)
+  - [func \(x \*IsRevokedResponse\) GetIsRevoked\(\) bool](<#IsRevokedResponse.GetIsRevoked>)
+  - [func \(x \*IsRevokedResponse\) GetSource\(\) string](<#IsRevokedResponse.GetSource>)
+  - [func \(\*IsRevokedResponse\) ProtoMessage\(\)](<#IsRevokedResponse.ProtoMessage>)
+  - [func \(x \*IsRevokedResponse\) ProtoReflect\(\) protoreflect.Message](<#IsRevokedResponse.ProtoReflect>)
+  - [func \(x \*IsRevokedResponse\) Reset\(\)](<#IsRevokedResponse.Reset>)
+  - [func \(x \*IsRevokedResponse\) String\(\) string](<#IsRevokedResponse.String>)
+- [type IsTrustedRequest](<#IsTrustedRequest>)
+  - [func \(\*IsTrustedRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#IsTrustedRequest.Descriptor>)
+  - [func \(x \*IsTrustedRequest\) GetDid\(\) string](<#IsTrustedRequest.GetDid>)
+  - [func \(\*IsTrustedRequest\) ProtoMessage\(\)](<#IsTrustedRequest.ProtoMessage>)
+  - [func \(x \*IsTrustedRequest\) ProtoReflect\(\) protoreflect.Message](<#IsTrustedRequest.ProtoReflect>)
+  - [func \(x \*IsTrustedRequest\) Reset\(\)](<#IsTrustedRequest.Reset>)
+  - [func \(x \*IsTrustedRequest\) String\(\) string](<#IsTrustedRequest.String>)
+- [type IsTrustedResponse](<#IsTrustedResponse>)
+  - [func \(\*IsTrustedResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#IsTrustedResponse.Descriptor>)
+  - [func \(x \*IsTrustedResponse\) GetIsTrusted\(\) bool](<#IsTrustedResponse.GetIsTrusted>)
+  - [func \(x \*IsTrustedResponse\) GetKey\(\) \*TrustedKey](<#IsTrustedResponse.GetKey>)
+  - [func \(\*IsTrustedResponse\) ProtoMessage\(\)](<#IsTrustedResponse.ProtoMessage>)
+  - [func \(x \*IsTrustedResponse\) ProtoReflect\(\) protoreflect.Message](<#IsTrustedResponse.ProtoReflect>)
+  - [func \(x \*IsTrustedResponse\) Reset\(\)](<#IsTrustedResponse.Reset>)
+  - [func \(x \*IsTrustedResponse\) String\(\) string](<#IsTrustedResponse.String>)
+- [type KeeperEvent](<#KeeperEvent>)
+  - [func \(\*KeeperEvent\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#KeeperEvent.Descriptor>)
+  - [func \(x \*KeeperEvent\) GetBadgeJti\(\) string](<#KeeperEvent.GetBadgeJti>)
+  - [func \(x \*KeeperEvent\) GetError\(\) string](<#KeeperEvent.GetError>)
+  - [func \(x \*KeeperEvent\) GetErrorCode\(\) string](<#KeeperEvent.GetErrorCode>)
+  - [func \(x \*KeeperEvent\) GetExpiresAt\(\) int64](<#KeeperEvent.GetExpiresAt>)
+  - [func \(x \*KeeperEvent\) GetSubject\(\) string](<#KeeperEvent.GetSubject>)
+  - [func \(x \*KeeperEvent\) GetTimestamp\(\) int64](<#KeeperEvent.GetTimestamp>)
+  - [func \(x \*KeeperEvent\) GetToken\(\) string](<#KeeperEvent.GetToken>)
+  - [func \(x \*KeeperEvent\) GetTrustLevel\(\) TrustLevel](<#KeeperEvent.GetTrustLevel>)
+  - [func \(x \*KeeperEvent\) GetType\(\) KeeperEventType](<#KeeperEvent.GetType>)
+  - [func \(\*KeeperEvent\) ProtoMessage\(\)](<#KeeperEvent.ProtoMessage>)
+  - [func \(x \*KeeperEvent\) ProtoReflect\(\) protoreflect.Message](<#KeeperEvent.ProtoReflect>)
+  - [func \(x \*KeeperEvent\) Reset\(\)](<#KeeperEvent.Reset>)
+  - [func \(x \*KeeperEvent\) String\(\) string](<#KeeperEvent.String>)
+- [type KeeperEventType](<#KeeperEventType>)
+  - [func \(KeeperEventType\) Descriptor\(\) protoreflect.EnumDescriptor](<#KeeperEventType.Descriptor>)
+  - [func \(x KeeperEventType\) Enum\(\) \*KeeperEventType](<#KeeperEventType.Enum>)
+  - [func \(KeeperEventType\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#KeeperEventType.EnumDescriptor>)
+  - [func \(x KeeperEventType\) Number\(\) protoreflect.EnumNumber](<#KeeperEventType.Number>)
+  - [func \(x KeeperEventType\) String\(\) string](<#KeeperEventType.String>)
+  - [func \(KeeperEventType\) Type\(\) protoreflect.EnumType](<#KeeperEventType.Type>)
+- [type KeeperMode](<#KeeperMode>)
+  - [func \(KeeperMode\) Descriptor\(\) protoreflect.EnumDescriptor](<#KeeperMode.Descriptor>)
+  - [func \(x KeeperMode\) Enum\(\) \*KeeperMode](<#KeeperMode.Enum>)
+  - [func \(KeeperMode\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#KeeperMode.EnumDescriptor>)
+  - [func \(x KeeperMode\) Number\(\) protoreflect.EnumNumber](<#KeeperMode.Number>)
+  - [func \(x KeeperMode\) String\(\) string](<#KeeperMode.String>)
+  - [func \(KeeperMode\) Type\(\) protoreflect.EnumType](<#KeeperMode.Type>)
+- [type KeyAlgorithm](<#KeyAlgorithm>)
+  - [func \(KeyAlgorithm\) Descriptor\(\) protoreflect.EnumDescriptor](<#KeyAlgorithm.Descriptor>)
+  - [func \(x KeyAlgorithm\) Enum\(\) \*KeyAlgorithm](<#KeyAlgorithm.Enum>)
+  - [func \(KeyAlgorithm\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#KeyAlgorithm.EnumDescriptor>)
+  - [func \(x KeyAlgorithm\) Number\(\) protoreflect.EnumNumber](<#KeyAlgorithm.Number>)
+  - [func \(x KeyAlgorithm\) String\(\) string](<#KeyAlgorithm.String>)
+  - [func \(KeyAlgorithm\) Type\(\) protoreflect.EnumType](<#KeyAlgorithm.Type>)
+- [type KeyFormat](<#KeyFormat>)
+  - [func \(KeyFormat\) Descriptor\(\) protoreflect.EnumDescriptor](<#KeyFormat.Descriptor>)
+  - [func \(x KeyFormat\) Enum\(\) \*KeyFormat](<#KeyFormat.Enum>)
+  - [func \(KeyFormat\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#KeyFormat.EnumDescriptor>)
+  - [func \(x KeyFormat\) Number\(\) protoreflect.EnumNumber](<#KeyFormat.Number>)
+  - [func \(x KeyFormat\) String\(\) string](<#KeyFormat.String>)
+  - [func \(KeyFormat\) Type\(\) protoreflect.EnumType](<#KeyFormat.Type>)
+- [type KeyValue](<#KeyValue>)
+  - [func \(\*KeyValue\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#KeyValue.Descriptor>)
+  - [func \(x \*KeyValue\) GetKey\(\) string](<#KeyValue.GetKey>)
+  - [func \(x \*KeyValue\) GetValue\(\) string](<#KeyValue.GetValue>)
+  - [func \(\*KeyValue\) ProtoMessage\(\)](<#KeyValue.ProtoMessage>)
+  - [func \(x \*KeyValue\) ProtoReflect\(\) protoreflect.Message](<#KeyValue.ProtoReflect>)
+  - [func \(x \*KeyValue\) Reset\(\)](<#KeyValue.Reset>)
+  - [func \(x \*KeyValue\) String\(\) string](<#KeyValue.String>)
+- [type ListAgentsRequest](<#ListAgentsRequest>)
+  - [func \(\*ListAgentsRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ListAgentsRequest.Descriptor>)
+  - [func \(x \*ListAgentsRequest\) GetCursor\(\) string](<#ListAgentsRequest.GetCursor>)
+  - [func \(x \*ListAgentsRequest\) GetLimit\(\) int32](<#ListAgentsRequest.GetLimit>)
+  - [func \(x \*ListAgentsRequest\) GetStatusFilter\(\) AgentStatus](<#ListAgentsRequest.GetStatusFilter>)
+  - [func \(\*ListAgentsRequest\) ProtoMessage\(\)](<#ListAgentsRequest.ProtoMessage>)
+  - [func \(x \*ListAgentsRequest\) ProtoReflect\(\) protoreflect.Message](<#ListAgentsRequest.ProtoReflect>)
+  - [func \(x \*ListAgentsRequest\) Reset\(\)](<#ListAgentsRequest.Reset>)
+  - [func \(x \*ListAgentsRequest\) String\(\) string](<#ListAgentsRequest.String>)
+- [type ListAgentsResponse](<#ListAgentsResponse>)
+  - [func \(\*ListAgentsResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ListAgentsResponse.Descriptor>)
+  - [func \(x \*ListAgentsResponse\) GetAgents\(\) \[\]\*RegisteredAgent](<#ListAgentsResponse.GetAgents>)
+  - [func \(x \*ListAgentsResponse\) GetNextCursor\(\) string](<#ListAgentsResponse.GetNextCursor>)
+  - [func \(x \*ListAgentsResponse\) GetTotalCount\(\) int32](<#ListAgentsResponse.GetTotalCount>)
+  - [func \(\*ListAgentsResponse\) ProtoMessage\(\)](<#ListAgentsResponse.ProtoMessage>)
+  - [func \(x \*ListAgentsResponse\) ProtoReflect\(\) protoreflect.Message](<#ListAgentsResponse.ProtoReflect>)
+  - [func \(x \*ListAgentsResponse\) Reset\(\)](<#ListAgentsResponse.Reset>)
+  - [func \(x \*ListAgentsResponse\) String\(\) string](<#ListAgentsResponse.String>)
+- [type ListKeysRequest](<#ListKeysRequest>)
+  - [func \(\*ListKeysRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ListKeysRequest.Descriptor>)
+  - [func \(x \*ListKeysRequest\) GetCursor\(\) string](<#ListKeysRequest.GetCursor>)
+  - [func \(x \*ListKeysRequest\) GetDidFilter\(\) string](<#ListKeysRequest.GetDidFilter>)
+  - [func \(x \*ListKeysRequest\) GetLimit\(\) int32](<#ListKeysRequest.GetLimit>)
+  - [func \(\*ListKeysRequest\) ProtoMessage\(\)](<#ListKeysRequest.ProtoMessage>)
+  - [func \(x \*ListKeysRequest\) ProtoReflect\(\) protoreflect.Message](<#ListKeysRequest.ProtoReflect>)
+  - [func \(x \*ListKeysRequest\) Reset\(\)](<#ListKeysRequest.Reset>)
+  - [func \(x \*ListKeysRequest\) String\(\) string](<#ListKeysRequest.String>)
+- [type ListKeysResponse](<#ListKeysResponse>)
+  - [func \(\*ListKeysResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ListKeysResponse.Descriptor>)
+  - [func \(x \*ListKeysResponse\) GetKeys\(\) \[\]\*TrustedKey](<#ListKeysResponse.GetKeys>)
+  - [func \(x \*ListKeysResponse\) GetNextCursor\(\) string](<#ListKeysResponse.GetNextCursor>)
+  - [func \(x \*ListKeysResponse\) GetTotalCount\(\) int32](<#ListKeysResponse.GetTotalCount>)
+  - [func \(\*ListKeysResponse\) ProtoMessage\(\)](<#ListKeysResponse.ProtoMessage>)
+  - [func \(x \*ListKeysResponse\) ProtoReflect\(\) protoreflect.Message](<#ListKeysResponse.ProtoReflect>)
+  - [func \(x \*ListKeysResponse\) Reset\(\)](<#ListKeysResponse.Reset>)
+  - [func \(x \*ListKeysResponse\) String\(\) string](<#ListKeysResponse.String>)
+- [type ListRevocationsRequest](<#ListRevocationsRequest>)
+  - [func \(\*ListRevocationsRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ListRevocationsRequest.Descriptor>)
+  - [func \(x \*ListRevocationsRequest\) GetCursor\(\) string](<#ListRevocationsRequest.GetCursor>)
+  - [func \(x \*ListRevocationsRequest\) GetLimit\(\) int32](<#ListRevocationsRequest.GetLimit>)
+  - [func \(x \*ListRevocationsRequest\) GetReasonFilter\(\) RevocationReason](<#ListRevocationsRequest.GetReasonFilter>)
+  - [func \(x \*ListRevocationsRequest\) GetSubjectFilter\(\) string](<#ListRevocationsRequest.GetSubjectFilter>)
+  - [func \(\*ListRevocationsRequest\) ProtoMessage\(\)](<#ListRevocationsRequest.ProtoMessage>)
+  - [func \(x \*ListRevocationsRequest\) ProtoReflect\(\) protoreflect.Message](<#ListRevocationsRequest.ProtoReflect>)
+  - [func \(x \*ListRevocationsRequest\) Reset\(\)](<#ListRevocationsRequest.Reset>)
+  - [func \(x \*ListRevocationsRequest\) String\(\) string](<#ListRevocationsRequest.String>)
+- [type ListRevocationsResponse](<#ListRevocationsResponse>)
+  - [func \(\*ListRevocationsResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ListRevocationsResponse.Descriptor>)
+  - [func \(x \*ListRevocationsResponse\) GetEntries\(\) \[\]\*RevocationEntry](<#ListRevocationsResponse.GetEntries>)
+  - [func \(x \*ListRevocationsResponse\) GetNextCursor\(\) string](<#ListRevocationsResponse.GetNextCursor>)
+  - [func \(x \*ListRevocationsResponse\) GetTotalCount\(\) int32](<#ListRevocationsResponse.GetTotalCount>)
+  - [func \(\*ListRevocationsResponse\) ProtoMessage\(\)](<#ListRevocationsResponse.ProtoMessage>)
+  - [func \(x \*ListRevocationsResponse\) ProtoReflect\(\) protoreflect.Message](<#ListRevocationsResponse.ProtoReflect>)
+  - [func \(x \*ListRevocationsResponse\) Reset\(\)](<#ListRevocationsResponse.Reset>)
+  - [func \(x \*ListRevocationsResponse\) String\(\) string](<#ListRevocationsResponse.String>)
+- [type ListRuleSetsRequest](<#ListRuleSetsRequest>)
+  - [func \(\*ListRuleSetsRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ListRuleSetsRequest.Descriptor>)
+  - [func \(x \*ListRuleSetsRequest\) GetCursor\(\) string](<#ListRuleSetsRequest.GetCursor>)
+  - [func \(x \*ListRuleSetsRequest\) GetLimit\(\) int32](<#ListRuleSetsRequest.GetLimit>)
+  - [func \(\*ListRuleSetsRequest\) ProtoMessage\(\)](<#ListRuleSetsRequest.ProtoMessage>)
+  - [func \(x \*ListRuleSetsRequest\) ProtoReflect\(\) protoreflect.Message](<#ListRuleSetsRequest.ProtoReflect>)
+  - [func \(x \*ListRuleSetsRequest\) Reset\(\)](<#ListRuleSetsRequest.Reset>)
+  - [func \(x \*ListRuleSetsRequest\) String\(\) string](<#ListRuleSetsRequest.String>)
+- [type ListRuleSetsResponse](<#ListRuleSetsResponse>)
+  - [func \(\*ListRuleSetsResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ListRuleSetsResponse.Descriptor>)
+  - [func \(x \*ListRuleSetsResponse\) GetNextCursor\(\) string](<#ListRuleSetsResponse.GetNextCursor>)
+  - [func \(x \*ListRuleSetsResponse\) GetRuleSets\(\) \[\]\*RuleSet](<#ListRuleSetsResponse.GetRuleSets>)
+  - [func \(\*ListRuleSetsResponse\) ProtoMessage\(\)](<#ListRuleSetsResponse.ProtoMessage>)
+  - [func \(x \*ListRuleSetsResponse\) ProtoReflect\(\) protoreflect.Message](<#ListRuleSetsResponse.ProtoReflect>)
+  - [func \(x \*ListRuleSetsResponse\) Reset\(\)](<#ListRuleSetsResponse.Reset>)
+  - [func \(x \*ListRuleSetsResponse\) String\(\) string](<#ListRuleSetsResponse.String>)
+- [type LoadKeyRequest](<#LoadKeyRequest>)
+  - [func \(\*LoadKeyRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#LoadKeyRequest.Descriptor>)
+  - [func \(x \*LoadKeyRequest\) GetFilePath\(\) string](<#LoadKeyRequest.GetFilePath>)
+  - [func \(x \*LoadKeyRequest\) GetFormat\(\) KeyFormat](<#LoadKeyRequest.GetFormat>)
+  - [func \(x \*LoadKeyRequest\) GetPassphrase\(\) string](<#LoadKeyRequest.GetPassphrase>)
+  - [func \(\*LoadKeyRequest\) ProtoMessage\(\)](<#LoadKeyRequest.ProtoMessage>)
+  - [func \(x \*LoadKeyRequest\) ProtoReflect\(\) protoreflect.Message](<#LoadKeyRequest.ProtoReflect>)
+  - [func \(x \*LoadKeyRequest\) Reset\(\)](<#LoadKeyRequest.Reset>)
+  - [func \(x \*LoadKeyRequest\) String\(\) string](<#LoadKeyRequest.String>)
+- [type LoadKeyResponse](<#LoadKeyResponse>)
+  - [func \(\*LoadKeyResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#LoadKeyResponse.Descriptor>)
+  - [func \(x \*LoadKeyResponse\) GetAlgorithm\(\) KeyAlgorithm](<#LoadKeyResponse.GetAlgorithm>)
+  - [func \(x \*LoadKeyResponse\) GetErrorMessage\(\) string](<#LoadKeyResponse.GetErrorMessage>)
+  - [func \(x \*LoadKeyResponse\) GetHasPrivateKey\(\) bool](<#LoadKeyResponse.GetHasPrivateKey>)
+  - [func \(x \*LoadKeyResponse\) GetKeyId\(\) string](<#LoadKeyResponse.GetKeyId>)
+  - [func \(\*LoadKeyResponse\) ProtoMessage\(\)](<#LoadKeyResponse.ProtoMessage>)
+  - [func \(x \*LoadKeyResponse\) ProtoReflect\(\) protoreflect.Message](<#LoadKeyResponse.ProtoReflect>)
+  - [func \(x \*LoadKeyResponse\) Reset\(\)](<#LoadKeyResponse.Reset>)
+  - [func \(x \*LoadKeyResponse\) String\(\) string](<#LoadKeyResponse.String>)
+- [type MCPAuthLevel](<#MCPAuthLevel>)
+  - [func \(MCPAuthLevel\) Descriptor\(\) protoreflect.EnumDescriptor](<#MCPAuthLevel.Descriptor>)
+  - [func \(x MCPAuthLevel\) Enum\(\) \*MCPAuthLevel](<#MCPAuthLevel.Enum>)
+  - [func \(MCPAuthLevel\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#MCPAuthLevel.EnumDescriptor>)
+  - [func \(x MCPAuthLevel\) Number\(\) protoreflect.EnumNumber](<#MCPAuthLevel.Number>)
+  - [func \(x MCPAuthLevel\) String\(\) string](<#MCPAuthLevel.String>)
+  - [func \(MCPAuthLevel\) Type\(\) protoreflect.EnumType](<#MCPAuthLevel.Type>)
+- [type MCPDecision](<#MCPDecision>)
+  - [func \(MCPDecision\) Descriptor\(\) protoreflect.EnumDescriptor](<#MCPDecision.Descriptor>)
+  - [func \(x MCPDecision\) Enum\(\) \*MCPDecision](<#MCPDecision.Enum>)
+  - [func \(MCPDecision\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#MCPDecision.EnumDescriptor>)
+  - [func \(x MCPDecision\) Number\(\) protoreflect.EnumNumber](<#MCPDecision.Number>)
+  - [func \(x MCPDecision\) String\(\) string](<#MCPDecision.String>)
+  - [func \(MCPDecision\) Type\(\) protoreflect.EnumType](<#MCPDecision.Type>)
+- [type MCPDenyReason](<#MCPDenyReason>)
+  - [func \(MCPDenyReason\) Descriptor\(\) protoreflect.EnumDescriptor](<#MCPDenyReason.Descriptor>)
+  - [func \(x MCPDenyReason\) Enum\(\) \*MCPDenyReason](<#MCPDenyReason.Enum>)
+  - [func \(MCPDenyReason\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#MCPDenyReason.EnumDescriptor>)
+  - [func \(x MCPDenyReason\) Number\(\) protoreflect.EnumNumber](<#MCPDenyReason.Number>)
+  - [func \(x MCPDenyReason\) String\(\) string](<#MCPDenyReason.String>)
+  - [func \(MCPDenyReason\) Type\(\) protoreflect.EnumType](<#MCPDenyReason.Type>)
+- [type MCPHealthRequest](<#MCPHealthRequest>)
+  - [func \(\*MCPHealthRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#MCPHealthRequest.Descriptor>)
+  - [func \(x \*MCPHealthRequest\) GetClientVersion\(\) string](<#MCPHealthRequest.GetClientVersion>)
+  - [func \(\*MCPHealthRequest\) ProtoMessage\(\)](<#MCPHealthRequest.ProtoMessage>)
+  - [func \(x \*MCPHealthRequest\) ProtoReflect\(\) protoreflect.Message](<#MCPHealthRequest.ProtoReflect>)
+  - [func \(x \*MCPHealthRequest\) Reset\(\)](<#MCPHealthRequest.Reset>)
+  - [func \(x \*MCPHealthRequest\) String\(\) string](<#MCPHealthRequest.String>)
+- [type MCPHealthResponse](<#MCPHealthResponse>)
+  - [func \(\*MCPHealthResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#MCPHealthResponse.Descriptor>)
+  - [func \(x \*MCPHealthResponse\) GetCoreVersion\(\) string](<#MCPHealthResponse.GetCoreVersion>)
+  - [func \(x \*MCPHealthResponse\) GetHealthy\(\) bool](<#MCPHealthResponse.GetHealthy>)
+  - [func \(x \*MCPHealthResponse\) GetProtoVersion\(\) string](<#MCPHealthResponse.GetProtoVersion>)
+  - [func \(x \*MCPHealthResponse\) GetVersionCompatible\(\) bool](<#MCPHealthResponse.GetVersionCompatible>)
+  - [func \(\*MCPHealthResponse\) ProtoMessage\(\)](<#MCPHealthResponse.ProtoMessage>)
+  - [func \(x \*MCPHealthResponse\) ProtoReflect\(\) protoreflect.Message](<#MCPHealthResponse.ProtoReflect>)
+  - [func \(x \*MCPHealthResponse\) Reset\(\)](<#MCPHealthResponse.Reset>)
+  - [func \(x \*MCPHealthResponse\) String\(\) string](<#MCPHealthResponse.String>)
+- [type MCPHttpHeaders](<#MCPHttpHeaders>)
+  - [func \(\*MCPHttpHeaders\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#MCPHttpHeaders.Descriptor>)
+  - [func \(x \*MCPHttpHeaders\) GetCapiscioServerBadge\(\) string](<#MCPHttpHeaders.GetCapiscioServerBadge>)
+  - [func \(x \*MCPHttpHeaders\) GetCapiscioServerDid\(\) string](<#MCPHttpHeaders.GetCapiscioServerDid>)
+  - [func \(\*MCPHttpHeaders\) ProtoMessage\(\)](<#MCPHttpHeaders.ProtoMessage>)
+  - [func \(x \*MCPHttpHeaders\) ProtoReflect\(\) protoreflect.Message](<#MCPHttpHeaders.ProtoReflect>)
+  - [func \(x \*MCPHttpHeaders\) Reset\(\)](<#MCPHttpHeaders.Reset>)
+  - [func \(x \*MCPHttpHeaders\) String\(\) string](<#MCPHttpHeaders.String>)
+- [type MCPJsonRpcMeta](<#MCPJsonRpcMeta>)
+  - [func \(\*MCPJsonRpcMeta\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#MCPJsonRpcMeta.Descriptor>)
+  - [func \(x \*MCPJsonRpcMeta\) GetMetaJson\(\) string](<#MCPJsonRpcMeta.GetMetaJson>)
+  - [func \(\*MCPJsonRpcMeta\) ProtoMessage\(\)](<#MCPJsonRpcMeta.ProtoMessage>)
+  - [func \(x \*MCPJsonRpcMeta\) ProtoReflect\(\) protoreflect.Message](<#MCPJsonRpcMeta.ProtoReflect>)
+  - [func \(x \*MCPJsonRpcMeta\) Reset\(\)](<#MCPJsonRpcMeta.Reset>)
+  - [func \(x \*MCPJsonRpcMeta\) String\(\) string](<#MCPJsonRpcMeta.String>)
+- [type MCPServerErrorCode](<#MCPServerErrorCode>)
+  - [func \(MCPServerErrorCode\) Descriptor\(\) protoreflect.EnumDescriptor](<#MCPServerErrorCode.Descriptor>)
+  - [func \(x MCPServerErrorCode\) Enum\(\) \*MCPServerErrorCode](<#MCPServerErrorCode.Enum>)
+  - [func \(MCPServerErrorCode\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#MCPServerErrorCode.EnumDescriptor>)
+  - [func \(x MCPServerErrorCode\) Number\(\) protoreflect.EnumNumber](<#MCPServerErrorCode.Number>)
+  - [func \(x MCPServerErrorCode\) String\(\) string](<#MCPServerErrorCode.String>)
+  - [func \(MCPServerErrorCode\) Type\(\) protoreflect.EnumType](<#MCPServerErrorCode.Type>)
+- [type MCPServerState](<#MCPServerState>)
+  - [func \(MCPServerState\) Descriptor\(\) protoreflect.EnumDescriptor](<#MCPServerState.Descriptor>)
+  - [func \(x MCPServerState\) Enum\(\) \*MCPServerState](<#MCPServerState.Enum>)
+  - [func \(MCPServerState\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#MCPServerState.EnumDescriptor>)
+  - [func \(x MCPServerState\) Number\(\) protoreflect.EnumNumber](<#MCPServerState.Number>)
+  - [func \(x MCPServerState\) String\(\) string](<#MCPServerState.String>)
+  - [func \(MCPServerState\) Type\(\) protoreflect.EnumType](<#MCPServerState.Type>)
+- [type MCPServiceClient](<#MCPServiceClient>)
+  - [func NewMCPServiceClient\(cc grpc.ClientConnInterface\) MCPServiceClient](<#NewMCPServiceClient>)
+- [type MCPServiceServer](<#MCPServiceServer>)
+- [type MCPVerifyConfig](<#MCPVerifyConfig>)
+  - [func \(\*MCPVerifyConfig\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#MCPVerifyConfig.Descriptor>)
+  - [func \(x \*MCPVerifyConfig\) GetAcceptLevelZero\(\) bool](<#MCPVerifyConfig.GetAcceptLevelZero>)
+  - [func \(x \*MCPVerifyConfig\) GetMinTrustLevel\(\) int32](<#MCPVerifyConfig.GetMinTrustLevel>)
+  - [func \(x \*MCPVerifyConfig\) GetOfflineMode\(\) bool](<#MCPVerifyConfig.GetOfflineMode>)
+  - [func \(x \*MCPVerifyConfig\) GetSkipOriginBinding\(\) bool](<#MCPVerifyConfig.GetSkipOriginBinding>)
+  - [func \(x \*MCPVerifyConfig\) GetTrustedIssuers\(\) \[\]string](<#MCPVerifyConfig.GetTrustedIssuers>)
+  - [func \(\*MCPVerifyConfig\) ProtoMessage\(\)](<#MCPVerifyConfig.ProtoMessage>)
+  - [func \(x \*MCPVerifyConfig\) ProtoReflect\(\) protoreflect.Message](<#MCPVerifyConfig.ProtoReflect>)
+  - [func \(x \*MCPVerifyConfig\) Reset\(\)](<#MCPVerifyConfig.Reset>)
+  - [func \(x \*MCPVerifyConfig\) String\(\) string](<#MCPVerifyConfig.String>)
+- [type NewAgentDIDRequest](<#NewAgentDIDRequest>)
+  - [func \(\*NewAgentDIDRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#NewAgentDIDRequest.Descriptor>)
+  - [func \(x \*NewAgentDIDRequest\) GetAgentId\(\) string](<#NewAgentDIDRequest.GetAgentId>)
+  - [func \(x \*NewAgentDIDRequest\) GetDomain\(\) string](<#NewAgentDIDRequest.GetDomain>)
+  - [func \(\*NewAgentDIDRequest\) ProtoMessage\(\)](<#NewAgentDIDRequest.ProtoMessage>)
+  - [func \(x \*NewAgentDIDRequest\) ProtoReflect\(\) protoreflect.Message](<#NewAgentDIDRequest.ProtoReflect>)
+  - [func \(x \*NewAgentDIDRequest\) Reset\(\)](<#NewAgentDIDRequest.Reset>)
+  - [func \(x \*NewAgentDIDRequest\) String\(\) string](<#NewAgentDIDRequest.String>)
+- [type NewAgentDIDResponse](<#NewAgentDIDResponse>)
+  - [func \(\*NewAgentDIDResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#NewAgentDIDResponse.Descriptor>)
+  - [func \(x \*NewAgentDIDResponse\) GetDid\(\) string](<#NewAgentDIDResponse.GetDid>)
+  - [func \(x \*NewAgentDIDResponse\) GetErrorMessage\(\) string](<#NewAgentDIDResponse.GetErrorMessage>)
+  - [func \(\*NewAgentDIDResponse\) ProtoMessage\(\)](<#NewAgentDIDResponse.ProtoMessage>)
+  - [func \(x \*NewAgentDIDResponse\) ProtoReflect\(\) protoreflect.Message](<#NewAgentDIDResponse.ProtoReflect>)
+  - [func \(x \*NewAgentDIDResponse\) Reset\(\)](<#NewAgentDIDResponse.Reset>)
+  - [func \(x \*NewAgentDIDResponse\) String\(\) string](<#NewAgentDIDResponse.String>)
+- [type NewCapiscIOAgentDIDRequest](<#NewCapiscIOAgentDIDRequest>)
+  - [func \(\*NewCapiscIOAgentDIDRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#NewCapiscIOAgentDIDRequest.Descriptor>)
+  - [func \(x \*NewCapiscIOAgentDIDRequest\) GetAgentId\(\) string](<#NewCapiscIOAgentDIDRequest.GetAgentId>)
+  - [func \(\*NewCapiscIOAgentDIDRequest\) ProtoMessage\(\)](<#NewCapiscIOAgentDIDRequest.ProtoMessage>)
+  - [func \(x \*NewCapiscIOAgentDIDRequest\) ProtoReflect\(\) protoreflect.Message](<#NewCapiscIOAgentDIDRequest.ProtoReflect>)
+  - [func \(x \*NewCapiscIOAgentDIDRequest\) Reset\(\)](<#NewCapiscIOAgentDIDRequest.Reset>)
+  - [func \(x \*NewCapiscIOAgentDIDRequest\) String\(\) string](<#NewCapiscIOAgentDIDRequest.String>)
+- [type ParseBadgeRequest](<#ParseBadgeRequest>)
+  - [func \(\*ParseBadgeRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ParseBadgeRequest.Descriptor>)
+  - [func \(x \*ParseBadgeRequest\) GetToken\(\) string](<#ParseBadgeRequest.GetToken>)
+  - [func \(\*ParseBadgeRequest\) ProtoMessage\(\)](<#ParseBadgeRequest.ProtoMessage>)
+  - [func \(x \*ParseBadgeRequest\) ProtoReflect\(\) protoreflect.Message](<#ParseBadgeRequest.ProtoReflect>)
+  - [func \(x \*ParseBadgeRequest\) Reset\(\)](<#ParseBadgeRequest.Reset>)
+  - [func \(x \*ParseBadgeRequest\) String\(\) string](<#ParseBadgeRequest.String>)
+- [type ParseBadgeResponse](<#ParseBadgeResponse>)
+  - [func \(\*ParseBadgeResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ParseBadgeResponse.Descriptor>)
+  - [func \(x \*ParseBadgeResponse\) GetClaims\(\) \*BadgeClaims](<#ParseBadgeResponse.GetClaims>)
+  - [func \(x \*ParseBadgeResponse\) GetErrorMessage\(\) string](<#ParseBadgeResponse.GetErrorMessage>)
+  - [func \(\*ParseBadgeResponse\) ProtoMessage\(\)](<#ParseBadgeResponse.ProtoMessage>)
+  - [func \(x \*ParseBadgeResponse\) ProtoReflect\(\) protoreflect.Message](<#ParseBadgeResponse.ProtoReflect>)
+  - [func \(x \*ParseBadgeResponse\) Reset\(\)](<#ParseBadgeResponse.Reset>)
+  - [func \(x \*ParseBadgeResponse\) String\(\) string](<#ParseBadgeResponse.String>)
+- [type ParseDIDRequest](<#ParseDIDRequest>)
+  - [func \(\*ParseDIDRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ParseDIDRequest.Descriptor>)
+  - [func \(x \*ParseDIDRequest\) GetDid\(\) string](<#ParseDIDRequest.GetDid>)
+  - [func \(\*ParseDIDRequest\) ProtoMessage\(\)](<#ParseDIDRequest.ProtoMessage>)
+  - [func \(x \*ParseDIDRequest\) ProtoReflect\(\) protoreflect.Message](<#ParseDIDRequest.ProtoReflect>)
+  - [func \(x \*ParseDIDRequest\) Reset\(\)](<#ParseDIDRequest.Reset>)
+  - [func \(x \*ParseDIDRequest\) String\(\) string](<#ParseDIDRequest.String>)
+- [type ParseDIDResponse](<#ParseDIDResponse>)
+  - [func \(\*ParseDIDResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ParseDIDResponse.Descriptor>)
+  - [func \(x \*ParseDIDResponse\) GetDid\(\) \*DID](<#ParseDIDResponse.GetDid>)
+  - [func \(x \*ParseDIDResponse\) GetErrorMessage\(\) string](<#ParseDIDResponse.GetErrorMessage>)
+  - [func \(\*ParseDIDResponse\) ProtoMessage\(\)](<#ParseDIDResponse.ProtoMessage>)
+  - [func \(x \*ParseDIDResponse\) ProtoReflect\(\) protoreflect.Message](<#ParseDIDResponse.ProtoReflect>)
+  - [func \(x \*ParseDIDResponse\) Reset\(\)](<#ParseDIDResponse.Reset>)
+  - [func \(x \*ParseDIDResponse\) String\(\) string](<#ParseDIDResponse.String>)
+- [type ParseServerIdentityRequest](<#ParseServerIdentityRequest>)
+  - [func \(\*ParseServerIdentityRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ParseServerIdentityRequest.Descriptor>)
+  - [func \(x \*ParseServerIdentityRequest\) GetHttpHeaders\(\) \*MCPHttpHeaders](<#ParseServerIdentityRequest.GetHttpHeaders>)
+  - [func \(x \*ParseServerIdentityRequest\) GetJsonrpcMeta\(\) \*MCPJsonRpcMeta](<#ParseServerIdentityRequest.GetJsonrpcMeta>)
+  - [func \(x \*ParseServerIdentityRequest\) GetSource\(\) isParseServerIdentityRequest\_Source](<#ParseServerIdentityRequest.GetSource>)
+  - [func \(\*ParseServerIdentityRequest\) ProtoMessage\(\)](<#ParseServerIdentityRequest.ProtoMessage>)
+  - [func \(x \*ParseServerIdentityRequest\) ProtoReflect\(\) protoreflect.Message](<#ParseServerIdentityRequest.ProtoReflect>)
+  - [func \(x \*ParseServerIdentityRequest\) Reset\(\)](<#ParseServerIdentityRequest.Reset>)
+  - [func \(x \*ParseServerIdentityRequest\) String\(\) string](<#ParseServerIdentityRequest.String>)
+- [type ParseServerIdentityRequest\_HttpHeaders](<#ParseServerIdentityRequest_HttpHeaders>)
+- [type ParseServerIdentityRequest\_JsonrpcMeta](<#ParseServerIdentityRequest_JsonrpcMeta>)
+- [type ParseServerIdentityResponse](<#ParseServerIdentityResponse>)
+  - [func \(\*ParseServerIdentityResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ParseServerIdentityResponse.Descriptor>)
+  - [func \(x \*ParseServerIdentityResponse\) GetIdentityPresent\(\) bool](<#ParseServerIdentityResponse.GetIdentityPresent>)
+  - [func \(x \*ParseServerIdentityResponse\) GetServerBadge\(\) string](<#ParseServerIdentityResponse.GetServerBadge>)
+  - [func \(x \*ParseServerIdentityResponse\) GetServerDid\(\) string](<#ParseServerIdentityResponse.GetServerDid>)
+  - [func \(\*ParseServerIdentityResponse\) ProtoMessage\(\)](<#ParseServerIdentityResponse.ProtoMessage>)
+  - [func \(x \*ParseServerIdentityResponse\) ProtoReflect\(\) protoreflect.Message](<#ParseServerIdentityResponse.ProtoReflect>)
+  - [func \(x \*ParseServerIdentityResponse\) Reset\(\)](<#ParseServerIdentityResponse.Reset>)
+  - [func \(x \*ParseServerIdentityResponse\) String\(\) string](<#ParseServerIdentityResponse.String>)
+- [type PingRequest](<#PingRequest>)
+  - [func \(\*PingRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#PingRequest.Descriptor>)
+  - [func \(\*PingRequest\) ProtoMessage\(\)](<#PingRequest.ProtoMessage>)
+  - [func \(x \*PingRequest\) ProtoReflect\(\) protoreflect.Message](<#PingRequest.ProtoReflect>)
+  - [func \(x \*PingRequest\) Reset\(\)](<#PingRequest.Reset>)
+  - [func \(x \*PingRequest\) String\(\) string](<#PingRequest.String>)
+- [type PingResponse](<#PingResponse>)
+  - [func \(\*PingResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#PingResponse.Descriptor>)
+  - [func \(x \*PingResponse\) GetServerTime\(\) \*Timestamp](<#PingResponse.GetServerTime>)
+  - [func \(x \*PingResponse\) GetStatus\(\) string](<#PingResponse.GetStatus>)
+  - [func \(x \*PingResponse\) GetVersion\(\) string](<#PingResponse.GetVersion>)
+  - [func \(\*PingResponse\) ProtoMessage\(\)](<#PingResponse.ProtoMessage>)
+  - [func \(x \*PingResponse\) ProtoReflect\(\) protoreflect.Message](<#PingResponse.ProtoReflect>)
+  - [func \(x \*PingResponse\) Reset\(\)](<#PingResponse.Reset>)
+  - [func \(x \*PingResponse\) String\(\) string](<#PingResponse.String>)
+- [type Rating](<#Rating>)
+  - [func \(Rating\) Descriptor\(\) protoreflect.EnumDescriptor](<#Rating.Descriptor>)
+  - [func \(x Rating\) Enum\(\) \*Rating](<#Rating.Enum>)
+  - [func \(Rating\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#Rating.EnumDescriptor>)
+  - [func \(x Rating\) Number\(\) protoreflect.EnumNumber](<#Rating.Number>)
+  - [func \(x Rating\) String\(\) string](<#Rating.String>)
+  - [func \(Rating\) Type\(\) protoreflect.EnumType](<#Rating.Type>)
+- [type RegisterAgentRequest](<#RegisterAgentRequest>)
+  - [func \(\*RegisterAgentRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#RegisterAgentRequest.Descriptor>)
+  - [func \(x \*RegisterAgentRequest\) GetAgentCardJson\(\) string](<#RegisterAgentRequest.GetAgentCardJson>)
+  - [func \(x \*RegisterAgentRequest\) GetMetadata\(\) map\[string\]string](<#RegisterAgentRequest.GetMetadata>)
+  - [func \(x \*RegisterAgentRequest\) GetSignedBadge\(\) string](<#RegisterAgentRequest.GetSignedBadge>)
+  - [func \(x \*RegisterAgentRequest\) GetTags\(\) \[\]string](<#RegisterAgentRequest.GetTags>)
+  - [func \(\*RegisterAgentRequest\) ProtoMessage\(\)](<#RegisterAgentRequest.ProtoMessage>)
+  - [func \(x \*RegisterAgentRequest\) ProtoReflect\(\) protoreflect.Message](<#RegisterAgentRequest.ProtoReflect>)
+  - [func \(x \*RegisterAgentRequest\) Reset\(\)](<#RegisterAgentRequest.Reset>)
+  - [func \(x \*RegisterAgentRequest\) String\(\) string](<#RegisterAgentRequest.String>)
+- [type RegisterAgentResponse](<#RegisterAgentResponse>)
+  - [func \(\*RegisterAgentResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#RegisterAgentResponse.Descriptor>)
+  - [func \(x \*RegisterAgentResponse\) GetDid\(\) string](<#RegisterAgentResponse.GetDid>)
+  - [func \(x \*RegisterAgentResponse\) GetErrorMessage\(\) string](<#RegisterAgentResponse.GetErrorMessage>)
+  - [func \(x \*RegisterAgentResponse\) GetStatus\(\) AgentStatus](<#RegisterAgentResponse.GetStatus>)
+  - [func \(\*RegisterAgentResponse\) ProtoMessage\(\)](<#RegisterAgentResponse.ProtoMessage>)
+  - [func \(x \*RegisterAgentResponse\) ProtoReflect\(\) protoreflect.Message](<#RegisterAgentResponse.ProtoReflect>)
+  - [func \(x \*RegisterAgentResponse\) Reset\(\)](<#RegisterAgentResponse.Reset>)
+  - [func \(x \*RegisterAgentResponse\) String\(\) string](<#RegisterAgentResponse.String>)
+- [type RegisteredAgent](<#RegisteredAgent>)
+  - [func \(\*RegisteredAgent\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#RegisteredAgent.Descriptor>)
+  - [func \(x \*RegisteredAgent\) GetAgentCardJson\(\) string](<#RegisteredAgent.GetAgentCardJson>)
+  - [func \(x \*RegisteredAgent\) GetBadge\(\) \*BadgeClaims](<#RegisteredAgent.GetBadge>)
+  - [func \(x \*RegisteredAgent\) GetCapabilities\(\) \[\]string](<#RegisteredAgent.GetCapabilities>)
+  - [func \(x \*RegisteredAgent\) GetDescription\(\) string](<#RegisteredAgent.GetDescription>)
+  - [func \(x \*RegisteredAgent\) GetDid\(\) string](<#RegisteredAgent.GetDid>)
+  - [func \(x \*RegisteredAgent\) GetMetadata\(\) map\[string\]string](<#RegisteredAgent.GetMetadata>)
+  - [func \(x \*RegisteredAgent\) GetName\(\) string](<#RegisteredAgent.GetName>)
+  - [func \(x \*RegisteredAgent\) GetRating\(\) Rating](<#RegisteredAgent.GetRating>)
+  - [func \(x \*RegisteredAgent\) GetRegisteredAt\(\) \*Timestamp](<#RegisteredAgent.GetRegisteredAt>)
+  - [func \(x \*RegisteredAgent\) GetStatus\(\) AgentStatus](<#RegisteredAgent.GetStatus>)
+  - [func \(x \*RegisteredAgent\) GetTags\(\) \[\]string](<#RegisteredAgent.GetTags>)
+  - [func \(x \*RegisteredAgent\) GetUpdatedAt\(\) \*Timestamp](<#RegisteredAgent.GetUpdatedAt>)
+  - [func \(\*RegisteredAgent\) ProtoMessage\(\)](<#RegisteredAgent.ProtoMessage>)
+  - [func \(x \*RegisteredAgent\) ProtoReflect\(\) protoreflect.Message](<#RegisteredAgent.ProtoReflect>)
+  - [func \(x \*RegisteredAgent\) Reset\(\)](<#RegisteredAgent.Reset>)
+  - [func \(x \*RegisteredAgent\) String\(\) string](<#RegisteredAgent.String>)
+- [type RegistryServiceClient](<#RegistryServiceClient>)
+  - [func NewRegistryServiceClient\(cc grpc.ClientConnInterface\) RegistryServiceClient](<#NewRegistryServiceClient>)
+- [type RegistryServiceServer](<#RegistryServiceServer>)
+- [type RemoveKeyRequest](<#RemoveKeyRequest>)
+  - [func \(\*RemoveKeyRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#RemoveKeyRequest.Descriptor>)
+  - [func \(x \*RemoveKeyRequest\) GetDid\(\) string](<#RemoveKeyRequest.GetDid>)
+  - [func \(x \*RemoveKeyRequest\) GetKeyId\(\) string](<#RemoveKeyRequest.GetKeyId>)
+  - [func \(\*RemoveKeyRequest\) ProtoMessage\(\)](<#RemoveKeyRequest.ProtoMessage>)
+  - [func \(x \*RemoveKeyRequest\) ProtoReflect\(\) protoreflect.Message](<#RemoveKeyRequest.ProtoReflect>)
+  - [func \(x \*RemoveKeyRequest\) Reset\(\)](<#RemoveKeyRequest.Reset>)
+  - [func \(x \*RemoveKeyRequest\) String\(\) string](<#RemoveKeyRequest.String>)
+- [type RemoveKeyResponse](<#RemoveKeyResponse>)
+  - [func \(\*RemoveKeyResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#RemoveKeyResponse.Descriptor>)
+  - [func \(x \*RemoveKeyResponse\) GetErrorMessage\(\) string](<#RemoveKeyResponse.GetErrorMessage>)
+  - [func \(x \*RemoveKeyResponse\) GetKeysRemoved\(\) int32](<#RemoveKeyResponse.GetKeysRemoved>)
+  - [func \(\*RemoveKeyResponse\) ProtoMessage\(\)](<#RemoveKeyResponse.ProtoMessage>)
+  - [func \(x \*RemoveKeyResponse\) ProtoReflect\(\) protoreflect.Message](<#RemoveKeyResponse.ProtoReflect>)
+  - [func \(x \*RemoveKeyResponse\) Reset\(\)](<#RemoveKeyResponse.Reset>)
+  - [func \(x \*RemoveKeyResponse\) String\(\) string](<#RemoveKeyResponse.String>)
+- [type RequestBadgeRequest](<#RequestBadgeRequest>)
+  - [func \(\*RequestBadgeRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#RequestBadgeRequest.Descriptor>)
+  - [func \(x \*RequestBadgeRequest\) GetAgentId\(\) string](<#RequestBadgeRequest.GetAgentId>)
+  - [func \(x \*RequestBadgeRequest\) GetApiKey\(\) string](<#RequestBadgeRequest.GetApiKey>)
+  - [func \(x \*RequestBadgeRequest\) GetAudience\(\) \[\]string](<#RequestBadgeRequest.GetAudience>)
+  - [func \(x \*RequestBadgeRequest\) GetCaUrl\(\) string](<#RequestBadgeRequest.GetCaUrl>)
+  - [func \(x \*RequestBadgeRequest\) GetDomain\(\) string](<#RequestBadgeRequest.GetDomain>)
+  - [func \(x \*RequestBadgeRequest\) GetTrustLevel\(\) TrustLevel](<#RequestBadgeRequest.GetTrustLevel>)
+  - [func \(x \*RequestBadgeRequest\) GetTtlSeconds\(\) int32](<#RequestBadgeRequest.GetTtlSeconds>)
+  - [func \(\*RequestBadgeRequest\) ProtoMessage\(\)](<#RequestBadgeRequest.ProtoMessage>)
+  - [func \(x \*RequestBadgeRequest\) ProtoReflect\(\) protoreflect.Message](<#RequestBadgeRequest.ProtoReflect>)
+  - [func \(x \*RequestBadgeRequest\) Reset\(\)](<#RequestBadgeRequest.Reset>)
+  - [func \(x \*RequestBadgeRequest\) String\(\) string](<#RequestBadgeRequest.String>)
+- [type RequestBadgeResponse](<#RequestBadgeResponse>)
+  - [func \(\*RequestBadgeResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#RequestBadgeResponse.Descriptor>)
+  - [func \(x \*RequestBadgeResponse\) GetError\(\) string](<#RequestBadgeResponse.GetError>)
+  - [func \(x \*RequestBadgeResponse\) GetErrorCode\(\) string](<#RequestBadgeResponse.GetErrorCode>)
+  - [func \(x \*RequestBadgeResponse\) GetExpiresAt\(\) int64](<#RequestBadgeResponse.GetExpiresAt>)
+  - [func \(x \*RequestBadgeResponse\) GetJti\(\) string](<#RequestBadgeResponse.GetJti>)
+  - [func \(x \*RequestBadgeResponse\) GetSubject\(\) string](<#RequestBadgeResponse.GetSubject>)
+  - [func \(x \*RequestBadgeResponse\) GetSuccess\(\) bool](<#RequestBadgeResponse.GetSuccess>)
+  - [func \(x \*RequestBadgeResponse\) GetToken\(\) string](<#RequestBadgeResponse.GetToken>)
+  - [func \(x \*RequestBadgeResponse\) GetTrustLevel\(\) TrustLevel](<#RequestBadgeResponse.GetTrustLevel>)
+  - [func \(\*RequestBadgeResponse\) ProtoMessage\(\)](<#RequestBadgeResponse.ProtoMessage>)
+  - [func \(x \*RequestBadgeResponse\) ProtoReflect\(\) protoreflect.Message](<#RequestBadgeResponse.ProtoReflect>)
+  - [func \(x \*RequestBadgeResponse\) Reset\(\)](<#RequestBadgeResponse.Reset>)
+  - [func \(x \*RequestBadgeResponse\) String\(\) string](<#RequestBadgeResponse.String>)
+- [type RequestPoPBadgeRequest](<#RequestPoPBadgeRequest>)
+  - [func \(\*RequestPoPBadgeRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#RequestPoPBadgeRequest.Descriptor>)
+  - [func \(x \*RequestPoPBadgeRequest\) GetAgentDid\(\) string](<#RequestPoPBadgeRequest.GetAgentDid>)
+  - [func \(x \*RequestPoPBadgeRequest\) GetApiKey\(\) string](<#RequestPoPBadgeRequest.GetApiKey>)
+  - [func \(x \*RequestPoPBadgeRequest\) GetAudience\(\) \[\]string](<#RequestPoPBadgeRequest.GetAudience>)
+  - [func \(x \*RequestPoPBadgeRequest\) GetCaUrl\(\) string](<#RequestPoPBadgeRequest.GetCaUrl>)
+  - [func \(x \*RequestPoPBadgeRequest\) GetPrivateKeyJwk\(\) string](<#RequestPoPBadgeRequest.GetPrivateKeyJwk>)
+  - [func \(x \*RequestPoPBadgeRequest\) GetTtlSeconds\(\) int32](<#RequestPoPBadgeRequest.GetTtlSeconds>)
+  - [func \(\*RequestPoPBadgeRequest\) ProtoMessage\(\)](<#RequestPoPBadgeRequest.ProtoMessage>)
+  - [func \(x \*RequestPoPBadgeRequest\) ProtoReflect\(\) protoreflect.Message](<#RequestPoPBadgeRequest.ProtoReflect>)
+  - [func \(x \*RequestPoPBadgeRequest\) Reset\(\)](<#RequestPoPBadgeRequest.Reset>)
+  - [func \(x \*RequestPoPBadgeRequest\) String\(\) string](<#RequestPoPBadgeRequest.String>)
+- [type RequestPoPBadgeResponse](<#RequestPoPBadgeResponse>)
+  - [func \(\*RequestPoPBadgeResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#RequestPoPBadgeResponse.Descriptor>)
+  - [func \(x \*RequestPoPBadgeResponse\) GetAssuranceLevel\(\) string](<#RequestPoPBadgeResponse.GetAssuranceLevel>)
+  - [func \(x \*RequestPoPBadgeResponse\) GetCnf\(\) map\[string\]string](<#RequestPoPBadgeResponse.GetCnf>)
+  - [func \(x \*RequestPoPBadgeResponse\) GetError\(\) string](<#RequestPoPBadgeResponse.GetError>)
+  - [func \(x \*RequestPoPBadgeResponse\) GetErrorCode\(\) string](<#RequestPoPBadgeResponse.GetErrorCode>)
+  - [func \(x \*RequestPoPBadgeResponse\) GetExpiresAt\(\) int64](<#RequestPoPBadgeResponse.GetExpiresAt>)
+  - [func \(x \*RequestPoPBadgeResponse\) GetJti\(\) string](<#RequestPoPBadgeResponse.GetJti>)
+  - [func \(x \*RequestPoPBadgeResponse\) GetSubject\(\) string](<#RequestPoPBadgeResponse.GetSubject>)
+  - [func \(x \*RequestPoPBadgeResponse\) GetSuccess\(\) bool](<#RequestPoPBadgeResponse.GetSuccess>)
+  - [func \(x \*RequestPoPBadgeResponse\) GetToken\(\) string](<#RequestPoPBadgeResponse.GetToken>)
+  - [func \(x \*RequestPoPBadgeResponse\) GetTrustLevel\(\) string](<#RequestPoPBadgeResponse.GetTrustLevel>)
+  - [func \(\*RequestPoPBadgeResponse\) ProtoMessage\(\)](<#RequestPoPBadgeResponse.ProtoMessage>)
+  - [func \(x \*RequestPoPBadgeResponse\) ProtoReflect\(\) protoreflect.Message](<#RequestPoPBadgeResponse.ProtoReflect>)
+  - [func \(x \*RequestPoPBadgeResponse\) Reset\(\)](<#RequestPoPBadgeResponse.Reset>)
+  - [func \(x \*RequestPoPBadgeResponse\) String\(\) string](<#RequestPoPBadgeResponse.String>)
+- [type RevocationEntry](<#RevocationEntry>)
+  - [func \(\*RevocationEntry\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#RevocationEntry.Descriptor>)
+  - [func \(x \*RevocationEntry\) GetComment\(\) string](<#RevocationEntry.GetComment>)
+  - [func \(x \*RevocationEntry\) GetExpiresAt\(\) \*Timestamp](<#RevocationEntry.GetExpiresAt>)
+  - [func \(x \*RevocationEntry\) GetIssuer\(\) string](<#RevocationEntry.GetIssuer>)
+  - [func \(x \*RevocationEntry\) GetReason\(\) RevocationReason](<#RevocationEntry.GetReason>)
+  - [func \(x \*RevocationEntry\) GetRevokedAt\(\) \*Timestamp](<#RevocationEntry.GetRevokedAt>)
+  - [func \(x \*RevocationEntry\) GetSubject\(\) string](<#RevocationEntry.GetSubject>)
+  - [func \(\*RevocationEntry\) ProtoMessage\(\)](<#RevocationEntry.ProtoMessage>)
+  - [func \(x \*RevocationEntry\) ProtoReflect\(\) protoreflect.Message](<#RevocationEntry.ProtoReflect>)
+  - [func \(x \*RevocationEntry\) Reset\(\)](<#RevocationEntry.Reset>)
+  - [func \(x \*RevocationEntry\) String\(\) string](<#RevocationEntry.String>)
+- [type RevocationReason](<#RevocationReason>)
+  - [func \(RevocationReason\) Descriptor\(\) protoreflect.EnumDescriptor](<#RevocationReason.Descriptor>)
+  - [func \(x RevocationReason\) Enum\(\) \*RevocationReason](<#RevocationReason.Enum>)
+  - [func \(RevocationReason\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#RevocationReason.EnumDescriptor>)
+  - [func \(x RevocationReason\) Number\(\) protoreflect.EnumNumber](<#RevocationReason.Number>)
+  - [func \(x RevocationReason\) String\(\) string](<#RevocationReason.String>)
+  - [func \(RevocationReason\) Type\(\) protoreflect.EnumType](<#RevocationReason.Type>)
+- [type RevocationServiceClient](<#RevocationServiceClient>)
+  - [func NewRevocationServiceClient\(cc grpc.ClientConnInterface\) RevocationServiceClient](<#NewRevocationServiceClient>)
+- [type RevocationServiceServer](<#RevocationServiceServer>)
+- [type RevokeRequest](<#RevokeRequest>)
+  - [func \(\*RevokeRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#RevokeRequest.Descriptor>)
+  - [func \(x \*RevokeRequest\) GetComment\(\) string](<#RevokeRequest.GetComment>)
+  - [func \(x \*RevokeRequest\) GetReason\(\) RevocationReason](<#RevokeRequest.GetReason>)
+  - [func \(x \*RevokeRequest\) GetSubject\(\) string](<#RevokeRequest.GetSubject>)
+  - [func \(\*RevokeRequest\) ProtoMessage\(\)](<#RevokeRequest.ProtoMessage>)
+  - [func \(x \*RevokeRequest\) ProtoReflect\(\) protoreflect.Message](<#RevokeRequest.ProtoReflect>)
+  - [func \(x \*RevokeRequest\) Reset\(\)](<#RevokeRequest.Reset>)
+  - [func \(x \*RevokeRequest\) String\(\) string](<#RevokeRequest.String>)
+- [type RevokeResponse](<#RevokeResponse>)
+  - [func \(\*RevokeResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#RevokeResponse.Descriptor>)
+  - [func \(x \*RevokeResponse\) GetEntry\(\) \*RevocationEntry](<#RevokeResponse.GetEntry>)
+  - [func \(x \*RevokeResponse\) GetErrorMessage\(\) string](<#RevokeResponse.GetErrorMessage>)
+  - [func \(\*RevokeResponse\) ProtoMessage\(\)](<#RevokeResponse.ProtoMessage>)
+  - [func \(x \*RevokeResponse\) ProtoReflect\(\) protoreflect.Message](<#RevokeResponse.ProtoReflect>)
+  - [func \(x \*RevokeResponse\) Reset\(\)](<#RevokeResponse.Reset>)
+  - [func \(x \*RevokeResponse\) String\(\) string](<#RevokeResponse.String>)
+- [type Rule](<#Rule>)
+  - [func \(\*Rule\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#Rule.Descriptor>)
+  - [func \(x \*Rule\) GetCategory\(\) ScoreCategory](<#Rule.GetCategory>)
+  - [func \(x \*Rule\) GetDescription\(\) string](<#Rule.GetDescription>)
+  - [func \(x \*Rule\) GetExpression\(\) string](<#Rule.GetExpression>)
+  - [func \(x \*Rule\) GetId\(\) string](<#Rule.GetId>)
+  - [func \(x \*Rule\) GetName\(\) string](<#Rule.GetName>)
+  - [func \(x \*Rule\) GetSeverity\(\) RuleSeverity](<#Rule.GetSeverity>)
+  - [func \(x \*Rule\) GetWeight\(\) int32](<#Rule.GetWeight>)
+  - [func \(\*Rule\) ProtoMessage\(\)](<#Rule.ProtoMessage>)
+  - [func \(x \*Rule\) ProtoReflect\(\) protoreflect.Message](<#Rule.ProtoReflect>)
+  - [func \(x \*Rule\) Reset\(\)](<#Rule.Reset>)
+  - [func \(x \*Rule\) String\(\) string](<#Rule.String>)
+- [type RuleResult](<#RuleResult>)
+  - [func \(\*RuleResult\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#RuleResult.Descriptor>)
+  - [func \(x \*RuleResult\) GetDetails\(\) map\[string\]string](<#RuleResult.GetDetails>)
+  - [func \(x \*RuleResult\) GetMessage\(\) string](<#RuleResult.GetMessage>)
+  - [func \(x \*RuleResult\) GetPassed\(\) bool](<#RuleResult.GetPassed>)
+  - [func \(x \*RuleResult\) GetRuleId\(\) string](<#RuleResult.GetRuleId>)
+  - [func \(x \*RuleResult\) GetScoreContribution\(\) float64](<#RuleResult.GetScoreContribution>)
+  - [func \(\*RuleResult\) ProtoMessage\(\)](<#RuleResult.ProtoMessage>)
+  - [func \(x \*RuleResult\) ProtoReflect\(\) protoreflect.Message](<#RuleResult.ProtoReflect>)
+  - [func \(x \*RuleResult\) Reset\(\)](<#RuleResult.Reset>)
+  - [func \(x \*RuleResult\) String\(\) string](<#RuleResult.String>)
+- [type RuleSet](<#RuleSet>)
+  - [func \(\*RuleSet\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#RuleSet.Descriptor>)
+  - [func \(x \*RuleSet\) GetDescription\(\) string](<#RuleSet.GetDescription>)
+  - [func \(x \*RuleSet\) GetId\(\) string](<#RuleSet.GetId>)
+  - [func \(x \*RuleSet\) GetMetadata\(\) map\[string\]string](<#RuleSet.GetMetadata>)
+  - [func \(x \*RuleSet\) GetName\(\) string](<#RuleSet.GetName>)
+  - [func \(x \*RuleSet\) GetRules\(\) \[\]\*Rule](<#RuleSet.GetRules>)
+  - [func \(x \*RuleSet\) GetVersion\(\) string](<#RuleSet.GetVersion>)
+  - [func \(\*RuleSet\) ProtoMessage\(\)](<#RuleSet.ProtoMessage>)
+  - [func \(x \*RuleSet\) ProtoReflect\(\) protoreflect.Message](<#RuleSet.ProtoReflect>)
+  - [func \(x \*RuleSet\) Reset\(\)](<#RuleSet.Reset>)
+  - [func \(x \*RuleSet\) String\(\) string](<#RuleSet.String>)
+- [type RuleSeverity](<#RuleSeverity>)
+  - [func \(RuleSeverity\) Descriptor\(\) protoreflect.EnumDescriptor](<#RuleSeverity.Descriptor>)
+  - [func \(x RuleSeverity\) Enum\(\) \*RuleSeverity](<#RuleSeverity.Enum>)
+  - [func \(RuleSeverity\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#RuleSeverity.EnumDescriptor>)
+  - [func \(x RuleSeverity\) Number\(\) protoreflect.EnumNumber](<#RuleSeverity.Number>)
+  - [func \(x RuleSeverity\) String\(\) string](<#RuleSeverity.String>)
+  - [func \(RuleSeverity\) Type\(\) protoreflect.EnumType](<#RuleSeverity.Type>)
+- [type ScoreAgentCardRequest](<#ScoreAgentCardRequest>)
+  - [func \(\*ScoreAgentCardRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ScoreAgentCardRequest.Descriptor>)
+  - [func \(x \*ScoreAgentCardRequest\) GetAgentCardJson\(\) string](<#ScoreAgentCardRequest.GetAgentCardJson>)
+  - [func \(x \*ScoreAgentCardRequest\) GetCategories\(\) \[\]ScoreCategory](<#ScoreAgentCardRequest.GetCategories>)
+  - [func \(x \*ScoreAgentCardRequest\) GetRuleSetId\(\) string](<#ScoreAgentCardRequest.GetRuleSetId>)
+  - [func \(\*ScoreAgentCardRequest\) ProtoMessage\(\)](<#ScoreAgentCardRequest.ProtoMessage>)
+  - [func \(x \*ScoreAgentCardRequest\) ProtoReflect\(\) protoreflect.Message](<#ScoreAgentCardRequest.ProtoReflect>)
+  - [func \(x \*ScoreAgentCardRequest\) Reset\(\)](<#ScoreAgentCardRequest.Reset>)
+  - [func \(x \*ScoreAgentCardRequest\) String\(\) string](<#ScoreAgentCardRequest.String>)
+- [type ScoreAgentCardResponse](<#ScoreAgentCardResponse>)
+  - [func \(\*ScoreAgentCardResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ScoreAgentCardResponse.Descriptor>)
+  - [func \(x \*ScoreAgentCardResponse\) GetErrorMessage\(\) string](<#ScoreAgentCardResponse.GetErrorMessage>)
+  - [func \(x \*ScoreAgentCardResponse\) GetResult\(\) \*ScoringResult](<#ScoreAgentCardResponse.GetResult>)
+  - [func \(\*ScoreAgentCardResponse\) ProtoMessage\(\)](<#ScoreAgentCardResponse.ProtoMessage>)
+  - [func \(x \*ScoreAgentCardResponse\) ProtoReflect\(\) protoreflect.Message](<#ScoreAgentCardResponse.ProtoReflect>)
+  - [func \(x \*ScoreAgentCardResponse\) Reset\(\)](<#ScoreAgentCardResponse.Reset>)
+  - [func \(x \*ScoreAgentCardResponse\) String\(\) string](<#ScoreAgentCardResponse.String>)
+- [type ScoreCategory](<#ScoreCategory>)
+  - [func \(ScoreCategory\) Descriptor\(\) protoreflect.EnumDescriptor](<#ScoreCategory.Descriptor>)
+  - [func \(x ScoreCategory\) Enum\(\) \*ScoreCategory](<#ScoreCategory.Enum>)
+  - [func \(ScoreCategory\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#ScoreCategory.EnumDescriptor>)
+  - [func \(x ScoreCategory\) Number\(\) protoreflect.EnumNumber](<#ScoreCategory.Number>)
+  - [func \(x ScoreCategory\) String\(\) string](<#ScoreCategory.String>)
+  - [func \(ScoreCategory\) Type\(\) protoreflect.EnumType](<#ScoreCategory.Type>)
+- [type ScoringResult](<#ScoringResult>)
+  - [func \(\*ScoringResult\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ScoringResult.Descriptor>)
+  - [func \(x \*ScoringResult\) GetCategories\(\) \[\]\*CategoryScore](<#ScoringResult.GetCategories>)
+  - [func \(x \*ScoringResult\) GetOverallScore\(\) float64](<#ScoringResult.GetOverallScore>)
+  - [func \(x \*ScoringResult\) GetRating\(\) Rating](<#ScoringResult.GetRating>)
+  - [func \(x \*ScoringResult\) GetRuleResults\(\) \[\]\*RuleResult](<#ScoringResult.GetRuleResults>)
+  - [func \(x \*ScoringResult\) GetRuleSetId\(\) string](<#ScoringResult.GetRuleSetId>)
+  - [func \(x \*ScoringResult\) GetRuleSetVersion\(\) string](<#ScoringResult.GetRuleSetVersion>)
+  - [func \(x \*ScoringResult\) GetScoredAt\(\) \*Timestamp](<#ScoringResult.GetScoredAt>)
+  - [func \(x \*ScoringResult\) GetValidation\(\) \*ValidationResult](<#ScoringResult.GetValidation>)
+  - [func \(\*ScoringResult\) ProtoMessage\(\)](<#ScoringResult.ProtoMessage>)
+  - [func \(x \*ScoringResult\) ProtoReflect\(\) protoreflect.Message](<#ScoringResult.ProtoReflect>)
+  - [func \(x \*ScoringResult\) Reset\(\)](<#ScoringResult.Reset>)
+  - [func \(x \*ScoringResult\) String\(\) string](<#ScoringResult.String>)
+- [type ScoringServiceClient](<#ScoringServiceClient>)
+  - [func NewScoringServiceClient\(cc grpc.ClientConnInterface\) ScoringServiceClient](<#NewScoringServiceClient>)
+- [type ScoringServiceServer](<#ScoringServiceServer>)
+- [type SearchAgentsRequest](<#SearchAgentsRequest>)
+  - [func \(\*SearchAgentsRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#SearchAgentsRequest.Descriptor>)
+  - [func \(x \*SearchAgentsRequest\) GetCapabilities\(\) \[\]string](<#SearchAgentsRequest.GetCapabilities>)
+  - [func \(x \*SearchAgentsRequest\) GetCursor\(\) string](<#SearchAgentsRequest.GetCursor>)
+  - [func \(x \*SearchAgentsRequest\) GetLimit\(\) int32](<#SearchAgentsRequest.GetLimit>)
+  - [func \(x \*SearchAgentsRequest\) GetMinRating\(\) Rating](<#SearchAgentsRequest.GetMinRating>)
+  - [func \(x \*SearchAgentsRequest\) GetOperator\(\) SearchOperator](<#SearchAgentsRequest.GetOperator>)
+  - [func \(x \*SearchAgentsRequest\) GetQuery\(\) string](<#SearchAgentsRequest.GetQuery>)
+  - [func \(x \*SearchAgentsRequest\) GetSortBy\(\) string](<#SearchAgentsRequest.GetSortBy>)
+  - [func \(x \*SearchAgentsRequest\) GetSortDescending\(\) bool](<#SearchAgentsRequest.GetSortDescending>)
+  - [func \(x \*SearchAgentsRequest\) GetStatusFilter\(\) AgentStatus](<#SearchAgentsRequest.GetStatusFilter>)
+  - [func \(x \*SearchAgentsRequest\) GetTags\(\) \[\]string](<#SearchAgentsRequest.GetTags>)
+  - [func \(\*SearchAgentsRequest\) ProtoMessage\(\)](<#SearchAgentsRequest.ProtoMessage>)
+  - [func \(x \*SearchAgentsRequest\) ProtoReflect\(\) protoreflect.Message](<#SearchAgentsRequest.ProtoReflect>)
+  - [func \(x \*SearchAgentsRequest\) Reset\(\)](<#SearchAgentsRequest.Reset>)
+  - [func \(x \*SearchAgentsRequest\) String\(\) string](<#SearchAgentsRequest.String>)
+- [type SearchAgentsResponse](<#SearchAgentsResponse>)
+  - [func \(\*SearchAgentsResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#SearchAgentsResponse.Descriptor>)
+  - [func \(x \*SearchAgentsResponse\) GetAgents\(\) \[\]\*RegisteredAgent](<#SearchAgentsResponse.GetAgents>)
+  - [func \(x \*SearchAgentsResponse\) GetNextCursor\(\) string](<#SearchAgentsResponse.GetNextCursor>)
+  - [func \(x \*SearchAgentsResponse\) GetTotalCount\(\) int32](<#SearchAgentsResponse.GetTotalCount>)
+  - [func \(\*SearchAgentsResponse\) ProtoMessage\(\)](<#SearchAgentsResponse.ProtoMessage>)
+  - [func \(x \*SearchAgentsResponse\) ProtoReflect\(\) protoreflect.Message](<#SearchAgentsResponse.ProtoReflect>)
+  - [func \(x \*SearchAgentsResponse\) Reset\(\)](<#SearchAgentsResponse.Reset>)
+  - [func \(x \*SearchAgentsResponse\) String\(\) string](<#SearchAgentsResponse.String>)
+- [type SearchOperator](<#SearchOperator>)
+  - [func \(SearchOperator\) Descriptor\(\) protoreflect.EnumDescriptor](<#SearchOperator.Descriptor>)
+  - [func \(x SearchOperator\) Enum\(\) \*SearchOperator](<#SearchOperator.Enum>)
+  - [func \(SearchOperator\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#SearchOperator.EnumDescriptor>)
+  - [func \(x SearchOperator\) Number\(\) protoreflect.EnumNumber](<#SearchOperator.Number>)
+  - [func \(x SearchOperator\) String\(\) string](<#SearchOperator.String>)
+  - [func \(SearchOperator\) Type\(\) protoreflect.EnumType](<#SearchOperator.Type>)
+- [type SignAttachedRequest](<#SignAttachedRequest>)
+  - [func \(\*SignAttachedRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#SignAttachedRequest.Descriptor>)
+  - [func \(x \*SignAttachedRequest\) GetDetachPayload\(\) bool](<#SignAttachedRequest.GetDetachPayload>)
+  - [func \(x \*SignAttachedRequest\) GetFormat\(\) SignatureFormat](<#SignAttachedRequest.GetFormat>)
+  - [func \(x \*SignAttachedRequest\) GetHeaders\(\) map\[string\]string](<#SignAttachedRequest.GetHeaders>)
+  - [func \(x \*SignAttachedRequest\) GetKeyId\(\) string](<#SignAttachedRequest.GetKeyId>)
+  - [func \(x \*SignAttachedRequest\) GetPayload\(\) \[\]byte](<#SignAttachedRequest.GetPayload>)
+  - [func \(\*SignAttachedRequest\) ProtoMessage\(\)](<#SignAttachedRequest.ProtoMessage>)
+  - [func \(x \*SignAttachedRequest\) ProtoReflect\(\) protoreflect.Message](<#SignAttachedRequest.ProtoReflect>)
+  - [func \(x \*SignAttachedRequest\) Reset\(\)](<#SignAttachedRequest.Reset>)
+  - [func \(x \*SignAttachedRequest\) String\(\) string](<#SignAttachedRequest.String>)
+- [type SignAttachedResponse](<#SignAttachedResponse>)
+  - [func \(\*SignAttachedResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#SignAttachedResponse.Descriptor>)
+  - [func \(x \*SignAttachedResponse\) GetErrorMessage\(\) string](<#SignAttachedResponse.GetErrorMessage>)
+  - [func \(x \*SignAttachedResponse\) GetJws\(\) string](<#SignAttachedResponse.GetJws>)
+  - [func \(\*SignAttachedResponse\) ProtoMessage\(\)](<#SignAttachedResponse.ProtoMessage>)
+  - [func \(x \*SignAttachedResponse\) ProtoReflect\(\) protoreflect.Message](<#SignAttachedResponse.ProtoReflect>)
+  - [func \(x \*SignAttachedResponse\) Reset\(\)](<#SignAttachedResponse.Reset>)
+  - [func \(x \*SignAttachedResponse\) String\(\) string](<#SignAttachedResponse.String>)
+- [type SignBadgeRequest](<#SignBadgeRequest>)
+  - [func \(\*SignBadgeRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#SignBadgeRequest.Descriptor>)
+  - [func \(x \*SignBadgeRequest\) GetClaims\(\) \*BadgeClaims](<#SignBadgeRequest.GetClaims>)
+  - [func \(x \*SignBadgeRequest\) GetKeyId\(\) string](<#SignBadgeRequest.GetKeyId>)
+  - [func \(x \*SignBadgeRequest\) GetPrivateKeyJwk\(\) string](<#SignBadgeRequest.GetPrivateKeyJwk>)
+  - [func \(\*SignBadgeRequest\) ProtoMessage\(\)](<#SignBadgeRequest.ProtoMessage>)
+  - [func \(x \*SignBadgeRequest\) ProtoReflect\(\) protoreflect.Message](<#SignBadgeRequest.ProtoReflect>)
+  - [func \(x \*SignBadgeRequest\) Reset\(\)](<#SignBadgeRequest.Reset>)
+  - [func \(x \*SignBadgeRequest\) String\(\) string](<#SignBadgeRequest.String>)
+- [type SignBadgeResponse](<#SignBadgeResponse>)
+  - [func \(\*SignBadgeResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#SignBadgeResponse.Descriptor>)
+  - [func \(x \*SignBadgeResponse\) GetClaims\(\) \*BadgeClaims](<#SignBadgeResponse.GetClaims>)
+  - [func \(x \*SignBadgeResponse\) GetToken\(\) string](<#SignBadgeResponse.GetToken>)
+  - [func \(\*SignBadgeResponse\) ProtoMessage\(\)](<#SignBadgeResponse.ProtoMessage>)
+  - [func \(x \*SignBadgeResponse\) ProtoReflect\(\) protoreflect.Message](<#SignBadgeResponse.ProtoReflect>)
+  - [func \(x \*SignBadgeResponse\) Reset\(\)](<#SignBadgeResponse.Reset>)
+  - [func \(x \*SignBadgeResponse\) String\(\) string](<#SignBadgeResponse.String>)
+- [type SignRequest](<#SignRequest>)
+  - [func \(\*SignRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#SignRequest.Descriptor>)
+  - [func \(x \*SignRequest\) GetFormat\(\) SignatureFormat](<#SignRequest.GetFormat>)
+  - [func \(x \*SignRequest\) GetHeaders\(\) map\[string\]string](<#SignRequest.GetHeaders>)
+  - [func \(x \*SignRequest\) GetKeyId\(\) string](<#SignRequest.GetKeyId>)
+  - [func \(x \*SignRequest\) GetPayload\(\) \[\]byte](<#SignRequest.GetPayload>)
+  - [func \(\*SignRequest\) ProtoMessage\(\)](<#SignRequest.ProtoMessage>)
+  - [func \(x \*SignRequest\) ProtoReflect\(\) protoreflect.Message](<#SignRequest.ProtoReflect>)
+  - [func \(x \*SignRequest\) Reset\(\)](<#SignRequest.Reset>)
+  - [func \(x \*SignRequest\) String\(\) string](<#SignRequest.String>)
+- [type SignResponse](<#SignResponse>)
+  - [func \(\*SignResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#SignResponse.Descriptor>)
+  - [func \(x \*SignResponse\) GetErrorMessage\(\) string](<#SignResponse.GetErrorMessage>)
+  - [func \(x \*SignResponse\) GetSignature\(\) \[\]byte](<#SignResponse.GetSignature>)
+  - [func \(x \*SignResponse\) GetSignatureString\(\) string](<#SignResponse.GetSignatureString>)
+  - [func \(\*SignResponse\) ProtoMessage\(\)](<#SignResponse.ProtoMessage>)
+  - [func \(x \*SignResponse\) ProtoReflect\(\) protoreflect.Message](<#SignResponse.ProtoReflect>)
+  - [func \(x \*SignResponse\) Reset\(\)](<#SignResponse.Reset>)
+  - [func \(x \*SignResponse\) String\(\) string](<#SignResponse.String>)
+- [type SignatureFormat](<#SignatureFormat>)
+  - [func \(SignatureFormat\) Descriptor\(\) protoreflect.EnumDescriptor](<#SignatureFormat.Descriptor>)
+  - [func \(x SignatureFormat\) Enum\(\) \*SignatureFormat](<#SignatureFormat.Enum>)
+  - [func \(SignatureFormat\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#SignatureFormat.EnumDescriptor>)
+  - [func \(x SignatureFormat\) Number\(\) protoreflect.EnumNumber](<#SignatureFormat.Number>)
+  - [func \(x SignatureFormat\) String\(\) string](<#SignatureFormat.String>)
+  - [func \(SignatureFormat\) Type\(\) protoreflect.EnumType](<#SignatureFormat.Type>)
+- [type SimpleGuardServiceClient](<#SimpleGuardServiceClient>)
+  - [func NewSimpleGuardServiceClient\(cc grpc.ClientConnInterface\) SimpleGuardServiceClient](<#NewSimpleGuardServiceClient>)
+- [type SimpleGuardServiceServer](<#SimpleGuardServiceServer>)
+- [type StartKeeperRequest](<#StartKeeperRequest>)
+  - [func \(\*StartKeeperRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#StartKeeperRequest.Descriptor>)
+  - [func \(x \*StartKeeperRequest\) GetAgentId\(\) string](<#StartKeeperRequest.GetAgentId>)
+  - [func \(x \*StartKeeperRequest\) GetApiKey\(\) string](<#StartKeeperRequest.GetApiKey>)
+  - [func \(x \*StartKeeperRequest\) GetCaUrl\(\) string](<#StartKeeperRequest.GetCaUrl>)
+  - [func \(x \*StartKeeperRequest\) GetCheckIntervalSeconds\(\) int32](<#StartKeeperRequest.GetCheckIntervalSeconds>)
+  - [func \(x \*StartKeeperRequest\) GetDomain\(\) string](<#StartKeeperRequest.GetDomain>)
+  - [func \(x \*StartKeeperRequest\) GetMode\(\) KeeperMode](<#StartKeeperRequest.GetMode>)
+  - [func \(x \*StartKeeperRequest\) GetOutputFile\(\) string](<#StartKeeperRequest.GetOutputFile>)
+  - [func \(x \*StartKeeperRequest\) GetPrivateKeyPath\(\) string](<#StartKeeperRequest.GetPrivateKeyPath>)
+  - [func \(x \*StartKeeperRequest\) GetRenewBeforeSeconds\(\) int32](<#StartKeeperRequest.GetRenewBeforeSeconds>)
+  - [func \(x \*StartKeeperRequest\) GetTrustLevel\(\) TrustLevel](<#StartKeeperRequest.GetTrustLevel>)
+  - [func \(x \*StartKeeperRequest\) GetTtlSeconds\(\) int32](<#StartKeeperRequest.GetTtlSeconds>)
+  - [func \(\*StartKeeperRequest\) ProtoMessage\(\)](<#StartKeeperRequest.ProtoMessage>)
+  - [func \(x \*StartKeeperRequest\) ProtoReflect\(\) protoreflect.Message](<#StartKeeperRequest.ProtoReflect>)
+  - [func \(x \*StartKeeperRequest\) Reset\(\)](<#StartKeeperRequest.Reset>)
+  - [func \(x \*StartKeeperRequest\) String\(\) string](<#StartKeeperRequest.String>)
+- [type Timestamp](<#Timestamp>)
+  - [func \(\*Timestamp\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#Timestamp.Descriptor>)
+  - [func \(x \*Timestamp\) GetValue\(\) string](<#Timestamp.GetValue>)
+  - [func \(\*Timestamp\) ProtoMessage\(\)](<#Timestamp.ProtoMessage>)
+  - [func \(x \*Timestamp\) ProtoReflect\(\) protoreflect.Message](<#Timestamp.ProtoReflect>)
+  - [func \(x \*Timestamp\) Reset\(\)](<#Timestamp.Reset>)
+  - [func \(x \*Timestamp\) String\(\) string](<#Timestamp.String>)
+- [type TrustLevel](<#TrustLevel>)
+  - [func \(TrustLevel\) Descriptor\(\) protoreflect.EnumDescriptor](<#TrustLevel.Descriptor>)
+  - [func \(x TrustLevel\) Enum\(\) \*TrustLevel](<#TrustLevel.Enum>)
+  - [func \(TrustLevel\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#TrustLevel.EnumDescriptor>)
+  - [func \(x TrustLevel\) Number\(\) protoreflect.EnumNumber](<#TrustLevel.Number>)
+  - [func \(x TrustLevel\) String\(\) string](<#TrustLevel.String>)
+  - [func \(TrustLevel\) Type\(\) protoreflect.EnumType](<#TrustLevel.Type>)
+- [type TrustStoreServiceClient](<#TrustStoreServiceClient>)
+  - [func NewTrustStoreServiceClient\(cc grpc.ClientConnInterface\) TrustStoreServiceClient](<#NewTrustStoreServiceClient>)
+- [type TrustStoreServiceServer](<#TrustStoreServiceServer>)
+- [type TrustedKey](<#TrustedKey>)
+  - [func \(\*TrustedKey\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#TrustedKey.Descriptor>)
+  - [func \(x \*TrustedKey\) GetAddedAt\(\) \*Timestamp](<#TrustedKey.GetAddedAt>)
+  - [func \(x \*TrustedKey\) GetAlgorithm\(\) KeyAlgorithm](<#TrustedKey.GetAlgorithm>)
+  - [func \(x \*TrustedKey\) GetDid\(\) string](<#TrustedKey.GetDid>)
+  - [func \(x \*TrustedKey\) GetExpiresAt\(\) \*Timestamp](<#TrustedKey.GetExpiresAt>)
+  - [func \(x \*TrustedKey\) GetFormat\(\) KeyFormat](<#TrustedKey.GetFormat>)
+  - [func \(x \*TrustedKey\) GetKeyId\(\) string](<#TrustedKey.GetKeyId>)
+  - [func \(x \*TrustedKey\) GetMetadata\(\) map\[string\]string](<#TrustedKey.GetMetadata>)
+  - [func \(x \*TrustedKey\) GetPublicKey\(\) \[\]byte](<#TrustedKey.GetPublicKey>)
+  - [func \(\*TrustedKey\) ProtoMessage\(\)](<#TrustedKey.ProtoMessage>)
+  - [func \(x \*TrustedKey\) ProtoReflect\(\) protoreflect.Message](<#TrustedKey.ProtoReflect>)
+  - [func \(x \*TrustedKey\) Reset\(\)](<#TrustedKey.Reset>)
+  - [func \(x \*TrustedKey\) String\(\) string](<#TrustedKey.String>)
+- [type UnimplementedBadgeServiceServer](<#UnimplementedBadgeServiceServer>)
+  - [func \(UnimplementedBadgeServiceServer\) CreateDVOrder\(context.Context, \*CreateDVOrderRequest\) \(\*CreateDVOrderResponse, error\)](<#UnimplementedBadgeServiceServer.CreateDVOrder>)
+  - [func \(UnimplementedBadgeServiceServer\) FinalizeDVOrder\(context.Context, \*FinalizeDVOrderRequest\) \(\*FinalizeDVOrderResponse, error\)](<#UnimplementedBadgeServiceServer.FinalizeDVOrder>)
+  - [func \(UnimplementedBadgeServiceServer\) GetDVOrder\(context.Context, \*GetDVOrderRequest\) \(\*GetDVOrderResponse, error\)](<#UnimplementedBadgeServiceServer.GetDVOrder>)
+  - [func \(UnimplementedBadgeServiceServer\) ParseBadge\(context.Context, \*ParseBadgeRequest\) \(\*ParseBadgeResponse, error\)](<#UnimplementedBadgeServiceServer.ParseBadge>)
+  - [func \(UnimplementedBadgeServiceServer\) RequestBadge\(context.Context, \*RequestBadgeRequest\) \(\*RequestBadgeResponse, error\)](<#UnimplementedBadgeServiceServer.RequestBadge>)
+  - [func \(UnimplementedBadgeServiceServer\) RequestPoPBadge\(context.Context, \*RequestPoPBadgeRequest\) \(\*RequestPoPBadgeResponse, error\)](<#UnimplementedBadgeServiceServer.RequestPoPBadge>)
+  - [func \(UnimplementedBadgeServiceServer\) SignBadge\(context.Context, \*SignBadgeRequest\) \(\*SignBadgeResponse, error\)](<#UnimplementedBadgeServiceServer.SignBadge>)
+  - [func \(UnimplementedBadgeServiceServer\) StartKeeper\(\*StartKeeperRequest, grpc.ServerStreamingServer\[KeeperEvent\]\) error](<#UnimplementedBadgeServiceServer.StartKeeper>)
+  - [func \(UnimplementedBadgeServiceServer\) VerifyBadge\(context.Context, \*VerifyBadgeRequest\) \(\*VerifyBadgeResponse, error\)](<#UnimplementedBadgeServiceServer.VerifyBadge>)
+  - [func \(UnimplementedBadgeServiceServer\) VerifyBadgeWithOptions\(context.Context, \*VerifyBadgeWithOptionsRequest\) \(\*VerifyBadgeResponse, error\)](<#UnimplementedBadgeServiceServer.VerifyBadgeWithOptions>)
+- [type UnimplementedDIDServiceServer](<#UnimplementedDIDServiceServer>)
+  - [func \(UnimplementedDIDServiceServer\) DocumentURL\(context.Context, \*DocumentURLRequest\) \(\*DocumentURLResponse, error\)](<#UnimplementedDIDServiceServer.DocumentURL>)
+  - [func \(UnimplementedDIDServiceServer\) IsAgentDID\(context.Context, \*IsAgentDIDRequest\) \(\*IsAgentDIDResponse, error\)](<#UnimplementedDIDServiceServer.IsAgentDID>)
+  - [func \(UnimplementedDIDServiceServer\) NewAgentDID\(context.Context, \*NewAgentDIDRequest\) \(\*NewAgentDIDResponse, error\)](<#UnimplementedDIDServiceServer.NewAgentDID>)
+  - [func \(UnimplementedDIDServiceServer\) NewCapiscIOAgentDID\(context.Context, \*NewCapiscIOAgentDIDRequest\) \(\*NewAgentDIDResponse, error\)](<#UnimplementedDIDServiceServer.NewCapiscIOAgentDID>)
+  - [func \(UnimplementedDIDServiceServer\) Parse\(context.Context, \*ParseDIDRequest\) \(\*ParseDIDResponse, error\)](<#UnimplementedDIDServiceServer.Parse>)
+- [type UnimplementedMCPServiceServer](<#UnimplementedMCPServiceServer>)
+  - [func \(UnimplementedMCPServiceServer\) EvaluateToolAccess\(context.Context, \*EvaluateToolAccessRequest\) \(\*EvaluateToolAccessResponse, error\)](<#UnimplementedMCPServiceServer.EvaluateToolAccess>)
+  - [func \(UnimplementedMCPServiceServer\) Health\(context.Context, \*MCPHealthRequest\) \(\*MCPHealthResponse, error\)](<#UnimplementedMCPServiceServer.Health>)
+  - [func \(UnimplementedMCPServiceServer\) ParseServerIdentity\(context.Context, \*ParseServerIdentityRequest\) \(\*ParseServerIdentityResponse, error\)](<#UnimplementedMCPServiceServer.ParseServerIdentity>)
+  - [func \(UnimplementedMCPServiceServer\) VerifyServerIdentity\(context.Context, \*VerifyServerIdentityRequest\) \(\*VerifyServerIdentityResponse, error\)](<#UnimplementedMCPServiceServer.VerifyServerIdentity>)
+- [type UnimplementedRegistryServiceServer](<#UnimplementedRegistryServiceServer>)
+  - [func \(UnimplementedRegistryServiceServer\) DeregisterAgent\(context.Context, \*DeregisterAgentRequest\) \(\*DeregisterAgentResponse, error\)](<#UnimplementedRegistryServiceServer.DeregisterAgent>)
+  - [func \(UnimplementedRegistryServiceServer\) GetAgent\(context.Context, \*GetAgentRequest\) \(\*GetAgentResponse, error\)](<#UnimplementedRegistryServiceServer.GetAgent>)
+  - [func \(UnimplementedRegistryServiceServer\) GetStats\(context.Context, \*GetStatsRequest\) \(\*GetStatsResponse, error\)](<#UnimplementedRegistryServiceServer.GetStats>)
+  - [func \(UnimplementedRegistryServiceServer\) ListAgents\(context.Context, \*ListAgentsRequest\) \(\*ListAgentsResponse, error\)](<#UnimplementedRegistryServiceServer.ListAgents>)
+  - [func \(UnimplementedRegistryServiceServer\) Ping\(context.Context, \*PingRequest\) \(\*PingResponse, error\)](<#UnimplementedRegistryServiceServer.Ping>)
+  - [func \(UnimplementedRegistryServiceServer\) RegisterAgent\(context.Context, \*RegisterAgentRequest\) \(\*RegisterAgentResponse, error\)](<#UnimplementedRegistryServiceServer.RegisterAgent>)
+  - [func \(UnimplementedRegistryServiceServer\) SearchAgents\(context.Context, \*SearchAgentsRequest\) \(\*SearchAgentsResponse, error\)](<#UnimplementedRegistryServiceServer.SearchAgents>)
+  - [func \(UnimplementedRegistryServiceServer\) UpdateAgent\(context.Context, \*UpdateAgentRequest\) \(\*UpdateAgentResponse, error\)](<#UnimplementedRegistryServiceServer.UpdateAgent>)
+  - [func \(UnimplementedRegistryServiceServer\) VerifyRegistration\(context.Context, \*VerifyRegistrationRequest\) \(\*VerifyRegistrationResponse, error\)](<#UnimplementedRegistryServiceServer.VerifyRegistration>)
+- [type UnimplementedRevocationServiceServer](<#UnimplementedRevocationServiceServer>)
+  - [func \(UnimplementedRevocationServiceServer\) ClearCache\(context.Context, \*ClearCacheRequest\) \(\*ClearCacheResponse, error\)](<#UnimplementedRevocationServiceServer.ClearCache>)
+  - [func \(UnimplementedRevocationServiceServer\) FetchRevocationList\(context.Context, \*FetchRevocationListRequest\) \(\*FetchRevocationListResponse, error\)](<#UnimplementedRevocationServiceServer.FetchRevocationList>)
+  - [func \(UnimplementedRevocationServiceServer\) GetCacheStats\(context.Context, \*GetCacheStatsRequest\) \(\*GetCacheStatsResponse, error\)](<#UnimplementedRevocationServiceServer.GetCacheStats>)
+  - [func \(UnimplementedRevocationServiceServer\) IsRevoked\(context.Context, \*IsRevokedRequest\) \(\*IsRevokedResponse, error\)](<#UnimplementedRevocationServiceServer.IsRevoked>)
+  - [func \(UnimplementedRevocationServiceServer\) ListRevocations\(context.Context, \*ListRevocationsRequest\) \(\*ListRevocationsResponse, error\)](<#UnimplementedRevocationServiceServer.ListRevocations>)
+  - [func \(UnimplementedRevocationServiceServer\) Revoke\(context.Context, \*RevokeRequest\) \(\*RevokeResponse, error\)](<#UnimplementedRevocationServiceServer.Revoke>)
+  - [func \(UnimplementedRevocationServiceServer\) Unrevoke\(context.Context, \*UnrevokeRequest\) \(\*UnrevokeResponse, error\)](<#UnimplementedRevocationServiceServer.Unrevoke>)
+- [type UnimplementedScoringServiceServer](<#UnimplementedScoringServiceServer>)
+  - [func \(UnimplementedScoringServiceServer\) AggregateScores\(context.Context, \*AggregateScoresRequest\) \(\*AggregateScoresResponse, error\)](<#UnimplementedScoringServiceServer.AggregateScores>)
+  - [func \(UnimplementedScoringServiceServer\) GetRuleSet\(context.Context, \*GetRuleSetRequest\) \(\*GetRuleSetResponse, error\)](<#UnimplementedScoringServiceServer.GetRuleSet>)
+  - [func \(UnimplementedScoringServiceServer\) ListRuleSets\(context.Context, \*ListRuleSetsRequest\) \(\*ListRuleSetsResponse, error\)](<#UnimplementedScoringServiceServer.ListRuleSets>)
+  - [func \(UnimplementedScoringServiceServer\) ScoreAgentCard\(context.Context, \*ScoreAgentCardRequest\) \(\*ScoreAgentCardResponse, error\)](<#UnimplementedScoringServiceServer.ScoreAgentCard>)
+  - [func \(UnimplementedScoringServiceServer\) ValidateRule\(context.Context, \*ValidateRuleRequest\) \(\*ValidateRuleResponse, error\)](<#UnimplementedScoringServiceServer.ValidateRule>)
+- [type UnimplementedSimpleGuardServiceServer](<#UnimplementedSimpleGuardServiceServer>)
+  - [func \(UnimplementedSimpleGuardServiceServer\) ExportKey\(context.Context, \*ExportKeyRequest\) \(\*ExportKeyResponse, error\)](<#UnimplementedSimpleGuardServiceServer.ExportKey>)
+  - [func \(UnimplementedSimpleGuardServiceServer\) GenerateKeyPair\(context.Context, \*GenerateKeyPairRequest\) \(\*GenerateKeyPairResponse, error\)](<#UnimplementedSimpleGuardServiceServer.GenerateKeyPair>)
+  - [func \(UnimplementedSimpleGuardServiceServer\) GetKeyInfo\(context.Context, \*GetKeyInfoRequest\) \(\*GetKeyInfoResponse, error\)](<#UnimplementedSimpleGuardServiceServer.GetKeyInfo>)
+  - [func \(UnimplementedSimpleGuardServiceServer\) LoadKey\(context.Context, \*LoadKeyRequest\) \(\*LoadKeyResponse, error\)](<#UnimplementedSimpleGuardServiceServer.LoadKey>)
+  - [func \(UnimplementedSimpleGuardServiceServer\) Sign\(context.Context, \*SignRequest\) \(\*SignResponse, error\)](<#UnimplementedSimpleGuardServiceServer.Sign>)
+  - [func \(UnimplementedSimpleGuardServiceServer\) SignAttached\(context.Context, \*SignAttachedRequest\) \(\*SignAttachedResponse, error\)](<#UnimplementedSimpleGuardServiceServer.SignAttached>)
+  - [func \(UnimplementedSimpleGuardServiceServer\) Verify\(context.Context, \*VerifyRequest\) \(\*VerifyResponse, error\)](<#UnimplementedSimpleGuardServiceServer.Verify>)
+  - [func \(UnimplementedSimpleGuardServiceServer\) VerifyAttached\(context.Context, \*VerifyAttachedRequest\) \(\*VerifyAttachedResponse, error\)](<#UnimplementedSimpleGuardServiceServer.VerifyAttached>)
+- [type UnimplementedTrustStoreServiceServer](<#UnimplementedTrustStoreServiceServer>)
+  - [func \(UnimplementedTrustStoreServiceServer\) AddKey\(context.Context, \*AddKeyRequest\) \(\*AddKeyResponse, error\)](<#UnimplementedTrustStoreServiceServer.AddKey>)
+  - [func \(UnimplementedTrustStoreServiceServer\) Clear\(context.Context, \*ClearKeysRequest\) \(\*ClearKeysResponse, error\)](<#UnimplementedTrustStoreServiceServer.Clear>)
+  - [func \(UnimplementedTrustStoreServiceServer\) ExportToDirectory\(context.Context, \*ExportToDirectoryRequest\) \(\*ExportToDirectoryResponse, error\)](<#UnimplementedTrustStoreServiceServer.ExportToDirectory>)
+  - [func \(UnimplementedTrustStoreServiceServer\) GetKey\(context.Context, \*GetKeyRequest\) \(\*GetKeyResponse, error\)](<#UnimplementedTrustStoreServiceServer.GetKey>)
+  - [func \(UnimplementedTrustStoreServiceServer\) ImportFromDirectory\(context.Context, \*ImportFromDirectoryRequest\) \(\*ImportFromDirectoryResponse, error\)](<#UnimplementedTrustStoreServiceServer.ImportFromDirectory>)
+  - [func \(UnimplementedTrustStoreServiceServer\) IsTrusted\(context.Context, \*IsTrustedRequest\) \(\*IsTrustedResponse, error\)](<#UnimplementedTrustStoreServiceServer.IsTrusted>)
+  - [func \(UnimplementedTrustStoreServiceServer\) ListKeys\(context.Context, \*ListKeysRequest\) \(\*ListKeysResponse, error\)](<#UnimplementedTrustStoreServiceServer.ListKeys>)
+  - [func \(UnimplementedTrustStoreServiceServer\) RemoveKey\(context.Context, \*RemoveKeyRequest\) \(\*RemoveKeyResponse, error\)](<#UnimplementedTrustStoreServiceServer.RemoveKey>)
+- [type UnrevokeRequest](<#UnrevokeRequest>)
+  - [func \(\*UnrevokeRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#UnrevokeRequest.Descriptor>)
+  - [func \(x \*UnrevokeRequest\) GetSubject\(\) string](<#UnrevokeRequest.GetSubject>)
+  - [func \(\*UnrevokeRequest\) ProtoMessage\(\)](<#UnrevokeRequest.ProtoMessage>)
+  - [func \(x \*UnrevokeRequest\) ProtoReflect\(\) protoreflect.Message](<#UnrevokeRequest.ProtoReflect>)
+  - [func \(x \*UnrevokeRequest\) Reset\(\)](<#UnrevokeRequest.Reset>)
+  - [func \(x \*UnrevokeRequest\) String\(\) string](<#UnrevokeRequest.String>)
+- [type UnrevokeResponse](<#UnrevokeResponse>)
+  - [func \(\*UnrevokeResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#UnrevokeResponse.Descriptor>)
+  - [func \(x \*UnrevokeResponse\) GetErrorMessage\(\) string](<#UnrevokeResponse.GetErrorMessage>)
+  - [func \(x \*UnrevokeResponse\) GetWasRevoked\(\) bool](<#UnrevokeResponse.GetWasRevoked>)
+  - [func \(\*UnrevokeResponse\) ProtoMessage\(\)](<#UnrevokeResponse.ProtoMessage>)
+  - [func \(x \*UnrevokeResponse\) ProtoReflect\(\) protoreflect.Message](<#UnrevokeResponse.ProtoReflect>)
+  - [func \(x \*UnrevokeResponse\) Reset\(\)](<#UnrevokeResponse.Reset>)
+  - [func \(x \*UnrevokeResponse\) String\(\) string](<#UnrevokeResponse.String>)
+- [type UnsafeBadgeServiceServer](<#UnsafeBadgeServiceServer>)
+- [type UnsafeDIDServiceServer](<#UnsafeDIDServiceServer>)
+- [type UnsafeMCPServiceServer](<#UnsafeMCPServiceServer>)
+- [type UnsafeRegistryServiceServer](<#UnsafeRegistryServiceServer>)
+- [type UnsafeRevocationServiceServer](<#UnsafeRevocationServiceServer>)
+- [type UnsafeScoringServiceServer](<#UnsafeScoringServiceServer>)
+- [type UnsafeSimpleGuardServiceServer](<#UnsafeSimpleGuardServiceServer>)
+- [type UnsafeTrustStoreServiceServer](<#UnsafeTrustStoreServiceServer>)
+- [type UpdateAgentRequest](<#UpdateAgentRequest>)
+  - [func \(\*UpdateAgentRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#UpdateAgentRequest.Descriptor>)
+  - [func \(x \*UpdateAgentRequest\) GetAgentCardJson\(\) string](<#UpdateAgentRequest.GetAgentCardJson>)
+  - [func \(x \*UpdateAgentRequest\) GetDid\(\) string](<#UpdateAgentRequest.GetDid>)
+  - [func \(x \*UpdateAgentRequest\) GetMetadata\(\) map\[string\]string](<#UpdateAgentRequest.GetMetadata>)
+  - [func \(x \*UpdateAgentRequest\) GetSignedBadge\(\) string](<#UpdateAgentRequest.GetSignedBadge>)
+  - [func \(x \*UpdateAgentRequest\) GetTags\(\) \[\]string](<#UpdateAgentRequest.GetTags>)
+  - [func \(\*UpdateAgentRequest\) ProtoMessage\(\)](<#UpdateAgentRequest.ProtoMessage>)
+  - [func \(x \*UpdateAgentRequest\) ProtoReflect\(\) protoreflect.Message](<#UpdateAgentRequest.ProtoReflect>)
+  - [func \(x \*UpdateAgentRequest\) Reset\(\)](<#UpdateAgentRequest.Reset>)
+  - [func \(x \*UpdateAgentRequest\) String\(\) string](<#UpdateAgentRequest.String>)
+- [type UpdateAgentResponse](<#UpdateAgentResponse>)
+  - [func \(\*UpdateAgentResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#UpdateAgentResponse.Descriptor>)
+  - [func \(x \*UpdateAgentResponse\) GetAgent\(\) \*RegisteredAgent](<#UpdateAgentResponse.GetAgent>)
+  - [func \(x \*UpdateAgentResponse\) GetErrorMessage\(\) string](<#UpdateAgentResponse.GetErrorMessage>)
+  - [func \(\*UpdateAgentResponse\) ProtoMessage\(\)](<#UpdateAgentResponse.ProtoMessage>)
+  - [func \(x \*UpdateAgentResponse\) ProtoReflect\(\) protoreflect.Message](<#UpdateAgentResponse.ProtoReflect>)
+  - [func \(x \*UpdateAgentResponse\) Reset\(\)](<#UpdateAgentResponse.Reset>)
+  - [func \(x \*UpdateAgentResponse\) String\(\) string](<#UpdateAgentResponse.String>)
+- [type ValidateRuleRequest](<#ValidateRuleRequest>)
+  - [func \(\*ValidateRuleRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ValidateRuleRequest.Descriptor>)
+  - [func \(x \*ValidateRuleRequest\) GetAgentCardJson\(\) string](<#ValidateRuleRequest.GetAgentCardJson>)
+  - [func \(x \*ValidateRuleRequest\) GetRuleId\(\) string](<#ValidateRuleRequest.GetRuleId>)
+  - [func \(\*ValidateRuleRequest\) ProtoMessage\(\)](<#ValidateRuleRequest.ProtoMessage>)
+  - [func \(x \*ValidateRuleRequest\) ProtoReflect\(\) protoreflect.Message](<#ValidateRuleRequest.ProtoReflect>)
+  - [func \(x \*ValidateRuleRequest\) Reset\(\)](<#ValidateRuleRequest.Reset>)
+  - [func \(x \*ValidateRuleRequest\) String\(\) string](<#ValidateRuleRequest.String>)
+- [type ValidateRuleResponse](<#ValidateRuleResponse>)
+  - [func \(\*ValidateRuleResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ValidateRuleResponse.Descriptor>)
+  - [func \(x \*ValidateRuleResponse\) GetErrorMessage\(\) string](<#ValidateRuleResponse.GetErrorMessage>)
+  - [func \(x \*ValidateRuleResponse\) GetResult\(\) \*RuleResult](<#ValidateRuleResponse.GetResult>)
+  - [func \(\*ValidateRuleResponse\) ProtoMessage\(\)](<#ValidateRuleResponse.ProtoMessage>)
+  - [func \(x \*ValidateRuleResponse\) ProtoReflect\(\) protoreflect.Message](<#ValidateRuleResponse.ProtoReflect>)
+  - [func \(x \*ValidateRuleResponse\) Reset\(\)](<#ValidateRuleResponse.Reset>)
+  - [func \(x \*ValidateRuleResponse\) String\(\) string](<#ValidateRuleResponse.String>)
+- [type ValidationIssue](<#ValidationIssue>)
+  - [func \(\*ValidationIssue\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ValidationIssue.Descriptor>)
+  - [func \(x \*ValidationIssue\) GetCode\(\) string](<#ValidationIssue.GetCode>)
+  - [func \(x \*ValidationIssue\) GetDetails\(\) string](<#ValidationIssue.GetDetails>)
+  - [func \(x \*ValidationIssue\) GetField\(\) string](<#ValidationIssue.GetField>)
+  - [func \(x \*ValidationIssue\) GetMessage\(\) string](<#ValidationIssue.GetMessage>)
+  - [func \(x \*ValidationIssue\) GetSeverity\(\) ValidationSeverity](<#ValidationIssue.GetSeverity>)
+  - [func \(\*ValidationIssue\) ProtoMessage\(\)](<#ValidationIssue.ProtoMessage>)
+  - [func \(x \*ValidationIssue\) ProtoReflect\(\) protoreflect.Message](<#ValidationIssue.ProtoReflect>)
+  - [func \(x \*ValidationIssue\) Reset\(\)](<#ValidationIssue.Reset>)
+  - [func \(x \*ValidationIssue\) String\(\) string](<#ValidationIssue.String>)
+- [type ValidationResult](<#ValidationResult>)
+  - [func \(\*ValidationResult\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#ValidationResult.Descriptor>)
+  - [func \(x \*ValidationResult\) GetIssues\(\) \[\]\*ValidationIssue](<#ValidationResult.GetIssues>)
+  - [func \(x \*ValidationResult\) GetValid\(\) bool](<#ValidationResult.GetValid>)
+  - [func \(x \*ValidationResult\) GetValidatedAt\(\) string](<#ValidationResult.GetValidatedAt>)
+  - [func \(\*ValidationResult\) ProtoMessage\(\)](<#ValidationResult.ProtoMessage>)
+  - [func \(x \*ValidationResult\) ProtoReflect\(\) protoreflect.Message](<#ValidationResult.ProtoReflect>)
+  - [func \(x \*ValidationResult\) Reset\(\)](<#ValidationResult.Reset>)
+  - [func \(x \*ValidationResult\) String\(\) string](<#ValidationResult.String>)
+- [type ValidationSeverity](<#ValidationSeverity>)
+  - [func \(ValidationSeverity\) Descriptor\(\) protoreflect.EnumDescriptor](<#ValidationSeverity.Descriptor>)
+  - [func \(x ValidationSeverity\) Enum\(\) \*ValidationSeverity](<#ValidationSeverity.Enum>)
+  - [func \(ValidationSeverity\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#ValidationSeverity.EnumDescriptor>)
+  - [func \(x ValidationSeverity\) Number\(\) protoreflect.EnumNumber](<#ValidationSeverity.Number>)
+  - [func \(x ValidationSeverity\) String\(\) string](<#ValidationSeverity.String>)
+  - [func \(ValidationSeverity\) Type\(\) protoreflect.EnumType](<#ValidationSeverity.Type>)
+- [type VerifyAttachedRequest](<#VerifyAttachedRequest>)
+  - [func \(\*VerifyAttachedRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#VerifyAttachedRequest.Descriptor>)
+  - [func \(x \*VerifyAttachedRequest\) GetDetachedPayload\(\) \[\]byte](<#VerifyAttachedRequest.GetDetachedPayload>)
+  - [func \(x \*VerifyAttachedRequest\) GetExpectedSigner\(\) string](<#VerifyAttachedRequest.GetExpectedSigner>)
+  - [func \(x \*VerifyAttachedRequest\) GetJws\(\) string](<#VerifyAttachedRequest.GetJws>)
+  - [func \(\*VerifyAttachedRequest\) ProtoMessage\(\)](<#VerifyAttachedRequest.ProtoMessage>)
+  - [func \(x \*VerifyAttachedRequest\) ProtoReflect\(\) protoreflect.Message](<#VerifyAttachedRequest.ProtoReflect>)
+  - [func \(x \*VerifyAttachedRequest\) Reset\(\)](<#VerifyAttachedRequest.Reset>)
+  - [func \(x \*VerifyAttachedRequest\) String\(\) string](<#VerifyAttachedRequest.String>)
+- [type VerifyAttachedResponse](<#VerifyAttachedResponse>)
+  - [func \(\*VerifyAttachedResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#VerifyAttachedResponse.Descriptor>)
+  - [func \(x \*VerifyAttachedResponse\) GetErrorMessage\(\) string](<#VerifyAttachedResponse.GetErrorMessage>)
+  - [func \(x \*VerifyAttachedResponse\) GetKeyId\(\) string](<#VerifyAttachedResponse.GetKeyId>)
+  - [func \(x \*VerifyAttachedResponse\) GetPayload\(\) \[\]byte](<#VerifyAttachedResponse.GetPayload>)
+  - [func \(x \*VerifyAttachedResponse\) GetSignerDid\(\) string](<#VerifyAttachedResponse.GetSignerDid>)
+  - [func \(x \*VerifyAttachedResponse\) GetValid\(\) bool](<#VerifyAttachedResponse.GetValid>)
+  - [func \(x \*VerifyAttachedResponse\) GetValidation\(\) \*ValidationResult](<#VerifyAttachedResponse.GetValidation>)
+  - [func \(\*VerifyAttachedResponse\) ProtoMessage\(\)](<#VerifyAttachedResponse.ProtoMessage>)
+  - [func \(x \*VerifyAttachedResponse\) ProtoReflect\(\) protoreflect.Message](<#VerifyAttachedResponse.ProtoReflect>)
+  - [func \(x \*VerifyAttachedResponse\) Reset\(\)](<#VerifyAttachedResponse.Reset>)
+  - [func \(x \*VerifyAttachedResponse\) String\(\) string](<#VerifyAttachedResponse.String>)
+- [type VerifyBadgeRequest](<#VerifyBadgeRequest>)
+  - [func \(\*VerifyBadgeRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#VerifyBadgeRequest.Descriptor>)
+  - [func \(x \*VerifyBadgeRequest\) GetPublicKeyJwk\(\) string](<#VerifyBadgeRequest.GetPublicKeyJwk>)
+  - [func \(x \*VerifyBadgeRequest\) GetToken\(\) string](<#VerifyBadgeRequest.GetToken>)
+  - [func \(\*VerifyBadgeRequest\) ProtoMessage\(\)](<#VerifyBadgeRequest.ProtoMessage>)
+  - [func \(x \*VerifyBadgeRequest\) ProtoReflect\(\) protoreflect.Message](<#VerifyBadgeRequest.ProtoReflect>)
+  - [func \(x \*VerifyBadgeRequest\) Reset\(\)](<#VerifyBadgeRequest.Reset>)
+  - [func \(x \*VerifyBadgeRequest\) String\(\) string](<#VerifyBadgeRequest.String>)
+- [type VerifyBadgeResponse](<#VerifyBadgeResponse>)
+  - [func \(\*VerifyBadgeResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#VerifyBadgeResponse.Descriptor>)
+  - [func \(x \*VerifyBadgeResponse\) GetClaims\(\) \*BadgeClaims](<#VerifyBadgeResponse.GetClaims>)
+  - [func \(x \*VerifyBadgeResponse\) GetErrorCode\(\) string](<#VerifyBadgeResponse.GetErrorCode>)
+  - [func \(x \*VerifyBadgeResponse\) GetErrorMessage\(\) string](<#VerifyBadgeResponse.GetErrorMessage>)
+  - [func \(x \*VerifyBadgeResponse\) GetModeUsed\(\) VerifyMode](<#VerifyBadgeResponse.GetModeUsed>)
+  - [func \(x \*VerifyBadgeResponse\) GetValid\(\) bool](<#VerifyBadgeResponse.GetValid>)
+  - [func \(x \*VerifyBadgeResponse\) GetWarnings\(\) \[\]string](<#VerifyBadgeResponse.GetWarnings>)
+  - [func \(\*VerifyBadgeResponse\) ProtoMessage\(\)](<#VerifyBadgeResponse.ProtoMessage>)
+  - [func \(x \*VerifyBadgeResponse\) ProtoReflect\(\) protoreflect.Message](<#VerifyBadgeResponse.ProtoReflect>)
+  - [func \(x \*VerifyBadgeResponse\) Reset\(\)](<#VerifyBadgeResponse.Reset>)
+  - [func \(x \*VerifyBadgeResponse\) String\(\) string](<#VerifyBadgeResponse.String>)
+- [type VerifyBadgeWithOptionsRequest](<#VerifyBadgeWithOptionsRequest>)
+  - [func \(\*VerifyBadgeWithOptionsRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#VerifyBadgeWithOptionsRequest.Descriptor>)
+  - [func \(x \*VerifyBadgeWithOptionsRequest\) GetOptions\(\) \*VerifyOptions](<#VerifyBadgeWithOptionsRequest.GetOptions>)
+  - [func \(x \*VerifyBadgeWithOptionsRequest\) GetToken\(\) string](<#VerifyBadgeWithOptionsRequest.GetToken>)
+  - [func \(\*VerifyBadgeWithOptionsRequest\) ProtoMessage\(\)](<#VerifyBadgeWithOptionsRequest.ProtoMessage>)
+  - [func \(x \*VerifyBadgeWithOptionsRequest\) ProtoReflect\(\) protoreflect.Message](<#VerifyBadgeWithOptionsRequest.ProtoReflect>)
+  - [func \(x \*VerifyBadgeWithOptionsRequest\) Reset\(\)](<#VerifyBadgeWithOptionsRequest.Reset>)
+  - [func \(x \*VerifyBadgeWithOptionsRequest\) String\(\) string](<#VerifyBadgeWithOptionsRequest.String>)
+- [type VerifyMode](<#VerifyMode>)
+  - [func \(VerifyMode\) Descriptor\(\) protoreflect.EnumDescriptor](<#VerifyMode.Descriptor>)
+  - [func \(x VerifyMode\) Enum\(\) \*VerifyMode](<#VerifyMode.Enum>)
+  - [func \(VerifyMode\) EnumDescriptor\(\) \(\[\]byte, \[\]int\)](<#VerifyMode.EnumDescriptor>)
+  - [func \(x VerifyMode\) Number\(\) protoreflect.EnumNumber](<#VerifyMode.Number>)
+  - [func \(x VerifyMode\) String\(\) string](<#VerifyMode.String>)
+  - [func \(VerifyMode\) Type\(\) protoreflect.EnumType](<#VerifyMode.Type>)
+- [type VerifyOptions](<#VerifyOptions>)
+  - [func \(\*VerifyOptions\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#VerifyOptions.Descriptor>)
+  - [func \(x \*VerifyOptions\) GetAcceptSelfSigned\(\) bool](<#VerifyOptions.GetAcceptSelfSigned>)
+  - [func \(x \*VerifyOptions\) GetAudience\(\) string](<#VerifyOptions.GetAudience>)
+  - [func \(x \*VerifyOptions\) GetClockToleranceSeconds\(\) int64](<#VerifyOptions.GetClockToleranceSeconds>)
+  - [func \(x \*VerifyOptions\) GetFailOpen\(\) bool](<#VerifyOptions.GetFailOpen>)
+  - [func \(x \*VerifyOptions\) GetMode\(\) VerifyMode](<#VerifyOptions.GetMode>)
+  - [func \(x \*VerifyOptions\) GetRegistryUrl\(\) string](<#VerifyOptions.GetRegistryUrl>)
+  - [func \(x \*VerifyOptions\) GetSkipAgentStatus\(\) bool](<#VerifyOptions.GetSkipAgentStatus>)
+  - [func \(x \*VerifyOptions\) GetSkipRevocation\(\) bool](<#VerifyOptions.GetSkipRevocation>)
+  - [func \(x \*VerifyOptions\) GetStaleThresholdSeconds\(\) int64](<#VerifyOptions.GetStaleThresholdSeconds>)
+  - [func \(x \*VerifyOptions\) GetTrustedIssuers\(\) \[\]string](<#VerifyOptions.GetTrustedIssuers>)
+  - [func \(\*VerifyOptions\) ProtoMessage\(\)](<#VerifyOptions.ProtoMessage>)
+  - [func \(x \*VerifyOptions\) ProtoReflect\(\) protoreflect.Message](<#VerifyOptions.ProtoReflect>)
+  - [func \(x \*VerifyOptions\) Reset\(\)](<#VerifyOptions.Reset>)
+  - [func \(x \*VerifyOptions\) String\(\) string](<#VerifyOptions.String>)
+- [type VerifyRegistrationRequest](<#VerifyRegistrationRequest>)
+  - [func \(\*VerifyRegistrationRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#VerifyRegistrationRequest.Descriptor>)
+  - [func \(x \*VerifyRegistrationRequest\) GetDid\(\) string](<#VerifyRegistrationRequest.GetDid>)
+  - [func \(x \*VerifyRegistrationRequest\) GetVerifyBadge\(\) bool](<#VerifyRegistrationRequest.GetVerifyBadge>)
+  - [func \(x \*VerifyRegistrationRequest\) GetVerifyKeys\(\) bool](<#VerifyRegistrationRequest.GetVerifyKeys>)
+  - [func \(\*VerifyRegistrationRequest\) ProtoMessage\(\)](<#VerifyRegistrationRequest.ProtoMessage>)
+  - [func \(x \*VerifyRegistrationRequest\) ProtoReflect\(\) protoreflect.Message](<#VerifyRegistrationRequest.ProtoReflect>)
+  - [func \(x \*VerifyRegistrationRequest\) Reset\(\)](<#VerifyRegistrationRequest.Reset>)
+  - [func \(x \*VerifyRegistrationRequest\) String\(\) string](<#VerifyRegistrationRequest.String>)
+- [type VerifyRegistrationResponse](<#VerifyRegistrationResponse>)
+  - [func \(\*VerifyRegistrationResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#VerifyRegistrationResponse.Descriptor>)
+  - [func \(x \*VerifyRegistrationResponse\) GetBadgeValid\(\) bool](<#VerifyRegistrationResponse.GetBadgeValid>)
+  - [func \(x \*VerifyRegistrationResponse\) GetErrorMessage\(\) string](<#VerifyRegistrationResponse.GetErrorMessage>)
+  - [func \(x \*VerifyRegistrationResponse\) GetIsRegistered\(\) bool](<#VerifyRegistrationResponse.GetIsRegistered>)
+  - [func \(x \*VerifyRegistrationResponse\) GetKeysValid\(\) bool](<#VerifyRegistrationResponse.GetKeysValid>)
+  - [func \(x \*VerifyRegistrationResponse\) GetValidation\(\) \*ValidationResult](<#VerifyRegistrationResponse.GetValidation>)
+  - [func \(\*VerifyRegistrationResponse\) ProtoMessage\(\)](<#VerifyRegistrationResponse.ProtoMessage>)
+  - [func \(x \*VerifyRegistrationResponse\) ProtoReflect\(\) protoreflect.Message](<#VerifyRegistrationResponse.ProtoReflect>)
+  - [func \(x \*VerifyRegistrationResponse\) Reset\(\)](<#VerifyRegistrationResponse.Reset>)
+  - [func \(x \*VerifyRegistrationResponse\) String\(\) string](<#VerifyRegistrationResponse.String>)
+- [type VerifyRequest](<#VerifyRequest>)
+  - [func \(\*VerifyRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#VerifyRequest.Descriptor>)
+  - [func \(x \*VerifyRequest\) GetExpectedSigner\(\) string](<#VerifyRequest.GetExpectedSigner>)
+  - [func \(x \*VerifyRequest\) GetPayload\(\) \[\]byte](<#VerifyRequest.GetPayload>)
+  - [func \(x \*VerifyRequest\) GetSignature\(\) \[\]byte](<#VerifyRequest.GetSignature>)
+  - [func \(x \*VerifyRequest\) GetSignatureString\(\) string](<#VerifyRequest.GetSignatureString>)
+  - [func \(\*VerifyRequest\) ProtoMessage\(\)](<#VerifyRequest.ProtoMessage>)
+  - [func \(x \*VerifyRequest\) ProtoReflect\(\) protoreflect.Message](<#VerifyRequest.ProtoReflect>)
+  - [func \(x \*VerifyRequest\) Reset\(\)](<#VerifyRequest.Reset>)
+  - [func \(x \*VerifyRequest\) String\(\) string](<#VerifyRequest.String>)
+- [type VerifyResponse](<#VerifyResponse>)
+  - [func \(\*VerifyResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#VerifyResponse.Descriptor>)
+  - [func \(x \*VerifyResponse\) GetErrorMessage\(\) string](<#VerifyResponse.GetErrorMessage>)
+  - [func \(x \*VerifyResponse\) GetKeyId\(\) string](<#VerifyResponse.GetKeyId>)
+  - [func \(x \*VerifyResponse\) GetSignerDid\(\) string](<#VerifyResponse.GetSignerDid>)
+  - [func \(x \*VerifyResponse\) GetValid\(\) bool](<#VerifyResponse.GetValid>)
+  - [func \(x \*VerifyResponse\) GetValidation\(\) \*ValidationResult](<#VerifyResponse.GetValidation>)
+  - [func \(\*VerifyResponse\) ProtoMessage\(\)](<#VerifyResponse.ProtoMessage>)
+  - [func \(x \*VerifyResponse\) ProtoReflect\(\) protoreflect.Message](<#VerifyResponse.ProtoReflect>)
+  - [func \(x \*VerifyResponse\) Reset\(\)](<#VerifyResponse.Reset>)
+  - [func \(x \*VerifyResponse\) String\(\) string](<#VerifyResponse.String>)
+- [type VerifyServerIdentityRequest](<#VerifyServerIdentityRequest>)
+  - [func \(\*VerifyServerIdentityRequest\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#VerifyServerIdentityRequest.Descriptor>)
+  - [func \(x \*VerifyServerIdentityRequest\) GetConfig\(\) \*MCPVerifyConfig](<#VerifyServerIdentityRequest.GetConfig>)
+  - [func \(x \*VerifyServerIdentityRequest\) GetEndpointPath\(\) string](<#VerifyServerIdentityRequest.GetEndpointPath>)
+  - [func \(x \*VerifyServerIdentityRequest\) GetServerBadge\(\) string](<#VerifyServerIdentityRequest.GetServerBadge>)
+  - [func \(x \*VerifyServerIdentityRequest\) GetServerDid\(\) string](<#VerifyServerIdentityRequest.GetServerDid>)
+  - [func \(x \*VerifyServerIdentityRequest\) GetTransportOrigin\(\) string](<#VerifyServerIdentityRequest.GetTransportOrigin>)
+  - [func \(\*VerifyServerIdentityRequest\) ProtoMessage\(\)](<#VerifyServerIdentityRequest.ProtoMessage>)
+  - [func \(x \*VerifyServerIdentityRequest\) ProtoReflect\(\) protoreflect.Message](<#VerifyServerIdentityRequest.ProtoReflect>)
+  - [func \(x \*VerifyServerIdentityRequest\) Reset\(\)](<#VerifyServerIdentityRequest.Reset>)
+  - [func \(x \*VerifyServerIdentityRequest\) String\(\) string](<#VerifyServerIdentityRequest.String>)
+- [type VerifyServerIdentityResponse](<#VerifyServerIdentityResponse>)
+  - [func \(\*VerifyServerIdentityResponse\) Descriptor\(\) \(\[\]byte, \[\]int\)](<#VerifyServerIdentityResponse.Descriptor>)
+  - [func \(x \*VerifyServerIdentityResponse\) GetBadgeJti\(\) string](<#VerifyServerIdentityResponse.GetBadgeJti>)
+  - [func \(x \*VerifyServerIdentityResponse\) GetErrorCode\(\) MCPServerErrorCode](<#VerifyServerIdentityResponse.GetErrorCode>)
+  - [func \(x \*VerifyServerIdentityResponse\) GetErrorDetail\(\) string](<#VerifyServerIdentityResponse.GetErrorDetail>)
+  - [func \(x \*VerifyServerIdentityResponse\) GetServerDid\(\) string](<#VerifyServerIdentityResponse.GetServerDid>)
+  - [func \(x \*VerifyServerIdentityResponse\) GetState\(\) MCPServerState](<#VerifyServerIdentityResponse.GetState>)
+  - [func \(x \*VerifyServerIdentityResponse\) GetTrustLevel\(\) int32](<#VerifyServerIdentityResponse.GetTrustLevel>)
+  - [func \(\*VerifyServerIdentityResponse\) ProtoMessage\(\)](<#VerifyServerIdentityResponse.ProtoMessage>)
+  - [func \(x \*VerifyServerIdentityResponse\) ProtoReflect\(\) protoreflect.Message](<#VerifyServerIdentityResponse.ProtoReflect>)
+  - [func \(x \*VerifyServerIdentityResponse\) Reset\(\)](<#VerifyServerIdentityResponse.Reset>)
+  - [func \(x \*VerifyServerIdentityResponse\) String\(\) string](<#VerifyServerIdentityResponse.String>)
+
+
+## Constants
+
+<a name="BadgeService_SignBadge_FullMethodName"></a>
+
+```go
+const (
+    BadgeService_SignBadge_FullMethodName              = "/capiscio.v1.BadgeService/SignBadge"
+    BadgeService_VerifyBadge_FullMethodName            = "/capiscio.v1.BadgeService/VerifyBadge"
+    BadgeService_VerifyBadgeWithOptions_FullMethodName = "/capiscio.v1.BadgeService/VerifyBadgeWithOptions"
+    BadgeService_ParseBadge_FullMethodName             = "/capiscio.v1.BadgeService/ParseBadge"
+    BadgeService_RequestBadge_FullMethodName           = "/capiscio.v1.BadgeService/RequestBadge"
+    BadgeService_RequestPoPBadge_FullMethodName        = "/capiscio.v1.BadgeService/RequestPoPBadge"
+    BadgeService_CreateDVOrder_FullMethodName          = "/capiscio.v1.BadgeService/CreateDVOrder"
+    BadgeService_GetDVOrder_FullMethodName             = "/capiscio.v1.BadgeService/GetDVOrder"
+    BadgeService_FinalizeDVOrder_FullMethodName        = "/capiscio.v1.BadgeService/FinalizeDVOrder"
+    BadgeService_StartKeeper_FullMethodName            = "/capiscio.v1.BadgeService/StartKeeper"
+)
+```
+
+<a name="DIDService_Parse_FullMethodName"></a>
+
+```go
+const (
+    DIDService_Parse_FullMethodName               = "/capiscio.v1.DIDService/Parse"
+    DIDService_NewAgentDID_FullMethodName         = "/capiscio.v1.DIDService/NewAgentDID"
+    DIDService_NewCapiscIOAgentDID_FullMethodName = "/capiscio.v1.DIDService/NewCapiscIOAgentDID"
+    DIDService_DocumentURL_FullMethodName         = "/capiscio.v1.DIDService/DocumentURL"
+    DIDService_IsAgentDID_FullMethodName          = "/capiscio.v1.DIDService/IsAgentDID"
+)
+```
+
+<a name="MCPService_EvaluateToolAccess_FullMethodName"></a>
+
+```go
+const (
+    MCPService_EvaluateToolAccess_FullMethodName   = "/capiscio.v1.MCPService/EvaluateToolAccess"
+    MCPService_VerifyServerIdentity_FullMethodName = "/capiscio.v1.MCPService/VerifyServerIdentity"
+    MCPService_ParseServerIdentity_FullMethodName  = "/capiscio.v1.MCPService/ParseServerIdentity"
+    MCPService_Health_FullMethodName               = "/capiscio.v1.MCPService/Health"
+)
+```
+
+<a name="RegistryService_GetAgent_FullMethodName"></a>
+
+```go
+const (
+    RegistryService_GetAgent_FullMethodName           = "/capiscio.v1.RegistryService/GetAgent"
+    RegistryService_SearchAgents_FullMethodName       = "/capiscio.v1.RegistryService/SearchAgents"
+    RegistryService_RegisterAgent_FullMethodName      = "/capiscio.v1.RegistryService/RegisterAgent"
+    RegistryService_UpdateAgent_FullMethodName        = "/capiscio.v1.RegistryService/UpdateAgent"
+    RegistryService_DeregisterAgent_FullMethodName    = "/capiscio.v1.RegistryService/DeregisterAgent"
+    RegistryService_VerifyRegistration_FullMethodName = "/capiscio.v1.RegistryService/VerifyRegistration"
+    RegistryService_ListAgents_FullMethodName         = "/capiscio.v1.RegistryService/ListAgents"
+    RegistryService_GetStats_FullMethodName           = "/capiscio.v1.RegistryService/GetStats"
+    RegistryService_Ping_FullMethodName               = "/capiscio.v1.RegistryService/Ping"
+)
+```
+
+<a name="RevocationService_IsRevoked_FullMethodName"></a>
+
+```go
+const (
+    RevocationService_IsRevoked_FullMethodName           = "/capiscio.v1.RevocationService/IsRevoked"
+    RevocationService_Revoke_FullMethodName              = "/capiscio.v1.RevocationService/Revoke"
+    RevocationService_Unrevoke_FullMethodName            = "/capiscio.v1.RevocationService/Unrevoke"
+    RevocationService_ListRevocations_FullMethodName     = "/capiscio.v1.RevocationService/ListRevocations"
+    RevocationService_FetchRevocationList_FullMethodName = "/capiscio.v1.RevocationService/FetchRevocationList"
+    RevocationService_ClearCache_FullMethodName          = "/capiscio.v1.RevocationService/ClearCache"
+    RevocationService_GetCacheStats_FullMethodName       = "/capiscio.v1.RevocationService/GetCacheStats"
+)
+```
+
+<a name="ScoringService_ScoreAgentCard_FullMethodName"></a>
+
+```go
+const (
+    ScoringService_ScoreAgentCard_FullMethodName  = "/capiscio.v1.ScoringService/ScoreAgentCard"
+    ScoringService_ValidateRule_FullMethodName    = "/capiscio.v1.ScoringService/ValidateRule"
+    ScoringService_ListRuleSets_FullMethodName    = "/capiscio.v1.ScoringService/ListRuleSets"
+    ScoringService_GetRuleSet_FullMethodName      = "/capiscio.v1.ScoringService/GetRuleSet"
+    ScoringService_AggregateScores_FullMethodName = "/capiscio.v1.ScoringService/AggregateScores"
+)
+```
+
+<a name="SimpleGuardService_Sign_FullMethodName"></a>
+
+```go
+const (
+    SimpleGuardService_Sign_FullMethodName            = "/capiscio.v1.SimpleGuardService/Sign"
+    SimpleGuardService_Verify_FullMethodName          = "/capiscio.v1.SimpleGuardService/Verify"
+    SimpleGuardService_SignAttached_FullMethodName    = "/capiscio.v1.SimpleGuardService/SignAttached"
+    SimpleGuardService_VerifyAttached_FullMethodName  = "/capiscio.v1.SimpleGuardService/VerifyAttached"
+    SimpleGuardService_GenerateKeyPair_FullMethodName = "/capiscio.v1.SimpleGuardService/GenerateKeyPair"
+    SimpleGuardService_LoadKey_FullMethodName         = "/capiscio.v1.SimpleGuardService/LoadKey"
+    SimpleGuardService_ExportKey_FullMethodName       = "/capiscio.v1.SimpleGuardService/ExportKey"
+    SimpleGuardService_GetKeyInfo_FullMethodName      = "/capiscio.v1.SimpleGuardService/GetKeyInfo"
+)
+```
+
+<a name="TrustStoreService_AddKey_FullMethodName"></a>
+
+```go
+const (
+    TrustStoreService_AddKey_FullMethodName              = "/capiscio.v1.TrustStoreService/AddKey"
+    TrustStoreService_RemoveKey_FullMethodName           = "/capiscio.v1.TrustStoreService/RemoveKey"
+    TrustStoreService_GetKey_FullMethodName              = "/capiscio.v1.TrustStoreService/GetKey"
+    TrustStoreService_ListKeys_FullMethodName            = "/capiscio.v1.TrustStoreService/ListKeys"
+    TrustStoreService_IsTrusted_FullMethodName           = "/capiscio.v1.TrustStoreService/IsTrusted"
+    TrustStoreService_ImportFromDirectory_FullMethodName = "/capiscio.v1.TrustStoreService/ImportFromDirectory"
+    TrustStoreService_ExportToDirectory_FullMethodName   = "/capiscio.v1.TrustStoreService/ExportToDirectory"
+    TrustStoreService_Clear_FullMethodName               = "/capiscio.v1.TrustStoreService/Clear"
+)
+```
+
+## Variables
+
+<a name="TrustLevel_name"></a>Enum value maps for TrustLevel.
+
+```go
+var (
+    TrustLevel_name = map[int32]string{
+        0:  "TRUST_LEVEL_UNSPECIFIED",
+        1:  "TRUST_LEVEL_SELF_SIGNED",
+        2:  "TRUST_LEVEL_DV",
+        3:  "TRUST_LEVEL_OV",
+        4:  "TRUST_LEVEL_EV",
+        5:  "TRUST_LEVEL_CV",
+    }
+    TrustLevel_value = map[string]int32{
+        "TRUST_LEVEL_UNSPECIFIED": 0,
+        "TRUST_LEVEL_SELF_SIGNED": 1,
+        "TRUST_LEVEL_DV":          2,
+        "TRUST_LEVEL_OV":          3,
+        "TRUST_LEVEL_EV":          4,
+        "TRUST_LEVEL_CV":          5,
+    }
+)
+```
+
+<a name="VerifyMode_name"></a>Enum value maps for VerifyMode.
+
+```go
+var (
+    VerifyMode_name = map[int32]string{
+        0:  "VERIFY_MODE_UNSPECIFIED",
+        1:  "VERIFY_MODE_OFFLINE",
+        2:  "VERIFY_MODE_ONLINE",
+        3:  "VERIFY_MODE_HYBRID",
+    }
+    VerifyMode_value = map[string]int32{
+        "VERIFY_MODE_UNSPECIFIED": 0,
+        "VERIFY_MODE_OFFLINE":     1,
+        "VERIFY_MODE_ONLINE":      2,
+        "VERIFY_MODE_HYBRID":      3,
+    }
+)
+```
+
+<a name="KeeperMode_name"></a>Enum value maps for KeeperMode.
+
+```go
+var (
+    KeeperMode_name = map[int32]string{
+        0:  "KEEPER_MODE_UNSPECIFIED",
+        1:  "KEEPER_MODE_CA",
+        2:  "KEEPER_MODE_SELF_SIGN",
+    }
+    KeeperMode_value = map[string]int32{
+        "KEEPER_MODE_UNSPECIFIED": 0,
+        "KEEPER_MODE_CA":          1,
+        "KEEPER_MODE_SELF_SIGN":   2,
+    }
+)
+```
+
+<a name="KeeperEventType_name"></a>Enum value maps for KeeperEventType.
+
+```go
+var (
+    KeeperEventType_name = map[int32]string{
+        0:  "KEEPER_EVENT_UNSPECIFIED",
+        1:  "KEEPER_EVENT_STARTED",
+        2:  "KEEPER_EVENT_RENEWED",
+        3:  "KEEPER_EVENT_ERROR",
+        4:  "KEEPER_EVENT_STOPPED",
+    }
+    KeeperEventType_value = map[string]int32{
+        "KEEPER_EVENT_UNSPECIFIED": 0,
+        "KEEPER_EVENT_STARTED":     1,
+        "KEEPER_EVENT_RENEWED":     2,
+        "KEEPER_EVENT_ERROR":       3,
+        "KEEPER_EVENT_STOPPED":     4,
+    }
+)
+```
+
+<a name="ValidationSeverity_name"></a>Enum value maps for ValidationSeverity.
+
+```go
+var (
+    ValidationSeverity_name = map[int32]string{
+        0:  "VALIDATION_SEVERITY_UNSPECIFIED",
+        1:  "VALIDATION_SEVERITY_INFO",
+        2:  "VALIDATION_SEVERITY_WARNING",
+        3:  "VALIDATION_SEVERITY_ERROR",
+    }
+    ValidationSeverity_value = map[string]int32{
+        "VALIDATION_SEVERITY_UNSPECIFIED": 0,
+        "VALIDATION_SEVERITY_INFO":        1,
+        "VALIDATION_SEVERITY_WARNING":     2,
+        "VALIDATION_SEVERITY_ERROR":       3,
+    }
+)
+```
+
+<a name="Rating_name"></a>Enum value maps for Rating.
+
+```go
+var (
+    Rating_name = map[int32]string{
+        0:  "RATING_UNSPECIFIED",
+        1:  "RATING_CRITICAL",
+        2:  "RATING_POOR",
+        3:  "RATING_FAIR",
+        4:  "RATING_GOOD",
+        5:  "RATING_EXCELLENT",
+    }
+    Rating_value = map[string]int32{
+        "RATING_UNSPECIFIED": 0,
+        "RATING_CRITICAL":    1,
+        "RATING_POOR":        2,
+        "RATING_FAIR":        3,
+        "RATING_GOOD":        4,
+        "RATING_EXCELLENT":   5,
+    }
+)
+```
+
+<a name="MCPDecision_name"></a>Enum value maps for MCPDecision.
+
+```go
+var (
+    MCPDecision_name = map[int32]string{
+        0:  "MCP_DECISION_UNSPECIFIED",
+        1:  "MCP_DECISION_ALLOW",
+        2:  "MCP_DECISION_DENY",
+    }
+    MCPDecision_value = map[string]int32{
+        "MCP_DECISION_UNSPECIFIED": 0,
+        "MCP_DECISION_ALLOW":       1,
+        "MCP_DECISION_DENY":        2,
+    }
+)
+```
+
+<a name="MCPAuthLevel_name"></a>Enum value maps for MCPAuthLevel.
+
+```go
+var (
+    MCPAuthLevel_name = map[int32]string{
+        0:  "MCP_AUTH_LEVEL_UNSPECIFIED",
+        1:  "MCP_AUTH_LEVEL_ANONYMOUS",
+        2:  "MCP_AUTH_LEVEL_API_KEY",
+        3:  "MCP_AUTH_LEVEL_BADGE",
+    }
+    MCPAuthLevel_value = map[string]int32{
+        "MCP_AUTH_LEVEL_UNSPECIFIED": 0,
+        "MCP_AUTH_LEVEL_ANONYMOUS":   1,
+        "MCP_AUTH_LEVEL_API_KEY":     2,
+        "MCP_AUTH_LEVEL_BADGE":       3,
+    }
+)
+```
+
+<a name="MCPDenyReason_name"></a>Enum value maps for MCPDenyReason.
+
+```go
+var (
+    MCPDenyReason_name = map[int32]string{
+        0:  "MCP_DENY_REASON_UNSPECIFIED",
+        1:  "MCP_DENY_REASON_BADGE_MISSING",
+        2:  "MCP_DENY_REASON_BADGE_INVALID",
+        3:  "MCP_DENY_REASON_BADGE_EXPIRED",
+        4:  "MCP_DENY_REASON_BADGE_REVOKED",
+        5:  "MCP_DENY_REASON_TRUST_INSUFFICIENT",
+        6:  "MCP_DENY_REASON_TOOL_NOT_ALLOWED",
+        7:  "MCP_DENY_REASON_ISSUER_UNTRUSTED",
+        8:  "MCP_DENY_REASON_POLICY_DENIED",
+    }
+    MCPDenyReason_value = map[string]int32{
+        "MCP_DENY_REASON_UNSPECIFIED":        0,
+        "MCP_DENY_REASON_BADGE_MISSING":      1,
+        "MCP_DENY_REASON_BADGE_INVALID":      2,
+        "MCP_DENY_REASON_BADGE_EXPIRED":      3,
+        "MCP_DENY_REASON_BADGE_REVOKED":      4,
+        "MCP_DENY_REASON_TRUST_INSUFFICIENT": 5,
+        "MCP_DENY_REASON_TOOL_NOT_ALLOWED":   6,
+        "MCP_DENY_REASON_ISSUER_UNTRUSTED":   7,
+        "MCP_DENY_REASON_POLICY_DENIED":      8,
+    }
+)
+```
+
+<a name="MCPServerState_name"></a>Enum value maps for MCPServerState.
+
+```go
+var (
+    MCPServerState_name = map[int32]string{
+        0:  "MCP_SERVER_STATE_UNSPECIFIED",
+        1:  "MCP_SERVER_STATE_VERIFIED_PRINCIPAL",
+        2:  "MCP_SERVER_STATE_DECLARED_PRINCIPAL",
+        3:  "MCP_SERVER_STATE_UNVERIFIED_ORIGIN",
+    }
+    MCPServerState_value = map[string]int32{
+        "MCP_SERVER_STATE_UNSPECIFIED":        0,
+        "MCP_SERVER_STATE_VERIFIED_PRINCIPAL": 1,
+        "MCP_SERVER_STATE_DECLARED_PRINCIPAL": 2,
+        "MCP_SERVER_STATE_UNVERIFIED_ORIGIN":  3,
+    }
+)
+```
+
+<a name="MCPServerErrorCode_name"></a>Enum value maps for MCPServerErrorCode.
+
+```go
+var (
+    MCPServerErrorCode_name = map[int32]string{
+        0:  "MCP_SERVER_ERROR_NONE",
+        1:  "MCP_SERVER_ERROR_DID_INVALID",
+        2:  "MCP_SERVER_ERROR_BADGE_INVALID",
+        3:  "MCP_SERVER_ERROR_BADGE_EXPIRED",
+        4:  "MCP_SERVER_ERROR_BADGE_REVOKED",
+        5:  "MCP_SERVER_ERROR_TRUST_INSUFFICIENT",
+        6:  "MCP_SERVER_ERROR_ORIGIN_MISMATCH",
+        7:  "MCP_SERVER_ERROR_PATH_MISMATCH",
+        8:  "MCP_SERVER_ERROR_ISSUER_UNTRUSTED",
+    }
+    MCPServerErrorCode_value = map[string]int32{
+        "MCP_SERVER_ERROR_NONE":               0,
+        "MCP_SERVER_ERROR_DID_INVALID":        1,
+        "MCP_SERVER_ERROR_BADGE_INVALID":      2,
+        "MCP_SERVER_ERROR_BADGE_EXPIRED":      3,
+        "MCP_SERVER_ERROR_BADGE_REVOKED":      4,
+        "MCP_SERVER_ERROR_TRUST_INSUFFICIENT": 5,
+        "MCP_SERVER_ERROR_ORIGIN_MISMATCH":    6,
+        "MCP_SERVER_ERROR_PATH_MISMATCH":      7,
+        "MCP_SERVER_ERROR_ISSUER_UNTRUSTED":   8,
+    }
+)
+```
+
+<a name="AgentStatus_name"></a>Enum value maps for AgentStatus.
+
+```go
+var (
+    AgentStatus_name = map[int32]string{
+        0:  "AGENT_STATUS_UNSPECIFIED",
+        1:  "AGENT_STATUS_ACTIVE",
+        2:  "AGENT_STATUS_INACTIVE",
+        3:  "AGENT_STATUS_SUSPENDED",
+        4:  "AGENT_STATUS_PENDING",
+    }
+    AgentStatus_value = map[string]int32{
+        "AGENT_STATUS_UNSPECIFIED": 0,
+        "AGENT_STATUS_ACTIVE":      1,
+        "AGENT_STATUS_INACTIVE":    2,
+        "AGENT_STATUS_SUSPENDED":   3,
+        "AGENT_STATUS_PENDING":     4,
+    }
+)
+```
+
+<a name="SearchOperator_name"></a>Enum value maps for SearchOperator.
+
+```go
+var (
+    SearchOperator_name = map[int32]string{
+        0:  "SEARCH_OPERATOR_UNSPECIFIED",
+        1:  "SEARCH_OPERATOR_AND",
+        2:  "SEARCH_OPERATOR_OR",
+    }
+    SearchOperator_value = map[string]int32{
+        "SEARCH_OPERATOR_UNSPECIFIED": 0,
+        "SEARCH_OPERATOR_AND":         1,
+        "SEARCH_OPERATOR_OR":          2,
+    }
+)
+```
+
+<a name="RevocationReason_name"></a>Enum value maps for RevocationReason.
+
+```go
+var (
+    RevocationReason_name = map[int32]string{
+        0:  "REVOCATION_REASON_UNSPECIFIED",
+        1:  "REVOCATION_REASON_KEY_COMPROMISE",
+        2:  "REVOCATION_REASON_AFFILIATION_CHANGED",
+        3:  "REVOCATION_REASON_SUPERSEDED",
+        4:  "REVOCATION_REASON_CESSATION_OF_OPERATION",
+        5:  "REVOCATION_REASON_PRIVILEGE_WITHDRAWN",
+    }
+    RevocationReason_value = map[string]int32{
+        "REVOCATION_REASON_UNSPECIFIED":            0,
+        "REVOCATION_REASON_KEY_COMPROMISE":         1,
+        "REVOCATION_REASON_AFFILIATION_CHANGED":    2,
+        "REVOCATION_REASON_SUPERSEDED":             3,
+        "REVOCATION_REASON_CESSATION_OF_OPERATION": 4,
+        "REVOCATION_REASON_PRIVILEGE_WITHDRAWN":    5,
+    }
+)
+```
+
+<a name="ScoreCategory_name"></a>Enum value maps for ScoreCategory.
+
+```go
+var (
+    ScoreCategory_name = map[int32]string{
+        0:  "SCORE_CATEGORY_UNSPECIFIED",
+        1:  "SCORE_CATEGORY_IDENTITY",
+        2:  "SCORE_CATEGORY_CAPABILITIES",
+        3:  "SCORE_CATEGORY_SECURITY",
+        4:  "SCORE_CATEGORY_COMPLIANCE",
+        5:  "SCORE_CATEGORY_TRANSPARENCY",
+    }
+    ScoreCategory_value = map[string]int32{
+        "SCORE_CATEGORY_UNSPECIFIED":  0,
+        "SCORE_CATEGORY_IDENTITY":     1,
+        "SCORE_CATEGORY_CAPABILITIES": 2,
+        "SCORE_CATEGORY_SECURITY":     3,
+        "SCORE_CATEGORY_COMPLIANCE":   4,
+        "SCORE_CATEGORY_TRANSPARENCY": 5,
+    }
+)
+```
+
+<a name="RuleSeverity_name"></a>Enum value maps for RuleSeverity.
+
+```go
+var (
+    RuleSeverity_name = map[int32]string{
+        0:  "RULE_SEVERITY_UNSPECIFIED",
+        1:  "RULE_SEVERITY_INFO",
+        2:  "RULE_SEVERITY_WARNING",
+        3:  "RULE_SEVERITY_ERROR",
+        4:  "RULE_SEVERITY_CRITICAL",
+    }
+    RuleSeverity_value = map[string]int32{
+        "RULE_SEVERITY_UNSPECIFIED": 0,
+        "RULE_SEVERITY_INFO":        1,
+        "RULE_SEVERITY_WARNING":     2,
+        "RULE_SEVERITY_ERROR":       3,
+        "RULE_SEVERITY_CRITICAL":    4,
+    }
+)
+```
+
+<a name="SignatureFormat_name"></a>Enum value maps for SignatureFormat.
+
+```go
+var (
+    SignatureFormat_name = map[int32]string{
+        0:  "SIGNATURE_FORMAT_UNSPECIFIED",
+        1:  "SIGNATURE_FORMAT_JWS_COMPACT",
+        2:  "SIGNATURE_FORMAT_JWS_JSON",
+        3:  "SIGNATURE_FORMAT_RAW",
+    }
+    SignatureFormat_value = map[string]int32{
+        "SIGNATURE_FORMAT_UNSPECIFIED": 0,
+        "SIGNATURE_FORMAT_JWS_COMPACT": 1,
+        "SIGNATURE_FORMAT_JWS_JSON":    2,
+        "SIGNATURE_FORMAT_RAW":         3,
+    }
+)
+```
+
+<a name="KeyAlgorithm_name"></a>Enum value maps for KeyAlgorithm.
+
+```go
+var (
+    KeyAlgorithm_name = map[int32]string{
+        0:  "KEY_ALGORITHM_UNSPECIFIED",
+        1:  "KEY_ALGORITHM_ED25519",
+        2:  "KEY_ALGORITHM_ECDSA_P256",
+        3:  "KEY_ALGORITHM_ECDSA_P384",
+        4:  "KEY_ALGORITHM_RSA_2048",
+        5:  "KEY_ALGORITHM_RSA_4096",
+    }
+    KeyAlgorithm_value = map[string]int32{
+        "KEY_ALGORITHM_UNSPECIFIED": 0,
+        "KEY_ALGORITHM_ED25519":     1,
+        "KEY_ALGORITHM_ECDSA_P256":  2,
+        "KEY_ALGORITHM_ECDSA_P384":  3,
+        "KEY_ALGORITHM_RSA_2048":    4,
+        "KEY_ALGORITHM_RSA_4096":    5,
+    }
+)
+```
+
+<a name="KeyFormat_name"></a>Enum value maps for KeyFormat.
+
+```go
+var (
+    KeyFormat_name = map[int32]string{
+        0:  "KEY_FORMAT_UNSPECIFIED",
+        1:  "KEY_FORMAT_JWK",
+        2:  "KEY_FORMAT_PEM",
+        3:  "KEY_FORMAT_DER",
+    }
+    KeyFormat_value = map[string]int32{
+        "KEY_FORMAT_UNSPECIFIED": 0,
+        "KEY_FORMAT_JWK":         1,
+        "KEY_FORMAT_PEM":         2,
+        "KEY_FORMAT_DER":         3,
+    }
+)
+```
+
+<a name="BadgeService_ServiceDesc"></a>BadgeService\_ServiceDesc is the grpc.ServiceDesc for BadgeService service. It's only intended for direct use with grpc.RegisterService, and not to be introspected or modified \(even as a copy\)
+
+```go
+var BadgeService_ServiceDesc = grpc.ServiceDesc{
+    ServiceName: "capiscio.v1.BadgeService",
+    HandlerType: (*BadgeServiceServer)(nil),
+    Methods: []grpc.MethodDesc{
+        {
+            MethodName: "SignBadge",
+            Handler:    _BadgeService_SignBadge_Handler,
+        },
+        {
+            MethodName: "VerifyBadge",
+            Handler:    _BadgeService_VerifyBadge_Handler,
+        },
+        {
+            MethodName: "VerifyBadgeWithOptions",
+            Handler:    _BadgeService_VerifyBadgeWithOptions_Handler,
+        },
+        {
+            MethodName: "ParseBadge",
+            Handler:    _BadgeService_ParseBadge_Handler,
+        },
+        {
+            MethodName: "RequestBadge",
+            Handler:    _BadgeService_RequestBadge_Handler,
+        },
+        {
+            MethodName: "RequestPoPBadge",
+            Handler:    _BadgeService_RequestPoPBadge_Handler,
+        },
+        {
+            MethodName: "CreateDVOrder",
+            Handler:    _BadgeService_CreateDVOrder_Handler,
+        },
+        {
+            MethodName: "GetDVOrder",
+            Handler:    _BadgeService_GetDVOrder_Handler,
+        },
+        {
+            MethodName: "FinalizeDVOrder",
+            Handler:    _BadgeService_FinalizeDVOrder_Handler,
+        },
+    },
+    Streams: []grpc.StreamDesc{
+        {
+            StreamName:    "StartKeeper",
+            Handler:       _BadgeService_StartKeeper_Handler,
+            ServerStreams: true,
+        },
+    },
+    Metadata: "capiscio/v1/badge.proto",
+}
+```
+
+<a name="DIDService_ServiceDesc"></a>DIDService\_ServiceDesc is the grpc.ServiceDesc for DIDService service. It's only intended for direct use with grpc.RegisterService, and not to be introspected or modified \(even as a copy\)
+
+```go
+var DIDService_ServiceDesc = grpc.ServiceDesc{
+    ServiceName: "capiscio.v1.DIDService",
+    HandlerType: (*DIDServiceServer)(nil),
+    Methods: []grpc.MethodDesc{
+        {
+            MethodName: "Parse",
+            Handler:    _DIDService_Parse_Handler,
+        },
+        {
+            MethodName: "NewAgentDID",
+            Handler:    _DIDService_NewAgentDID_Handler,
+        },
+        {
+            MethodName: "NewCapiscIOAgentDID",
+            Handler:    _DIDService_NewCapiscIOAgentDID_Handler,
+        },
+        {
+            MethodName: "DocumentURL",
+            Handler:    _DIDService_DocumentURL_Handler,
+        },
+        {
+            MethodName: "IsAgentDID",
+            Handler:    _DIDService_IsAgentDID_Handler,
+        },
+    },
+    Streams:  []grpc.StreamDesc{},
+    Metadata: "capiscio/v1/did.proto",
+}
+```
+
+<a name="File_capiscio_v1_badge_proto"></a>
+
+```go
+var File_capiscio_v1_badge_proto protoreflect.FileDescriptor
+```
+
+<a name="File_capiscio_v1_common_proto"></a>
+
+```go
+var File_capiscio_v1_common_proto protoreflect.FileDescriptor
+```
+
+<a name="File_capiscio_v1_did_proto"></a>
+
+```go
+var File_capiscio_v1_did_proto protoreflect.FileDescriptor
+```
+
+<a name="File_capiscio_v1_mcp_proto"></a>
+
+```go
+var File_capiscio_v1_mcp_proto protoreflect.FileDescriptor
+```
+
+<a name="File_capiscio_v1_registry_proto"></a>
+
+```go
+var File_capiscio_v1_registry_proto protoreflect.FileDescriptor
+```
+
+<a name="File_capiscio_v1_revocation_proto"></a>
+
+```go
+var File_capiscio_v1_revocation_proto protoreflect.FileDescriptor
+```
+
+<a name="File_capiscio_v1_scoring_proto"></a>
+
+```go
+var File_capiscio_v1_scoring_proto protoreflect.FileDescriptor
+```
+
+<a name="File_capiscio_v1_simpleguard_proto"></a>
+
+```go
+var File_capiscio_v1_simpleguard_proto protoreflect.FileDescriptor
+```
+
+<a name="File_capiscio_v1_trust_proto"></a>
+
+```go
+var File_capiscio_v1_trust_proto protoreflect.FileDescriptor
+```
+
+<a name="MCPService_ServiceDesc"></a>MCPService\_ServiceDesc is the grpc.ServiceDesc for MCPService service. It's only intended for direct use with grpc.RegisterService, and not to be introspected or modified \(even as a copy\)
+
+```go
+var MCPService_ServiceDesc = grpc.ServiceDesc{
+    ServiceName: "capiscio.v1.MCPService",
+    HandlerType: (*MCPServiceServer)(nil),
+    Methods: []grpc.MethodDesc{
+        {
+            MethodName: "EvaluateToolAccess",
+            Handler:    _MCPService_EvaluateToolAccess_Handler,
+        },
+        {
+            MethodName: "VerifyServerIdentity",
+            Handler:    _MCPService_VerifyServerIdentity_Handler,
+        },
+        {
+            MethodName: "ParseServerIdentity",
+            Handler:    _MCPService_ParseServerIdentity_Handler,
+        },
+        {
+            MethodName: "Health",
+            Handler:    _MCPService_Health_Handler,
+        },
+    },
+    Streams:  []grpc.StreamDesc{},
+    Metadata: "capiscio/v1/mcp.proto",
+}
+```
+
+<a name="RegistryService_ServiceDesc"></a>RegistryService\_ServiceDesc is the grpc.ServiceDesc for RegistryService service. It's only intended for direct use with grpc.RegisterService, and not to be introspected or modified \(even as a copy\)
+
+```go
+var RegistryService_ServiceDesc = grpc.ServiceDesc{
+    ServiceName: "capiscio.v1.RegistryService",
+    HandlerType: (*RegistryServiceServer)(nil),
+    Methods: []grpc.MethodDesc{
+        {
+            MethodName: "GetAgent",
+            Handler:    _RegistryService_GetAgent_Handler,
+        },
+        {
+            MethodName: "SearchAgents",
+            Handler:    _RegistryService_SearchAgents_Handler,
+        },
+        {
+            MethodName: "RegisterAgent",
+            Handler:    _RegistryService_RegisterAgent_Handler,
+        },
+        {
+            MethodName: "UpdateAgent",
+            Handler:    _RegistryService_UpdateAgent_Handler,
+        },
+        {
+            MethodName: "DeregisterAgent",
+            Handler:    _RegistryService_DeregisterAgent_Handler,
+        },
+        {
+            MethodName: "VerifyRegistration",
+            Handler:    _RegistryService_VerifyRegistration_Handler,
+        },
+        {
+            MethodName: "ListAgents",
+            Handler:    _RegistryService_ListAgents_Handler,
+        },
+        {
+            MethodName: "GetStats",
+            Handler:    _RegistryService_GetStats_Handler,
+        },
+        {
+            MethodName: "Ping",
+            Handler:    _RegistryService_Ping_Handler,
+        },
+    },
+    Streams:  []grpc.StreamDesc{},
+    Metadata: "capiscio/v1/registry.proto",
+}
+```
+
+<a name="RevocationService_ServiceDesc"></a>RevocationService\_ServiceDesc is the grpc.ServiceDesc for RevocationService service. It's only intended for direct use with grpc.RegisterService, and not to be introspected or modified \(even as a copy\)
+
+```go
+var RevocationService_ServiceDesc = grpc.ServiceDesc{
+    ServiceName: "capiscio.v1.RevocationService",
+    HandlerType: (*RevocationServiceServer)(nil),
+    Methods: []grpc.MethodDesc{
+        {
+            MethodName: "IsRevoked",
+            Handler:    _RevocationService_IsRevoked_Handler,
+        },
+        {
+            MethodName: "Revoke",
+            Handler:    _RevocationService_Revoke_Handler,
+        },
+        {
+            MethodName: "Unrevoke",
+            Handler:    _RevocationService_Unrevoke_Handler,
+        },
+        {
+            MethodName: "ListRevocations",
+            Handler:    _RevocationService_ListRevocations_Handler,
+        },
+        {
+            MethodName: "FetchRevocationList",
+            Handler:    _RevocationService_FetchRevocationList_Handler,
+        },
+        {
+            MethodName: "ClearCache",
+            Handler:    _RevocationService_ClearCache_Handler,
+        },
+        {
+            MethodName: "GetCacheStats",
+            Handler:    _RevocationService_GetCacheStats_Handler,
+        },
+    },
+    Streams:  []grpc.StreamDesc{},
+    Metadata: "capiscio/v1/revocation.proto",
+}
+```
+
+<a name="ScoringService_ServiceDesc"></a>ScoringService\_ServiceDesc is the grpc.ServiceDesc for ScoringService service. It's only intended for direct use with grpc.RegisterService, and not to be introspected or modified \(even as a copy\)
+
+```go
+var ScoringService_ServiceDesc = grpc.ServiceDesc{
+    ServiceName: "capiscio.v1.ScoringService",
+    HandlerType: (*ScoringServiceServer)(nil),
+    Methods: []grpc.MethodDesc{
+        {
+            MethodName: "ScoreAgentCard",
+            Handler:    _ScoringService_ScoreAgentCard_Handler,
+        },
+        {
+            MethodName: "ValidateRule",
+            Handler:    _ScoringService_ValidateRule_Handler,
+        },
+        {
+            MethodName: "ListRuleSets",
+            Handler:    _ScoringService_ListRuleSets_Handler,
+        },
+        {
+            MethodName: "GetRuleSet",
+            Handler:    _ScoringService_GetRuleSet_Handler,
+        },
+        {
+            MethodName: "AggregateScores",
+            Handler:    _ScoringService_AggregateScores_Handler,
+        },
+    },
+    Streams:  []grpc.StreamDesc{},
+    Metadata: "capiscio/v1/scoring.proto",
+}
+```
+
+<a name="SimpleGuardService_ServiceDesc"></a>SimpleGuardService\_ServiceDesc is the grpc.ServiceDesc for SimpleGuardService service. It's only intended for direct use with grpc.RegisterService, and not to be introspected or modified \(even as a copy\)
+
+```go
+var SimpleGuardService_ServiceDesc = grpc.ServiceDesc{
+    ServiceName: "capiscio.v1.SimpleGuardService",
+    HandlerType: (*SimpleGuardServiceServer)(nil),
+    Methods: []grpc.MethodDesc{
+        {
+            MethodName: "Sign",
+            Handler:    _SimpleGuardService_Sign_Handler,
+        },
+        {
+            MethodName: "Verify",
+            Handler:    _SimpleGuardService_Verify_Handler,
+        },
+        {
+            MethodName: "SignAttached",
+            Handler:    _SimpleGuardService_SignAttached_Handler,
+        },
+        {
+            MethodName: "VerifyAttached",
+            Handler:    _SimpleGuardService_VerifyAttached_Handler,
+        },
+        {
+            MethodName: "GenerateKeyPair",
+            Handler:    _SimpleGuardService_GenerateKeyPair_Handler,
+        },
+        {
+            MethodName: "LoadKey",
+            Handler:    _SimpleGuardService_LoadKey_Handler,
+        },
+        {
+            MethodName: "ExportKey",
+            Handler:    _SimpleGuardService_ExportKey_Handler,
+        },
+        {
+            MethodName: "GetKeyInfo",
+            Handler:    _SimpleGuardService_GetKeyInfo_Handler,
+        },
+    },
+    Streams:  []grpc.StreamDesc{},
+    Metadata: "capiscio/v1/simpleguard.proto",
+}
+```
+
+<a name="TrustStoreService_ServiceDesc"></a>TrustStoreService\_ServiceDesc is the grpc.ServiceDesc for TrustStoreService service. It's only intended for direct use with grpc.RegisterService, and not to be introspected or modified \(even as a copy\)
+
+```go
+var TrustStoreService_ServiceDesc = grpc.ServiceDesc{
+    ServiceName: "capiscio.v1.TrustStoreService",
+    HandlerType: (*TrustStoreServiceServer)(nil),
+    Methods: []grpc.MethodDesc{
+        {
+            MethodName: "AddKey",
+            Handler:    _TrustStoreService_AddKey_Handler,
+        },
+        {
+            MethodName: "RemoveKey",
+            Handler:    _TrustStoreService_RemoveKey_Handler,
+        },
+        {
+            MethodName: "GetKey",
+            Handler:    _TrustStoreService_GetKey_Handler,
+        },
+        {
+            MethodName: "ListKeys",
+            Handler:    _TrustStoreService_ListKeys_Handler,
+        },
+        {
+            MethodName: "IsTrusted",
+            Handler:    _TrustStoreService_IsTrusted_Handler,
+        },
+        {
+            MethodName: "ImportFromDirectory",
+            Handler:    _TrustStoreService_ImportFromDirectory_Handler,
+        },
+        {
+            MethodName: "ExportToDirectory",
+            Handler:    _TrustStoreService_ExportToDirectory_Handler,
+        },
+        {
+            MethodName: "Clear",
+            Handler:    _TrustStoreService_Clear_Handler,
+        },
+    },
+    Streams:  []grpc.StreamDesc{},
+    Metadata: "capiscio/v1/trust.proto",
+}
+```
+
+<a name="RegisterBadgeServiceServer"></a>
+## func [RegisterBadgeServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge_grpc.pb.go#L263>)
+
+```go
+func RegisterBadgeServiceServer(s grpc.ServiceRegistrar, srv BadgeServiceServer)
+```
+
+
+
+<a name="RegisterDIDServiceServer"></a>
+## func [RegisterDIDServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did_grpc.pb.go#L158>)
+
+```go
+func RegisterDIDServiceServer(s grpc.ServiceRegistrar, srv DIDServiceServer)
+```
+
+
+
+<a name="RegisterMCPServiceServer"></a>
+## func [RegisterMCPServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp_grpc.pb.go#L152>)
+
+```go
+func RegisterMCPServiceServer(s grpc.ServiceRegistrar, srv MCPServiceServer)
+```
+
+
+
+<a name="RegisterRegistryServiceServer"></a>
+## func [RegisterRegistryServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry_grpc.pb.go#L230>)
+
+```go
+func RegisterRegistryServiceServer(s grpc.ServiceRegistrar, srv RegistryServiceServer)
+```
+
+
+
+<a name="RegisterRevocationServiceServer"></a>
+## func [RegisterRevocationServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation_grpc.pb.go#L194>)
+
+```go
+func RegisterRevocationServiceServer(s grpc.ServiceRegistrar, srv RevocationServiceServer)
+```
+
+
+
+<a name="RegisterScoringServiceServer"></a>
+## func [RegisterScoringServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring_grpc.pb.go#L158>)
+
+```go
+func RegisterScoringServiceServer(s grpc.ServiceRegistrar, srv ScoringServiceServer)
+```
+
+
+
+<a name="RegisterSimpleGuardServiceServer"></a>
+## func [RegisterSimpleGuardServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard_grpc.pb.go#L212>)
+
+```go
+func RegisterSimpleGuardServiceServer(s grpc.ServiceRegistrar, srv SimpleGuardServiceServer)
+```
+
+
+
+<a name="RegisterTrustStoreServiceServer"></a>
+## func [RegisterTrustStoreServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust_grpc.pb.go#L212>)
+
+```go
+func RegisterTrustStoreServiceServer(s grpc.ServiceRegistrar, srv TrustStoreServiceServer)
+```
+
+
+
+<a name="AddKeyRequest"></a>
+## type [AddKeyRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L240-L248>)
+
+Request to add a key
+
+```go
+type AddKeyRequest struct {
+    Did       string            `protobuf:"bytes,1,opt,name=did,proto3" json:"did,omitempty"`
+    PublicKey []byte            `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
+    Format    KeyFormat         `protobuf:"varint,3,opt,name=format,proto3,enum=capiscio.v1.KeyFormat" json:"format,omitempty"`
+    Metadata  map[string]string `protobuf:"bytes,4,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="AddKeyRequest.Descriptor"></a>
+### func \(\*AddKeyRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L276>)
+
+```go
+func (*AddKeyRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use AddKeyRequest.ProtoReflect.Descriptor instead.
+
+<a name="AddKeyRequest.GetDid"></a>
+### func \(\*AddKeyRequest\) [GetDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L280>)
+
+```go
+func (x *AddKeyRequest) GetDid() string
+```
+
+
+
+<a name="AddKeyRequest.GetFormat"></a>
+### func \(\*AddKeyRequest\) [GetFormat](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L294>)
+
+```go
+func (x *AddKeyRequest) GetFormat() KeyFormat
+```
+
+
+
+<a name="AddKeyRequest.GetMetadata"></a>
+### func \(\*AddKeyRequest\) [GetMetadata](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L301>)
+
+```go
+func (x *AddKeyRequest) GetMetadata() map[string]string
+```
+
+
+
+<a name="AddKeyRequest.GetPublicKey"></a>
+### func \(\*AddKeyRequest\) [GetPublicKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L287>)
+
+```go
+func (x *AddKeyRequest) GetPublicKey() []byte
+```
+
+
+
+<a name="AddKeyRequest.ProtoMessage"></a>
+### func \(\*AddKeyRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L261>)
+
+```go
+func (*AddKeyRequest) ProtoMessage()
+```
+
+
+
+<a name="AddKeyRequest.ProtoReflect"></a>
+### func \(\*AddKeyRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L263>)
+
+```go
+func (x *AddKeyRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="AddKeyRequest.Reset"></a>
+### func \(\*AddKeyRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L250>)
+
+```go
+func (x *AddKeyRequest) Reset()
+```
+
+
+
+<a name="AddKeyRequest.String"></a>
+### func \(\*AddKeyRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L257>)
+
+```go
+func (x *AddKeyRequest) String() string
+```
+
+
+
+<a name="AddKeyResponse"></a>
+## type [AddKeyResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L309-L315>)
+
+Response for add key
+
+```go
+type AddKeyResponse struct {
+    KeyId        string `protobuf:"bytes,1,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
+    ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="AddKeyResponse.Descriptor"></a>
+### func \(\*AddKeyResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L343>)
+
+```go
+func (*AddKeyResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use AddKeyResponse.ProtoReflect.Descriptor instead.
+
+<a name="AddKeyResponse.GetErrorMessage"></a>
+### func \(\*AddKeyResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L354>)
+
+```go
+func (x *AddKeyResponse) GetErrorMessage() string
+```
+
+
+
+<a name="AddKeyResponse.GetKeyId"></a>
+### func \(\*AddKeyResponse\) [GetKeyId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L347>)
+
+```go
+func (x *AddKeyResponse) GetKeyId() string
+```
+
+
+
+<a name="AddKeyResponse.ProtoMessage"></a>
+### func \(\*AddKeyResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L328>)
+
+```go
+func (*AddKeyResponse) ProtoMessage()
+```
+
+
+
+<a name="AddKeyResponse.ProtoReflect"></a>
+### func \(\*AddKeyResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L330>)
+
+```go
+func (x *AddKeyResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="AddKeyResponse.Reset"></a>
+### func \(\*AddKeyResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L317>)
+
+```go
+func (x *AddKeyResponse) Reset()
+```
+
+
+
+<a name="AddKeyResponse.String"></a>
+### func \(\*AddKeyResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L324>)
+
+```go
+func (x *AddKeyResponse) String() string
+```
+
+
+
+<a name="AgentStatus"></a>
+## type [AgentStatus](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L27>)
+
+Agent status
+
+```go
+type AgentStatus int32
+```
+
+<a name="AgentStatus_AGENT_STATUS_UNSPECIFIED"></a>
+
+```go
+const (
+    AgentStatus_AGENT_STATUS_UNSPECIFIED AgentStatus = 0
+    AgentStatus_AGENT_STATUS_ACTIVE      AgentStatus = 1
+    AgentStatus_AGENT_STATUS_INACTIVE    AgentStatus = 2
+    AgentStatus_AGENT_STATUS_SUSPENDED   AgentStatus = 3
+    AgentStatus_AGENT_STATUS_PENDING     AgentStatus = 4
+)
+```
+
+<a name="AgentStatus.Descriptor"></a>
+### func \(AgentStatus\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L65>)
+
+```go
+func (AgentStatus) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="AgentStatus.Enum"></a>
+### func \(AgentStatus\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L55>)
+
+```go
+func (x AgentStatus) Enum() *AgentStatus
+```
+
+
+
+<a name="AgentStatus.EnumDescriptor"></a>
+### func \(AgentStatus\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L78>)
+
+```go
+func (AgentStatus) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use AgentStatus.Descriptor instead.
+
+<a name="AgentStatus.Number"></a>
+### func \(AgentStatus\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L73>)
+
+```go
+func (x AgentStatus) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="AgentStatus.String"></a>
+### func \(AgentStatus\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L61>)
+
+```go
+func (x AgentStatus) String() string
+```
+
+
+
+<a name="AgentStatus.Type"></a>
+### func \(AgentStatus\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L69>)
+
+```go
+func (AgentStatus) Type() protoreflect.EnumType
+```
+
+
+
+<a name="AggregateScoresRequest"></a>
+## type [AggregateScoresRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L1007-L1013>)
+
+Request to aggregate scores
+
+```go
+type AggregateScoresRequest struct {
+    Results           []*ScoringResult `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
+    AggregationMethod string           `protobuf:"bytes,2,opt,name=aggregation_method,json=aggregationMethod,proto3" json:"aggregation_method,omitempty"` // "mean", "weighted", "min"
+    // contains filtered or unexported fields
+}
+```
+
+<a name="AggregateScoresRequest.Descriptor"></a>
+### func \(\*AggregateScoresRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L1041>)
+
+```go
+func (*AggregateScoresRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use AggregateScoresRequest.ProtoReflect.Descriptor instead.
+
+<a name="AggregateScoresRequest.GetAggregationMethod"></a>
+### func \(\*AggregateScoresRequest\) [GetAggregationMethod](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L1052>)
+
+```go
+func (x *AggregateScoresRequest) GetAggregationMethod() string
+```
+
+
+
+<a name="AggregateScoresRequest.GetResults"></a>
+### func \(\*AggregateScoresRequest\) [GetResults](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L1045>)
+
+```go
+func (x *AggregateScoresRequest) GetResults() []*ScoringResult
+```
+
+
+
+<a name="AggregateScoresRequest.ProtoMessage"></a>
+### func \(\*AggregateScoresRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L1026>)
+
+```go
+func (*AggregateScoresRequest) ProtoMessage()
+```
+
+
+
+<a name="AggregateScoresRequest.ProtoReflect"></a>
+### func \(\*AggregateScoresRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L1028>)
+
+```go
+func (x *AggregateScoresRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="AggregateScoresRequest.Reset"></a>
+### func \(\*AggregateScoresRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L1015>)
+
+```go
+func (x *AggregateScoresRequest) Reset()
+```
+
+
+
+<a name="AggregateScoresRequest.String"></a>
+### func \(\*AggregateScoresRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L1022>)
+
+```go
+func (x *AggregateScoresRequest) String() string
+```
+
+
+
+<a name="AggregateScoresResponse"></a>
+## type [AggregateScoresResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L1060-L1067>)
+
+Response with aggregated score
+
+```go
+type AggregateScoresResponse struct {
+    AggregateScore     float64            `protobuf:"fixed64,1,opt,name=aggregate_score,json=aggregateScore,proto3" json:"aggregate_score,omitempty"`
+    AggregateRating    Rating             `protobuf:"varint,2,opt,name=aggregate_rating,json=aggregateRating,proto3,enum=capiscio.v1.Rating" json:"aggregate_rating,omitempty"`
+    CategoryAggregates map[string]float64 `protobuf:"bytes,3,rep,name=category_aggregates,json=categoryAggregates,proto3" json:"category_aggregates,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"fixed64,2,opt,name=value"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="AggregateScoresResponse.Descriptor"></a>
+### func \(\*AggregateScoresResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L1095>)
+
+```go
+func (*AggregateScoresResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use AggregateScoresResponse.ProtoReflect.Descriptor instead.
+
+<a name="AggregateScoresResponse.GetAggregateRating"></a>
+### func \(\*AggregateScoresResponse\) [GetAggregateRating](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L1106>)
+
+```go
+func (x *AggregateScoresResponse) GetAggregateRating() Rating
+```
+
+
+
+<a name="AggregateScoresResponse.GetAggregateScore"></a>
+### func \(\*AggregateScoresResponse\) [GetAggregateScore](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L1099>)
+
+```go
+func (x *AggregateScoresResponse) GetAggregateScore() float64
+```
+
+
+
+<a name="AggregateScoresResponse.GetCategoryAggregates"></a>
+### func \(\*AggregateScoresResponse\) [GetCategoryAggregates](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L1113>)
+
+```go
+func (x *AggregateScoresResponse) GetCategoryAggregates() map[string]float64
+```
+
+
+
+<a name="AggregateScoresResponse.ProtoMessage"></a>
+### func \(\*AggregateScoresResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L1080>)
+
+```go
+func (*AggregateScoresResponse) ProtoMessage()
+```
+
+
+
+<a name="AggregateScoresResponse.ProtoReflect"></a>
+### func \(\*AggregateScoresResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L1082>)
+
+```go
+func (x *AggregateScoresResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="AggregateScoresResponse.Reset"></a>
+### func \(\*AggregateScoresResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L1069>)
+
+```go
+func (x *AggregateScoresResponse) Reset()
+```
+
+
+
+<a name="AggregateScoresResponse.String"></a>
+### func \(\*AggregateScoresResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L1076>)
+
+```go
+func (x *AggregateScoresResponse) String() string
+```
+
+
+
+<a name="BadgeClaims"></a>
+## type [BadgeClaims](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L245-L260>)
+
+Badge claims structure
+
+```go
+type BadgeClaims struct {
+    Jti        string     `protobuf:"bytes,1,opt,name=jti,proto3" json:"jti,omitempty"`  // JWT ID - unique identifier
+    Iss        string     `protobuf:"bytes,2,opt,name=iss,proto3" json:"iss,omitempty"`  // Issuer URL
+    Sub        string     `protobuf:"bytes,3,opt,name=sub,proto3" json:"sub,omitempty"`  // Subject (did:web identifier)
+    Iat        int64      `protobuf:"varint,4,opt,name=iat,proto3" json:"iat,omitempty"` // Issued At (Unix timestamp)
+    Exp        int64      `protobuf:"varint,5,opt,name=exp,proto3" json:"exp,omitempty"` // Expiration (Unix timestamp)
+    Nbf        int64      `protobuf:"varint,6,opt,name=nbf,proto3" json:"nbf,omitempty"` // Not Before (Unix timestamp)
+    Aud        []string   `protobuf:"bytes,7,rep,name=aud,proto3" json:"aud,omitempty"`  // Audience
+    TrustLevel TrustLevel `protobuf:"varint,8,opt,name=trust_level,json=trustLevel,proto3,enum=capiscio.v1.TrustLevel" json:"trust_level,omitempty"`
+    Domain     string     `protobuf:"bytes,9,opt,name=domain,proto3" json:"domain,omitempty"`
+    AgentName  string     `protobuf:"bytes,10,opt,name=agent_name,json=agentName,proto3" json:"agent_name,omitempty"`
+    Scope      string     `protobuf:"bytes,11,opt,name=scope,proto3" json:"scope,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="BadgeClaims.Descriptor"></a>
+### func \(\*BadgeClaims\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L288>)
+
+```go
+func (*BadgeClaims) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use BadgeClaims.ProtoReflect.Descriptor instead.
+
+<a name="BadgeClaims.GetAgentName"></a>
+### func \(\*BadgeClaims\) [GetAgentName](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L355>)
+
+```go
+func (x *BadgeClaims) GetAgentName() string
+```
+
+
+
+<a name="BadgeClaims.GetAud"></a>
+### func \(\*BadgeClaims\) [GetAud](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L334>)
+
+```go
+func (x *BadgeClaims) GetAud() []string
+```
+
+
+
+<a name="BadgeClaims.GetDomain"></a>
+### func \(\*BadgeClaims\) [GetDomain](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L348>)
+
+```go
+func (x *BadgeClaims) GetDomain() string
+```
+
+
+
+<a name="BadgeClaims.GetExp"></a>
+### func \(\*BadgeClaims\) [GetExp](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L320>)
+
+```go
+func (x *BadgeClaims) GetExp() int64
+```
+
+
+
+<a name="BadgeClaims.GetIat"></a>
+### func \(\*BadgeClaims\) [GetIat](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L313>)
+
+```go
+func (x *BadgeClaims) GetIat() int64
+```
+
+
+
+<a name="BadgeClaims.GetIss"></a>
+### func \(\*BadgeClaims\) [GetIss](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L299>)
+
+```go
+func (x *BadgeClaims) GetIss() string
+```
+
+
+
+<a name="BadgeClaims.GetJti"></a>
+### func \(\*BadgeClaims\) [GetJti](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L292>)
+
+```go
+func (x *BadgeClaims) GetJti() string
+```
+
+
+
+<a name="BadgeClaims.GetNbf"></a>
+### func \(\*BadgeClaims\) [GetNbf](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L327>)
+
+```go
+func (x *BadgeClaims) GetNbf() int64
+```
+
+
+
+<a name="BadgeClaims.GetScope"></a>
+### func \(\*BadgeClaims\) [GetScope](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L362>)
+
+```go
+func (x *BadgeClaims) GetScope() string
+```
+
+
+
+<a name="BadgeClaims.GetSub"></a>
+### func \(\*BadgeClaims\) [GetSub](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L306>)
+
+```go
+func (x *BadgeClaims) GetSub() string
+```
+
+
+
+<a name="BadgeClaims.GetTrustLevel"></a>
+### func \(\*BadgeClaims\) [GetTrustLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L341>)
+
+```go
+func (x *BadgeClaims) GetTrustLevel() TrustLevel
+```
+
+
+
+<a name="BadgeClaims.ProtoMessage"></a>
+### func \(\*BadgeClaims\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L273>)
+
+```go
+func (*BadgeClaims) ProtoMessage()
+```
+
+
+
+<a name="BadgeClaims.ProtoReflect"></a>
+### func \(\*BadgeClaims\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L275>)
+
+```go
+func (x *BadgeClaims) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="BadgeClaims.Reset"></a>
+### func \(\*BadgeClaims\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L262>)
+
+```go
+func (x *BadgeClaims) Reset()
+```
+
+
+
+<a name="BadgeClaims.String"></a>
+### func \(\*BadgeClaims\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L269>)
+
+```go
+func (x *BadgeClaims) String() string
+```
+
+
+
+<a name="BadgeServiceClient"></a>
+## type [BadgeServiceClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge_grpc.pb.go#L41-L65>)
+
+BadgeServiceClient is the client API for BadgeService service.
+
+For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+
+BadgeService handles Trust Badge operations
+
+```go
+type BadgeServiceClient interface {
+    // Sign a new badge with the provided claims
+    SignBadge(ctx context.Context, in *SignBadgeRequest, opts ...grpc.CallOption) (*SignBadgeResponse, error)
+    // Verify a badge token (basic verification)
+    VerifyBadge(ctx context.Context, in *VerifyBadgeRequest, opts ...grpc.CallOption) (*VerifyBadgeResponse, error)
+    // Verify a badge with full options (online checks, etc.)
+    VerifyBadgeWithOptions(ctx context.Context, in *VerifyBadgeWithOptionsRequest, opts ...grpc.CallOption) (*VerifyBadgeResponse, error)
+    // Parse badge claims without verification
+    ParseBadge(ctx context.Context, in *ParseBadgeRequest, opts ...grpc.CallOption) (*ParseBadgeResponse, error)
+    // Request a badge from a Certificate Authority (RFC-002 §12.1)
+    // This is for production use where badges are issued by CapiscIO registry
+    RequestBadge(ctx context.Context, in *RequestBadgeRequest, opts ...grpc.CallOption) (*RequestBadgeResponse, error)
+    // Request a badge using Proof of Possession (RFC-003)
+    // This provides IAL-1 assurance with cryptographic key binding
+    RequestPoPBadge(ctx context.Context, in *RequestPoPBadgeRequest, opts ...grpc.CallOption) (*RequestPoPBadgeResponse, error)
+    // Create a Domain Validated (DV) badge order (RFC-002 v1.2)
+    CreateDVOrder(ctx context.Context, in *CreateDVOrderRequest, opts ...grpc.CallOption) (*CreateDVOrderResponse, error)
+    // Get DV order status
+    GetDVOrder(ctx context.Context, in *GetDVOrderRequest, opts ...grpc.CallOption) (*GetDVOrderResponse, error)
+    // Finalize DV order and receive grant
+    FinalizeDVOrder(ctx context.Context, in *FinalizeDVOrderRequest, opts ...grpc.CallOption) (*FinalizeDVOrderResponse, error)
+    // Start a badge keeper that automatically renews badges (RFC-002 §7.3)
+    // Returns a stream of keeper events (started, renewed, error, stopped)
+    StartKeeper(ctx context.Context, in *StartKeeperRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[KeeperEvent], error)
+}
+```
+
+<a name="NewBadgeServiceClient"></a>
+### func [NewBadgeServiceClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge_grpc.pb.go#L71>)
+
+```go
+func NewBadgeServiceClient(cc grpc.ClientConnInterface) BadgeServiceClient
+```
+
+
+
+<a name="BadgeServiceServer"></a>
+## type [BadgeServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge_grpc.pb.go#L189-L214>)
+
+BadgeServiceServer is the server API for BadgeService service. All implementations must embed UnimplementedBadgeServiceServer for forward compatibility.
+
+BadgeService handles Trust Badge operations
+
+```go
+type BadgeServiceServer interface {
+    // Sign a new badge with the provided claims
+    SignBadge(context.Context, *SignBadgeRequest) (*SignBadgeResponse, error)
+    // Verify a badge token (basic verification)
+    VerifyBadge(context.Context, *VerifyBadgeRequest) (*VerifyBadgeResponse, error)
+    // Verify a badge with full options (online checks, etc.)
+    VerifyBadgeWithOptions(context.Context, *VerifyBadgeWithOptionsRequest) (*VerifyBadgeResponse, error)
+    // Parse badge claims without verification
+    ParseBadge(context.Context, *ParseBadgeRequest) (*ParseBadgeResponse, error)
+    // Request a badge from a Certificate Authority (RFC-002 §12.1)
+    // This is for production use where badges are issued by CapiscIO registry
+    RequestBadge(context.Context, *RequestBadgeRequest) (*RequestBadgeResponse, error)
+    // Request a badge using Proof of Possession (RFC-003)
+    // This provides IAL-1 assurance with cryptographic key binding
+    RequestPoPBadge(context.Context, *RequestPoPBadgeRequest) (*RequestPoPBadgeResponse, error)
+    // Create a Domain Validated (DV) badge order (RFC-002 v1.2)
+    CreateDVOrder(context.Context, *CreateDVOrderRequest) (*CreateDVOrderResponse, error)
+    // Get DV order status
+    GetDVOrder(context.Context, *GetDVOrderRequest) (*GetDVOrderResponse, error)
+    // Finalize DV order and receive grant
+    FinalizeDVOrder(context.Context, *FinalizeDVOrderRequest) (*FinalizeDVOrderResponse, error)
+    // Start a badge keeper that automatically renews badges (RFC-002 §7.3)
+    // Returns a stream of keeper events (started, renewed, error, stopped)
+    StartKeeper(*StartKeeperRequest, grpc.ServerStreamingServer[KeeperEvent]) error
+    // contains filtered or unexported methods
+}
+```
+
+<a name="BadgeService_StartKeeperClient"></a>
+## type [BadgeService\\\_StartKeeperClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge_grpc.pb.go#L182>)
+
+This type alias is provided for backwards compatibility with existing code that references the prior non\-generic stream type by name.
+
+```go
+type BadgeService_StartKeeperClient = grpc.ServerStreamingClient[KeeperEvent]
+```
+
+<a name="BadgeService_StartKeeperServer"></a>
+## type [BadgeService\\\_StartKeeperServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge_grpc.pb.go#L445>)
+
+This type alias is provided for backwards compatibility with existing code that references the prior non\-generic stream type by name.
+
+```go
+type BadgeService_StartKeeperServer = grpc.ServerStreamingServer[KeeperEvent]
+```
+
+<a name="CategoryScore"></a>
+## type [CategoryScore](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L397-L406>)
+
+Category score breakdown
+
+```go
+type CategoryScore struct {
+    Category    ScoreCategory `protobuf:"varint,1,opt,name=category,proto3,enum=capiscio.v1.ScoreCategory" json:"category,omitempty"`
+    Score       float64       `protobuf:"fixed64,2,opt,name=score,proto3" json:"score,omitempty"` // 0.0 to 1.0
+    RulesPassed int32         `protobuf:"varint,3,opt,name=rules_passed,json=rulesPassed,proto3" json:"rules_passed,omitempty"`
+    RulesFailed int32         `protobuf:"varint,4,opt,name=rules_failed,json=rulesFailed,proto3" json:"rules_failed,omitempty"`
+    Results     []*RuleResult `protobuf:"bytes,5,rep,name=results,proto3" json:"results,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="CategoryScore.Descriptor"></a>
+### func \(\*CategoryScore\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L434>)
+
+```go
+func (*CategoryScore) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use CategoryScore.ProtoReflect.Descriptor instead.
+
+<a name="CategoryScore.GetCategory"></a>
+### func \(\*CategoryScore\) [GetCategory](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L438>)
+
+```go
+func (x *CategoryScore) GetCategory() ScoreCategory
+```
+
+
+
+<a name="CategoryScore.GetResults"></a>
+### func \(\*CategoryScore\) [GetResults](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L466>)
+
+```go
+func (x *CategoryScore) GetResults() []*RuleResult
+```
+
+
+
+<a name="CategoryScore.GetRulesFailed"></a>
+### func \(\*CategoryScore\) [GetRulesFailed](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L459>)
+
+```go
+func (x *CategoryScore) GetRulesFailed() int32
+```
+
+
+
+<a name="CategoryScore.GetRulesPassed"></a>
+### func \(\*CategoryScore\) [GetRulesPassed](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L452>)
+
+```go
+func (x *CategoryScore) GetRulesPassed() int32
+```
+
+
+
+<a name="CategoryScore.GetScore"></a>
+### func \(\*CategoryScore\) [GetScore](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L445>)
+
+```go
+func (x *CategoryScore) GetScore() float64
+```
+
+
+
+<a name="CategoryScore.ProtoMessage"></a>
+### func \(\*CategoryScore\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L419>)
+
+```go
+func (*CategoryScore) ProtoMessage()
+```
+
+
+
+<a name="CategoryScore.ProtoReflect"></a>
+### func \(\*CategoryScore\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L421>)
+
+```go
+func (x *CategoryScore) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="CategoryScore.Reset"></a>
+### func \(\*CategoryScore\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L408>)
+
+```go
+func (x *CategoryScore) Reset()
+```
+
+
+
+<a name="CategoryScore.String"></a>
+### func \(\*CategoryScore\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L415>)
+
+```go
+func (x *CategoryScore) String() string
+```
+
+
+
+<a name="ClearCacheRequest"></a>
+## type [ClearCacheRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L757-L762>)
+
+Request to clear cache
+
+```go
+type ClearCacheRequest struct {
+    SourceFilter string `protobuf:"bytes,1,opt,name=source_filter,json=sourceFilter,proto3" json:"source_filter,omitempty"` // Optional: clear only from specific source
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ClearCacheRequest.Descriptor"></a>
+### func \(\*ClearCacheRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L790>)
+
+```go
+func (*ClearCacheRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ClearCacheRequest.ProtoReflect.Descriptor instead.
+
+<a name="ClearCacheRequest.GetSourceFilter"></a>
+### func \(\*ClearCacheRequest\) [GetSourceFilter](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L794>)
+
+```go
+func (x *ClearCacheRequest) GetSourceFilter() string
+```
+
+
+
+<a name="ClearCacheRequest.ProtoMessage"></a>
+### func \(\*ClearCacheRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L775>)
+
+```go
+func (*ClearCacheRequest) ProtoMessage()
+```
+
+
+
+<a name="ClearCacheRequest.ProtoReflect"></a>
+### func \(\*ClearCacheRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L777>)
+
+```go
+func (x *ClearCacheRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ClearCacheRequest.Reset"></a>
+### func \(\*ClearCacheRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L764>)
+
+```go
+func (x *ClearCacheRequest) Reset()
+```
+
+
+
+<a name="ClearCacheRequest.String"></a>
+### func \(\*ClearCacheRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L771>)
+
+```go
+func (x *ClearCacheRequest) String() string
+```
+
+
+
+<a name="ClearCacheResponse"></a>
+## type [ClearCacheResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L802-L807>)
+
+Response for clear cache
+
+```go
+type ClearCacheResponse struct {
+    EntriesCleared int32 `protobuf:"varint,1,opt,name=entries_cleared,json=entriesCleared,proto3" json:"entries_cleared,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ClearCacheResponse.Descriptor"></a>
+### func \(\*ClearCacheResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L835>)
+
+```go
+func (*ClearCacheResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ClearCacheResponse.ProtoReflect.Descriptor instead.
+
+<a name="ClearCacheResponse.GetEntriesCleared"></a>
+### func \(\*ClearCacheResponse\) [GetEntriesCleared](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L839>)
+
+```go
+func (x *ClearCacheResponse) GetEntriesCleared() int32
+```
+
+
+
+<a name="ClearCacheResponse.ProtoMessage"></a>
+### func \(\*ClearCacheResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L820>)
+
+```go
+func (*ClearCacheResponse) ProtoMessage()
+```
+
+
+
+<a name="ClearCacheResponse.ProtoReflect"></a>
+### func \(\*ClearCacheResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L822>)
+
+```go
+func (x *ClearCacheResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ClearCacheResponse.Reset"></a>
+### func \(\*ClearCacheResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L809>)
+
+```go
+func (x *ClearCacheResponse) Reset()
+```
+
+
+
+<a name="ClearCacheResponse.String"></a>
+### func \(\*ClearCacheResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L816>)
+
+```go
+func (x *ClearCacheResponse) String() string
+```
+
+
+
+<a name="ClearKeysRequest"></a>
+## type [ClearKeysRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L1014-L1019>)
+
+Request to clear all keys
+
+```go
+type ClearKeysRequest struct {
+    Confirm bool `protobuf:"varint,1,opt,name=confirm,proto3" json:"confirm,omitempty"` // Must be true to clear
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ClearKeysRequest.Descriptor"></a>
+### func \(\*ClearKeysRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L1047>)
+
+```go
+func (*ClearKeysRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ClearKeysRequest.ProtoReflect.Descriptor instead.
+
+<a name="ClearKeysRequest.GetConfirm"></a>
+### func \(\*ClearKeysRequest\) [GetConfirm](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L1051>)
+
+```go
+func (x *ClearKeysRequest) GetConfirm() bool
+```
+
+
+
+<a name="ClearKeysRequest.ProtoMessage"></a>
+### func \(\*ClearKeysRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L1032>)
+
+```go
+func (*ClearKeysRequest) ProtoMessage()
+```
+
+
+
+<a name="ClearKeysRequest.ProtoReflect"></a>
+### func \(\*ClearKeysRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L1034>)
+
+```go
+func (x *ClearKeysRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ClearKeysRequest.Reset"></a>
+### func \(\*ClearKeysRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L1021>)
+
+```go
+func (x *ClearKeysRequest) Reset()
+```
+
+
+
+<a name="ClearKeysRequest.String"></a>
+### func \(\*ClearKeysRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L1028>)
+
+```go
+func (x *ClearKeysRequest) String() string
+```
+
+
+
+<a name="ClearKeysResponse"></a>
+## type [ClearKeysResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L1059-L1064>)
+
+Response for clear
+
+```go
+type ClearKeysResponse struct {
+    KeysCleared int32 `protobuf:"varint,1,opt,name=keys_cleared,json=keysCleared,proto3" json:"keys_cleared,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ClearKeysResponse.Descriptor"></a>
+### func \(\*ClearKeysResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L1092>)
+
+```go
+func (*ClearKeysResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ClearKeysResponse.ProtoReflect.Descriptor instead.
+
+<a name="ClearKeysResponse.GetKeysCleared"></a>
+### func \(\*ClearKeysResponse\) [GetKeysCleared](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L1096>)
+
+```go
+func (x *ClearKeysResponse) GetKeysCleared() int32
+```
+
+
+
+<a name="ClearKeysResponse.ProtoMessage"></a>
+### func \(\*ClearKeysResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L1077>)
+
+```go
+func (*ClearKeysResponse) ProtoMessage()
+```
+
+
+
+<a name="ClearKeysResponse.ProtoReflect"></a>
+### func \(\*ClearKeysResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L1079>)
+
+```go
+func (x *ClearKeysResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ClearKeysResponse.Reset"></a>
+### func \(\*ClearKeysResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L1066>)
+
+```go
+func (x *ClearKeysResponse) Reset()
+```
+
+
+
+<a name="ClearKeysResponse.String"></a>
+### func \(\*ClearKeysResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L1073>)
+
+```go
+func (x *ClearKeysResponse) String() string
+```
+
+
+
+<a name="CreateDVOrderRequest"></a>
+## type [CreateDVOrderRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1575-L1587>)
+
+Request to create a DV badge order
+
+```go
+type CreateDVOrderRequest struct {
+
+    // Domain to validate (e.g., "example.com")
+    Domain string `protobuf:"bytes,1,opt,name=domain,proto3" json:"domain,omitempty"`
+    // Challenge type: "http-01" or "dns-01"
+    ChallengeType string `protobuf:"bytes,2,opt,name=challenge_type,json=challengeType,proto3" json:"challenge_type,omitempty"`
+    // Public key in JWK format (JSON string)
+    Jwk string `protobuf:"bytes,3,opt,name=jwk,proto3" json:"jwk,omitempty"`
+    // CA URL (default: https://registry.capisc.io)
+    CaUrl string `protobuf:"bytes,4,opt,name=ca_url,json=caUrl,proto3" json:"ca_url,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="CreateDVOrderRequest.Descriptor"></a>
+### func \(\*CreateDVOrderRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1615>)
+
+```go
+func (*CreateDVOrderRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use CreateDVOrderRequest.ProtoReflect.Descriptor instead.
+
+<a name="CreateDVOrderRequest.GetCaUrl"></a>
+### func \(\*CreateDVOrderRequest\) [GetCaUrl](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1640>)
+
+```go
+func (x *CreateDVOrderRequest) GetCaUrl() string
+```
+
+
+
+<a name="CreateDVOrderRequest.GetChallengeType"></a>
+### func \(\*CreateDVOrderRequest\) [GetChallengeType](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1626>)
+
+```go
+func (x *CreateDVOrderRequest) GetChallengeType() string
+```
+
+
+
+<a name="CreateDVOrderRequest.GetDomain"></a>
+### func \(\*CreateDVOrderRequest\) [GetDomain](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1619>)
+
+```go
+func (x *CreateDVOrderRequest) GetDomain() string
+```
+
+
+
+<a name="CreateDVOrderRequest.GetJwk"></a>
+### func \(\*CreateDVOrderRequest\) [GetJwk](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1633>)
+
+```go
+func (x *CreateDVOrderRequest) GetJwk() string
+```
+
+
+
+<a name="CreateDVOrderRequest.ProtoMessage"></a>
+### func \(\*CreateDVOrderRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1600>)
+
+```go
+func (*CreateDVOrderRequest) ProtoMessage()
+```
+
+
+
+<a name="CreateDVOrderRequest.ProtoReflect"></a>
+### func \(\*CreateDVOrderRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1602>)
+
+```go
+func (x *CreateDVOrderRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="CreateDVOrderRequest.Reset"></a>
+### func \(\*CreateDVOrderRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1589>)
+
+```go
+func (x *CreateDVOrderRequest) Reset()
+```
+
+
+
+<a name="CreateDVOrderRequest.String"></a>
+### func \(\*CreateDVOrderRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1596>)
+
+```go
+func (x *CreateDVOrderRequest) String() string
+```
+
+
+
+<a name="CreateDVOrderResponse"></a>
+## type [CreateDVOrderResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1648-L1674>)
+
+Response from DV order creation
+
+```go
+type CreateDVOrderResponse struct {
+
+    // Whether the request succeeded
+    Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+    // Order ID (UUID)
+    OrderId string `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+    // Domain
+    Domain string `protobuf:"bytes,3,opt,name=domain,proto3" json:"domain,omitempty"`
+    // Challenge type
+    ChallengeType string `protobuf:"bytes,4,opt,name=challenge_type,json=challengeType,proto3" json:"challenge_type,omitempty"`
+    // Challenge token
+    ChallengeToken string `protobuf:"bytes,5,opt,name=challenge_token,json=challengeToken,proto3" json:"challenge_token,omitempty"`
+    // Order status ("pending", "valid", "invalid")
+    Status string `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
+    // Validation URL (for HTTP-01)
+    ValidationUrl string `protobuf:"bytes,7,opt,name=validation_url,json=validationUrl,proto3" json:"validation_url,omitempty"`
+    // DNS record value (for DNS-01)
+    DnsRecord string `protobuf:"bytes,8,opt,name=dns_record,json=dnsRecord,proto3" json:"dns_record,omitempty"`
+    // When the order expires (Unix timestamp)
+    ExpiresAt int64 `protobuf:"varint,9,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+    // Error message if success=false
+    Error string `protobuf:"bytes,10,opt,name=error,proto3" json:"error,omitempty"`
+    // Error code
+    ErrorCode string `protobuf:"bytes,11,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="CreateDVOrderResponse.Descriptor"></a>
+### func \(\*CreateDVOrderResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1702>)
+
+```go
+func (*CreateDVOrderResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use CreateDVOrderResponse.ProtoReflect.Descriptor instead.
+
+<a name="CreateDVOrderResponse.GetChallengeToken"></a>
+### func \(\*CreateDVOrderResponse\) [GetChallengeToken](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1734>)
+
+```go
+func (x *CreateDVOrderResponse) GetChallengeToken() string
+```
+
+
+
+<a name="CreateDVOrderResponse.GetChallengeType"></a>
+### func \(\*CreateDVOrderResponse\) [GetChallengeType](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1727>)
+
+```go
+func (x *CreateDVOrderResponse) GetChallengeType() string
+```
+
+
+
+<a name="CreateDVOrderResponse.GetDnsRecord"></a>
+### func \(\*CreateDVOrderResponse\) [GetDnsRecord](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1755>)
+
+```go
+func (x *CreateDVOrderResponse) GetDnsRecord() string
+```
+
+
+
+<a name="CreateDVOrderResponse.GetDomain"></a>
+### func \(\*CreateDVOrderResponse\) [GetDomain](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1720>)
+
+```go
+func (x *CreateDVOrderResponse) GetDomain() string
+```
+
+
+
+<a name="CreateDVOrderResponse.GetError"></a>
+### func \(\*CreateDVOrderResponse\) [GetError](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1769>)
+
+```go
+func (x *CreateDVOrderResponse) GetError() string
+```
+
+
+
+<a name="CreateDVOrderResponse.GetErrorCode"></a>
+### func \(\*CreateDVOrderResponse\) [GetErrorCode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1776>)
+
+```go
+func (x *CreateDVOrderResponse) GetErrorCode() string
+```
+
+
+
+<a name="CreateDVOrderResponse.GetExpiresAt"></a>
+### func \(\*CreateDVOrderResponse\) [GetExpiresAt](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1762>)
+
+```go
+func (x *CreateDVOrderResponse) GetExpiresAt() int64
+```
+
+
+
+<a name="CreateDVOrderResponse.GetOrderId"></a>
+### func \(\*CreateDVOrderResponse\) [GetOrderId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1713>)
+
+```go
+func (x *CreateDVOrderResponse) GetOrderId() string
+```
+
+
+
+<a name="CreateDVOrderResponse.GetStatus"></a>
+### func \(\*CreateDVOrderResponse\) [GetStatus](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1741>)
+
+```go
+func (x *CreateDVOrderResponse) GetStatus() string
+```
+
+
+
+<a name="CreateDVOrderResponse.GetSuccess"></a>
+### func \(\*CreateDVOrderResponse\) [GetSuccess](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1706>)
+
+```go
+func (x *CreateDVOrderResponse) GetSuccess() bool
+```
+
+
+
+<a name="CreateDVOrderResponse.GetValidationUrl"></a>
+### func \(\*CreateDVOrderResponse\) [GetValidationUrl](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1748>)
+
+```go
+func (x *CreateDVOrderResponse) GetValidationUrl() string
+```
+
+
+
+<a name="CreateDVOrderResponse.ProtoMessage"></a>
+### func \(\*CreateDVOrderResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1687>)
+
+```go
+func (*CreateDVOrderResponse) ProtoMessage()
+```
+
+
+
+<a name="CreateDVOrderResponse.ProtoReflect"></a>
+### func \(\*CreateDVOrderResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1689>)
+
+```go
+func (x *CreateDVOrderResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="CreateDVOrderResponse.Reset"></a>
+### func \(\*CreateDVOrderResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1676>)
+
+```go
+func (x *CreateDVOrderResponse) Reset()
+```
+
+
+
+<a name="CreateDVOrderResponse.String"></a>
+### func \(\*CreateDVOrderResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1683>)
+
+```go
+func (x *CreateDVOrderResponse) String() string
+```
+
+
+
+<a name="DID"></a>
+## type [DID](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L27-L36>)
+
+Parsed DID structure
+
+```go
+type DID struct {
+    Raw      string   `protobuf:"bytes,1,opt,name=raw,proto3" json:"raw,omitempty"`           // Original DID string
+    Method   string   `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`     // "web"
+    Domain   string   `protobuf:"bytes,3,opt,name=domain,proto3" json:"domain,omitempty"`     // Domain part
+    Path     []string `protobuf:"bytes,4,rep,name=path,proto3" json:"path,omitempty"`         // Path segments
+    Fragment string   `protobuf:"bytes,5,opt,name=fragment,proto3" json:"fragment,omitempty"` // Fragment (if any)
+    // contains filtered or unexported fields
+}
+```
+
+<a name="DID.Descriptor"></a>
+### func \(\*DID\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L64>)
+
+```go
+func (*DID) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use DID.ProtoReflect.Descriptor instead.
+
+<a name="DID.GetDomain"></a>
+### func \(\*DID\) [GetDomain](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L82>)
+
+```go
+func (x *DID) GetDomain() string
+```
+
+
+
+<a name="DID.GetFragment"></a>
+### func \(\*DID\) [GetFragment](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L96>)
+
+```go
+func (x *DID) GetFragment() string
+```
+
+
+
+<a name="DID.GetMethod"></a>
+### func \(\*DID\) [GetMethod](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L75>)
+
+```go
+func (x *DID) GetMethod() string
+```
+
+
+
+<a name="DID.GetPath"></a>
+### func \(\*DID\) [GetPath](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L89>)
+
+```go
+func (x *DID) GetPath() []string
+```
+
+
+
+<a name="DID.GetRaw"></a>
+### func \(\*DID\) [GetRaw](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L68>)
+
+```go
+func (x *DID) GetRaw() string
+```
+
+
+
+<a name="DID.ProtoMessage"></a>
+### func \(\*DID\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L49>)
+
+```go
+func (*DID) ProtoMessage()
+```
+
+
+
+<a name="DID.ProtoReflect"></a>
+### func \(\*DID\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L51>)
+
+```go
+func (x *DID) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="DID.Reset"></a>
+### func \(\*DID\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L38>)
+
+```go
+func (x *DID) Reset()
+```
+
+
+
+<a name="DID.String"></a>
+### func \(\*DID\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L45>)
+
+```go
+func (x *DID) String() string
+```
+
+
+
+<a name="DIDServiceClient"></a>
+## type [DIDServiceClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did_grpc.pb.go#L36-L47>)
+
+DIDServiceClient is the client API for DIDService service.
+
+For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+
+DIDService handles did:web operations
+
+```go
+type DIDServiceClient interface {
+    // Parse a did:web identifier
+    Parse(ctx context.Context, in *ParseDIDRequest, opts ...grpc.CallOption) (*ParseDIDResponse, error)
+    // Construct a new agent DID
+    NewAgentDID(ctx context.Context, in *NewAgentDIDRequest, opts ...grpc.CallOption) (*NewAgentDIDResponse, error)
+    // Construct a Capiscio registry DID
+    NewCapiscIOAgentDID(ctx context.Context, in *NewCapiscIOAgentDIDRequest, opts ...grpc.CallOption) (*NewAgentDIDResponse, error)
+    // Get the document URL for a DID
+    DocumentURL(ctx context.Context, in *DocumentURLRequest, opts ...grpc.CallOption) (*DocumentURLResponse, error)
+    // Check if a DID is an agent DID
+    IsAgentDID(ctx context.Context, in *IsAgentDIDRequest, opts ...grpc.CallOption) (*IsAgentDIDResponse, error)
+}
+```
+
+<a name="NewDIDServiceClient"></a>
+### func [NewDIDServiceClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did_grpc.pb.go#L53>)
+
+```go
+func NewDIDServiceClient(cc grpc.ClientConnInterface) DIDServiceClient
+```
+
+
+
+<a name="DIDServiceServer"></a>
+## type [DIDServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did_grpc.pb.go#L112-L124>)
+
+DIDServiceServer is the server API for DIDService service. All implementations must embed UnimplementedDIDServiceServer for forward compatibility.
+
+DIDService handles did:web operations
+
+```go
+type DIDServiceServer interface {
+    // Parse a did:web identifier
+    Parse(context.Context, *ParseDIDRequest) (*ParseDIDResponse, error)
+    // Construct a new agent DID
+    NewAgentDID(context.Context, *NewAgentDIDRequest) (*NewAgentDIDResponse, error)
+    // Construct a Capiscio registry DID
+    NewCapiscIOAgentDID(context.Context, *NewCapiscIOAgentDIDRequest) (*NewAgentDIDResponse, error)
+    // Get the document URL for a DID
+    DocumentURL(context.Context, *DocumentURLRequest) (*DocumentURLResponse, error)
+    // Check if a DID is an agent DID
+    IsAgentDID(context.Context, *IsAgentDIDRequest) (*IsAgentDIDResponse, error)
+    // contains filtered or unexported methods
+}
+```
+
+<a name="DeregisterAgentRequest"></a>
+## type [DeregisterAgentRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L826-L832>)
+
+Deregister request
+
+```go
+type DeregisterAgentRequest struct {
+    Did    string `protobuf:"bytes,1,opt,name=did,proto3" json:"did,omitempty"`
+    Reason string `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="DeregisterAgentRequest.Descriptor"></a>
+### func \(\*DeregisterAgentRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L860>)
+
+```go
+func (*DeregisterAgentRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use DeregisterAgentRequest.ProtoReflect.Descriptor instead.
+
+<a name="DeregisterAgentRequest.GetDid"></a>
+### func \(\*DeregisterAgentRequest\) [GetDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L864>)
+
+```go
+func (x *DeregisterAgentRequest) GetDid() string
+```
+
+
+
+<a name="DeregisterAgentRequest.GetReason"></a>
+### func \(\*DeregisterAgentRequest\) [GetReason](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L871>)
+
+```go
+func (x *DeregisterAgentRequest) GetReason() string
+```
+
+
+
+<a name="DeregisterAgentRequest.ProtoMessage"></a>
+### func \(\*DeregisterAgentRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L845>)
+
+```go
+func (*DeregisterAgentRequest) ProtoMessage()
+```
+
+
+
+<a name="DeregisterAgentRequest.ProtoReflect"></a>
+### func \(\*DeregisterAgentRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L847>)
+
+```go
+func (x *DeregisterAgentRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="DeregisterAgentRequest.Reset"></a>
+### func \(\*DeregisterAgentRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L834>)
+
+```go
+func (x *DeregisterAgentRequest) Reset()
+```
+
+
+
+<a name="DeregisterAgentRequest.String"></a>
+### func \(\*DeregisterAgentRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L841>)
+
+```go
+func (x *DeregisterAgentRequest) String() string
+```
+
+
+
+<a name="DeregisterAgentResponse"></a>
+## type [DeregisterAgentResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L879-L885>)
+
+Deregister response
+
+```go
+type DeregisterAgentResponse struct {
+    Success      bool   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+    ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="DeregisterAgentResponse.Descriptor"></a>
+### func \(\*DeregisterAgentResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L913>)
+
+```go
+func (*DeregisterAgentResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use DeregisterAgentResponse.ProtoReflect.Descriptor instead.
+
+<a name="DeregisterAgentResponse.GetErrorMessage"></a>
+### func \(\*DeregisterAgentResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L924>)
+
+```go
+func (x *DeregisterAgentResponse) GetErrorMessage() string
+```
+
+
+
+<a name="DeregisterAgentResponse.GetSuccess"></a>
+### func \(\*DeregisterAgentResponse\) [GetSuccess](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L917>)
+
+```go
+func (x *DeregisterAgentResponse) GetSuccess() bool
+```
+
+
+
+<a name="DeregisterAgentResponse.ProtoMessage"></a>
+### func \(\*DeregisterAgentResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L898>)
+
+```go
+func (*DeregisterAgentResponse) ProtoMessage()
+```
+
+
+
+<a name="DeregisterAgentResponse.ProtoReflect"></a>
+### func \(\*DeregisterAgentResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L900>)
+
+```go
+func (x *DeregisterAgentResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="DeregisterAgentResponse.Reset"></a>
+### func \(\*DeregisterAgentResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L887>)
+
+```go
+func (x *DeregisterAgentResponse) Reset()
+```
+
+
+
+<a name="DeregisterAgentResponse.String"></a>
+### func \(\*DeregisterAgentResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L894>)
+
+```go
+func (x *DeregisterAgentResponse) String() string
+```
+
+
+
+<a name="DocumentURLRequest"></a>
+## type [DocumentURLRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L353-L358>)
+
+Request to get document URL
+
+```go
+type DocumentURLRequest struct {
+    Did string `protobuf:"bytes,1,opt,name=did,proto3" json:"did,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="DocumentURLRequest.Descriptor"></a>
+### func \(\*DocumentURLRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L386>)
+
+```go
+func (*DocumentURLRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use DocumentURLRequest.ProtoReflect.Descriptor instead.
+
+<a name="DocumentURLRequest.GetDid"></a>
+### func \(\*DocumentURLRequest\) [GetDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L390>)
+
+```go
+func (x *DocumentURLRequest) GetDid() string
+```
+
+
+
+<a name="DocumentURLRequest.ProtoMessage"></a>
+### func \(\*DocumentURLRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L371>)
+
+```go
+func (*DocumentURLRequest) ProtoMessage()
+```
+
+
+
+<a name="DocumentURLRequest.ProtoReflect"></a>
+### func \(\*DocumentURLRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L373>)
+
+```go
+func (x *DocumentURLRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="DocumentURLRequest.Reset"></a>
+### func \(\*DocumentURLRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L360>)
+
+```go
+func (x *DocumentURLRequest) Reset()
+```
+
+
+
+<a name="DocumentURLRequest.String"></a>
+### func \(\*DocumentURLRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L367>)
+
+```go
+func (x *DocumentURLRequest) String() string
+```
+
+
+
+<a name="DocumentURLResponse"></a>
+## type [DocumentURLResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L398-L404>)
+
+Response with document URL
+
+```go
+type DocumentURLResponse struct {
+    Url          string `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+    ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="DocumentURLResponse.Descriptor"></a>
+### func \(\*DocumentURLResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L432>)
+
+```go
+func (*DocumentURLResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use DocumentURLResponse.ProtoReflect.Descriptor instead.
+
+<a name="DocumentURLResponse.GetErrorMessage"></a>
+### func \(\*DocumentURLResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L443>)
+
+```go
+func (x *DocumentURLResponse) GetErrorMessage() string
+```
+
+
+
+<a name="DocumentURLResponse.GetUrl"></a>
+### func \(\*DocumentURLResponse\) [GetUrl](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L436>)
+
+```go
+func (x *DocumentURLResponse) GetUrl() string
+```
+
+
+
+<a name="DocumentURLResponse.ProtoMessage"></a>
+### func \(\*DocumentURLResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L417>)
+
+```go
+func (*DocumentURLResponse) ProtoMessage()
+```
+
+
+
+<a name="DocumentURLResponse.ProtoReflect"></a>
+### func \(\*DocumentURLResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L419>)
+
+```go
+func (x *DocumentURLResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="DocumentURLResponse.Reset"></a>
+### func \(\*DocumentURLResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L406>)
+
+```go
+func (x *DocumentURLResponse) Reset()
+```
+
+
+
+<a name="DocumentURLResponse.String"></a>
+### func \(\*DocumentURLResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L413>)
+
+```go
+func (x *DocumentURLResponse) String() string
+```
+
+
+
+<a name="Duration"></a>
+## type [Duration](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L184-L189>)
+
+Duration in seconds
+
+```go
+type Duration struct {
+    Seconds int64 `protobuf:"varint,1,opt,name=seconds,proto3" json:"seconds,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="Duration.Descriptor"></a>
+### func \(\*Duration\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L217>)
+
+```go
+func (*Duration) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use Duration.ProtoReflect.Descriptor instead.
+
+<a name="Duration.GetSeconds"></a>
+### func \(\*Duration\) [GetSeconds](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L221>)
+
+```go
+func (x *Duration) GetSeconds() int64
+```
+
+
+
+<a name="Duration.ProtoMessage"></a>
+### func \(\*Duration\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L202>)
+
+```go
+func (*Duration) ProtoMessage()
+```
+
+
+
+<a name="Duration.ProtoReflect"></a>
+### func \(\*Duration\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L204>)
+
+```go
+func (x *Duration) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="Duration.Reset"></a>
+### func \(\*Duration\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L191>)
+
+```go
+func (x *Duration) Reset()
+```
+
+
+
+<a name="Duration.String"></a>
+### func \(\*Duration\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L198>)
+
+```go
+func (x *Duration) String() string
+```
+
+
+
+<a name="ErrorDetail"></a>
+## type [ErrorDetail](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L420-L427>)
+
+Error details for rich error responses
+
+```go
+type ErrorDetail struct {
+    Code     string            `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+    Message  string            `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+    Metadata map[string]string `protobuf:"bytes,3,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ErrorDetail.Descriptor"></a>
+### func \(\*ErrorDetail\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L455>)
+
+```go
+func (*ErrorDetail) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ErrorDetail.ProtoReflect.Descriptor instead.
+
+<a name="ErrorDetail.GetCode"></a>
+### func \(\*ErrorDetail\) [GetCode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L459>)
+
+```go
+func (x *ErrorDetail) GetCode() string
+```
+
+
+
+<a name="ErrorDetail.GetMessage"></a>
+### func \(\*ErrorDetail\) [GetMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L466>)
+
+```go
+func (x *ErrorDetail) GetMessage() string
+```
+
+
+
+<a name="ErrorDetail.GetMetadata"></a>
+### func \(\*ErrorDetail\) [GetMetadata](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L473>)
+
+```go
+func (x *ErrorDetail) GetMetadata() map[string]string
+```
+
+
+
+<a name="ErrorDetail.ProtoMessage"></a>
+### func \(\*ErrorDetail\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L440>)
+
+```go
+func (*ErrorDetail) ProtoMessage()
+```
+
+
+
+<a name="ErrorDetail.ProtoReflect"></a>
+### func \(\*ErrorDetail\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L442>)
+
+```go
+func (x *ErrorDetail) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ErrorDetail.Reset"></a>
+### func \(\*ErrorDetail\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L429>)
+
+```go
+func (x *ErrorDetail) Reset()
+```
+
+
+
+<a name="ErrorDetail.String"></a>
+### func \(\*ErrorDetail\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L436>)
+
+```go
+func (x *ErrorDetail) String() string
+```
+
+
+
+<a name="EvaluateConfig"></a>
+## type [EvaluateConfig](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L460-L472>)
+
+Configuration for tool access evaluation
+
+```go
+type EvaluateConfig struct {
+
+    // List of trusted badge issuers
+    TrustedIssuers []string `protobuf:"bytes,1,rep,name=trusted_issuers,json=trustedIssuers,proto3" json:"trusted_issuers,omitempty"`
+    // Minimum required trust level (0-4, default 0)
+    MinTrustLevel int32 `protobuf:"varint,2,opt,name=min_trust_level,json=minTrustLevel,proto3" json:"min_trust_level,omitempty"`
+    // Accept self-signed did:key badges (Trust Level 0)
+    AcceptLevelZero bool `protobuf:"varint,3,opt,name=accept_level_zero,json=acceptLevelZero,proto3" json:"accept_level_zero,omitempty"`
+    // Allowed tool patterns (glob patterns, e.g., "read_*", "fs.*")
+    AllowedTools []string `protobuf:"bytes,4,rep,name=allowed_tools,json=allowedTools,proto3" json:"allowed_tools,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="EvaluateConfig.Descriptor"></a>
+### func \(\*EvaluateConfig\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L500>)
+
+```go
+func (*EvaluateConfig) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use EvaluateConfig.ProtoReflect.Descriptor instead.
+
+<a name="EvaluateConfig.GetAcceptLevelZero"></a>
+### func \(\*EvaluateConfig\) [GetAcceptLevelZero](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L518>)
+
+```go
+func (x *EvaluateConfig) GetAcceptLevelZero() bool
+```
+
+
+
+<a name="EvaluateConfig.GetAllowedTools"></a>
+### func \(\*EvaluateConfig\) [GetAllowedTools](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L525>)
+
+```go
+func (x *EvaluateConfig) GetAllowedTools() []string
+```
+
+
+
+<a name="EvaluateConfig.GetMinTrustLevel"></a>
+### func \(\*EvaluateConfig\) [GetMinTrustLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L511>)
+
+```go
+func (x *EvaluateConfig) GetMinTrustLevel() int32
+```
+
+
+
+<a name="EvaluateConfig.GetTrustedIssuers"></a>
+### func \(\*EvaluateConfig\) [GetTrustedIssuers](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L504>)
+
+```go
+func (x *EvaluateConfig) GetTrustedIssuers() []string
+```
+
+
+
+<a name="EvaluateConfig.ProtoMessage"></a>
+### func \(\*EvaluateConfig\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L485>)
+
+```go
+func (*EvaluateConfig) ProtoMessage()
+```
+
+
+
+<a name="EvaluateConfig.ProtoReflect"></a>
+### func \(\*EvaluateConfig\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L487>)
+
+```go
+func (x *EvaluateConfig) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="EvaluateConfig.Reset"></a>
+### func \(\*EvaluateConfig\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L474>)
+
+```go
+func (x *EvaluateConfig) Reset()
+```
+
+
+
+<a name="EvaluateConfig.String"></a>
+### func \(\*EvaluateConfig\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L481>)
+
+```go
+func (x *EvaluateConfig) String() string
+```
+
+
+
+<a name="EvaluateToolAccessRequest"></a>
+## type [EvaluateToolAccessRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L330-L351>)
+
+Request to evaluate tool access
+
+```go
+type EvaluateToolAccessRequest struct {
+
+    // Tool name being invoked
+    ToolName string `protobuf:"bytes,1,opt,name=tool_name,json=toolName,proto3" json:"tool_name,omitempty"`
+    // SHA-256 hash of canonicalized params: "sha256:<base64url>"
+    // CRITICAL: Raw params never sent to core - canonicalization happens in wrapper
+    ParamsHash string `protobuf:"bytes,2,opt,name=params_hash,json=paramsHash,proto3" json:"params_hash,omitempty"`
+    // HTTP origin of the server (e.g., "https://api.example.com")
+    ServerOrigin string `protobuf:"bytes,3,opt,name=server_origin,json=serverOrigin,proto3" json:"server_origin,omitempty"`
+    // Caller identity - core derives agent_did, badge_jti, auth_level
+    //
+    // Types that are valid to be assigned to CallerCredential:
+    //
+    //	*EvaluateToolAccessRequest_BadgeJws
+    //	*EvaluateToolAccessRequest_ApiKey
+    CallerCredential isEvaluateToolAccessRequest_CallerCredential `protobuf_oneof:"caller_credential"`
+    // Optional policy configuration
+    PolicyVersion string          `protobuf:"bytes,6,opt,name=policy_version,json=policyVersion,proto3" json:"policy_version,omitempty"`
+    Config        *EvaluateConfig `protobuf:"bytes,7,opt,name=config,proto3" json:"config,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="EvaluateToolAccessRequest.Descriptor"></a>
+### func \(\*EvaluateToolAccessRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L379>)
+
+```go
+func (*EvaluateToolAccessRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use EvaluateToolAccessRequest.ProtoReflect.Descriptor instead.
+
+<a name="EvaluateToolAccessRequest.GetApiKey"></a>
+### func \(\*EvaluateToolAccessRequest\) [GetApiKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L420>)
+
+```go
+func (x *EvaluateToolAccessRequest) GetApiKey() string
+```
+
+
+
+<a name="EvaluateToolAccessRequest.GetBadgeJws"></a>
+### func \(\*EvaluateToolAccessRequest\) [GetBadgeJws](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L411>)
+
+```go
+func (x *EvaluateToolAccessRequest) GetBadgeJws() string
+```
+
+
+
+<a name="EvaluateToolAccessRequest.GetCallerCredential"></a>
+### func \(\*EvaluateToolAccessRequest\) [GetCallerCredential](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L404>)
+
+```go
+func (x *EvaluateToolAccessRequest) GetCallerCredential() isEvaluateToolAccessRequest_CallerCredential
+```
+
+
+
+<a name="EvaluateToolAccessRequest.GetConfig"></a>
+### func \(\*EvaluateToolAccessRequest\) [GetConfig](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L436>)
+
+```go
+func (x *EvaluateToolAccessRequest) GetConfig() *EvaluateConfig
+```
+
+
+
+<a name="EvaluateToolAccessRequest.GetParamsHash"></a>
+### func \(\*EvaluateToolAccessRequest\) [GetParamsHash](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L390>)
+
+```go
+func (x *EvaluateToolAccessRequest) GetParamsHash() string
+```
+
+
+
+<a name="EvaluateToolAccessRequest.GetPolicyVersion"></a>
+### func \(\*EvaluateToolAccessRequest\) [GetPolicyVersion](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L429>)
+
+```go
+func (x *EvaluateToolAccessRequest) GetPolicyVersion() string
+```
+
+
+
+<a name="EvaluateToolAccessRequest.GetServerOrigin"></a>
+### func \(\*EvaluateToolAccessRequest\) [GetServerOrigin](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L397>)
+
+```go
+func (x *EvaluateToolAccessRequest) GetServerOrigin() string
+```
+
+
+
+<a name="EvaluateToolAccessRequest.GetToolName"></a>
+### func \(\*EvaluateToolAccessRequest\) [GetToolName](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L383>)
+
+```go
+func (x *EvaluateToolAccessRequest) GetToolName() string
+```
+
+
+
+<a name="EvaluateToolAccessRequest.ProtoMessage"></a>
+### func \(\*EvaluateToolAccessRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L364>)
+
+```go
+func (*EvaluateToolAccessRequest) ProtoMessage()
+```
+
+
+
+<a name="EvaluateToolAccessRequest.ProtoReflect"></a>
+### func \(\*EvaluateToolAccessRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L366>)
+
+```go
+func (x *EvaluateToolAccessRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="EvaluateToolAccessRequest.Reset"></a>
+### func \(\*EvaluateToolAccessRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L353>)
+
+```go
+func (x *EvaluateToolAccessRequest) Reset()
+```
+
+
+
+<a name="EvaluateToolAccessRequest.String"></a>
+### func \(\*EvaluateToolAccessRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L360>)
+
+```go
+func (x *EvaluateToolAccessRequest) String() string
+```
+
+
+
+<a name="EvaluateToolAccessRequest_ApiKey"></a>
+## type [EvaluateToolAccessRequest\\\_ApiKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L451-L453>)
+
+
+
+```go
+type EvaluateToolAccessRequest_ApiKey struct {
+    ApiKey string `protobuf:"bytes,5,opt,name=api_key,json=apiKey,proto3,oneof"` // API key
+}
+```
+
+<a name="EvaluateToolAccessRequest_BadgeJws"></a>
+## type [EvaluateToolAccessRequest\\\_BadgeJws](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L447-L449>)
+
+
+
+```go
+type EvaluateToolAccessRequest_BadgeJws struct {
+    BadgeJws string `protobuf:"bytes,4,opt,name=badge_jws,json=badgeJws,proto3,oneof"` // Full badge JWT
+}
+```
+
+<a name="EvaluateToolAccessResponse"></a>
+## type [EvaluateToolAccessResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L533-L555>)
+
+Response from tool access evaluation
+
+```go
+type EvaluateToolAccessResponse struct {
+
+    // Access decision
+    Decision MCPDecision `protobuf:"varint,1,opt,name=decision,proto3,enum=capiscio.v1.MCPDecision" json:"decision,omitempty"`
+    // Reason for denial (only set if decision = DENY)
+    DenyReason MCPDenyReason `protobuf:"varint,2,opt,name=deny_reason,json=denyReason,proto3,enum=capiscio.v1.MCPDenyReason" json:"deny_reason,omitempty"`
+    // Human-readable denial detail
+    DenyDetail string `protobuf:"bytes,3,opt,name=deny_detail,json=denyDetail,proto3" json:"deny_detail,omitempty"`
+    // Derived identity (core extracts from credential)
+    AgentDid   string       `protobuf:"bytes,4,opt,name=agent_did,json=agentDid,proto3" json:"agent_did,omitempty"`                                   // Extracted from badge/API key
+    BadgeJti   string       `protobuf:"bytes,5,opt,name=badge_jti,json=badgeJti,proto3" json:"badge_jti,omitempty"`                                   // Badge ID if present
+    AuthLevel  MCPAuthLevel `protobuf:"varint,6,opt,name=auth_level,json=authLevel,proto3,enum=capiscio.v1.MCPAuthLevel" json:"auth_level,omitempty"` // ANONYMOUS, API_KEY, or BADGE
+    TrustLevel int32        `protobuf:"varint,7,opt,name=trust_level,json=trustLevel,proto3" json:"trust_level,omitempty"`                            // Verified trust level (0-4)
+    // Evidence (single source of truth - no separate EmitEvidence RPC)
+    // RFC-006 §7 compliant JSON
+    EvidenceJson string `protobuf:"bytes,8,opt,name=evidence_json,json=evidenceJson,proto3" json:"evidence_json,omitempty"`
+    // Unique evidence record ID
+    EvidenceId string `protobuf:"bytes,9,opt,name=evidence_id,json=evidenceId,proto3" json:"evidence_id,omitempty"`
+    // Timestamp of evaluation
+    Timestamp *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="EvaluateToolAccessResponse.Descriptor"></a>
+### func \(\*EvaluateToolAccessResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L583>)
+
+```go
+func (*EvaluateToolAccessResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use EvaluateToolAccessResponse.ProtoReflect.Descriptor instead.
+
+<a name="EvaluateToolAccessResponse.GetAgentDid"></a>
+### func \(\*EvaluateToolAccessResponse\) [GetAgentDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L608>)
+
+```go
+func (x *EvaluateToolAccessResponse) GetAgentDid() string
+```
+
+
+
+<a name="EvaluateToolAccessResponse.GetAuthLevel"></a>
+### func \(\*EvaluateToolAccessResponse\) [GetAuthLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L622>)
+
+```go
+func (x *EvaluateToolAccessResponse) GetAuthLevel() MCPAuthLevel
+```
+
+
+
+<a name="EvaluateToolAccessResponse.GetBadgeJti"></a>
+### func \(\*EvaluateToolAccessResponse\) [GetBadgeJti](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L615>)
+
+```go
+func (x *EvaluateToolAccessResponse) GetBadgeJti() string
+```
+
+
+
+<a name="EvaluateToolAccessResponse.GetDecision"></a>
+### func \(\*EvaluateToolAccessResponse\) [GetDecision](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L587>)
+
+```go
+func (x *EvaluateToolAccessResponse) GetDecision() MCPDecision
+```
+
+
+
+<a name="EvaluateToolAccessResponse.GetDenyDetail"></a>
+### func \(\*EvaluateToolAccessResponse\) [GetDenyDetail](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L601>)
+
+```go
+func (x *EvaluateToolAccessResponse) GetDenyDetail() string
+```
+
+
+
+<a name="EvaluateToolAccessResponse.GetDenyReason"></a>
+### func \(\*EvaluateToolAccessResponse\) [GetDenyReason](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L594>)
+
+```go
+func (x *EvaluateToolAccessResponse) GetDenyReason() MCPDenyReason
+```
+
+
+
+<a name="EvaluateToolAccessResponse.GetEvidenceId"></a>
+### func \(\*EvaluateToolAccessResponse\) [GetEvidenceId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L643>)
+
+```go
+func (x *EvaluateToolAccessResponse) GetEvidenceId() string
+```
+
+
+
+<a name="EvaluateToolAccessResponse.GetEvidenceJson"></a>
+### func \(\*EvaluateToolAccessResponse\) [GetEvidenceJson](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L636>)
+
+```go
+func (x *EvaluateToolAccessResponse) GetEvidenceJson() string
+```
+
+
+
+<a name="EvaluateToolAccessResponse.GetTimestamp"></a>
+### func \(\*EvaluateToolAccessResponse\) [GetTimestamp](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L650>)
+
+```go
+func (x *EvaluateToolAccessResponse) GetTimestamp() *timestamppb.Timestamp
+```
+
+
+
+<a name="EvaluateToolAccessResponse.GetTrustLevel"></a>
+### func \(\*EvaluateToolAccessResponse\) [GetTrustLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L629>)
+
+```go
+func (x *EvaluateToolAccessResponse) GetTrustLevel() int32
+```
+
+
+
+<a name="EvaluateToolAccessResponse.ProtoMessage"></a>
+### func \(\*EvaluateToolAccessResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L568>)
+
+```go
+func (*EvaluateToolAccessResponse) ProtoMessage()
+```
+
+
+
+<a name="EvaluateToolAccessResponse.ProtoReflect"></a>
+### func \(\*EvaluateToolAccessResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L570>)
+
+```go
+func (x *EvaluateToolAccessResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="EvaluateToolAccessResponse.Reset"></a>
+### func \(\*EvaluateToolAccessResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L557>)
+
+```go
+func (x *EvaluateToolAccessResponse) Reset()
+```
+
+
+
+<a name="EvaluateToolAccessResponse.String"></a>
+### func \(\*EvaluateToolAccessResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L564>)
+
+```go
+func (x *EvaluateToolAccessResponse) String() string
+```
+
+
+
+<a name="ExportKeyRequest"></a>
+## type [ExportKeyRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L924-L933>)
+
+Request to export key
+
+```go
+type ExportKeyRequest struct {
+    KeyId          string    `protobuf:"bytes,1,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
+    FilePath       string    `protobuf:"bytes,2,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
+    Format         KeyFormat `protobuf:"varint,3,opt,name=format,proto3,enum=capiscio.v1.KeyFormat" json:"format,omitempty"`
+    IncludePrivate bool      `protobuf:"varint,4,opt,name=include_private,json=includePrivate,proto3" json:"include_private,omitempty"`
+    Passphrase     string    `protobuf:"bytes,5,opt,name=passphrase,proto3" json:"passphrase,omitempty"` // Optional: encrypt private key
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ExportKeyRequest.Descriptor"></a>
+### func \(\*ExportKeyRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L961>)
+
+```go
+func (*ExportKeyRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ExportKeyRequest.ProtoReflect.Descriptor instead.
+
+<a name="ExportKeyRequest.GetFilePath"></a>
+### func \(\*ExportKeyRequest\) [GetFilePath](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L972>)
+
+```go
+func (x *ExportKeyRequest) GetFilePath() string
+```
+
+
+
+<a name="ExportKeyRequest.GetFormat"></a>
+### func \(\*ExportKeyRequest\) [GetFormat](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L979>)
+
+```go
+func (x *ExportKeyRequest) GetFormat() KeyFormat
+```
+
+
+
+<a name="ExportKeyRequest.GetIncludePrivate"></a>
+### func \(\*ExportKeyRequest\) [GetIncludePrivate](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L986>)
+
+```go
+func (x *ExportKeyRequest) GetIncludePrivate() bool
+```
+
+
+
+<a name="ExportKeyRequest.GetKeyId"></a>
+### func \(\*ExportKeyRequest\) [GetKeyId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L965>)
+
+```go
+func (x *ExportKeyRequest) GetKeyId() string
+```
+
+
+
+<a name="ExportKeyRequest.GetPassphrase"></a>
+### func \(\*ExportKeyRequest\) [GetPassphrase](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L993>)
+
+```go
+func (x *ExportKeyRequest) GetPassphrase() string
+```
+
+
+
+<a name="ExportKeyRequest.ProtoMessage"></a>
+### func \(\*ExportKeyRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L946>)
+
+```go
+func (*ExportKeyRequest) ProtoMessage()
+```
+
+
+
+<a name="ExportKeyRequest.ProtoReflect"></a>
+### func \(\*ExportKeyRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L948>)
+
+```go
+func (x *ExportKeyRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ExportKeyRequest.Reset"></a>
+### func \(\*ExportKeyRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L935>)
+
+```go
+func (x *ExportKeyRequest) Reset()
+```
+
+
+
+<a name="ExportKeyRequest.String"></a>
+### func \(\*ExportKeyRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L942>)
+
+```go
+func (x *ExportKeyRequest) String() string
+```
+
+
+
+<a name="ExportKeyResponse"></a>
+## type [ExportKeyResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1001-L1007>)
+
+Response for export
+
+```go
+type ExportKeyResponse struct {
+    FilePath     string `protobuf:"bytes,1,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
+    ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ExportKeyResponse.Descriptor"></a>
+### func \(\*ExportKeyResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1035>)
+
+```go
+func (*ExportKeyResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ExportKeyResponse.ProtoReflect.Descriptor instead.
+
+<a name="ExportKeyResponse.GetErrorMessage"></a>
+### func \(\*ExportKeyResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1046>)
+
+```go
+func (x *ExportKeyResponse) GetErrorMessage() string
+```
+
+
+
+<a name="ExportKeyResponse.GetFilePath"></a>
+### func \(\*ExportKeyResponse\) [GetFilePath](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1039>)
+
+```go
+func (x *ExportKeyResponse) GetFilePath() string
+```
+
+
+
+<a name="ExportKeyResponse.ProtoMessage"></a>
+### func \(\*ExportKeyResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1020>)
+
+```go
+func (*ExportKeyResponse) ProtoMessage()
+```
+
+
+
+<a name="ExportKeyResponse.ProtoReflect"></a>
+### func \(\*ExportKeyResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1022>)
+
+```go
+func (x *ExportKeyResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ExportKeyResponse.Reset"></a>
+### func \(\*ExportKeyResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1009>)
+
+```go
+func (x *ExportKeyResponse) Reset()
+```
+
+
+
+<a name="ExportKeyResponse.String"></a>
+### func \(\*ExportKeyResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1016>)
+
+```go
+func (x *ExportKeyResponse) String() string
+```
+
+
+
+<a name="ExportToDirectoryRequest"></a>
+## type [ExportToDirectoryRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L908-L914>)
+
+Request to export to directory
+
+```go
+type ExportToDirectoryRequest struct {
+    DirectoryPath string    `protobuf:"bytes,1,opt,name=directory_path,json=directoryPath,proto3" json:"directory_path,omitempty"`
+    Format        KeyFormat `protobuf:"varint,2,opt,name=format,proto3,enum=capiscio.v1.KeyFormat" json:"format,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ExportToDirectoryRequest.Descriptor"></a>
+### func \(\*ExportToDirectoryRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L942>)
+
+```go
+func (*ExportToDirectoryRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ExportToDirectoryRequest.ProtoReflect.Descriptor instead.
+
+<a name="ExportToDirectoryRequest.GetDirectoryPath"></a>
+### func \(\*ExportToDirectoryRequest\) [GetDirectoryPath](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L946>)
+
+```go
+func (x *ExportToDirectoryRequest) GetDirectoryPath() string
+```
+
+
+
+<a name="ExportToDirectoryRequest.GetFormat"></a>
+### func \(\*ExportToDirectoryRequest\) [GetFormat](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L953>)
+
+```go
+func (x *ExportToDirectoryRequest) GetFormat() KeyFormat
+```
+
+
+
+<a name="ExportToDirectoryRequest.ProtoMessage"></a>
+### func \(\*ExportToDirectoryRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L927>)
+
+```go
+func (*ExportToDirectoryRequest) ProtoMessage()
+```
+
+
+
+<a name="ExportToDirectoryRequest.ProtoReflect"></a>
+### func \(\*ExportToDirectoryRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L929>)
+
+```go
+func (x *ExportToDirectoryRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ExportToDirectoryRequest.Reset"></a>
+### func \(\*ExportToDirectoryRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L916>)
+
+```go
+func (x *ExportToDirectoryRequest) Reset()
+```
+
+
+
+<a name="ExportToDirectoryRequest.String"></a>
+### func \(\*ExportToDirectoryRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L923>)
+
+```go
+func (x *ExportToDirectoryRequest) String() string
+```
+
+
+
+<a name="ExportToDirectoryResponse"></a>
+## type [ExportToDirectoryResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L961-L967>)
+
+Response for export
+
+```go
+type ExportToDirectoryResponse struct {
+    KeysExported int32  `protobuf:"varint,1,opt,name=keys_exported,json=keysExported,proto3" json:"keys_exported,omitempty"`
+    ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ExportToDirectoryResponse.Descriptor"></a>
+### func \(\*ExportToDirectoryResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L995>)
+
+```go
+func (*ExportToDirectoryResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ExportToDirectoryResponse.ProtoReflect.Descriptor instead.
+
+<a name="ExportToDirectoryResponse.GetErrorMessage"></a>
+### func \(\*ExportToDirectoryResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L1006>)
+
+```go
+func (x *ExportToDirectoryResponse) GetErrorMessage() string
+```
+
+
+
+<a name="ExportToDirectoryResponse.GetKeysExported"></a>
+### func \(\*ExportToDirectoryResponse\) [GetKeysExported](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L999>)
+
+```go
+func (x *ExportToDirectoryResponse) GetKeysExported() int32
+```
+
+
+
+<a name="ExportToDirectoryResponse.ProtoMessage"></a>
+### func \(\*ExportToDirectoryResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L980>)
+
+```go
+func (*ExportToDirectoryResponse) ProtoMessage()
+```
+
+
+
+<a name="ExportToDirectoryResponse.ProtoReflect"></a>
+### func \(\*ExportToDirectoryResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L982>)
+
+```go
+func (x *ExportToDirectoryResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ExportToDirectoryResponse.Reset"></a>
+### func \(\*ExportToDirectoryResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L969>)
+
+```go
+func (x *ExportToDirectoryResponse) Reset()
+```
+
+
+
+<a name="ExportToDirectoryResponse.String"></a>
+### func \(\*ExportToDirectoryResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L976>)
+
+```go
+func (x *ExportToDirectoryResponse) String() string
+```
+
+
+
+<a name="FetchRevocationListRequest"></a>
+## type [FetchRevocationListRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L635-L641>)
+
+Request to fetch remote revocation list
+
+```go
+type FetchRevocationListRequest struct {
+    Url     string    `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+    Timeout *Duration `protobuf:"bytes,2,opt,name=timeout,proto3" json:"timeout,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="FetchRevocationListRequest.Descriptor"></a>
+### func \(\*FetchRevocationListRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L669>)
+
+```go
+func (*FetchRevocationListRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use FetchRevocationListRequest.ProtoReflect.Descriptor instead.
+
+<a name="FetchRevocationListRequest.GetTimeout"></a>
+### func \(\*FetchRevocationListRequest\) [GetTimeout](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L680>)
+
+```go
+func (x *FetchRevocationListRequest) GetTimeout() *Duration
+```
+
+
+
+<a name="FetchRevocationListRequest.GetUrl"></a>
+### func \(\*FetchRevocationListRequest\) [GetUrl](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L673>)
+
+```go
+func (x *FetchRevocationListRequest) GetUrl() string
+```
+
+
+
+<a name="FetchRevocationListRequest.ProtoMessage"></a>
+### func \(\*FetchRevocationListRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L654>)
+
+```go
+func (*FetchRevocationListRequest) ProtoMessage()
+```
+
+
+
+<a name="FetchRevocationListRequest.ProtoReflect"></a>
+### func \(\*FetchRevocationListRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L656>)
+
+```go
+func (x *FetchRevocationListRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="FetchRevocationListRequest.Reset"></a>
+### func \(\*FetchRevocationListRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L643>)
+
+```go
+func (x *FetchRevocationListRequest) Reset()
+```
+
+
+
+<a name="FetchRevocationListRequest.String"></a>
+### func \(\*FetchRevocationListRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L650>)
+
+```go
+func (x *FetchRevocationListRequest) String() string
+```
+
+
+
+<a name="FetchRevocationListResponse"></a>
+## type [FetchRevocationListResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L688-L696>)
+
+Response for fetch
+
+```go
+type FetchRevocationListResponse struct {
+    EntriesAdded   int32      `protobuf:"varint,1,opt,name=entries_added,json=entriesAdded,proto3" json:"entries_added,omitempty"`
+    EntriesUpdated int32      `protobuf:"varint,2,opt,name=entries_updated,json=entriesUpdated,proto3" json:"entries_updated,omitempty"`
+    FetchedAt      *Timestamp `protobuf:"bytes,3,opt,name=fetched_at,json=fetchedAt,proto3" json:"fetched_at,omitempty"`
+    ErrorMessage   string     `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="FetchRevocationListResponse.Descriptor"></a>
+### func \(\*FetchRevocationListResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L724>)
+
+```go
+func (*FetchRevocationListResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use FetchRevocationListResponse.ProtoReflect.Descriptor instead.
+
+<a name="FetchRevocationListResponse.GetEntriesAdded"></a>
+### func \(\*FetchRevocationListResponse\) [GetEntriesAdded](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L728>)
+
+```go
+func (x *FetchRevocationListResponse) GetEntriesAdded() int32
+```
+
+
+
+<a name="FetchRevocationListResponse.GetEntriesUpdated"></a>
+### func \(\*FetchRevocationListResponse\) [GetEntriesUpdated](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L735>)
+
+```go
+func (x *FetchRevocationListResponse) GetEntriesUpdated() int32
+```
+
+
+
+<a name="FetchRevocationListResponse.GetErrorMessage"></a>
+### func \(\*FetchRevocationListResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L749>)
+
+```go
+func (x *FetchRevocationListResponse) GetErrorMessage() string
+```
+
+
+
+<a name="FetchRevocationListResponse.GetFetchedAt"></a>
+### func \(\*FetchRevocationListResponse\) [GetFetchedAt](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L742>)
+
+```go
+func (x *FetchRevocationListResponse) GetFetchedAt() *Timestamp
+```
+
+
+
+<a name="FetchRevocationListResponse.ProtoMessage"></a>
+### func \(\*FetchRevocationListResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L709>)
+
+```go
+func (*FetchRevocationListResponse) ProtoMessage()
+```
+
+
+
+<a name="FetchRevocationListResponse.ProtoReflect"></a>
+### func \(\*FetchRevocationListResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L711>)
+
+```go
+func (x *FetchRevocationListResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="FetchRevocationListResponse.Reset"></a>
+### func \(\*FetchRevocationListResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L698>)
+
+```go
+func (x *FetchRevocationListResponse) Reset()
+```
+
+
+
+<a name="FetchRevocationListResponse.String"></a>
+### func \(\*FetchRevocationListResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L705>)
+
+```go
+func (x *FetchRevocationListResponse) String() string
+```
+
+
+
+<a name="FinalizeDVOrderRequest"></a>
+## type [FinalizeDVOrderRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1984-L1992>)
+
+Request to finalize DV order
+
+```go
+type FinalizeDVOrderRequest struct {
+
+    // Order ID (UUID)
+    OrderId string `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+    // CA URL (default: https://registry.capisc.io)
+    CaUrl string `protobuf:"bytes,2,opt,name=ca_url,json=caUrl,proto3" json:"ca_url,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="FinalizeDVOrderRequest.Descriptor"></a>
+### func \(\*FinalizeDVOrderRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L2020>)
+
+```go
+func (*FinalizeDVOrderRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use FinalizeDVOrderRequest.ProtoReflect.Descriptor instead.
+
+<a name="FinalizeDVOrderRequest.GetCaUrl"></a>
+### func \(\*FinalizeDVOrderRequest\) [GetCaUrl](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L2031>)
+
+```go
+func (x *FinalizeDVOrderRequest) GetCaUrl() string
+```
+
+
+
+<a name="FinalizeDVOrderRequest.GetOrderId"></a>
+### func \(\*FinalizeDVOrderRequest\) [GetOrderId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L2024>)
+
+```go
+func (x *FinalizeDVOrderRequest) GetOrderId() string
+```
+
+
+
+<a name="FinalizeDVOrderRequest.ProtoMessage"></a>
+### func \(\*FinalizeDVOrderRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L2005>)
+
+```go
+func (*FinalizeDVOrderRequest) ProtoMessage()
+```
+
+
+
+<a name="FinalizeDVOrderRequest.ProtoReflect"></a>
+### func \(\*FinalizeDVOrderRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L2007>)
+
+```go
+func (x *FinalizeDVOrderRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="FinalizeDVOrderRequest.Reset"></a>
+### func \(\*FinalizeDVOrderRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1994>)
+
+```go
+func (x *FinalizeDVOrderRequest) Reset()
+```
+
+
+
+<a name="FinalizeDVOrderRequest.String"></a>
+### func \(\*FinalizeDVOrderRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L2001>)
+
+```go
+func (x *FinalizeDVOrderRequest) String() string
+```
+
+
+
+<a name="FinalizeDVOrderResponse"></a>
+## type [FinalizeDVOrderResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L2039-L2053>)
+
+Response from DV order finalization
+
+```go
+type FinalizeDVOrderResponse struct {
+
+    // Whether the request succeeded
+    Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+    // DV grant JWT
+    Grant string `protobuf:"bytes,2,opt,name=grant,proto3" json:"grant,omitempty"`
+    // When the grant expires (Unix timestamp)
+    ExpiresAt int64 `protobuf:"varint,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+    // Error message if success=false
+    Error string `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
+    // Error code
+    ErrorCode string `protobuf:"bytes,5,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="FinalizeDVOrderResponse.Descriptor"></a>
+### func \(\*FinalizeDVOrderResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L2081>)
+
+```go
+func (*FinalizeDVOrderResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use FinalizeDVOrderResponse.ProtoReflect.Descriptor instead.
+
+<a name="FinalizeDVOrderResponse.GetError"></a>
+### func \(\*FinalizeDVOrderResponse\) [GetError](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L2106>)
+
+```go
+func (x *FinalizeDVOrderResponse) GetError() string
+```
+
+
+
+<a name="FinalizeDVOrderResponse.GetErrorCode"></a>
+### func \(\*FinalizeDVOrderResponse\) [GetErrorCode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L2113>)
+
+```go
+func (x *FinalizeDVOrderResponse) GetErrorCode() string
+```
+
+
+
+<a name="FinalizeDVOrderResponse.GetExpiresAt"></a>
+### func \(\*FinalizeDVOrderResponse\) [GetExpiresAt](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L2099>)
+
+```go
+func (x *FinalizeDVOrderResponse) GetExpiresAt() int64
+```
+
+
+
+<a name="FinalizeDVOrderResponse.GetGrant"></a>
+### func \(\*FinalizeDVOrderResponse\) [GetGrant](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L2092>)
+
+```go
+func (x *FinalizeDVOrderResponse) GetGrant() string
+```
+
+
+
+<a name="FinalizeDVOrderResponse.GetSuccess"></a>
+### func \(\*FinalizeDVOrderResponse\) [GetSuccess](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L2085>)
+
+```go
+func (x *FinalizeDVOrderResponse) GetSuccess() bool
+```
+
+
+
+<a name="FinalizeDVOrderResponse.ProtoMessage"></a>
+### func \(\*FinalizeDVOrderResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L2066>)
+
+```go
+func (*FinalizeDVOrderResponse) ProtoMessage()
+```
+
+
+
+<a name="FinalizeDVOrderResponse.ProtoReflect"></a>
+### func \(\*FinalizeDVOrderResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L2068>)
+
+```go
+func (x *FinalizeDVOrderResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="FinalizeDVOrderResponse.Reset"></a>
+### func \(\*FinalizeDVOrderResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L2055>)
+
+```go
+func (x *FinalizeDVOrderResponse) Reset()
+```
+
+
+
+<a name="FinalizeDVOrderResponse.String"></a>
+### func \(\*FinalizeDVOrderResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L2062>)
+
+```go
+func (x *FinalizeDVOrderResponse) String() string
+```
+
+
+
+<a name="GenerateKeyPairRequest"></a>
+## type [GenerateKeyPairRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L632-L639>)
+
+Request to generate key pair
+
+```go
+type GenerateKeyPairRequest struct {
+    Algorithm KeyAlgorithm      `protobuf:"varint,1,opt,name=algorithm,proto3,enum=capiscio.v1.KeyAlgorithm" json:"algorithm,omitempty"`
+    KeyId     string            `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"` // Optional: specific key ID
+    Metadata  map[string]string `protobuf:"bytes,3,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="GenerateKeyPairRequest.Descriptor"></a>
+### func \(\*GenerateKeyPairRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L667>)
+
+```go
+func (*GenerateKeyPairRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use GenerateKeyPairRequest.ProtoReflect.Descriptor instead.
+
+<a name="GenerateKeyPairRequest.GetAlgorithm"></a>
+### func \(\*GenerateKeyPairRequest\) [GetAlgorithm](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L671>)
+
+```go
+func (x *GenerateKeyPairRequest) GetAlgorithm() KeyAlgorithm
+```
+
+
+
+<a name="GenerateKeyPairRequest.GetKeyId"></a>
+### func \(\*GenerateKeyPairRequest\) [GetKeyId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L678>)
+
+```go
+func (x *GenerateKeyPairRequest) GetKeyId() string
+```
+
+
+
+<a name="GenerateKeyPairRequest.GetMetadata"></a>
+### func \(\*GenerateKeyPairRequest\) [GetMetadata](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L685>)
+
+```go
+func (x *GenerateKeyPairRequest) GetMetadata() map[string]string
+```
+
+
+
+<a name="GenerateKeyPairRequest.ProtoMessage"></a>
+### func \(\*GenerateKeyPairRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L652>)
+
+```go
+func (*GenerateKeyPairRequest) ProtoMessage()
+```
+
+
+
+<a name="GenerateKeyPairRequest.ProtoReflect"></a>
+### func \(\*GenerateKeyPairRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L654>)
+
+```go
+func (x *GenerateKeyPairRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="GenerateKeyPairRequest.Reset"></a>
+### func \(\*GenerateKeyPairRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L641>)
+
+```go
+func (x *GenerateKeyPairRequest) Reset()
+```
+
+
+
+<a name="GenerateKeyPairRequest.String"></a>
+### func \(\*GenerateKeyPairRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L648>)
+
+```go
+func (x *GenerateKeyPairRequest) String() string
+```
+
+
+
+<a name="GenerateKeyPairResponse"></a>
+## type [GenerateKeyPairResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L693-L705>)
+
+Response with generated keys
+
+```go
+type GenerateKeyPairResponse struct {
+    KeyId         string       `protobuf:"bytes,1,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
+    PublicKey     []byte       `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
+    PrivateKey    []byte       `protobuf:"bytes,3,opt,name=private_key,json=privateKey,proto3" json:"private_key,omitempty"`
+    PublicKeyPem  string       `protobuf:"bytes,4,opt,name=public_key_pem,json=publicKeyPem,proto3" json:"public_key_pem,omitempty"`
+    PrivateKeyPem string       `protobuf:"bytes,5,opt,name=private_key_pem,json=privateKeyPem,proto3" json:"private_key_pem,omitempty"`
+    Algorithm     KeyAlgorithm `protobuf:"varint,6,opt,name=algorithm,proto3,enum=capiscio.v1.KeyAlgorithm" json:"algorithm,omitempty"`
+    ErrorMessage  string       `protobuf:"bytes,7,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    DidKey        string       `protobuf:"bytes,8,opt,name=did_key,json=didKey,proto3" json:"did_key,omitempty"` // did:key URI derived from public key (RFC-002 §6.1)
+    // contains filtered or unexported fields
+}
+```
+
+<a name="GenerateKeyPairResponse.Descriptor"></a>
+### func \(\*GenerateKeyPairResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L733>)
+
+```go
+func (*GenerateKeyPairResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use GenerateKeyPairResponse.ProtoReflect.Descriptor instead.
+
+<a name="GenerateKeyPairResponse.GetAlgorithm"></a>
+### func \(\*GenerateKeyPairResponse\) [GetAlgorithm](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L772>)
+
+```go
+func (x *GenerateKeyPairResponse) GetAlgorithm() KeyAlgorithm
+```
+
+
+
+<a name="GenerateKeyPairResponse.GetDidKey"></a>
+### func \(\*GenerateKeyPairResponse\) [GetDidKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L786>)
+
+```go
+func (x *GenerateKeyPairResponse) GetDidKey() string
+```
+
+
+
+<a name="GenerateKeyPairResponse.GetErrorMessage"></a>
+### func \(\*GenerateKeyPairResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L779>)
+
+```go
+func (x *GenerateKeyPairResponse) GetErrorMessage() string
+```
+
+
+
+<a name="GenerateKeyPairResponse.GetKeyId"></a>
+### func \(\*GenerateKeyPairResponse\) [GetKeyId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L737>)
+
+```go
+func (x *GenerateKeyPairResponse) GetKeyId() string
+```
+
+
+
+<a name="GenerateKeyPairResponse.GetPrivateKey"></a>
+### func \(\*GenerateKeyPairResponse\) [GetPrivateKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L751>)
+
+```go
+func (x *GenerateKeyPairResponse) GetPrivateKey() []byte
+```
+
+
+
+<a name="GenerateKeyPairResponse.GetPrivateKeyPem"></a>
+### func \(\*GenerateKeyPairResponse\) [GetPrivateKeyPem](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L765>)
+
+```go
+func (x *GenerateKeyPairResponse) GetPrivateKeyPem() string
+```
+
+
+
+<a name="GenerateKeyPairResponse.GetPublicKey"></a>
+### func \(\*GenerateKeyPairResponse\) [GetPublicKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L744>)
+
+```go
+func (x *GenerateKeyPairResponse) GetPublicKey() []byte
+```
+
+
+
+<a name="GenerateKeyPairResponse.GetPublicKeyPem"></a>
+### func \(\*GenerateKeyPairResponse\) [GetPublicKeyPem](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L758>)
+
+```go
+func (x *GenerateKeyPairResponse) GetPublicKeyPem() string
+```
+
+
+
+<a name="GenerateKeyPairResponse.ProtoMessage"></a>
+### func \(\*GenerateKeyPairResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L718>)
+
+```go
+func (*GenerateKeyPairResponse) ProtoMessage()
+```
+
+
+
+<a name="GenerateKeyPairResponse.ProtoReflect"></a>
+### func \(\*GenerateKeyPairResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L720>)
+
+```go
+func (x *GenerateKeyPairResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="GenerateKeyPairResponse.Reset"></a>
+### func \(\*GenerateKeyPairResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L707>)
+
+```go
+func (x *GenerateKeyPairResponse) Reset()
+```
+
+
+
+<a name="GenerateKeyPairResponse.String"></a>
+### func \(\*GenerateKeyPairResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L714>)
+
+```go
+func (x *GenerateKeyPairResponse) String() string
+```
+
+
+
+<a name="GetAgentRequest"></a>
+## type [GetAgentRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L266-L273>)
+
+Request to get agent
+
+```go
+type GetAgentRequest struct {
+    Did          string `protobuf:"bytes,1,opt,name=did,proto3" json:"did,omitempty"`
+    IncludeBadge bool   `protobuf:"varint,2,opt,name=include_badge,json=includeBadge,proto3" json:"include_badge,omitempty"` // Whether to include badge info
+    VerifyBadge  bool   `protobuf:"varint,3,opt,name=verify_badge,json=verifyBadge,proto3" json:"verify_badge,omitempty"`    // Whether to verify badge
+    // contains filtered or unexported fields
+}
+```
+
+<a name="GetAgentRequest.Descriptor"></a>
+### func \(\*GetAgentRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L301>)
+
+```go
+func (*GetAgentRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use GetAgentRequest.ProtoReflect.Descriptor instead.
+
+<a name="GetAgentRequest.GetDid"></a>
+### func \(\*GetAgentRequest\) [GetDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L305>)
+
+```go
+func (x *GetAgentRequest) GetDid() string
+```
+
+
+
+<a name="GetAgentRequest.GetIncludeBadge"></a>
+### func \(\*GetAgentRequest\) [GetIncludeBadge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L312>)
+
+```go
+func (x *GetAgentRequest) GetIncludeBadge() bool
+```
+
+
+
+<a name="GetAgentRequest.GetVerifyBadge"></a>
+### func \(\*GetAgentRequest\) [GetVerifyBadge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L319>)
+
+```go
+func (x *GetAgentRequest) GetVerifyBadge() bool
+```
+
+
+
+<a name="GetAgentRequest.ProtoMessage"></a>
+### func \(\*GetAgentRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L286>)
+
+```go
+func (*GetAgentRequest) ProtoMessage()
+```
+
+
+
+<a name="GetAgentRequest.ProtoReflect"></a>
+### func \(\*GetAgentRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L288>)
+
+```go
+func (x *GetAgentRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="GetAgentRequest.Reset"></a>
+### func \(\*GetAgentRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L275>)
+
+```go
+func (x *GetAgentRequest) Reset()
+```
+
+
+
+<a name="GetAgentRequest.String"></a>
+### func \(\*GetAgentRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L282>)
+
+```go
+func (x *GetAgentRequest) String() string
+```
+
+
+
+<a name="GetAgentResponse"></a>
+## type [GetAgentResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L327-L334>)
+
+Response with agent
+
+```go
+type GetAgentResponse struct {
+    Agent        *RegisteredAgent `protobuf:"bytes,1,opt,name=agent,proto3" json:"agent,omitempty"`
+    BadgeValid   bool             `protobuf:"varint,2,opt,name=badge_valid,json=badgeValid,proto3" json:"badge_valid,omitempty"`
+    ErrorMessage string           `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="GetAgentResponse.Descriptor"></a>
+### func \(\*GetAgentResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L362>)
+
+```go
+func (*GetAgentResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use GetAgentResponse.ProtoReflect.Descriptor instead.
+
+<a name="GetAgentResponse.GetAgent"></a>
+### func \(\*GetAgentResponse\) [GetAgent](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L366>)
+
+```go
+func (x *GetAgentResponse) GetAgent() *RegisteredAgent
+```
+
+
+
+<a name="GetAgentResponse.GetBadgeValid"></a>
+### func \(\*GetAgentResponse\) [GetBadgeValid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L373>)
+
+```go
+func (x *GetAgentResponse) GetBadgeValid() bool
+```
+
+
+
+<a name="GetAgentResponse.GetErrorMessage"></a>
+### func \(\*GetAgentResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L380>)
+
+```go
+func (x *GetAgentResponse) GetErrorMessage() string
+```
+
+
+
+<a name="GetAgentResponse.ProtoMessage"></a>
+### func \(\*GetAgentResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L347>)
+
+```go
+func (*GetAgentResponse) ProtoMessage()
+```
+
+
+
+<a name="GetAgentResponse.ProtoReflect"></a>
+### func \(\*GetAgentResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L349>)
+
+```go
+func (x *GetAgentResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="GetAgentResponse.Reset"></a>
+### func \(\*GetAgentResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L336>)
+
+```go
+func (x *GetAgentResponse) Reset()
+```
+
+
+
+<a name="GetAgentResponse.String"></a>
+### func \(\*GetAgentResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L343>)
+
+```go
+func (x *GetAgentResponse) String() string
+```
+
+
+
+<a name="GetCacheStatsRequest"></a>
+## type [GetCacheStatsRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L847-L851>)
+
+Request for cache stats
+
+```go
+type GetCacheStatsRequest struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="GetCacheStatsRequest.Descriptor"></a>
+### func \(\*GetCacheStatsRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L879>)
+
+```go
+func (*GetCacheStatsRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use GetCacheStatsRequest.ProtoReflect.Descriptor instead.
+
+<a name="GetCacheStatsRequest.ProtoMessage"></a>
+### func \(\*GetCacheStatsRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L864>)
+
+```go
+func (*GetCacheStatsRequest) ProtoMessage()
+```
+
+
+
+<a name="GetCacheStatsRequest.ProtoReflect"></a>
+### func \(\*GetCacheStatsRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L866>)
+
+```go
+func (x *GetCacheStatsRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="GetCacheStatsRequest.Reset"></a>
+### func \(\*GetCacheStatsRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L853>)
+
+```go
+func (x *GetCacheStatsRequest) Reset()
+```
+
+
+
+<a name="GetCacheStatsRequest.String"></a>
+### func \(\*GetCacheStatsRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L860>)
+
+```go
+func (x *GetCacheStatsRequest) String() string
+```
+
+
+
+<a name="GetCacheStatsResponse"></a>
+## type [GetCacheStatsResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L884-L894>)
+
+Cache statistics
+
+```go
+type GetCacheStatsResponse struct {
+    TotalEntries    int32            `protobuf:"varint,1,opt,name=total_entries,json=totalEntries,proto3" json:"total_entries,omitempty"`
+    LocalEntries    int32            `protobuf:"varint,2,opt,name=local_entries,json=localEntries,proto3" json:"local_entries,omitempty"`
+    RemoteEntries   int32            `protobuf:"varint,3,opt,name=remote_entries,json=remoteEntries,proto3" json:"remote_entries,omitempty"`
+    LastRemoteFetch *Timestamp       `protobuf:"bytes,4,opt,name=last_remote_fetch,json=lastRemoteFetch,proto3" json:"last_remote_fetch,omitempty"`
+    CacheTtl        *Duration        `protobuf:"bytes,5,opt,name=cache_ttl,json=cacheTtl,proto3" json:"cache_ttl,omitempty"`
+    EntriesBySource map[string]int32 `protobuf:"bytes,6,rep,name=entries_by_source,json=entriesBySource,proto3" json:"entries_by_source,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="GetCacheStatsResponse.Descriptor"></a>
+### func \(\*GetCacheStatsResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L922>)
+
+```go
+func (*GetCacheStatsResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use GetCacheStatsResponse.ProtoReflect.Descriptor instead.
+
+<a name="GetCacheStatsResponse.GetCacheTtl"></a>
+### func \(\*GetCacheStatsResponse\) [GetCacheTtl](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L954>)
+
+```go
+func (x *GetCacheStatsResponse) GetCacheTtl() *Duration
+```
+
+
+
+<a name="GetCacheStatsResponse.GetEntriesBySource"></a>
+### func \(\*GetCacheStatsResponse\) [GetEntriesBySource](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L961>)
+
+```go
+func (x *GetCacheStatsResponse) GetEntriesBySource() map[string]int32
+```
+
+
+
+<a name="GetCacheStatsResponse.GetLastRemoteFetch"></a>
+### func \(\*GetCacheStatsResponse\) [GetLastRemoteFetch](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L947>)
+
+```go
+func (x *GetCacheStatsResponse) GetLastRemoteFetch() *Timestamp
+```
+
+
+
+<a name="GetCacheStatsResponse.GetLocalEntries"></a>
+### func \(\*GetCacheStatsResponse\) [GetLocalEntries](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L933>)
+
+```go
+func (x *GetCacheStatsResponse) GetLocalEntries() int32
+```
+
+
+
+<a name="GetCacheStatsResponse.GetRemoteEntries"></a>
+### func \(\*GetCacheStatsResponse\) [GetRemoteEntries](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L940>)
+
+```go
+func (x *GetCacheStatsResponse) GetRemoteEntries() int32
+```
+
+
+
+<a name="GetCacheStatsResponse.GetTotalEntries"></a>
+### func \(\*GetCacheStatsResponse\) [GetTotalEntries](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L926>)
+
+```go
+func (x *GetCacheStatsResponse) GetTotalEntries() int32
+```
+
+
+
+<a name="GetCacheStatsResponse.ProtoMessage"></a>
+### func \(\*GetCacheStatsResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L907>)
+
+```go
+func (*GetCacheStatsResponse) ProtoMessage()
+```
+
+
+
+<a name="GetCacheStatsResponse.ProtoReflect"></a>
+### func \(\*GetCacheStatsResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L909>)
+
+```go
+func (x *GetCacheStatsResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="GetCacheStatsResponse.Reset"></a>
+### func \(\*GetCacheStatsResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L896>)
+
+```go
+func (x *GetCacheStatsResponse) Reset()
+```
+
+
+
+<a name="GetCacheStatsResponse.String"></a>
+### func \(\*GetCacheStatsResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L903>)
+
+```go
+func (x *GetCacheStatsResponse) String() string
+```
+
+
+
+<a name="GetDVOrderRequest"></a>
+## type [GetDVOrderRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1784-L1792>)
+
+Request to get DV order status
+
+```go
+type GetDVOrderRequest struct {
+
+    // Order ID (UUID)
+    OrderId string `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+    // CA URL (default: https://registry.capisc.io)
+    CaUrl string `protobuf:"bytes,2,opt,name=ca_url,json=caUrl,proto3" json:"ca_url,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="GetDVOrderRequest.Descriptor"></a>
+### func \(\*GetDVOrderRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1820>)
+
+```go
+func (*GetDVOrderRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use GetDVOrderRequest.ProtoReflect.Descriptor instead.
+
+<a name="GetDVOrderRequest.GetCaUrl"></a>
+### func \(\*GetDVOrderRequest\) [GetCaUrl](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1831>)
+
+```go
+func (x *GetDVOrderRequest) GetCaUrl() string
+```
+
+
+
+<a name="GetDVOrderRequest.GetOrderId"></a>
+### func \(\*GetDVOrderRequest\) [GetOrderId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1824>)
+
+```go
+func (x *GetDVOrderRequest) GetOrderId() string
+```
+
+
+
+<a name="GetDVOrderRequest.ProtoMessage"></a>
+### func \(\*GetDVOrderRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1805>)
+
+```go
+func (*GetDVOrderRequest) ProtoMessage()
+```
+
+
+
+<a name="GetDVOrderRequest.ProtoReflect"></a>
+### func \(\*GetDVOrderRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1807>)
+
+```go
+func (x *GetDVOrderRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="GetDVOrderRequest.Reset"></a>
+### func \(\*GetDVOrderRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1794>)
+
+```go
+func (x *GetDVOrderRequest) Reset()
+```
+
+
+
+<a name="GetDVOrderRequest.String"></a>
+### func \(\*GetDVOrderRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1801>)
+
+```go
+func (x *GetDVOrderRequest) String() string
+```
+
+
+
+<a name="GetDVOrderResponse"></a>
+## type [GetDVOrderResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1839-L1867>)
+
+Response with DV order status
+
+```go
+type GetDVOrderResponse struct {
+
+    // Whether the request succeeded
+    Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+    // Order ID (UUID)
+    OrderId string `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+    // Domain
+    Domain string `protobuf:"bytes,3,opt,name=domain,proto3" json:"domain,omitempty"`
+    // Challenge type
+    ChallengeType string `protobuf:"bytes,4,opt,name=challenge_type,json=challengeType,proto3" json:"challenge_type,omitempty"`
+    // Challenge token
+    ChallengeToken string `protobuf:"bytes,5,opt,name=challenge_token,json=challengeToken,proto3" json:"challenge_token,omitempty"`
+    // Order status
+    Status string `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
+    // Validation URL (for HTTP-01)
+    ValidationUrl string `protobuf:"bytes,7,opt,name=validation_url,json=validationUrl,proto3" json:"validation_url,omitempty"`
+    // DNS record value (for DNS-01)
+    DnsRecord string `protobuf:"bytes,8,opt,name=dns_record,json=dnsRecord,proto3" json:"dns_record,omitempty"`
+    // When the order expires (Unix timestamp)
+    ExpiresAt int64 `protobuf:"varint,9,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+    // When the order was finalized (Unix timestamp, optional)
+    FinalizedAt int64 `protobuf:"varint,10,opt,name=finalized_at,json=finalizedAt,proto3" json:"finalized_at,omitempty"`
+    // Error message if success=false
+    Error string `protobuf:"bytes,11,opt,name=error,proto3" json:"error,omitempty"`
+    // Error code
+    ErrorCode string `protobuf:"bytes,12,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="GetDVOrderResponse.Descriptor"></a>
+### func \(\*GetDVOrderResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1895>)
+
+```go
+func (*GetDVOrderResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use GetDVOrderResponse.ProtoReflect.Descriptor instead.
+
+<a name="GetDVOrderResponse.GetChallengeToken"></a>
+### func \(\*GetDVOrderResponse\) [GetChallengeToken](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1927>)
+
+```go
+func (x *GetDVOrderResponse) GetChallengeToken() string
+```
+
+
+
+<a name="GetDVOrderResponse.GetChallengeType"></a>
+### func \(\*GetDVOrderResponse\) [GetChallengeType](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1920>)
+
+```go
+func (x *GetDVOrderResponse) GetChallengeType() string
+```
+
+
+
+<a name="GetDVOrderResponse.GetDnsRecord"></a>
+### func \(\*GetDVOrderResponse\) [GetDnsRecord](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1948>)
+
+```go
+func (x *GetDVOrderResponse) GetDnsRecord() string
+```
+
+
+
+<a name="GetDVOrderResponse.GetDomain"></a>
+### func \(\*GetDVOrderResponse\) [GetDomain](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1913>)
+
+```go
+func (x *GetDVOrderResponse) GetDomain() string
+```
+
+
+
+<a name="GetDVOrderResponse.GetError"></a>
+### func \(\*GetDVOrderResponse\) [GetError](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1969>)
+
+```go
+func (x *GetDVOrderResponse) GetError() string
+```
+
+
+
+<a name="GetDVOrderResponse.GetErrorCode"></a>
+### func \(\*GetDVOrderResponse\) [GetErrorCode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1976>)
+
+```go
+func (x *GetDVOrderResponse) GetErrorCode() string
+```
+
+
+
+<a name="GetDVOrderResponse.GetExpiresAt"></a>
+### func \(\*GetDVOrderResponse\) [GetExpiresAt](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1955>)
+
+```go
+func (x *GetDVOrderResponse) GetExpiresAt() int64
+```
+
+
+
+<a name="GetDVOrderResponse.GetFinalizedAt"></a>
+### func \(\*GetDVOrderResponse\) [GetFinalizedAt](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1962>)
+
+```go
+func (x *GetDVOrderResponse) GetFinalizedAt() int64
+```
+
+
+
+<a name="GetDVOrderResponse.GetOrderId"></a>
+### func \(\*GetDVOrderResponse\) [GetOrderId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1906>)
+
+```go
+func (x *GetDVOrderResponse) GetOrderId() string
+```
+
+
+
+<a name="GetDVOrderResponse.GetStatus"></a>
+### func \(\*GetDVOrderResponse\) [GetStatus](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1934>)
+
+```go
+func (x *GetDVOrderResponse) GetStatus() string
+```
+
+
+
+<a name="GetDVOrderResponse.GetSuccess"></a>
+### func \(\*GetDVOrderResponse\) [GetSuccess](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1899>)
+
+```go
+func (x *GetDVOrderResponse) GetSuccess() bool
+```
+
+
+
+<a name="GetDVOrderResponse.GetValidationUrl"></a>
+### func \(\*GetDVOrderResponse\) [GetValidationUrl](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1941>)
+
+```go
+func (x *GetDVOrderResponse) GetValidationUrl() string
+```
+
+
+
+<a name="GetDVOrderResponse.ProtoMessage"></a>
+### func \(\*GetDVOrderResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1880>)
+
+```go
+func (*GetDVOrderResponse) ProtoMessage()
+```
+
+
+
+<a name="GetDVOrderResponse.ProtoReflect"></a>
+### func \(\*GetDVOrderResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1882>)
+
+```go
+func (x *GetDVOrderResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="GetDVOrderResponse.Reset"></a>
+### func \(\*GetDVOrderResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1869>)
+
+```go
+func (x *GetDVOrderResponse) Reset()
+```
+
+
+
+<a name="GetDVOrderResponse.String"></a>
+### func \(\*GetDVOrderResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1876>)
+
+```go
+func (x *GetDVOrderResponse) String() string
+```
+
+
+
+<a name="GetKeyInfoRequest"></a>
+## type [GetKeyInfoRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1054-L1059>)
+
+Request for key info
+
+```go
+type GetKeyInfoRequest struct {
+    KeyId string `protobuf:"bytes,1,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="GetKeyInfoRequest.Descriptor"></a>
+### func \(\*GetKeyInfoRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1087>)
+
+```go
+func (*GetKeyInfoRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use GetKeyInfoRequest.ProtoReflect.Descriptor instead.
+
+<a name="GetKeyInfoRequest.GetKeyId"></a>
+### func \(\*GetKeyInfoRequest\) [GetKeyId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1091>)
+
+```go
+func (x *GetKeyInfoRequest) GetKeyId() string
+```
+
+
+
+<a name="GetKeyInfoRequest.ProtoMessage"></a>
+### func \(\*GetKeyInfoRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1072>)
+
+```go
+func (*GetKeyInfoRequest) ProtoMessage()
+```
+
+
+
+<a name="GetKeyInfoRequest.ProtoReflect"></a>
+### func \(\*GetKeyInfoRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1074>)
+
+```go
+func (x *GetKeyInfoRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="GetKeyInfoRequest.Reset"></a>
+### func \(\*GetKeyInfoRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1061>)
+
+```go
+func (x *GetKeyInfoRequest) Reset()
+```
+
+
+
+<a name="GetKeyInfoRequest.String"></a>
+### func \(\*GetKeyInfoRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1068>)
+
+```go
+func (x *GetKeyInfoRequest) String() string
+```
+
+
+
+<a name="GetKeyInfoResponse"></a>
+## type [GetKeyInfoResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1099-L1111>)
+
+Response with key info
+
+```go
+type GetKeyInfoResponse struct {
+    KeyId         string            `protobuf:"bytes,1,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
+    Algorithm     KeyAlgorithm      `protobuf:"varint,2,opt,name=algorithm,proto3,enum=capiscio.v1.KeyAlgorithm" json:"algorithm,omitempty"`
+    HasPrivateKey bool              `protobuf:"varint,3,opt,name=has_private_key,json=hasPrivateKey,proto3" json:"has_private_key,omitempty"`
+    PublicKey     []byte            `protobuf:"bytes,4,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
+    PublicKeyPem  string            `protobuf:"bytes,5,opt,name=public_key_pem,json=publicKeyPem,proto3" json:"public_key_pem,omitempty"`
+    CreatedAt     *Timestamp        `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+    Metadata      map[string]string `protobuf:"bytes,7,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+    ErrorMessage  string            `protobuf:"bytes,8,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="GetKeyInfoResponse.Descriptor"></a>
+### func \(\*GetKeyInfoResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1139>)
+
+```go
+func (*GetKeyInfoResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use GetKeyInfoResponse.ProtoReflect.Descriptor instead.
+
+<a name="GetKeyInfoResponse.GetAlgorithm"></a>
+### func \(\*GetKeyInfoResponse\) [GetAlgorithm](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1150>)
+
+```go
+func (x *GetKeyInfoResponse) GetAlgorithm() KeyAlgorithm
+```
+
+
+
+<a name="GetKeyInfoResponse.GetCreatedAt"></a>
+### func \(\*GetKeyInfoResponse\) [GetCreatedAt](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1178>)
+
+```go
+func (x *GetKeyInfoResponse) GetCreatedAt() *Timestamp
+```
+
+
+
+<a name="GetKeyInfoResponse.GetErrorMessage"></a>
+### func \(\*GetKeyInfoResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1192>)
+
+```go
+func (x *GetKeyInfoResponse) GetErrorMessage() string
+```
+
+
+
+<a name="GetKeyInfoResponse.GetHasPrivateKey"></a>
+### func \(\*GetKeyInfoResponse\) [GetHasPrivateKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1157>)
+
+```go
+func (x *GetKeyInfoResponse) GetHasPrivateKey() bool
+```
+
+
+
+<a name="GetKeyInfoResponse.GetKeyId"></a>
+### func \(\*GetKeyInfoResponse\) [GetKeyId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1143>)
+
+```go
+func (x *GetKeyInfoResponse) GetKeyId() string
+```
+
+
+
+<a name="GetKeyInfoResponse.GetMetadata"></a>
+### func \(\*GetKeyInfoResponse\) [GetMetadata](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1185>)
+
+```go
+func (x *GetKeyInfoResponse) GetMetadata() map[string]string
+```
+
+
+
+<a name="GetKeyInfoResponse.GetPublicKey"></a>
+### func \(\*GetKeyInfoResponse\) [GetPublicKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1164>)
+
+```go
+func (x *GetKeyInfoResponse) GetPublicKey() []byte
+```
+
+
+
+<a name="GetKeyInfoResponse.GetPublicKeyPem"></a>
+### func \(\*GetKeyInfoResponse\) [GetPublicKeyPem](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1171>)
+
+```go
+func (x *GetKeyInfoResponse) GetPublicKeyPem() string
+```
+
+
+
+<a name="GetKeyInfoResponse.ProtoMessage"></a>
+### func \(\*GetKeyInfoResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1124>)
+
+```go
+func (*GetKeyInfoResponse) ProtoMessage()
+```
+
+
+
+<a name="GetKeyInfoResponse.ProtoReflect"></a>
+### func \(\*GetKeyInfoResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1126>)
+
+```go
+func (x *GetKeyInfoResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="GetKeyInfoResponse.Reset"></a>
+### func \(\*GetKeyInfoResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1113>)
+
+```go
+func (x *GetKeyInfoResponse) Reset()
+```
+
+
+
+<a name="GetKeyInfoResponse.String"></a>
+### func \(\*GetKeyInfoResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L1120>)
+
+```go
+func (x *GetKeyInfoResponse) String() string
+```
+
+
+
+<a name="GetKeyRequest"></a>
+## type [GetKeyRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L468-L474>)
+
+Request to get a key
+
+```go
+type GetKeyRequest struct {
+    Did   string `protobuf:"bytes,1,opt,name=did,proto3" json:"did,omitempty"`
+    KeyId string `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"` // Optional: if not set, returns primary key
+    // contains filtered or unexported fields
+}
+```
+
+<a name="GetKeyRequest.Descriptor"></a>
+### func \(\*GetKeyRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L502>)
+
+```go
+func (*GetKeyRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use GetKeyRequest.ProtoReflect.Descriptor instead.
+
+<a name="GetKeyRequest.GetDid"></a>
+### func \(\*GetKeyRequest\) [GetDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L506>)
+
+```go
+func (x *GetKeyRequest) GetDid() string
+```
+
+
+
+<a name="GetKeyRequest.GetKeyId"></a>
+### func \(\*GetKeyRequest\) [GetKeyId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L513>)
+
+```go
+func (x *GetKeyRequest) GetKeyId() string
+```
+
+
+
+<a name="GetKeyRequest.ProtoMessage"></a>
+### func \(\*GetKeyRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L487>)
+
+```go
+func (*GetKeyRequest) ProtoMessage()
+```
+
+
+
+<a name="GetKeyRequest.ProtoReflect"></a>
+### func \(\*GetKeyRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L489>)
+
+```go
+func (x *GetKeyRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="GetKeyRequest.Reset"></a>
+### func \(\*GetKeyRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L476>)
+
+```go
+func (x *GetKeyRequest) Reset()
+```
+
+
+
+<a name="GetKeyRequest.String"></a>
+### func \(\*GetKeyRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L483>)
+
+```go
+func (x *GetKeyRequest) String() string
+```
+
+
+
+<a name="GetKeyResponse"></a>
+## type [GetKeyResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L521-L527>)
+
+Response with key
+
+```go
+type GetKeyResponse struct {
+    Key          *TrustedKey `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+    ErrorMessage string      `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="GetKeyResponse.Descriptor"></a>
+### func \(\*GetKeyResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L555>)
+
+```go
+func (*GetKeyResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use GetKeyResponse.ProtoReflect.Descriptor instead.
+
+<a name="GetKeyResponse.GetErrorMessage"></a>
+### func \(\*GetKeyResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L566>)
+
+```go
+func (x *GetKeyResponse) GetErrorMessage() string
+```
+
+
+
+<a name="GetKeyResponse.GetKey"></a>
+### func \(\*GetKeyResponse\) [GetKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L559>)
+
+```go
+func (x *GetKeyResponse) GetKey() *TrustedKey
+```
+
+
+
+<a name="GetKeyResponse.ProtoMessage"></a>
+### func \(\*GetKeyResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L540>)
+
+```go
+func (*GetKeyResponse) ProtoMessage()
+```
+
+
+
+<a name="GetKeyResponse.ProtoReflect"></a>
+### func \(\*GetKeyResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L542>)
+
+```go
+func (x *GetKeyResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="GetKeyResponse.Reset"></a>
+### func \(\*GetKeyResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L529>)
+
+```go
+func (x *GetKeyResponse) Reset()
+```
+
+
+
+<a name="GetKeyResponse.String"></a>
+### func \(\*GetKeyResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L536>)
+
+```go
+func (x *GetKeyResponse) String() string
+```
+
+
+
+<a name="GetRuleSetRequest"></a>
+## type [GetRuleSetRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L901-L907>)
+
+Request to get rule set
+
+```go
+type GetRuleSetRequest struct {
+    Id      string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+    Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"` // Optional: specific version
+    // contains filtered or unexported fields
+}
+```
+
+<a name="GetRuleSetRequest.Descriptor"></a>
+### func \(\*GetRuleSetRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L935>)
+
+```go
+func (*GetRuleSetRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use GetRuleSetRequest.ProtoReflect.Descriptor instead.
+
+<a name="GetRuleSetRequest.GetId"></a>
+### func \(\*GetRuleSetRequest\) [GetId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L939>)
+
+```go
+func (x *GetRuleSetRequest) GetId() string
+```
+
+
+
+<a name="GetRuleSetRequest.GetVersion"></a>
+### func \(\*GetRuleSetRequest\) [GetVersion](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L946>)
+
+```go
+func (x *GetRuleSetRequest) GetVersion() string
+```
+
+
+
+<a name="GetRuleSetRequest.ProtoMessage"></a>
+### func \(\*GetRuleSetRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L920>)
+
+```go
+func (*GetRuleSetRequest) ProtoMessage()
+```
+
+
+
+<a name="GetRuleSetRequest.ProtoReflect"></a>
+### func \(\*GetRuleSetRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L922>)
+
+```go
+func (x *GetRuleSetRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="GetRuleSetRequest.Reset"></a>
+### func \(\*GetRuleSetRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L909>)
+
+```go
+func (x *GetRuleSetRequest) Reset()
+```
+
+
+
+<a name="GetRuleSetRequest.String"></a>
+### func \(\*GetRuleSetRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L916>)
+
+```go
+func (x *GetRuleSetRequest) String() string
+```
+
+
+
+<a name="GetRuleSetResponse"></a>
+## type [GetRuleSetResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L954-L960>)
+
+Response with rule set
+
+```go
+type GetRuleSetResponse struct {
+    RuleSet      *RuleSet `protobuf:"bytes,1,opt,name=rule_set,json=ruleSet,proto3" json:"rule_set,omitempty"`
+    ErrorMessage string   `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="GetRuleSetResponse.Descriptor"></a>
+### func \(\*GetRuleSetResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L988>)
+
+```go
+func (*GetRuleSetResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use GetRuleSetResponse.ProtoReflect.Descriptor instead.
+
+<a name="GetRuleSetResponse.GetErrorMessage"></a>
+### func \(\*GetRuleSetResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L999>)
+
+```go
+func (x *GetRuleSetResponse) GetErrorMessage() string
+```
+
+
+
+<a name="GetRuleSetResponse.GetRuleSet"></a>
+### func \(\*GetRuleSetResponse\) [GetRuleSet](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L992>)
+
+```go
+func (x *GetRuleSetResponse) GetRuleSet() *RuleSet
+```
+
+
+
+<a name="GetRuleSetResponse.ProtoMessage"></a>
+### func \(\*GetRuleSetResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L973>)
+
+```go
+func (*GetRuleSetResponse) ProtoMessage()
+```
+
+
+
+<a name="GetRuleSetResponse.ProtoReflect"></a>
+### func \(\*GetRuleSetResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L975>)
+
+```go
+func (x *GetRuleSetResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="GetRuleSetResponse.Reset"></a>
+### func \(\*GetRuleSetResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L962>)
+
+```go
+func (x *GetRuleSetResponse) Reset()
+```
+
+
+
+<a name="GetRuleSetResponse.String"></a>
+### func \(\*GetRuleSetResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L969>)
+
+```go
+func (x *GetRuleSetResponse) String() string
+```
+
+
+
+<a name="GetStatsRequest"></a>
+## type [GetStatsRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1192-L1196>)
+
+Get stats request
+
+```go
+type GetStatsRequest struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="GetStatsRequest.Descriptor"></a>
+### func \(\*GetStatsRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1224>)
+
+```go
+func (*GetStatsRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use GetStatsRequest.ProtoReflect.Descriptor instead.
+
+<a name="GetStatsRequest.ProtoMessage"></a>
+### func \(\*GetStatsRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1209>)
+
+```go
+func (*GetStatsRequest) ProtoMessage()
+```
+
+
+
+<a name="GetStatsRequest.ProtoReflect"></a>
+### func \(\*GetStatsRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1211>)
+
+```go
+func (x *GetStatsRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="GetStatsRequest.Reset"></a>
+### func \(\*GetStatsRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1198>)
+
+```go
+func (x *GetStatsRequest) Reset()
+```
+
+
+
+<a name="GetStatsRequest.String"></a>
+### func \(\*GetStatsRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1205>)
+
+```go
+func (x *GetStatsRequest) String() string
+```
+
+
+
+<a name="GetStatsResponse"></a>
+## type [GetStatsResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1229-L1242>)
+
+Registry statistics
+
+```go
+type GetStatsResponse struct {
+    TotalAgents        int32            `protobuf:"varint,1,opt,name=total_agents,json=totalAgents,proto3" json:"total_agents,omitempty"`
+    ActiveAgents       int32            `protobuf:"varint,2,opt,name=active_agents,json=activeAgents,proto3" json:"active_agents,omitempty"`
+    InactiveAgents     int32            `protobuf:"varint,3,opt,name=inactive_agents,json=inactiveAgents,proto3" json:"inactive_agents,omitempty"`
+    SuspendedAgents    int32            `protobuf:"varint,4,opt,name=suspended_agents,json=suspendedAgents,proto3" json:"suspended_agents,omitempty"`
+    PendingAgents      int32            `protobuf:"varint,5,opt,name=pending_agents,json=pendingAgents,proto3" json:"pending_agents,omitempty"`
+    BadgedAgents       int32            `protobuf:"varint,6,opt,name=badged_agents,json=badgedAgents,proto3" json:"badged_agents,omitempty"` // Agents with valid badges
+    AgentsByRating     map[string]int32 `protobuf:"bytes,7,rep,name=agents_by_rating,json=agentsByRating,proto3" json:"agents_by_rating,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+    AgentsByCapability map[string]int32 `protobuf:"bytes,8,rep,name=agents_by_capability,json=agentsByCapability,proto3" json:"agents_by_capability,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+    LastUpdated        *Timestamp       `protobuf:"bytes,9,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="GetStatsResponse.Descriptor"></a>
+### func \(\*GetStatsResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1270>)
+
+```go
+func (*GetStatsResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use GetStatsResponse.ProtoReflect.Descriptor instead.
+
+<a name="GetStatsResponse.GetActiveAgents"></a>
+### func \(\*GetStatsResponse\) [GetActiveAgents](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1281>)
+
+```go
+func (x *GetStatsResponse) GetActiveAgents() int32
+```
+
+
+
+<a name="GetStatsResponse.GetAgentsByCapability"></a>
+### func \(\*GetStatsResponse\) [GetAgentsByCapability](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1323>)
+
+```go
+func (x *GetStatsResponse) GetAgentsByCapability() map[string]int32
+```
+
+
+
+<a name="GetStatsResponse.GetAgentsByRating"></a>
+### func \(\*GetStatsResponse\) [GetAgentsByRating](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1316>)
+
+```go
+func (x *GetStatsResponse) GetAgentsByRating() map[string]int32
+```
+
+
+
+<a name="GetStatsResponse.GetBadgedAgents"></a>
+### func \(\*GetStatsResponse\) [GetBadgedAgents](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1309>)
+
+```go
+func (x *GetStatsResponse) GetBadgedAgents() int32
+```
+
+
+
+<a name="GetStatsResponse.GetInactiveAgents"></a>
+### func \(\*GetStatsResponse\) [GetInactiveAgents](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1288>)
+
+```go
+func (x *GetStatsResponse) GetInactiveAgents() int32
+```
+
+
+
+<a name="GetStatsResponse.GetLastUpdated"></a>
+### func \(\*GetStatsResponse\) [GetLastUpdated](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1330>)
+
+```go
+func (x *GetStatsResponse) GetLastUpdated() *Timestamp
+```
+
+
+
+<a name="GetStatsResponse.GetPendingAgents"></a>
+### func \(\*GetStatsResponse\) [GetPendingAgents](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1302>)
+
+```go
+func (x *GetStatsResponse) GetPendingAgents() int32
+```
+
+
+
+<a name="GetStatsResponse.GetSuspendedAgents"></a>
+### func \(\*GetStatsResponse\) [GetSuspendedAgents](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1295>)
+
+```go
+func (x *GetStatsResponse) GetSuspendedAgents() int32
+```
+
+
+
+<a name="GetStatsResponse.GetTotalAgents"></a>
+### func \(\*GetStatsResponse\) [GetTotalAgents](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1274>)
+
+```go
+func (x *GetStatsResponse) GetTotalAgents() int32
+```
+
+
+
+<a name="GetStatsResponse.ProtoMessage"></a>
+### func \(\*GetStatsResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1255>)
+
+```go
+func (*GetStatsResponse) ProtoMessage()
+```
+
+
+
+<a name="GetStatsResponse.ProtoReflect"></a>
+### func \(\*GetStatsResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1257>)
+
+```go
+func (x *GetStatsResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="GetStatsResponse.Reset"></a>
+### func \(\*GetStatsResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1244>)
+
+```go
+func (x *GetStatsResponse) Reset()
+```
+
+
+
+<a name="GetStatsResponse.String"></a>
+### func \(\*GetStatsResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1251>)
+
+```go
+func (x *GetStatsResponse) String() string
+```
+
+
+
+<a name="ImportFromDirectoryRequest"></a>
+## type [ImportFromDirectoryRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L794-L800>)
+
+Request to import from directory
+
+```go
+type ImportFromDirectoryRequest struct {
+    DirectoryPath string `protobuf:"bytes,1,opt,name=directory_path,json=directoryPath,proto3" json:"directory_path,omitempty"`
+    Recursive     bool   `protobuf:"varint,2,opt,name=recursive,proto3" json:"recursive,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ImportFromDirectoryRequest.Descriptor"></a>
+### func \(\*ImportFromDirectoryRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L828>)
+
+```go
+func (*ImportFromDirectoryRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ImportFromDirectoryRequest.ProtoReflect.Descriptor instead.
+
+<a name="ImportFromDirectoryRequest.GetDirectoryPath"></a>
+### func \(\*ImportFromDirectoryRequest\) [GetDirectoryPath](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L832>)
+
+```go
+func (x *ImportFromDirectoryRequest) GetDirectoryPath() string
+```
+
+
+
+<a name="ImportFromDirectoryRequest.GetRecursive"></a>
+### func \(\*ImportFromDirectoryRequest\) [GetRecursive](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L839>)
+
+```go
+func (x *ImportFromDirectoryRequest) GetRecursive() bool
+```
+
+
+
+<a name="ImportFromDirectoryRequest.ProtoMessage"></a>
+### func \(\*ImportFromDirectoryRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L813>)
+
+```go
+func (*ImportFromDirectoryRequest) ProtoMessage()
+```
+
+
+
+<a name="ImportFromDirectoryRequest.ProtoReflect"></a>
+### func \(\*ImportFromDirectoryRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L815>)
+
+```go
+func (x *ImportFromDirectoryRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ImportFromDirectoryRequest.Reset"></a>
+### func \(\*ImportFromDirectoryRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L802>)
+
+```go
+func (x *ImportFromDirectoryRequest) Reset()
+```
+
+
+
+<a name="ImportFromDirectoryRequest.String"></a>
+### func \(\*ImportFromDirectoryRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L809>)
+
+```go
+func (x *ImportFromDirectoryRequest) String() string
+```
+
+
+
+<a name="ImportFromDirectoryResponse"></a>
+## type [ImportFromDirectoryResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L847-L854>)
+
+Response for import
+
+```go
+type ImportFromDirectoryResponse struct {
+    KeysImported int32    `protobuf:"varint,1,opt,name=keys_imported,json=keysImported,proto3" json:"keys_imported,omitempty"`
+    KeysSkipped  int32    `protobuf:"varint,2,opt,name=keys_skipped,json=keysSkipped,proto3" json:"keys_skipped,omitempty"`
+    Errors       []string `protobuf:"bytes,3,rep,name=errors,proto3" json:"errors,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ImportFromDirectoryResponse.Descriptor"></a>
+### func \(\*ImportFromDirectoryResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L882>)
+
+```go
+func (*ImportFromDirectoryResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ImportFromDirectoryResponse.ProtoReflect.Descriptor instead.
+
+<a name="ImportFromDirectoryResponse.GetErrors"></a>
+### func \(\*ImportFromDirectoryResponse\) [GetErrors](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L900>)
+
+```go
+func (x *ImportFromDirectoryResponse) GetErrors() []string
+```
+
+
+
+<a name="ImportFromDirectoryResponse.GetKeysImported"></a>
+### func \(\*ImportFromDirectoryResponse\) [GetKeysImported](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L886>)
+
+```go
+func (x *ImportFromDirectoryResponse) GetKeysImported() int32
+```
+
+
+
+<a name="ImportFromDirectoryResponse.GetKeysSkipped"></a>
+### func \(\*ImportFromDirectoryResponse\) [GetKeysSkipped](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L893>)
+
+```go
+func (x *ImportFromDirectoryResponse) GetKeysSkipped() int32
+```
+
+
+
+<a name="ImportFromDirectoryResponse.ProtoMessage"></a>
+### func \(\*ImportFromDirectoryResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L867>)
+
+```go
+func (*ImportFromDirectoryResponse) ProtoMessage()
+```
+
+
+
+<a name="ImportFromDirectoryResponse.ProtoReflect"></a>
+### func \(\*ImportFromDirectoryResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L869>)
+
+```go
+func (x *ImportFromDirectoryResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ImportFromDirectoryResponse.Reset"></a>
+### func \(\*ImportFromDirectoryResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L856>)
+
+```go
+func (x *ImportFromDirectoryResponse) Reset()
+```
+
+
+
+<a name="ImportFromDirectoryResponse.String"></a>
+### func \(\*ImportFromDirectoryResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L863>)
+
+```go
+func (x *ImportFromDirectoryResponse) String() string
+```
+
+
+
+<a name="IsAgentDIDRequest"></a>
+## type [IsAgentDIDRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L451-L456>)
+
+Request to check if DID is agent DID
+
+```go
+type IsAgentDIDRequest struct {
+    Did string `protobuf:"bytes,1,opt,name=did,proto3" json:"did,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="IsAgentDIDRequest.Descriptor"></a>
+### func \(\*IsAgentDIDRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L484>)
+
+```go
+func (*IsAgentDIDRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use IsAgentDIDRequest.ProtoReflect.Descriptor instead.
+
+<a name="IsAgentDIDRequest.GetDid"></a>
+### func \(\*IsAgentDIDRequest\) [GetDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L488>)
+
+```go
+func (x *IsAgentDIDRequest) GetDid() string
+```
+
+
+
+<a name="IsAgentDIDRequest.ProtoMessage"></a>
+### func \(\*IsAgentDIDRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L469>)
+
+```go
+func (*IsAgentDIDRequest) ProtoMessage()
+```
+
+
+
+<a name="IsAgentDIDRequest.ProtoReflect"></a>
+### func \(\*IsAgentDIDRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L471>)
+
+```go
+func (x *IsAgentDIDRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="IsAgentDIDRequest.Reset"></a>
+### func \(\*IsAgentDIDRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L458>)
+
+```go
+func (x *IsAgentDIDRequest) Reset()
+```
+
+
+
+<a name="IsAgentDIDRequest.String"></a>
+### func \(\*IsAgentDIDRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L465>)
+
+```go
+func (x *IsAgentDIDRequest) String() string
+```
+
+
+
+<a name="IsAgentDIDResponse"></a>
+## type [IsAgentDIDResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L496-L502>)
+
+Response for agent DID check
+
+```go
+type IsAgentDIDResponse struct {
+    IsAgentDid bool   `protobuf:"varint,1,opt,name=is_agent_did,json=isAgentDid,proto3" json:"is_agent_did,omitempty"`
+    AgentId    string `protobuf:"bytes,2,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"` // Extracted agent ID if valid
+    // contains filtered or unexported fields
+}
+```
+
+<a name="IsAgentDIDResponse.Descriptor"></a>
+### func \(\*IsAgentDIDResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L530>)
+
+```go
+func (*IsAgentDIDResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use IsAgentDIDResponse.ProtoReflect.Descriptor instead.
+
+<a name="IsAgentDIDResponse.GetAgentId"></a>
+### func \(\*IsAgentDIDResponse\) [GetAgentId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L541>)
+
+```go
+func (x *IsAgentDIDResponse) GetAgentId() string
+```
+
+
+
+<a name="IsAgentDIDResponse.GetIsAgentDid"></a>
+### func \(\*IsAgentDIDResponse\) [GetIsAgentDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L534>)
+
+```go
+func (x *IsAgentDIDResponse) GetIsAgentDid() bool
+```
+
+
+
+<a name="IsAgentDIDResponse.ProtoMessage"></a>
+### func \(\*IsAgentDIDResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L515>)
+
+```go
+func (*IsAgentDIDResponse) ProtoMessage()
+```
+
+
+
+<a name="IsAgentDIDResponse.ProtoReflect"></a>
+### func \(\*IsAgentDIDResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L517>)
+
+```go
+func (x *IsAgentDIDResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="IsAgentDIDResponse.Reset"></a>
+### func \(\*IsAgentDIDResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L504>)
+
+```go
+func (x *IsAgentDIDResponse) Reset()
+```
+
+
+
+<a name="IsAgentDIDResponse.String"></a>
+### func \(\*IsAgentDIDResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L511>)
+
+```go
+func (x *IsAgentDIDResponse) String() string
+```
+
+
+
+<a name="IsRevokedRequest"></a>
+## type [IsRevokedRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L171-L178>)
+
+Request to check revocation
+
+```go
+type IsRevokedRequest struct {
+    Subject     string     `protobuf:"bytes,1,opt,name=subject,proto3" json:"subject,omitempty"`                             // DID or key ID to check
+    AtTime      *Timestamp `protobuf:"bytes,2,opt,name=at_time,json=atTime,proto3" json:"at_time,omitempty"`                 // Optional: check at specific time
+    CheckRemote bool       `protobuf:"varint,3,opt,name=check_remote,json=checkRemote,proto3" json:"check_remote,omitempty"` // Whether to check remote lists
+    // contains filtered or unexported fields
+}
+```
+
+<a name="IsRevokedRequest.Descriptor"></a>
+### func \(\*IsRevokedRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L206>)
+
+```go
+func (*IsRevokedRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use IsRevokedRequest.ProtoReflect.Descriptor instead.
+
+<a name="IsRevokedRequest.GetAtTime"></a>
+### func \(\*IsRevokedRequest\) [GetAtTime](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L217>)
+
+```go
+func (x *IsRevokedRequest) GetAtTime() *Timestamp
+```
+
+
+
+<a name="IsRevokedRequest.GetCheckRemote"></a>
+### func \(\*IsRevokedRequest\) [GetCheckRemote](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L224>)
+
+```go
+func (x *IsRevokedRequest) GetCheckRemote() bool
+```
+
+
+
+<a name="IsRevokedRequest.GetSubject"></a>
+### func \(\*IsRevokedRequest\) [GetSubject](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L210>)
+
+```go
+func (x *IsRevokedRequest) GetSubject() string
+```
+
+
+
+<a name="IsRevokedRequest.ProtoMessage"></a>
+### func \(\*IsRevokedRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L191>)
+
+```go
+func (*IsRevokedRequest) ProtoMessage()
+```
+
+
+
+<a name="IsRevokedRequest.ProtoReflect"></a>
+### func \(\*IsRevokedRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L193>)
+
+```go
+func (x *IsRevokedRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="IsRevokedRequest.Reset"></a>
+### func \(\*IsRevokedRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L180>)
+
+```go
+func (x *IsRevokedRequest) Reset()
+```
+
+
+
+<a name="IsRevokedRequest.String"></a>
+### func \(\*IsRevokedRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L187>)
+
+```go
+func (x *IsRevokedRequest) String() string
+```
+
+
+
+<a name="IsRevokedResponse"></a>
+## type [IsRevokedResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L232-L239>)
+
+Response for revocation check
+
+```go
+type IsRevokedResponse struct {
+    IsRevoked bool             `protobuf:"varint,1,opt,name=is_revoked,json=isRevoked,proto3" json:"is_revoked,omitempty"`
+    Entry     *RevocationEntry `protobuf:"bytes,2,opt,name=entry,proto3" json:"entry,omitempty"`   // If revoked, the entry
+    Source    string           `protobuf:"bytes,3,opt,name=source,proto3" json:"source,omitempty"` // Where revocation was found
+    // contains filtered or unexported fields
+}
+```
+
+<a name="IsRevokedResponse.Descriptor"></a>
+### func \(\*IsRevokedResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L267>)
+
+```go
+func (*IsRevokedResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use IsRevokedResponse.ProtoReflect.Descriptor instead.
+
+<a name="IsRevokedResponse.GetEntry"></a>
+### func \(\*IsRevokedResponse\) [GetEntry](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L278>)
+
+```go
+func (x *IsRevokedResponse) GetEntry() *RevocationEntry
+```
+
+
+
+<a name="IsRevokedResponse.GetIsRevoked"></a>
+### func \(\*IsRevokedResponse\) [GetIsRevoked](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L271>)
+
+```go
+func (x *IsRevokedResponse) GetIsRevoked() bool
+```
+
+
+
+<a name="IsRevokedResponse.GetSource"></a>
+### func \(\*IsRevokedResponse\) [GetSource](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L285>)
+
+```go
+func (x *IsRevokedResponse) GetSource() string
+```
+
+
+
+<a name="IsRevokedResponse.ProtoMessage"></a>
+### func \(\*IsRevokedResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L252>)
+
+```go
+func (*IsRevokedResponse) ProtoMessage()
+```
+
+
+
+<a name="IsRevokedResponse.ProtoReflect"></a>
+### func \(\*IsRevokedResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L254>)
+
+```go
+func (x *IsRevokedResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="IsRevokedResponse.Reset"></a>
+### func \(\*IsRevokedResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L241>)
+
+```go
+func (x *IsRevokedResponse) Reset()
+```
+
+
+
+<a name="IsRevokedResponse.String"></a>
+### func \(\*IsRevokedResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L248>)
+
+```go
+func (x *IsRevokedResponse) String() string
+```
+
+
+
+<a name="IsTrustedRequest"></a>
+## type [IsTrustedRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L696-L701>)
+
+Request to check if trusted
+
+```go
+type IsTrustedRequest struct {
+    Did string `protobuf:"bytes,1,opt,name=did,proto3" json:"did,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="IsTrustedRequest.Descriptor"></a>
+### func \(\*IsTrustedRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L729>)
+
+```go
+func (*IsTrustedRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use IsTrustedRequest.ProtoReflect.Descriptor instead.
+
+<a name="IsTrustedRequest.GetDid"></a>
+### func \(\*IsTrustedRequest\) [GetDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L733>)
+
+```go
+func (x *IsTrustedRequest) GetDid() string
+```
+
+
+
+<a name="IsTrustedRequest.ProtoMessage"></a>
+### func \(\*IsTrustedRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L714>)
+
+```go
+func (*IsTrustedRequest) ProtoMessage()
+```
+
+
+
+<a name="IsTrustedRequest.ProtoReflect"></a>
+### func \(\*IsTrustedRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L716>)
+
+```go
+func (x *IsTrustedRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="IsTrustedRequest.Reset"></a>
+### func \(\*IsTrustedRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L703>)
+
+```go
+func (x *IsTrustedRequest) Reset()
+```
+
+
+
+<a name="IsTrustedRequest.String"></a>
+### func \(\*IsTrustedRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L710>)
+
+```go
+func (x *IsTrustedRequest) String() string
+```
+
+
+
+<a name="IsTrustedResponse"></a>
+## type [IsTrustedResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L741-L747>)
+
+Response for trust check
+
+```go
+type IsTrustedResponse struct {
+    IsTrusted bool        `protobuf:"varint,1,opt,name=is_trusted,json=isTrusted,proto3" json:"is_trusted,omitempty"`
+    Key       *TrustedKey `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"` // If trusted, the matching key
+    // contains filtered or unexported fields
+}
+```
+
+<a name="IsTrustedResponse.Descriptor"></a>
+### func \(\*IsTrustedResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L775>)
+
+```go
+func (*IsTrustedResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use IsTrustedResponse.ProtoReflect.Descriptor instead.
+
+<a name="IsTrustedResponse.GetIsTrusted"></a>
+### func \(\*IsTrustedResponse\) [GetIsTrusted](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L779>)
+
+```go
+func (x *IsTrustedResponse) GetIsTrusted() bool
+```
+
+
+
+<a name="IsTrustedResponse.GetKey"></a>
+### func \(\*IsTrustedResponse\) [GetKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L786>)
+
+```go
+func (x *IsTrustedResponse) GetKey() *TrustedKey
+```
+
+
+
+<a name="IsTrustedResponse.ProtoMessage"></a>
+### func \(\*IsTrustedResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L760>)
+
+```go
+func (*IsTrustedResponse) ProtoMessage()
+```
+
+
+
+<a name="IsTrustedResponse.ProtoReflect"></a>
+### func \(\*IsTrustedResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L762>)
+
+```go
+func (x *IsTrustedResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="IsTrustedResponse.Reset"></a>
+### func \(\*IsTrustedResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L749>)
+
+```go
+func (x *IsTrustedResponse) Reset()
+```
+
+
+
+<a name="IsTrustedResponse.String"></a>
+### func \(\*IsTrustedResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L756>)
+
+```go
+func (x *IsTrustedResponse) String() string
+```
+
+
+
+<a name="KeeperEvent"></a>
+## type [KeeperEvent](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1457-L1479>)
+
+Event emitted by the badge keeper
+
+```go
+type KeeperEvent struct {
+
+    // Event type
+    Type KeeperEventType `protobuf:"varint,1,opt,name=type,proto3,enum=capiscio.v1.KeeperEventType" json:"type,omitempty"`
+    // Badge JTI (for RENEWED events)
+    BadgeJti string `protobuf:"bytes,2,opt,name=badge_jti,json=badgeJti,proto3" json:"badge_jti,omitempty"`
+    // Subject DID (for RENEWED events)
+    Subject string `protobuf:"bytes,3,opt,name=subject,proto3" json:"subject,omitempty"`
+    // Trust level (for RENEWED events)
+    TrustLevel TrustLevel `protobuf:"varint,4,opt,name=trust_level,json=trustLevel,proto3,enum=capiscio.v1.TrustLevel" json:"trust_level,omitempty"`
+    // When the badge expires (Unix timestamp, for RENEWED events)
+    ExpiresAt int64 `protobuf:"varint,5,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+    // Error message (for ERROR events)
+    Error string `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"`
+    // Error code (for ERROR events)
+    ErrorCode string `protobuf:"bytes,7,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+    // Timestamp of the event (Unix timestamp)
+    Timestamp int64 `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+    // The badge token itself (for RENEWED events, optional)
+    Token string `protobuf:"bytes,9,opt,name=token,proto3" json:"token,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="KeeperEvent.Descriptor"></a>
+### func \(\*KeeperEvent\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1507>)
+
+```go
+func (*KeeperEvent) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use KeeperEvent.ProtoReflect.Descriptor instead.
+
+<a name="KeeperEvent.GetBadgeJti"></a>
+### func \(\*KeeperEvent\) [GetBadgeJti](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1518>)
+
+```go
+func (x *KeeperEvent) GetBadgeJti() string
+```
+
+
+
+<a name="KeeperEvent.GetError"></a>
+### func \(\*KeeperEvent\) [GetError](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1546>)
+
+```go
+func (x *KeeperEvent) GetError() string
+```
+
+
+
+<a name="KeeperEvent.GetErrorCode"></a>
+### func \(\*KeeperEvent\) [GetErrorCode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1553>)
+
+```go
+func (x *KeeperEvent) GetErrorCode() string
+```
+
+
+
+<a name="KeeperEvent.GetExpiresAt"></a>
+### func \(\*KeeperEvent\) [GetExpiresAt](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1539>)
+
+```go
+func (x *KeeperEvent) GetExpiresAt() int64
+```
+
+
+
+<a name="KeeperEvent.GetSubject"></a>
+### func \(\*KeeperEvent\) [GetSubject](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1525>)
+
+```go
+func (x *KeeperEvent) GetSubject() string
+```
+
+
+
+<a name="KeeperEvent.GetTimestamp"></a>
+### func \(\*KeeperEvent\) [GetTimestamp](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1560>)
+
+```go
+func (x *KeeperEvent) GetTimestamp() int64
+```
+
+
+
+<a name="KeeperEvent.GetToken"></a>
+### func \(\*KeeperEvent\) [GetToken](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1567>)
+
+```go
+func (x *KeeperEvent) GetToken() string
+```
+
+
+
+<a name="KeeperEvent.GetTrustLevel"></a>
+### func \(\*KeeperEvent\) [GetTrustLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1532>)
+
+```go
+func (x *KeeperEvent) GetTrustLevel() TrustLevel
+```
+
+
+
+<a name="KeeperEvent.GetType"></a>
+### func \(\*KeeperEvent\) [GetType](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1511>)
+
+```go
+func (x *KeeperEvent) GetType() KeeperEventType
+```
+
+
+
+<a name="KeeperEvent.ProtoMessage"></a>
+### func \(\*KeeperEvent\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1492>)
+
+```go
+func (*KeeperEvent) ProtoMessage()
+```
+
+
+
+<a name="KeeperEvent.ProtoReflect"></a>
+### func \(\*KeeperEvent\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1494>)
+
+```go
+func (x *KeeperEvent) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="KeeperEvent.Reset"></a>
+### func \(\*KeeperEvent\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1481>)
+
+```go
+func (x *KeeperEvent) Reset()
+```
+
+
+
+<a name="KeeperEvent.String"></a>
+### func \(\*KeeperEvent\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1488>)
+
+```go
+func (x *KeeperEvent) String() string
+```
+
+
+
+<a name="KeeperEventType"></a>
+## type [KeeperEventType](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L189>)
+
+Event types emitted by the keeper
+
+```go
+type KeeperEventType int32
+```
+
+<a name="KeeperEventType_KEEPER_EVENT_UNSPECIFIED"></a>
+
+```go
+const (
+    KeeperEventType_KEEPER_EVENT_UNSPECIFIED KeeperEventType = 0
+    KeeperEventType_KEEPER_EVENT_STARTED     KeeperEventType = 1 // Keeper started successfully
+    KeeperEventType_KEEPER_EVENT_RENEWED     KeeperEventType = 2 // Badge was renewed
+    KeeperEventType_KEEPER_EVENT_ERROR       KeeperEventType = 3 // An error occurred (non-fatal)
+    KeeperEventType_KEEPER_EVENT_STOPPED     KeeperEventType = 4 // Keeper stopped (client disconnect or fatal error)
+)
+```
+
+<a name="KeeperEventType.Descriptor"></a>
+### func \(KeeperEventType\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L227>)
+
+```go
+func (KeeperEventType) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="KeeperEventType.Enum"></a>
+### func \(KeeperEventType\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L217>)
+
+```go
+func (x KeeperEventType) Enum() *KeeperEventType
+```
+
+
+
+<a name="KeeperEventType.EnumDescriptor"></a>
+### func \(KeeperEventType\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L240>)
+
+```go
+func (KeeperEventType) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use KeeperEventType.Descriptor instead.
+
+<a name="KeeperEventType.Number"></a>
+### func \(KeeperEventType\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L235>)
+
+```go
+func (x KeeperEventType) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="KeeperEventType.String"></a>
+### func \(KeeperEventType\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L223>)
+
+```go
+func (x KeeperEventType) String() string
+```
+
+
+
+<a name="KeeperEventType.Type"></a>
+### func \(KeeperEventType\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L231>)
+
+```go
+func (KeeperEventType) Type() protoreflect.EnumType
+```
+
+
+
+<a name="KeeperMode"></a>
+## type [KeeperMode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L139>)
+
+Keeper operation mode
+
+```go
+type KeeperMode int32
+```
+
+<a name="KeeperMode_KEEPER_MODE_UNSPECIFIED"></a>
+
+```go
+const (
+    KeeperMode_KEEPER_MODE_UNSPECIFIED KeeperMode = 0
+    KeeperMode_KEEPER_MODE_CA          KeeperMode = 1 // Request badges from CA
+    KeeperMode_KEEPER_MODE_SELF_SIGN   KeeperMode = 2 // Self-sign badges locally (development)
+)
+```
+
+<a name="KeeperMode.Descriptor"></a>
+### func \(KeeperMode\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L171>)
+
+```go
+func (KeeperMode) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="KeeperMode.Enum"></a>
+### func \(KeeperMode\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L161>)
+
+```go
+func (x KeeperMode) Enum() *KeeperMode
+```
+
+
+
+<a name="KeeperMode.EnumDescriptor"></a>
+### func \(KeeperMode\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L184>)
+
+```go
+func (KeeperMode) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use KeeperMode.Descriptor instead.
+
+<a name="KeeperMode.Number"></a>
+### func \(KeeperMode\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L179>)
+
+```go
+func (x KeeperMode) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="KeeperMode.String"></a>
+### func \(KeeperMode\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L167>)
+
+```go
+func (x KeeperMode) String() string
+```
+
+
+
+<a name="KeeperMode.Type"></a>
+### func \(KeeperMode\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L175>)
+
+```go
+func (KeeperMode) Type() protoreflect.EnumType
+```
+
+
+
+<a name="KeyAlgorithm"></a>
+## type [KeyAlgorithm](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L27>)
+
+Key algorithms supported
+
+```go
+type KeyAlgorithm int32
+```
+
+<a name="KeyAlgorithm_KEY_ALGORITHM_UNSPECIFIED"></a>
+
+```go
+const (
+    KeyAlgorithm_KEY_ALGORITHM_UNSPECIFIED KeyAlgorithm = 0
+    KeyAlgorithm_KEY_ALGORITHM_ED25519     KeyAlgorithm = 1
+    KeyAlgorithm_KEY_ALGORITHM_ECDSA_P256  KeyAlgorithm = 2
+    KeyAlgorithm_KEY_ALGORITHM_ECDSA_P384  KeyAlgorithm = 3
+    KeyAlgorithm_KEY_ALGORITHM_RSA_2048    KeyAlgorithm = 4
+    KeyAlgorithm_KEY_ALGORITHM_RSA_4096    KeyAlgorithm = 5
+)
+```
+
+<a name="KeyAlgorithm.Descriptor"></a>
+### func \(KeyAlgorithm\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L68>)
+
+```go
+func (KeyAlgorithm) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="KeyAlgorithm.Enum"></a>
+### func \(KeyAlgorithm\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L58>)
+
+```go
+func (x KeyAlgorithm) Enum() *KeyAlgorithm
+```
+
+
+
+<a name="KeyAlgorithm.EnumDescriptor"></a>
+### func \(KeyAlgorithm\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L81>)
+
+```go
+func (KeyAlgorithm) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use KeyAlgorithm.Descriptor instead.
+
+<a name="KeyAlgorithm.Number"></a>
+### func \(KeyAlgorithm\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L76>)
+
+```go
+func (x KeyAlgorithm) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="KeyAlgorithm.String"></a>
+### func \(KeyAlgorithm\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L64>)
+
+```go
+func (x KeyAlgorithm) String() string
+```
+
+
+
+<a name="KeyAlgorithm.Type"></a>
+### func \(KeyAlgorithm\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L72>)
+
+```go
+func (KeyAlgorithm) Type() protoreflect.EnumType
+```
+
+
+
+<a name="KeyFormat"></a>
+## type [KeyFormat](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L86>)
+
+Key format types
+
+```go
+type KeyFormat int32
+```
+
+<a name="KeyFormat_KEY_FORMAT_UNSPECIFIED"></a>
+
+```go
+const (
+    KeyFormat_KEY_FORMAT_UNSPECIFIED KeyFormat = 0
+    KeyFormat_KEY_FORMAT_JWK         KeyFormat = 1
+    KeyFormat_KEY_FORMAT_PEM         KeyFormat = 2
+    KeyFormat_KEY_FORMAT_DER         KeyFormat = 3
+)
+```
+
+<a name="KeyFormat.Descriptor"></a>
+### func \(KeyFormat\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L121>)
+
+```go
+func (KeyFormat) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="KeyFormat.Enum"></a>
+### func \(KeyFormat\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L111>)
+
+```go
+func (x KeyFormat) Enum() *KeyFormat
+```
+
+
+
+<a name="KeyFormat.EnumDescriptor"></a>
+### func \(KeyFormat\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L134>)
+
+```go
+func (KeyFormat) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use KeyFormat.Descriptor instead.
+
+<a name="KeyFormat.Number"></a>
+### func \(KeyFormat\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L129>)
+
+```go
+func (x KeyFormat) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="KeyFormat.String"></a>
+### func \(KeyFormat\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L117>)
+
+```go
+func (x KeyFormat) String() string
+```
+
+
+
+<a name="KeyFormat.Type"></a>
+### func \(KeyFormat\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L125>)
+
+```go
+func (KeyFormat) Type() protoreflect.EnumType
+```
+
+
+
+<a name="KeyValue"></a>
+## type [KeyValue](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L229-L235>)
+
+Generic key\-value pair
+
+```go
+type KeyValue struct {
+    Key   string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+    Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="KeyValue.Descriptor"></a>
+### func \(\*KeyValue\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L263>)
+
+```go
+func (*KeyValue) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use KeyValue.ProtoReflect.Descriptor instead.
+
+<a name="KeyValue.GetKey"></a>
+### func \(\*KeyValue\) [GetKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L267>)
+
+```go
+func (x *KeyValue) GetKey() string
+```
+
+
+
+<a name="KeyValue.GetValue"></a>
+### func \(\*KeyValue\) [GetValue](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L274>)
+
+```go
+func (x *KeyValue) GetValue() string
+```
+
+
+
+<a name="KeyValue.ProtoMessage"></a>
+### func \(\*KeyValue\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L248>)
+
+```go
+func (*KeyValue) ProtoMessage()
+```
+
+
+
+<a name="KeyValue.ProtoReflect"></a>
+### func \(\*KeyValue\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L250>)
+
+```go
+func (x *KeyValue) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="KeyValue.Reset"></a>
+### func \(\*KeyValue\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L237>)
+
+```go
+func (x *KeyValue) Reset()
+```
+
+
+
+<a name="KeyValue.String"></a>
+### func \(\*KeyValue\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L244>)
+
+```go
+func (x *KeyValue) String() string
+```
+
+
+
+<a name="ListAgentsRequest"></a>
+## type [ListAgentsRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1070-L1077>)
+
+List agents request
+
+```go
+type ListAgentsRequest struct {
+    StatusFilter AgentStatus `protobuf:"varint,1,opt,name=status_filter,json=statusFilter,proto3,enum=capiscio.v1.AgentStatus" json:"status_filter,omitempty"`
+    Limit        int32       `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+    Cursor       string      `protobuf:"bytes,3,opt,name=cursor,proto3" json:"cursor,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ListAgentsRequest.Descriptor"></a>
+### func \(\*ListAgentsRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1105>)
+
+```go
+func (*ListAgentsRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ListAgentsRequest.ProtoReflect.Descriptor instead.
+
+<a name="ListAgentsRequest.GetCursor"></a>
+### func \(\*ListAgentsRequest\) [GetCursor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1123>)
+
+```go
+func (x *ListAgentsRequest) GetCursor() string
+```
+
+
+
+<a name="ListAgentsRequest.GetLimit"></a>
+### func \(\*ListAgentsRequest\) [GetLimit](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1116>)
+
+```go
+func (x *ListAgentsRequest) GetLimit() int32
+```
+
+
+
+<a name="ListAgentsRequest.GetStatusFilter"></a>
+### func \(\*ListAgentsRequest\) [GetStatusFilter](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1109>)
+
+```go
+func (x *ListAgentsRequest) GetStatusFilter() AgentStatus
+```
+
+
+
+<a name="ListAgentsRequest.ProtoMessage"></a>
+### func \(\*ListAgentsRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1090>)
+
+```go
+func (*ListAgentsRequest) ProtoMessage()
+```
+
+
+
+<a name="ListAgentsRequest.ProtoReflect"></a>
+### func \(\*ListAgentsRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1092>)
+
+```go
+func (x *ListAgentsRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ListAgentsRequest.Reset"></a>
+### func \(\*ListAgentsRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1079>)
+
+```go
+func (x *ListAgentsRequest) Reset()
+```
+
+
+
+<a name="ListAgentsRequest.String"></a>
+### func \(\*ListAgentsRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1086>)
+
+```go
+func (x *ListAgentsRequest) String() string
+```
+
+
+
+<a name="ListAgentsResponse"></a>
+## type [ListAgentsResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1131-L1138>)
+
+List agents response
+
+```go
+type ListAgentsResponse struct {
+    Agents     []*RegisteredAgent `protobuf:"bytes,1,rep,name=agents,proto3" json:"agents,omitempty"`
+    NextCursor string             `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
+    TotalCount int32              `protobuf:"varint,3,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ListAgentsResponse.Descriptor"></a>
+### func \(\*ListAgentsResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1166>)
+
+```go
+func (*ListAgentsResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ListAgentsResponse.ProtoReflect.Descriptor instead.
+
+<a name="ListAgentsResponse.GetAgents"></a>
+### func \(\*ListAgentsResponse\) [GetAgents](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1170>)
+
+```go
+func (x *ListAgentsResponse) GetAgents() []*RegisteredAgent
+```
+
+
+
+<a name="ListAgentsResponse.GetNextCursor"></a>
+### func \(\*ListAgentsResponse\) [GetNextCursor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1177>)
+
+```go
+func (x *ListAgentsResponse) GetNextCursor() string
+```
+
+
+
+<a name="ListAgentsResponse.GetTotalCount"></a>
+### func \(\*ListAgentsResponse\) [GetTotalCount](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1184>)
+
+```go
+func (x *ListAgentsResponse) GetTotalCount() int32
+```
+
+
+
+<a name="ListAgentsResponse.ProtoMessage"></a>
+### func \(\*ListAgentsResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1151>)
+
+```go
+func (*ListAgentsResponse) ProtoMessage()
+```
+
+
+
+<a name="ListAgentsResponse.ProtoReflect"></a>
+### func \(\*ListAgentsResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1153>)
+
+```go
+func (x *ListAgentsResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ListAgentsResponse.Reset"></a>
+### func \(\*ListAgentsResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1140>)
+
+```go
+func (x *ListAgentsResponse) Reset()
+```
+
+
+
+<a name="ListAgentsResponse.String"></a>
+### func \(\*ListAgentsResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1147>)
+
+```go
+func (x *ListAgentsResponse) String() string
+```
+
+
+
+<a name="ListKeysRequest"></a>
+## type [ListKeysRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L574-L581>)
+
+Request to list keys
+
+```go
+type ListKeysRequest struct {
+    DidFilter string `protobuf:"bytes,1,opt,name=did_filter,json=didFilter,proto3" json:"did_filter,omitempty"` // Optional: filter by DID prefix
+    Limit     int32  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+    Cursor    string `protobuf:"bytes,3,opt,name=cursor,proto3" json:"cursor,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ListKeysRequest.Descriptor"></a>
+### func \(\*ListKeysRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L609>)
+
+```go
+func (*ListKeysRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ListKeysRequest.ProtoReflect.Descriptor instead.
+
+<a name="ListKeysRequest.GetCursor"></a>
+### func \(\*ListKeysRequest\) [GetCursor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L627>)
+
+```go
+func (x *ListKeysRequest) GetCursor() string
+```
+
+
+
+<a name="ListKeysRequest.GetDidFilter"></a>
+### func \(\*ListKeysRequest\) [GetDidFilter](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L613>)
+
+```go
+func (x *ListKeysRequest) GetDidFilter() string
+```
+
+
+
+<a name="ListKeysRequest.GetLimit"></a>
+### func \(\*ListKeysRequest\) [GetLimit](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L620>)
+
+```go
+func (x *ListKeysRequest) GetLimit() int32
+```
+
+
+
+<a name="ListKeysRequest.ProtoMessage"></a>
+### func \(\*ListKeysRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L594>)
+
+```go
+func (*ListKeysRequest) ProtoMessage()
+```
+
+
+
+<a name="ListKeysRequest.ProtoReflect"></a>
+### func \(\*ListKeysRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L596>)
+
+```go
+func (x *ListKeysRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ListKeysRequest.Reset"></a>
+### func \(\*ListKeysRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L583>)
+
+```go
+func (x *ListKeysRequest) Reset()
+```
+
+
+
+<a name="ListKeysRequest.String"></a>
+### func \(\*ListKeysRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L590>)
+
+```go
+func (x *ListKeysRequest) String() string
+```
+
+
+
+<a name="ListKeysResponse"></a>
+## type [ListKeysResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L635-L642>)
+
+Response with keys list
+
+```go
+type ListKeysResponse struct {
+    Keys       []*TrustedKey `protobuf:"bytes,1,rep,name=keys,proto3" json:"keys,omitempty"`
+    NextCursor string        `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
+    TotalCount int32         `protobuf:"varint,3,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ListKeysResponse.Descriptor"></a>
+### func \(\*ListKeysResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L670>)
+
+```go
+func (*ListKeysResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ListKeysResponse.ProtoReflect.Descriptor instead.
+
+<a name="ListKeysResponse.GetKeys"></a>
+### func \(\*ListKeysResponse\) [GetKeys](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L674>)
+
+```go
+func (x *ListKeysResponse) GetKeys() []*TrustedKey
+```
+
+
+
+<a name="ListKeysResponse.GetNextCursor"></a>
+### func \(\*ListKeysResponse\) [GetNextCursor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L681>)
+
+```go
+func (x *ListKeysResponse) GetNextCursor() string
+```
+
+
+
+<a name="ListKeysResponse.GetTotalCount"></a>
+### func \(\*ListKeysResponse\) [GetTotalCount](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L688>)
+
+```go
+func (x *ListKeysResponse) GetTotalCount() int32
+```
+
+
+
+<a name="ListKeysResponse.ProtoMessage"></a>
+### func \(\*ListKeysResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L655>)
+
+```go
+func (*ListKeysResponse) ProtoMessage()
+```
+
+
+
+<a name="ListKeysResponse.ProtoReflect"></a>
+### func \(\*ListKeysResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L657>)
+
+```go
+func (x *ListKeysResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ListKeysResponse.Reset"></a>
+### func \(\*ListKeysResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L644>)
+
+```go
+func (x *ListKeysResponse) Reset()
+```
+
+
+
+<a name="ListKeysResponse.String"></a>
+### func \(\*ListKeysResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L651>)
+
+```go
+func (x *ListKeysResponse) String() string
+```
+
+
+
+<a name="ListRevocationsRequest"></a>
+## type [ListRevocationsRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L505-L513>)
+
+Request to list revocations
+
+```go
+type ListRevocationsRequest struct {
+    SubjectFilter string           `protobuf:"bytes,1,opt,name=subject_filter,json=subjectFilter,proto3" json:"subject_filter,omitempty"` // Optional: filter by subject prefix
+    ReasonFilter  RevocationReason `protobuf:"varint,2,opt,name=reason_filter,json=reasonFilter,proto3,enum=capiscio.v1.RevocationReason" json:"reason_filter,omitempty"`
+    Limit         int32            `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
+    Cursor        string           `protobuf:"bytes,4,opt,name=cursor,proto3" json:"cursor,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ListRevocationsRequest.Descriptor"></a>
+### func \(\*ListRevocationsRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L541>)
+
+```go
+func (*ListRevocationsRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ListRevocationsRequest.ProtoReflect.Descriptor instead.
+
+<a name="ListRevocationsRequest.GetCursor"></a>
+### func \(\*ListRevocationsRequest\) [GetCursor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L566>)
+
+```go
+func (x *ListRevocationsRequest) GetCursor() string
+```
+
+
+
+<a name="ListRevocationsRequest.GetLimit"></a>
+### func \(\*ListRevocationsRequest\) [GetLimit](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L559>)
+
+```go
+func (x *ListRevocationsRequest) GetLimit() int32
+```
+
+
+
+<a name="ListRevocationsRequest.GetReasonFilter"></a>
+### func \(\*ListRevocationsRequest\) [GetReasonFilter](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L552>)
+
+```go
+func (x *ListRevocationsRequest) GetReasonFilter() RevocationReason
+```
+
+
+
+<a name="ListRevocationsRequest.GetSubjectFilter"></a>
+### func \(\*ListRevocationsRequest\) [GetSubjectFilter](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L545>)
+
+```go
+func (x *ListRevocationsRequest) GetSubjectFilter() string
+```
+
+
+
+<a name="ListRevocationsRequest.ProtoMessage"></a>
+### func \(\*ListRevocationsRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L526>)
+
+```go
+func (*ListRevocationsRequest) ProtoMessage()
+```
+
+
+
+<a name="ListRevocationsRequest.ProtoReflect"></a>
+### func \(\*ListRevocationsRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L528>)
+
+```go
+func (x *ListRevocationsRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ListRevocationsRequest.Reset"></a>
+### func \(\*ListRevocationsRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L515>)
+
+```go
+func (x *ListRevocationsRequest) Reset()
+```
+
+
+
+<a name="ListRevocationsRequest.String"></a>
+### func \(\*ListRevocationsRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L522>)
+
+```go
+func (x *ListRevocationsRequest) String() string
+```
+
+
+
+<a name="ListRevocationsResponse"></a>
+## type [ListRevocationsResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L574-L581>)
+
+Response with revocations list
+
+```go
+type ListRevocationsResponse struct {
+    Entries    []*RevocationEntry `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries,omitempty"`
+    NextCursor string             `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
+    TotalCount int32              `protobuf:"varint,3,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ListRevocationsResponse.Descriptor"></a>
+### func \(\*ListRevocationsResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L609>)
+
+```go
+func (*ListRevocationsResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ListRevocationsResponse.ProtoReflect.Descriptor instead.
+
+<a name="ListRevocationsResponse.GetEntries"></a>
+### func \(\*ListRevocationsResponse\) [GetEntries](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L613>)
+
+```go
+func (x *ListRevocationsResponse) GetEntries() []*RevocationEntry
+```
+
+
+
+<a name="ListRevocationsResponse.GetNextCursor"></a>
+### func \(\*ListRevocationsResponse\) [GetNextCursor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L620>)
+
+```go
+func (x *ListRevocationsResponse) GetNextCursor() string
+```
+
+
+
+<a name="ListRevocationsResponse.GetTotalCount"></a>
+### func \(\*ListRevocationsResponse\) [GetTotalCount](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L627>)
+
+```go
+func (x *ListRevocationsResponse) GetTotalCount() int32
+```
+
+
+
+<a name="ListRevocationsResponse.ProtoMessage"></a>
+### func \(\*ListRevocationsResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L594>)
+
+```go
+func (*ListRevocationsResponse) ProtoMessage()
+```
+
+
+
+<a name="ListRevocationsResponse.ProtoReflect"></a>
+### func \(\*ListRevocationsResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L596>)
+
+```go
+func (x *ListRevocationsResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ListRevocationsResponse.Reset"></a>
+### func \(\*ListRevocationsResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L583>)
+
+```go
+func (x *ListRevocationsResponse) Reset()
+```
+
+
+
+<a name="ListRevocationsResponse.String"></a>
+### func \(\*ListRevocationsResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L590>)
+
+```go
+func (x *ListRevocationsResponse) String() string
+```
+
+
+
+<a name="ListRuleSetsRequest"></a>
+## type [ListRuleSetsRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L795-L801>)
+
+Request to list rule sets
+
+```go
+type ListRuleSetsRequest struct {
+    Limit  int32  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+    Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ListRuleSetsRequest.Descriptor"></a>
+### func \(\*ListRuleSetsRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L829>)
+
+```go
+func (*ListRuleSetsRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ListRuleSetsRequest.ProtoReflect.Descriptor instead.
+
+<a name="ListRuleSetsRequest.GetCursor"></a>
+### func \(\*ListRuleSetsRequest\) [GetCursor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L840>)
+
+```go
+func (x *ListRuleSetsRequest) GetCursor() string
+```
+
+
+
+<a name="ListRuleSetsRequest.GetLimit"></a>
+### func \(\*ListRuleSetsRequest\) [GetLimit](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L833>)
+
+```go
+func (x *ListRuleSetsRequest) GetLimit() int32
+```
+
+
+
+<a name="ListRuleSetsRequest.ProtoMessage"></a>
+### func \(\*ListRuleSetsRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L814>)
+
+```go
+func (*ListRuleSetsRequest) ProtoMessage()
+```
+
+
+
+<a name="ListRuleSetsRequest.ProtoReflect"></a>
+### func \(\*ListRuleSetsRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L816>)
+
+```go
+func (x *ListRuleSetsRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ListRuleSetsRequest.Reset"></a>
+### func \(\*ListRuleSetsRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L803>)
+
+```go
+func (x *ListRuleSetsRequest) Reset()
+```
+
+
+
+<a name="ListRuleSetsRequest.String"></a>
+### func \(\*ListRuleSetsRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L810>)
+
+```go
+func (x *ListRuleSetsRequest) String() string
+```
+
+
+
+<a name="ListRuleSetsResponse"></a>
+## type [ListRuleSetsResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L848-L854>)
+
+Response with rule sets
+
+```go
+type ListRuleSetsResponse struct {
+    RuleSets   []*RuleSet `protobuf:"bytes,1,rep,name=rule_sets,json=ruleSets,proto3" json:"rule_sets,omitempty"`
+    NextCursor string     `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ListRuleSetsResponse.Descriptor"></a>
+### func \(\*ListRuleSetsResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L882>)
+
+```go
+func (*ListRuleSetsResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ListRuleSetsResponse.ProtoReflect.Descriptor instead.
+
+<a name="ListRuleSetsResponse.GetNextCursor"></a>
+### func \(\*ListRuleSetsResponse\) [GetNextCursor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L893>)
+
+```go
+func (x *ListRuleSetsResponse) GetNextCursor() string
+```
+
+
+
+<a name="ListRuleSetsResponse.GetRuleSets"></a>
+### func \(\*ListRuleSetsResponse\) [GetRuleSets](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L886>)
+
+```go
+func (x *ListRuleSetsResponse) GetRuleSets() []*RuleSet
+```
+
+
+
+<a name="ListRuleSetsResponse.ProtoMessage"></a>
+### func \(\*ListRuleSetsResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L867>)
+
+```go
+func (*ListRuleSetsResponse) ProtoMessage()
+```
+
+
+
+<a name="ListRuleSetsResponse.ProtoReflect"></a>
+### func \(\*ListRuleSetsResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L869>)
+
+```go
+func (x *ListRuleSetsResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ListRuleSetsResponse.Reset"></a>
+### func \(\*ListRuleSetsResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L856>)
+
+```go
+func (x *ListRuleSetsResponse) Reset()
+```
+
+
+
+<a name="ListRuleSetsResponse.String"></a>
+### func \(\*ListRuleSetsResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L863>)
+
+```go
+func (x *ListRuleSetsResponse) String() string
+```
+
+
+
+<a name="LoadKeyRequest"></a>
+## type [LoadKeyRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L794-L801>)
+
+Request to load key
+
+```go
+type LoadKeyRequest struct {
+    FilePath   string    `protobuf:"bytes,1,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
+    Format     KeyFormat `protobuf:"varint,2,opt,name=format,proto3,enum=capiscio.v1.KeyFormat" json:"format,omitempty"`
+    Passphrase string    `protobuf:"bytes,3,opt,name=passphrase,proto3" json:"passphrase,omitempty"` // Optional: for encrypted keys
+    // contains filtered or unexported fields
+}
+```
+
+<a name="LoadKeyRequest.Descriptor"></a>
+### func \(\*LoadKeyRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L829>)
+
+```go
+func (*LoadKeyRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use LoadKeyRequest.ProtoReflect.Descriptor instead.
+
+<a name="LoadKeyRequest.GetFilePath"></a>
+### func \(\*LoadKeyRequest\) [GetFilePath](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L833>)
+
+```go
+func (x *LoadKeyRequest) GetFilePath() string
+```
+
+
+
+<a name="LoadKeyRequest.GetFormat"></a>
+### func \(\*LoadKeyRequest\) [GetFormat](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L840>)
+
+```go
+func (x *LoadKeyRequest) GetFormat() KeyFormat
+```
+
+
+
+<a name="LoadKeyRequest.GetPassphrase"></a>
+### func \(\*LoadKeyRequest\) [GetPassphrase](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L847>)
+
+```go
+func (x *LoadKeyRequest) GetPassphrase() string
+```
+
+
+
+<a name="LoadKeyRequest.ProtoMessage"></a>
+### func \(\*LoadKeyRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L814>)
+
+```go
+func (*LoadKeyRequest) ProtoMessage()
+```
+
+
+
+<a name="LoadKeyRequest.ProtoReflect"></a>
+### func \(\*LoadKeyRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L816>)
+
+```go
+func (x *LoadKeyRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="LoadKeyRequest.Reset"></a>
+### func \(\*LoadKeyRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L803>)
+
+```go
+func (x *LoadKeyRequest) Reset()
+```
+
+
+
+<a name="LoadKeyRequest.String"></a>
+### func \(\*LoadKeyRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L810>)
+
+```go
+func (x *LoadKeyRequest) String() string
+```
+
+
+
+<a name="LoadKeyResponse"></a>
+## type [LoadKeyResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L855-L863>)
+
+Response for load key
+
+```go
+type LoadKeyResponse struct {
+    KeyId         string       `protobuf:"bytes,1,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
+    Algorithm     KeyAlgorithm `protobuf:"varint,2,opt,name=algorithm,proto3,enum=capiscio.v1.KeyAlgorithm" json:"algorithm,omitempty"`
+    HasPrivateKey bool         `protobuf:"varint,3,opt,name=has_private_key,json=hasPrivateKey,proto3" json:"has_private_key,omitempty"`
+    ErrorMessage  string       `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="LoadKeyResponse.Descriptor"></a>
+### func \(\*LoadKeyResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L891>)
+
+```go
+func (*LoadKeyResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use LoadKeyResponse.ProtoReflect.Descriptor instead.
+
+<a name="LoadKeyResponse.GetAlgorithm"></a>
+### func \(\*LoadKeyResponse\) [GetAlgorithm](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L902>)
+
+```go
+func (x *LoadKeyResponse) GetAlgorithm() KeyAlgorithm
+```
+
+
+
+<a name="LoadKeyResponse.GetErrorMessage"></a>
+### func \(\*LoadKeyResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L916>)
+
+```go
+func (x *LoadKeyResponse) GetErrorMessage() string
+```
+
+
+
+<a name="LoadKeyResponse.GetHasPrivateKey"></a>
+### func \(\*LoadKeyResponse\) [GetHasPrivateKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L909>)
+
+```go
+func (x *LoadKeyResponse) GetHasPrivateKey() bool
+```
+
+
+
+<a name="LoadKeyResponse.GetKeyId"></a>
+### func \(\*LoadKeyResponse\) [GetKeyId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L895>)
+
+```go
+func (x *LoadKeyResponse) GetKeyId() string
+```
+
+
+
+<a name="LoadKeyResponse.ProtoMessage"></a>
+### func \(\*LoadKeyResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L876>)
+
+```go
+func (*LoadKeyResponse) ProtoMessage()
+```
+
+
+
+<a name="LoadKeyResponse.ProtoReflect"></a>
+### func \(\*LoadKeyResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L878>)
+
+```go
+func (x *LoadKeyResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="LoadKeyResponse.Reset"></a>
+### func \(\*LoadKeyResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L865>)
+
+```go
+func (x *LoadKeyResponse) Reset()
+```
+
+
+
+<a name="LoadKeyResponse.String"></a>
+### func \(\*LoadKeyResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L872>)
+
+```go
+func (x *LoadKeyResponse) String() string
+```
+
+
+
+<a name="MCPAuthLevel"></a>
+## type [MCPAuthLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L88>)
+
+Authentication level enum
+
+```go
+type MCPAuthLevel int32
+```
+
+<a name="MCPAuthLevel_MCP_AUTH_LEVEL_UNSPECIFIED"></a>
+
+```go
+const (
+    MCPAuthLevel_MCP_AUTH_LEVEL_UNSPECIFIED MCPAuthLevel = 0
+    MCPAuthLevel_MCP_AUTH_LEVEL_ANONYMOUS   MCPAuthLevel = 1
+    MCPAuthLevel_MCP_AUTH_LEVEL_API_KEY     MCPAuthLevel = 2
+    MCPAuthLevel_MCP_AUTH_LEVEL_BADGE       MCPAuthLevel = 3
+)
+```
+
+<a name="MCPAuthLevel.Descriptor"></a>
+### func \(MCPAuthLevel\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L123>)
+
+```go
+func (MCPAuthLevel) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="MCPAuthLevel.Enum"></a>
+### func \(MCPAuthLevel\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L113>)
+
+```go
+func (x MCPAuthLevel) Enum() *MCPAuthLevel
+```
+
+
+
+<a name="MCPAuthLevel.EnumDescriptor"></a>
+### func \(MCPAuthLevel\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L136>)
+
+```go
+func (MCPAuthLevel) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use MCPAuthLevel.Descriptor instead.
+
+<a name="MCPAuthLevel.Number"></a>
+### func \(MCPAuthLevel\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L131>)
+
+```go
+func (x MCPAuthLevel) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="MCPAuthLevel.String"></a>
+### func \(MCPAuthLevel\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L119>)
+
+```go
+func (x MCPAuthLevel) String() string
+```
+
+
+
+<a name="MCPAuthLevel.Type"></a>
+### func \(MCPAuthLevel\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L127>)
+
+```go
+func (MCPAuthLevel) Type() protoreflect.EnumType
+```
+
+
+
+<a name="MCPDecision"></a>
+## type [MCPDecision](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L38>)
+
+Access decision enum
+
+```go
+type MCPDecision int32
+```
+
+<a name="MCPDecision_MCP_DECISION_UNSPECIFIED"></a>
+
+```go
+const (
+    MCPDecision_MCP_DECISION_UNSPECIFIED MCPDecision = 0
+    MCPDecision_MCP_DECISION_ALLOW       MCPDecision = 1
+    MCPDecision_MCP_DECISION_DENY        MCPDecision = 2
+)
+```
+
+<a name="MCPDecision.Descriptor"></a>
+### func \(MCPDecision\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L70>)
+
+```go
+func (MCPDecision) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="MCPDecision.Enum"></a>
+### func \(MCPDecision\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L60>)
+
+```go
+func (x MCPDecision) Enum() *MCPDecision
+```
+
+
+
+<a name="MCPDecision.EnumDescriptor"></a>
+### func \(MCPDecision\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L83>)
+
+```go
+func (MCPDecision) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use MCPDecision.Descriptor instead.
+
+<a name="MCPDecision.Number"></a>
+### func \(MCPDecision\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L78>)
+
+```go
+func (x MCPDecision) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="MCPDecision.String"></a>
+### func \(MCPDecision\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L66>)
+
+```go
+func (x MCPDecision) String() string
+```
+
+
+
+<a name="MCPDecision.Type"></a>
+### func \(MCPDecision\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L74>)
+
+```go
+func (MCPDecision) Type() protoreflect.EnumType
+```
+
+
+
+<a name="MCPDenyReason"></a>
+## type [MCPDenyReason](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L141>)
+
+Denial reason enum \(RFC\-006 §6.4\)
+
+```go
+type MCPDenyReason int32
+```
+
+<a name="MCPDenyReason_MCP_DENY_REASON_UNSPECIFIED"></a>
+
+```go
+const (
+    MCPDenyReason_MCP_DENY_REASON_UNSPECIFIED        MCPDenyReason = 0
+    MCPDenyReason_MCP_DENY_REASON_BADGE_MISSING      MCPDenyReason = 1 // Required but not provided
+    MCPDenyReason_MCP_DENY_REASON_BADGE_INVALID      MCPDenyReason = 2 // Malformed or unverifiable
+    MCPDenyReason_MCP_DENY_REASON_BADGE_EXPIRED      MCPDenyReason = 3
+    MCPDenyReason_MCP_DENY_REASON_BADGE_REVOKED      MCPDenyReason = 4
+    MCPDenyReason_MCP_DENY_REASON_TRUST_INSUFFICIENT MCPDenyReason = 5 // Trust level < min required
+    MCPDenyReason_MCP_DENY_REASON_TOOL_NOT_ALLOWED   MCPDenyReason = 6 // Tool not in allowed list
+    MCPDenyReason_MCP_DENY_REASON_ISSUER_UNTRUSTED   MCPDenyReason = 7
+    MCPDenyReason_MCP_DENY_REASON_POLICY_DENIED      MCPDenyReason = 8 // Policy evaluation failed
+)
+```
+
+<a name="MCPDenyReason.Descriptor"></a>
+### func \(MCPDenyReason\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L191>)
+
+```go
+func (MCPDenyReason) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="MCPDenyReason.Enum"></a>
+### func \(MCPDenyReason\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L181>)
+
+```go
+func (x MCPDenyReason) Enum() *MCPDenyReason
+```
+
+
+
+<a name="MCPDenyReason.EnumDescriptor"></a>
+### func \(MCPDenyReason\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L204>)
+
+```go
+func (MCPDenyReason) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use MCPDenyReason.Descriptor instead.
+
+<a name="MCPDenyReason.Number"></a>
+### func \(MCPDenyReason\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L199>)
+
+```go
+func (x MCPDenyReason) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="MCPDenyReason.String"></a>
+### func \(MCPDenyReason\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L187>)
+
+```go
+func (x MCPDenyReason) String() string
+```
+
+
+
+<a name="MCPDenyReason.Type"></a>
+### func \(MCPDenyReason\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L195>)
+
+```go
+func (MCPDenyReason) Type() protoreflect.EnumType
+```
+
+
+
+<a name="MCPHealthRequest"></a>
+## type [MCPHealthRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1159-L1165>)
+
+Health check request
+
+```go
+type MCPHealthRequest struct {
+
+    // Client SDK version for compatibility check
+    ClientVersion string `protobuf:"bytes,1,opt,name=client_version,json=clientVersion,proto3" json:"client_version,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="MCPHealthRequest.Descriptor"></a>
+### func \(\*MCPHealthRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1193>)
+
+```go
+func (*MCPHealthRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use MCPHealthRequest.ProtoReflect.Descriptor instead.
+
+<a name="MCPHealthRequest.GetClientVersion"></a>
+### func \(\*MCPHealthRequest\) [GetClientVersion](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1197>)
+
+```go
+func (x *MCPHealthRequest) GetClientVersion() string
+```
+
+
+
+<a name="MCPHealthRequest.ProtoMessage"></a>
+### func \(\*MCPHealthRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1178>)
+
+```go
+func (*MCPHealthRequest) ProtoMessage()
+```
+
+
+
+<a name="MCPHealthRequest.ProtoReflect"></a>
+### func \(\*MCPHealthRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1180>)
+
+```go
+func (x *MCPHealthRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="MCPHealthRequest.Reset"></a>
+### func \(\*MCPHealthRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1167>)
+
+```go
+func (x *MCPHealthRequest) Reset()
+```
+
+
+
+<a name="MCPHealthRequest.String"></a>
+### func \(\*MCPHealthRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1174>)
+
+```go
+func (x *MCPHealthRequest) String() string
+```
+
+
+
+<a name="MCPHealthResponse"></a>
+## type [MCPHealthResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1205-L1217>)
+
+Health check response
+
+```go
+type MCPHealthResponse struct {
+
+    // Whether the service is healthy
+    Healthy bool `protobuf:"varint,1,opt,name=healthy,proto3" json:"healthy,omitempty"`
+    // capiscio-core version
+    CoreVersion string `protobuf:"bytes,2,opt,name=core_version,json=coreVersion,proto3" json:"core_version,omitempty"`
+    // Proto schema version
+    ProtoVersion string `protobuf:"bytes,3,opt,name=proto_version,json=protoVersion,proto3" json:"proto_version,omitempty"`
+    // Whether client version is compatible with this core
+    VersionCompatible bool `protobuf:"varint,4,opt,name=version_compatible,json=versionCompatible,proto3" json:"version_compatible,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="MCPHealthResponse.Descriptor"></a>
+### func \(\*MCPHealthResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1245>)
+
+```go
+func (*MCPHealthResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use MCPHealthResponse.ProtoReflect.Descriptor instead.
+
+<a name="MCPHealthResponse.GetCoreVersion"></a>
+### func \(\*MCPHealthResponse\) [GetCoreVersion](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1256>)
+
+```go
+func (x *MCPHealthResponse) GetCoreVersion() string
+```
+
+
+
+<a name="MCPHealthResponse.GetHealthy"></a>
+### func \(\*MCPHealthResponse\) [GetHealthy](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1249>)
+
+```go
+func (x *MCPHealthResponse) GetHealthy() bool
+```
+
+
+
+<a name="MCPHealthResponse.GetProtoVersion"></a>
+### func \(\*MCPHealthResponse\) [GetProtoVersion](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1263>)
+
+```go
+func (x *MCPHealthResponse) GetProtoVersion() string
+```
+
+
+
+<a name="MCPHealthResponse.GetVersionCompatible"></a>
+### func \(\*MCPHealthResponse\) [GetVersionCompatible](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1270>)
+
+```go
+func (x *MCPHealthResponse) GetVersionCompatible() bool
+```
+
+
+
+<a name="MCPHealthResponse.ProtoMessage"></a>
+### func \(\*MCPHealthResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1230>)
+
+```go
+func (*MCPHealthResponse) ProtoMessage()
+```
+
+
+
+<a name="MCPHealthResponse.ProtoReflect"></a>
+### func \(\*MCPHealthResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1232>)
+
+```go
+func (x *MCPHealthResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="MCPHealthResponse.Reset"></a>
+### func \(\*MCPHealthResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1219>)
+
+```go
+func (x *MCPHealthResponse) Reset()
+```
+
+
+
+<a name="MCPHealthResponse.String"></a>
+### func \(\*MCPHealthResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1226>)
+
+```go
+func (x *MCPHealthResponse) String() string
+```
+
+
+
+<a name="MCPHttpHeaders"></a>
+## type [MCPHttpHeaders](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L996-L1002>)
+
+HTTP headers containing server identity
+
+```go
+type MCPHttpHeaders struct {
+    CapiscioServerDid   string `protobuf:"bytes,1,opt,name=capiscio_server_did,json=capiscioServerDid,proto3" json:"capiscio_server_did,omitempty"`
+    CapiscioServerBadge string `protobuf:"bytes,2,opt,name=capiscio_server_badge,json=capiscioServerBadge,proto3" json:"capiscio_server_badge,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="MCPHttpHeaders.Descriptor"></a>
+### func \(\*MCPHttpHeaders\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1030>)
+
+```go
+func (*MCPHttpHeaders) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use MCPHttpHeaders.ProtoReflect.Descriptor instead.
+
+<a name="MCPHttpHeaders.GetCapiscioServerBadge"></a>
+### func \(\*MCPHttpHeaders\) [GetCapiscioServerBadge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1041>)
+
+```go
+func (x *MCPHttpHeaders) GetCapiscioServerBadge() string
+```
+
+
+
+<a name="MCPHttpHeaders.GetCapiscioServerDid"></a>
+### func \(\*MCPHttpHeaders\) [GetCapiscioServerDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1034>)
+
+```go
+func (x *MCPHttpHeaders) GetCapiscioServerDid() string
+```
+
+
+
+<a name="MCPHttpHeaders.ProtoMessage"></a>
+### func \(\*MCPHttpHeaders\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1015>)
+
+```go
+func (*MCPHttpHeaders) ProtoMessage()
+```
+
+
+
+<a name="MCPHttpHeaders.ProtoReflect"></a>
+### func \(\*MCPHttpHeaders\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1017>)
+
+```go
+func (x *MCPHttpHeaders) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="MCPHttpHeaders.Reset"></a>
+### func \(\*MCPHttpHeaders\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1004>)
+
+```go
+func (x *MCPHttpHeaders) Reset()
+```
+
+
+
+<a name="MCPHttpHeaders.String"></a>
+### func \(\*MCPHttpHeaders\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1011>)
+
+```go
+func (x *MCPHttpHeaders) String() string
+```
+
+
+
+<a name="MCPJsonRpcMeta"></a>
+## type [MCPJsonRpcMeta](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1049-L1055>)
+
+JSON\-RPC \_meta object containing server identity
+
+```go
+type MCPJsonRpcMeta struct {
+
+    // The _meta object as JSON string
+    MetaJson string `protobuf:"bytes,1,opt,name=meta_json,json=metaJson,proto3" json:"meta_json,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="MCPJsonRpcMeta.Descriptor"></a>
+### func \(\*MCPJsonRpcMeta\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1083>)
+
+```go
+func (*MCPJsonRpcMeta) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use MCPJsonRpcMeta.ProtoReflect.Descriptor instead.
+
+<a name="MCPJsonRpcMeta.GetMetaJson"></a>
+### func \(\*MCPJsonRpcMeta\) [GetMetaJson](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1087>)
+
+```go
+func (x *MCPJsonRpcMeta) GetMetaJson() string
+```
+
+
+
+<a name="MCPJsonRpcMeta.ProtoMessage"></a>
+### func \(\*MCPJsonRpcMeta\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1068>)
+
+```go
+func (*MCPJsonRpcMeta) ProtoMessage()
+```
+
+
+
+<a name="MCPJsonRpcMeta.ProtoReflect"></a>
+### func \(\*MCPJsonRpcMeta\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1070>)
+
+```go
+func (x *MCPJsonRpcMeta) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="MCPJsonRpcMeta.Reset"></a>
+### func \(\*MCPJsonRpcMeta\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1057>)
+
+```go
+func (x *MCPJsonRpcMeta) Reset()
+```
+
+
+
+<a name="MCPJsonRpcMeta.String"></a>
+### func \(\*MCPJsonRpcMeta\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1064>)
+
+```go
+func (x *MCPJsonRpcMeta) String() string
+```
+
+
+
+<a name="MCPServerErrorCode"></a>
+## type [MCPServerErrorCode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L262>)
+
+Server verification error codes \(RFC\-007 §8\)
+
+```go
+type MCPServerErrorCode int32
+```
+
+<a name="MCPServerErrorCode_MCP_SERVER_ERROR_NONE"></a>
+
+```go
+const (
+    MCPServerErrorCode_MCP_SERVER_ERROR_NONE               MCPServerErrorCode = 0
+    MCPServerErrorCode_MCP_SERVER_ERROR_DID_INVALID        MCPServerErrorCode = 1
+    MCPServerErrorCode_MCP_SERVER_ERROR_BADGE_INVALID      MCPServerErrorCode = 2
+    MCPServerErrorCode_MCP_SERVER_ERROR_BADGE_EXPIRED      MCPServerErrorCode = 3
+    MCPServerErrorCode_MCP_SERVER_ERROR_BADGE_REVOKED      MCPServerErrorCode = 4
+    MCPServerErrorCode_MCP_SERVER_ERROR_TRUST_INSUFFICIENT MCPServerErrorCode = 5
+    MCPServerErrorCode_MCP_SERVER_ERROR_ORIGIN_MISMATCH    MCPServerErrorCode = 6
+    MCPServerErrorCode_MCP_SERVER_ERROR_PATH_MISMATCH      MCPServerErrorCode = 7
+    MCPServerErrorCode_MCP_SERVER_ERROR_ISSUER_UNTRUSTED   MCPServerErrorCode = 8
+)
+```
+
+<a name="MCPServerErrorCode.Descriptor"></a>
+### func \(MCPServerErrorCode\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L312>)
+
+```go
+func (MCPServerErrorCode) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="MCPServerErrorCode.Enum"></a>
+### func \(MCPServerErrorCode\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L302>)
+
+```go
+func (x MCPServerErrorCode) Enum() *MCPServerErrorCode
+```
+
+
+
+<a name="MCPServerErrorCode.EnumDescriptor"></a>
+### func \(MCPServerErrorCode\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L325>)
+
+```go
+func (MCPServerErrorCode) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use MCPServerErrorCode.Descriptor instead.
+
+<a name="MCPServerErrorCode.Number"></a>
+### func \(MCPServerErrorCode\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L320>)
+
+```go
+func (x MCPServerErrorCode) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="MCPServerErrorCode.String"></a>
+### func \(MCPServerErrorCode\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L308>)
+
+```go
+func (x MCPServerErrorCode) String() string
+```
+
+
+
+<a name="MCPServerErrorCode.Type"></a>
+### func \(MCPServerErrorCode\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L316>)
+
+```go
+func (MCPServerErrorCode) Type() protoreflect.EnumType
+```
+
+
+
+<a name="MCPServerState"></a>
+## type [MCPServerState](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L209>)
+
+Server classification state \(RFC\-007 §5.2\)
+
+```go
+type MCPServerState int32
+```
+
+<a name="MCPServerState_MCP_SERVER_STATE_UNSPECIFIED"></a>
+
+```go
+const (
+    MCPServerState_MCP_SERVER_STATE_UNSPECIFIED        MCPServerState = 0
+    MCPServerState_MCP_SERVER_STATE_VERIFIED_PRINCIPAL MCPServerState = 1 // Badge verified, trust level established
+    MCPServerState_MCP_SERVER_STATE_DECLARED_PRINCIPAL MCPServerState = 2 // DID present but no/invalid badge
+    MCPServerState_MCP_SERVER_STATE_UNVERIFIED_ORIGIN  MCPServerState = 3 // No identity disclosed (distinct from Trust Level 0)
+)
+```
+
+<a name="MCPServerState.Descriptor"></a>
+### func \(MCPServerState\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L244>)
+
+```go
+func (MCPServerState) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="MCPServerState.Enum"></a>
+### func \(MCPServerState\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L234>)
+
+```go
+func (x MCPServerState) Enum() *MCPServerState
+```
+
+
+
+<a name="MCPServerState.EnumDescriptor"></a>
+### func \(MCPServerState\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L257>)
+
+```go
+func (MCPServerState) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use MCPServerState.Descriptor instead.
+
+<a name="MCPServerState.Number"></a>
+### func \(MCPServerState\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L252>)
+
+```go
+func (x MCPServerState) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="MCPServerState.String"></a>
+### func \(MCPServerState\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L240>)
+
+```go
+func (x MCPServerState) String() string
+```
+
+
+
+<a name="MCPServerState.Type"></a>
+### func \(MCPServerState\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L248>)
+
+```go
+func (MCPServerState) Type() protoreflect.EnumType
+```
+
+
+
+<a name="MCPServiceClient"></a>
+## type [MCPServiceClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp_grpc.pb.go#L45-L55>)
+
+MCPServiceClient is the client API for MCPService service.
+
+For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+
+MCPService provides unified MCP security operations \(RFC\-006 \+ RFC\-007\)
+
+```go
+type MCPServiceClient interface {
+    // RFC-006: Evaluate tool access and emit evidence atomically
+    // Single RPC returns both decision and evidence to avoid partial failures
+    EvaluateToolAccess(ctx context.Context, in *EvaluateToolAccessRequest, opts ...grpc.CallOption) (*EvaluateToolAccessResponse, error)
+    // RFC-007: Verify server identity from disclosed DID + badge
+    VerifyServerIdentity(ctx context.Context, in *VerifyServerIdentityRequest, opts ...grpc.CallOption) (*VerifyServerIdentityResponse, error)
+    // RFC-007: Extract server identity from transport headers/meta
+    ParseServerIdentity(ctx context.Context, in *ParseServerIdentityRequest, opts ...grpc.CallOption) (*ParseServerIdentityResponse, error)
+    // Health check for client supervision and version handshake
+    Health(ctx context.Context, in *MCPHealthRequest, opts ...grpc.CallOption) (*MCPHealthResponse, error)
+}
+```
+
+<a name="NewMCPServiceClient"></a>
+### func [NewMCPServiceClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp_grpc.pb.go#L61>)
+
+```go
+func NewMCPServiceClient(cc grpc.ClientConnInterface) MCPServiceClient
+```
+
+
+
+<a name="MCPServiceServer"></a>
+## type [MCPServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp_grpc.pb.go#L110-L121>)
+
+MCPServiceServer is the server API for MCPService service. All implementations must embed UnimplementedMCPServiceServer for forward compatibility.
+
+MCPService provides unified MCP security operations \(RFC\-006 \+ RFC\-007\)
+
+```go
+type MCPServiceServer interface {
+    // RFC-006: Evaluate tool access and emit evidence atomically
+    // Single RPC returns both decision and evidence to avoid partial failures
+    EvaluateToolAccess(context.Context, *EvaluateToolAccessRequest) (*EvaluateToolAccessResponse, error)
+    // RFC-007: Verify server identity from disclosed DID + badge
+    VerifyServerIdentity(context.Context, *VerifyServerIdentityRequest) (*VerifyServerIdentityResponse, error)
+    // RFC-007: Extract server identity from transport headers/meta
+    ParseServerIdentity(context.Context, *ParseServerIdentityRequest) (*ParseServerIdentityResponse, error)
+    // Health check for client supervision and version handshake
+    Health(context.Context, *MCPHealthRequest) (*MCPHealthResponse, error)
+    // contains filtered or unexported methods
+}
+```
+
+<a name="MCPVerifyConfig"></a>
+## type [MCPVerifyConfig](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L740-L754>)
+
+Configuration for server identity verification
+
+```go
+type MCPVerifyConfig struct {
+
+    // List of trusted badge issuers
+    TrustedIssuers []string `protobuf:"bytes,1,rep,name=trusted_issuers,json=trustedIssuers,proto3" json:"trusted_issuers,omitempty"`
+    // Minimum required trust level (0-4, default 0)
+    MinTrustLevel int32 `protobuf:"varint,2,opt,name=min_trust_level,json=minTrustLevel,proto3" json:"min_trust_level,omitempty"`
+    // Accept self-signed did:key badges (Trust Level 0)
+    AcceptLevelZero bool `protobuf:"varint,3,opt,name=accept_level_zero,json=acceptLevelZero,proto3" json:"accept_level_zero,omitempty"`
+    // Skip revocation checks (offline mode)
+    OfflineMode bool `protobuf:"varint,4,opt,name=offline_mode,json=offlineMode,proto3" json:"offline_mode,omitempty"`
+    // Skip origin binding checks (for trusted gateways)
+    SkipOriginBinding bool `protobuf:"varint,5,opt,name=skip_origin_binding,json=skipOriginBinding,proto3" json:"skip_origin_binding,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="MCPVerifyConfig.Descriptor"></a>
+### func \(\*MCPVerifyConfig\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L782>)
+
+```go
+func (*MCPVerifyConfig) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use MCPVerifyConfig.ProtoReflect.Descriptor instead.
+
+<a name="MCPVerifyConfig.GetAcceptLevelZero"></a>
+### func \(\*MCPVerifyConfig\) [GetAcceptLevelZero](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L800>)
+
+```go
+func (x *MCPVerifyConfig) GetAcceptLevelZero() bool
+```
+
+
+
+<a name="MCPVerifyConfig.GetMinTrustLevel"></a>
+### func \(\*MCPVerifyConfig\) [GetMinTrustLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L793>)
+
+```go
+func (x *MCPVerifyConfig) GetMinTrustLevel() int32
+```
+
+
+
+<a name="MCPVerifyConfig.GetOfflineMode"></a>
+### func \(\*MCPVerifyConfig\) [GetOfflineMode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L807>)
+
+```go
+func (x *MCPVerifyConfig) GetOfflineMode() bool
+```
+
+
+
+<a name="MCPVerifyConfig.GetSkipOriginBinding"></a>
+### func \(\*MCPVerifyConfig\) [GetSkipOriginBinding](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L814>)
+
+```go
+func (x *MCPVerifyConfig) GetSkipOriginBinding() bool
+```
+
+
+
+<a name="MCPVerifyConfig.GetTrustedIssuers"></a>
+### func \(\*MCPVerifyConfig\) [GetTrustedIssuers](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L786>)
+
+```go
+func (x *MCPVerifyConfig) GetTrustedIssuers() []string
+```
+
+
+
+<a name="MCPVerifyConfig.ProtoMessage"></a>
+### func \(\*MCPVerifyConfig\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L767>)
+
+```go
+func (*MCPVerifyConfig) ProtoMessage()
+```
+
+
+
+<a name="MCPVerifyConfig.ProtoReflect"></a>
+### func \(\*MCPVerifyConfig\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L769>)
+
+```go
+func (x *MCPVerifyConfig) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="MCPVerifyConfig.Reset"></a>
+### func \(\*MCPVerifyConfig\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L756>)
+
+```go
+func (x *MCPVerifyConfig) Reset()
+```
+
+
+
+<a name="MCPVerifyConfig.String"></a>
+### func \(\*MCPVerifyConfig\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L763>)
+
+```go
+func (x *MCPVerifyConfig) String() string
+```
+
+
+
+<a name="NewAgentDIDRequest"></a>
+## type [NewAgentDIDRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L202-L208>)
+
+Request to create an agent DID
+
+```go
+type NewAgentDIDRequest struct {
+    Domain  string `protobuf:"bytes,1,opt,name=domain,proto3" json:"domain,omitempty"`
+    AgentId string `protobuf:"bytes,2,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewAgentDIDRequest.Descriptor"></a>
+### func \(\*NewAgentDIDRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L236>)
+
+```go
+func (*NewAgentDIDRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use NewAgentDIDRequest.ProtoReflect.Descriptor instead.
+
+<a name="NewAgentDIDRequest.GetAgentId"></a>
+### func \(\*NewAgentDIDRequest\) [GetAgentId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L247>)
+
+```go
+func (x *NewAgentDIDRequest) GetAgentId() string
+```
+
+
+
+<a name="NewAgentDIDRequest.GetDomain"></a>
+### func \(\*NewAgentDIDRequest\) [GetDomain](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L240>)
+
+```go
+func (x *NewAgentDIDRequest) GetDomain() string
+```
+
+
+
+<a name="NewAgentDIDRequest.ProtoMessage"></a>
+### func \(\*NewAgentDIDRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L221>)
+
+```go
+func (*NewAgentDIDRequest) ProtoMessage()
+```
+
+
+
+<a name="NewAgentDIDRequest.ProtoReflect"></a>
+### func \(\*NewAgentDIDRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L223>)
+
+```go
+func (x *NewAgentDIDRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="NewAgentDIDRequest.Reset"></a>
+### func \(\*NewAgentDIDRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L210>)
+
+```go
+func (x *NewAgentDIDRequest) Reset()
+```
+
+
+
+<a name="NewAgentDIDRequest.String"></a>
+### func \(\*NewAgentDIDRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L217>)
+
+```go
+func (x *NewAgentDIDRequest) String() string
+```
+
+
+
+<a name="NewAgentDIDResponse"></a>
+## type [NewAgentDIDResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L255-L261>)
+
+Response with created DID
+
+```go
+type NewAgentDIDResponse struct {
+    Did          string `protobuf:"bytes,1,opt,name=did,proto3" json:"did,omitempty"`
+    ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewAgentDIDResponse.Descriptor"></a>
+### func \(\*NewAgentDIDResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L289>)
+
+```go
+func (*NewAgentDIDResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use NewAgentDIDResponse.ProtoReflect.Descriptor instead.
+
+<a name="NewAgentDIDResponse.GetDid"></a>
+### func \(\*NewAgentDIDResponse\) [GetDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L293>)
+
+```go
+func (x *NewAgentDIDResponse) GetDid() string
+```
+
+
+
+<a name="NewAgentDIDResponse.GetErrorMessage"></a>
+### func \(\*NewAgentDIDResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L300>)
+
+```go
+func (x *NewAgentDIDResponse) GetErrorMessage() string
+```
+
+
+
+<a name="NewAgentDIDResponse.ProtoMessage"></a>
+### func \(\*NewAgentDIDResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L274>)
+
+```go
+func (*NewAgentDIDResponse) ProtoMessage()
+```
+
+
+
+<a name="NewAgentDIDResponse.ProtoReflect"></a>
+### func \(\*NewAgentDIDResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L276>)
+
+```go
+func (x *NewAgentDIDResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="NewAgentDIDResponse.Reset"></a>
+### func \(\*NewAgentDIDResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L263>)
+
+```go
+func (x *NewAgentDIDResponse) Reset()
+```
+
+
+
+<a name="NewAgentDIDResponse.String"></a>
+### func \(\*NewAgentDIDResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L270>)
+
+```go
+func (x *NewAgentDIDResponse) String() string
+```
+
+
+
+<a name="NewCapiscIOAgentDIDRequest"></a>
+## type [NewCapiscIOAgentDIDRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L308-L313>)
+
+Request to create a Capiscio registry DID
+
+```go
+type NewCapiscIOAgentDIDRequest struct {
+    AgentId string `protobuf:"bytes,1,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewCapiscIOAgentDIDRequest.Descriptor"></a>
+### func \(\*NewCapiscIOAgentDIDRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L341>)
+
+```go
+func (*NewCapiscIOAgentDIDRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use NewCapiscIOAgentDIDRequest.ProtoReflect.Descriptor instead.
+
+<a name="NewCapiscIOAgentDIDRequest.GetAgentId"></a>
+### func \(\*NewCapiscIOAgentDIDRequest\) [GetAgentId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L345>)
+
+```go
+func (x *NewCapiscIOAgentDIDRequest) GetAgentId() string
+```
+
+
+
+<a name="NewCapiscIOAgentDIDRequest.ProtoMessage"></a>
+### func \(\*NewCapiscIOAgentDIDRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L326>)
+
+```go
+func (*NewCapiscIOAgentDIDRequest) ProtoMessage()
+```
+
+
+
+<a name="NewCapiscIOAgentDIDRequest.ProtoReflect"></a>
+### func \(\*NewCapiscIOAgentDIDRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L328>)
+
+```go
+func (x *NewCapiscIOAgentDIDRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="NewCapiscIOAgentDIDRequest.Reset"></a>
+### func \(\*NewCapiscIOAgentDIDRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L315>)
+
+```go
+func (x *NewCapiscIOAgentDIDRequest) Reset()
+```
+
+
+
+<a name="NewCapiscIOAgentDIDRequest.String"></a>
+### func \(\*NewCapiscIOAgentDIDRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L322>)
+
+```go
+func (x *NewCapiscIOAgentDIDRequest) String() string
+```
+
+
+
+<a name="ParseBadgeRequest"></a>
+## type [ParseBadgeRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L796-L801>)
+
+Request to parse badge without verification
+
+```go
+type ParseBadgeRequest struct {
+    Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ParseBadgeRequest.Descriptor"></a>
+### func \(\*ParseBadgeRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L829>)
+
+```go
+func (*ParseBadgeRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ParseBadgeRequest.ProtoReflect.Descriptor instead.
+
+<a name="ParseBadgeRequest.GetToken"></a>
+### func \(\*ParseBadgeRequest\) [GetToken](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L833>)
+
+```go
+func (x *ParseBadgeRequest) GetToken() string
+```
+
+
+
+<a name="ParseBadgeRequest.ProtoMessage"></a>
+### func \(\*ParseBadgeRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L814>)
+
+```go
+func (*ParseBadgeRequest) ProtoMessage()
+```
+
+
+
+<a name="ParseBadgeRequest.ProtoReflect"></a>
+### func \(\*ParseBadgeRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L816>)
+
+```go
+func (x *ParseBadgeRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ParseBadgeRequest.Reset"></a>
+### func \(\*ParseBadgeRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L803>)
+
+```go
+func (x *ParseBadgeRequest) Reset()
+```
+
+
+
+<a name="ParseBadgeRequest.String"></a>
+### func \(\*ParseBadgeRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L810>)
+
+```go
+func (x *ParseBadgeRequest) String() string
+```
+
+
+
+<a name="ParseBadgeResponse"></a>
+## type [ParseBadgeResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L841-L847>)
+
+Response with parsed claims
+
+```go
+type ParseBadgeResponse struct {
+    Claims       *BadgeClaims `protobuf:"bytes,1,opt,name=claims,proto3" json:"claims,omitempty"`
+    ErrorMessage string       `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ParseBadgeResponse.Descriptor"></a>
+### func \(\*ParseBadgeResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L875>)
+
+```go
+func (*ParseBadgeResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ParseBadgeResponse.ProtoReflect.Descriptor instead.
+
+<a name="ParseBadgeResponse.GetClaims"></a>
+### func \(\*ParseBadgeResponse\) [GetClaims](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L879>)
+
+```go
+func (x *ParseBadgeResponse) GetClaims() *BadgeClaims
+```
+
+
+
+<a name="ParseBadgeResponse.GetErrorMessage"></a>
+### func \(\*ParseBadgeResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L886>)
+
+```go
+func (x *ParseBadgeResponse) GetErrorMessage() string
+```
+
+
+
+<a name="ParseBadgeResponse.ProtoMessage"></a>
+### func \(\*ParseBadgeResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L860>)
+
+```go
+func (*ParseBadgeResponse) ProtoMessage()
+```
+
+
+
+<a name="ParseBadgeResponse.ProtoReflect"></a>
+### func \(\*ParseBadgeResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L862>)
+
+```go
+func (x *ParseBadgeResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ParseBadgeResponse.Reset"></a>
+### func \(\*ParseBadgeResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L849>)
+
+```go
+func (x *ParseBadgeResponse) Reset()
+```
+
+
+
+<a name="ParseBadgeResponse.String"></a>
+### func \(\*ParseBadgeResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L856>)
+
+```go
+func (x *ParseBadgeResponse) String() string
+```
+
+
+
+<a name="ParseDIDRequest"></a>
+## type [ParseDIDRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L104-L109>)
+
+Request to parse a DID
+
+```go
+type ParseDIDRequest struct {
+    Did string `protobuf:"bytes,1,opt,name=did,proto3" json:"did,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ParseDIDRequest.Descriptor"></a>
+### func \(\*ParseDIDRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L137>)
+
+```go
+func (*ParseDIDRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ParseDIDRequest.ProtoReflect.Descriptor instead.
+
+<a name="ParseDIDRequest.GetDid"></a>
+### func \(\*ParseDIDRequest\) [GetDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L141>)
+
+```go
+func (x *ParseDIDRequest) GetDid() string
+```
+
+
+
+<a name="ParseDIDRequest.ProtoMessage"></a>
+### func \(\*ParseDIDRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L122>)
+
+```go
+func (*ParseDIDRequest) ProtoMessage()
+```
+
+
+
+<a name="ParseDIDRequest.ProtoReflect"></a>
+### func \(\*ParseDIDRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L124>)
+
+```go
+func (x *ParseDIDRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ParseDIDRequest.Reset"></a>
+### func \(\*ParseDIDRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L111>)
+
+```go
+func (x *ParseDIDRequest) Reset()
+```
+
+
+
+<a name="ParseDIDRequest.String"></a>
+### func \(\*ParseDIDRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L118>)
+
+```go
+func (x *ParseDIDRequest) String() string
+```
+
+
+
+<a name="ParseDIDResponse"></a>
+## type [ParseDIDResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L149-L155>)
+
+Response with parsed DID
+
+```go
+type ParseDIDResponse struct {
+    Did          *DID   `protobuf:"bytes,1,opt,name=did,proto3" json:"did,omitempty"`
+    ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ParseDIDResponse.Descriptor"></a>
+### func \(\*ParseDIDResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L183>)
+
+```go
+func (*ParseDIDResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ParseDIDResponse.ProtoReflect.Descriptor instead.
+
+<a name="ParseDIDResponse.GetDid"></a>
+### func \(\*ParseDIDResponse\) [GetDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L187>)
+
+```go
+func (x *ParseDIDResponse) GetDid() *DID
+```
+
+
+
+<a name="ParseDIDResponse.GetErrorMessage"></a>
+### func \(\*ParseDIDResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L194>)
+
+```go
+func (x *ParseDIDResponse) GetErrorMessage() string
+```
+
+
+
+<a name="ParseDIDResponse.ProtoMessage"></a>
+### func \(\*ParseDIDResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L168>)
+
+```go
+func (*ParseDIDResponse) ProtoMessage()
+```
+
+
+
+<a name="ParseDIDResponse.ProtoReflect"></a>
+### func \(\*ParseDIDResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L170>)
+
+```go
+func (x *ParseDIDResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ParseDIDResponse.Reset"></a>
+### func \(\*ParseDIDResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L157>)
+
+```go
+func (x *ParseDIDResponse) Reset()
+```
+
+
+
+<a name="ParseDIDResponse.String"></a>
+### func \(\*ParseDIDResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did.pb.go#L164>)
+
+```go
+func (x *ParseDIDResponse) String() string
+```
+
+
+
+<a name="ParseServerIdentityRequest"></a>
+## type [ParseServerIdentityRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L913-L922>)
+
+Request to parse server identity from headers/meta
+
+```go
+type ParseServerIdentityRequest struct {
+
+    // Types that are valid to be assigned to Source:
+    //
+    //	*ParseServerIdentityRequest_HttpHeaders
+    //	*ParseServerIdentityRequest_JsonrpcMeta
+    Source isParseServerIdentityRequest_Source `protobuf_oneof:"source"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ParseServerIdentityRequest.Descriptor"></a>
+### func \(\*ParseServerIdentityRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L950>)
+
+```go
+func (*ParseServerIdentityRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ParseServerIdentityRequest.ProtoReflect.Descriptor instead.
+
+<a name="ParseServerIdentityRequest.GetHttpHeaders"></a>
+### func \(\*ParseServerIdentityRequest\) [GetHttpHeaders](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L961>)
+
+```go
+func (x *ParseServerIdentityRequest) GetHttpHeaders() *MCPHttpHeaders
+```
+
+
+
+<a name="ParseServerIdentityRequest.GetJsonrpcMeta"></a>
+### func \(\*ParseServerIdentityRequest\) [GetJsonrpcMeta](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L970>)
+
+```go
+func (x *ParseServerIdentityRequest) GetJsonrpcMeta() *MCPJsonRpcMeta
+```
+
+
+
+<a name="ParseServerIdentityRequest.GetSource"></a>
+### func \(\*ParseServerIdentityRequest\) [GetSource](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L954>)
+
+```go
+func (x *ParseServerIdentityRequest) GetSource() isParseServerIdentityRequest_Source
+```
+
+
+
+<a name="ParseServerIdentityRequest.ProtoMessage"></a>
+### func \(\*ParseServerIdentityRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L935>)
+
+```go
+func (*ParseServerIdentityRequest) ProtoMessage()
+```
+
+
+
+<a name="ParseServerIdentityRequest.ProtoReflect"></a>
+### func \(\*ParseServerIdentityRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L937>)
+
+```go
+func (x *ParseServerIdentityRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ParseServerIdentityRequest.Reset"></a>
+### func \(\*ParseServerIdentityRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L924>)
+
+```go
+func (x *ParseServerIdentityRequest) Reset()
+```
+
+
+
+<a name="ParseServerIdentityRequest.String"></a>
+### func \(\*ParseServerIdentityRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L931>)
+
+```go
+func (x *ParseServerIdentityRequest) String() string
+```
+
+
+
+<a name="ParseServerIdentityRequest_HttpHeaders"></a>
+## type [ParseServerIdentityRequest\\\_HttpHeaders](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L983-L985>)
+
+
+
+```go
+type ParseServerIdentityRequest_HttpHeaders struct {
+    HttpHeaders *MCPHttpHeaders `protobuf:"bytes,1,opt,name=http_headers,json=httpHeaders,proto3,oneof"`
+}
+```
+
+<a name="ParseServerIdentityRequest_JsonrpcMeta"></a>
+## type [ParseServerIdentityRequest\\\_JsonrpcMeta](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L987-L989>)
+
+
+
+```go
+type ParseServerIdentityRequest_JsonrpcMeta struct {
+    JsonrpcMeta *MCPJsonRpcMeta `protobuf:"bytes,2,opt,name=jsonrpc_meta,json=jsonrpcMeta,proto3,oneof"`
+}
+```
+
+<a name="ParseServerIdentityResponse"></a>
+## type [ParseServerIdentityResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1095-L1105>)
+
+Response from parsing server identity
+
+```go
+type ParseServerIdentityResponse struct {
+
+    // Extracted server DID
+    ServerDid string `protobuf:"bytes,1,opt,name=server_did,json=serverDid,proto3" json:"server_did,omitempty"`
+    // Extracted server badge
+    ServerBadge string `protobuf:"bytes,2,opt,name=server_badge,json=serverBadge,proto3" json:"server_badge,omitempty"`
+    // Whether any identity information was present
+    IdentityPresent bool `protobuf:"varint,3,opt,name=identity_present,json=identityPresent,proto3" json:"identity_present,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ParseServerIdentityResponse.Descriptor"></a>
+### func \(\*ParseServerIdentityResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1133>)
+
+```go
+func (*ParseServerIdentityResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ParseServerIdentityResponse.ProtoReflect.Descriptor instead.
+
+<a name="ParseServerIdentityResponse.GetIdentityPresent"></a>
+### func \(\*ParseServerIdentityResponse\) [GetIdentityPresent](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1151>)
+
+```go
+func (x *ParseServerIdentityResponse) GetIdentityPresent() bool
+```
+
+
+
+<a name="ParseServerIdentityResponse.GetServerBadge"></a>
+### func \(\*ParseServerIdentityResponse\) [GetServerBadge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1144>)
+
+```go
+func (x *ParseServerIdentityResponse) GetServerBadge() string
+```
+
+
+
+<a name="ParseServerIdentityResponse.GetServerDid"></a>
+### func \(\*ParseServerIdentityResponse\) [GetServerDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1137>)
+
+```go
+func (x *ParseServerIdentityResponse) GetServerDid() string
+```
+
+
+
+<a name="ParseServerIdentityResponse.ProtoMessage"></a>
+### func \(\*ParseServerIdentityResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1118>)
+
+```go
+func (*ParseServerIdentityResponse) ProtoMessage()
+```
+
+
+
+<a name="ParseServerIdentityResponse.ProtoReflect"></a>
+### func \(\*ParseServerIdentityResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1120>)
+
+```go
+func (x *ParseServerIdentityResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ParseServerIdentityResponse.Reset"></a>
+### func \(\*ParseServerIdentityResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1107>)
+
+```go
+func (x *ParseServerIdentityResponse) Reset()
+```
+
+
+
+<a name="ParseServerIdentityResponse.String"></a>
+### func \(\*ParseServerIdentityResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L1114>)
+
+```go
+func (x *ParseServerIdentityResponse) String() string
+```
+
+
+
+<a name="PingRequest"></a>
+## type [PingRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1338-L1342>)
+
+Ping request
+
+```go
+type PingRequest struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="PingRequest.Descriptor"></a>
+### func \(\*PingRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1370>)
+
+```go
+func (*PingRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use PingRequest.ProtoReflect.Descriptor instead.
+
+<a name="PingRequest.ProtoMessage"></a>
+### func \(\*PingRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1355>)
+
+```go
+func (*PingRequest) ProtoMessage()
+```
+
+
+
+<a name="PingRequest.ProtoReflect"></a>
+### func \(\*PingRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1357>)
+
+```go
+func (x *PingRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="PingRequest.Reset"></a>
+### func \(\*PingRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1344>)
+
+```go
+func (x *PingRequest) Reset()
+```
+
+
+
+<a name="PingRequest.String"></a>
+### func \(\*PingRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1351>)
+
+```go
+func (x *PingRequest) String() string
+```
+
+
+
+<a name="PingResponse"></a>
+## type [PingResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1375-L1382>)
+
+Ping response
+
+```go
+type PingResponse struct {
+    Status     string     `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+    Version    string     `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+    ServerTime *Timestamp `protobuf:"bytes,3,opt,name=server_time,json=serverTime,proto3" json:"server_time,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="PingResponse.Descriptor"></a>
+### func \(\*PingResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1410>)
+
+```go
+func (*PingResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use PingResponse.ProtoReflect.Descriptor instead.
+
+<a name="PingResponse.GetServerTime"></a>
+### func \(\*PingResponse\) [GetServerTime](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1428>)
+
+```go
+func (x *PingResponse) GetServerTime() *Timestamp
+```
+
+
+
+<a name="PingResponse.GetStatus"></a>
+### func \(\*PingResponse\) [GetStatus](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1414>)
+
+```go
+func (x *PingResponse) GetStatus() string
+```
+
+
+
+<a name="PingResponse.GetVersion"></a>
+### func \(\*PingResponse\) [GetVersion](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1421>)
+
+```go
+func (x *PingResponse) GetVersion() string
+```
+
+
+
+<a name="PingResponse.ProtoMessage"></a>
+### func \(\*PingResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1395>)
+
+```go
+func (*PingResponse) ProtoMessage()
+```
+
+
+
+<a name="PingResponse.ProtoReflect"></a>
+### func \(\*PingResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1397>)
+
+```go
+func (x *PingResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="PingResponse.Reset"></a>
+### func \(\*PingResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1384>)
+
+```go
+func (x *PingResponse) Reset()
+```
+
+
+
+<a name="PingResponse.String"></a>
+### func \(\*PingResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1391>)
+
+```go
+func (x *PingResponse) String() string
+```
+
+
+
+<a name="Rating"></a>
+## type [Rating](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L80>)
+
+Rating levels \(used by scoring\)
+
+```go
+type Rating int32
+```
+
+<a name="Rating_RATING_UNSPECIFIED"></a>
+
+```go
+const (
+    Rating_RATING_UNSPECIFIED Rating = 0
+    Rating_RATING_CRITICAL    Rating = 1
+    Rating_RATING_POOR        Rating = 2
+    Rating_RATING_FAIR        Rating = 3
+    Rating_RATING_GOOD        Rating = 4
+    Rating_RATING_EXCELLENT   Rating = 5
+)
+```
+
+<a name="Rating.Descriptor"></a>
+### func \(Rating\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L121>)
+
+```go
+func (Rating) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="Rating.Enum"></a>
+### func \(Rating\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L111>)
+
+```go
+func (x Rating) Enum() *Rating
+```
+
+
+
+<a name="Rating.EnumDescriptor"></a>
+### func \(Rating\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L134>)
+
+```go
+func (Rating) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use Rating.Descriptor instead.
+
+<a name="Rating.Number"></a>
+### func \(Rating\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L129>)
+
+```go
+func (x Rating) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="Rating.String"></a>
+### func \(Rating\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L117>)
+
+```go
+func (x Rating) String() string
+```
+
+
+
+<a name="Rating.Type"></a>
+### func \(Rating\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L125>)
+
+```go
+func (Rating) Type() protoreflect.EnumType
+```
+
+
+
+<a name="RegisterAgentRequest"></a>
+## type [RegisterAgentRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L566-L574>)
+
+Register request
+
+```go
+type RegisterAgentRequest struct {
+    AgentCardJson string            `protobuf:"bytes,1,opt,name=agent_card_json,json=agentCardJson,proto3" json:"agent_card_json,omitempty"`
+    SignedBadge   string            `protobuf:"bytes,2,opt,name=signed_badge,json=signedBadge,proto3" json:"signed_badge,omitempty"` // Optional: pre-signed badge
+    Tags          []string          `protobuf:"bytes,3,rep,name=tags,proto3" json:"tags,omitempty"`
+    Metadata      map[string]string `protobuf:"bytes,4,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="RegisterAgentRequest.Descriptor"></a>
+### func \(\*RegisterAgentRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L602>)
+
+```go
+func (*RegisterAgentRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use RegisterAgentRequest.ProtoReflect.Descriptor instead.
+
+<a name="RegisterAgentRequest.GetAgentCardJson"></a>
+### func \(\*RegisterAgentRequest\) [GetAgentCardJson](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L606>)
+
+```go
+func (x *RegisterAgentRequest) GetAgentCardJson() string
+```
+
+
+
+<a name="RegisterAgentRequest.GetMetadata"></a>
+### func \(\*RegisterAgentRequest\) [GetMetadata](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L627>)
+
+```go
+func (x *RegisterAgentRequest) GetMetadata() map[string]string
+```
+
+
+
+<a name="RegisterAgentRequest.GetSignedBadge"></a>
+### func \(\*RegisterAgentRequest\) [GetSignedBadge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L613>)
+
+```go
+func (x *RegisterAgentRequest) GetSignedBadge() string
+```
+
+
+
+<a name="RegisterAgentRequest.GetTags"></a>
+### func \(\*RegisterAgentRequest\) [GetTags](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L620>)
+
+```go
+func (x *RegisterAgentRequest) GetTags() []string
+```
+
+
+
+<a name="RegisterAgentRequest.ProtoMessage"></a>
+### func \(\*RegisterAgentRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L587>)
+
+```go
+func (*RegisterAgentRequest) ProtoMessage()
+```
+
+
+
+<a name="RegisterAgentRequest.ProtoReflect"></a>
+### func \(\*RegisterAgentRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L589>)
+
+```go
+func (x *RegisterAgentRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="RegisterAgentRequest.Reset"></a>
+### func \(\*RegisterAgentRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L576>)
+
+```go
+func (x *RegisterAgentRequest) Reset()
+```
+
+
+
+<a name="RegisterAgentRequest.String"></a>
+### func \(\*RegisterAgentRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L583>)
+
+```go
+func (x *RegisterAgentRequest) String() string
+```
+
+
+
+<a name="RegisterAgentResponse"></a>
+## type [RegisterAgentResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L635-L642>)
+
+Register response
+
+```go
+type RegisterAgentResponse struct {
+    Did          string      `protobuf:"bytes,1,opt,name=did,proto3" json:"did,omitempty"`
+    Status       AgentStatus `protobuf:"varint,2,opt,name=status,proto3,enum=capiscio.v1.AgentStatus" json:"status,omitempty"`
+    ErrorMessage string      `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="RegisterAgentResponse.Descriptor"></a>
+### func \(\*RegisterAgentResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L670>)
+
+```go
+func (*RegisterAgentResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use RegisterAgentResponse.ProtoReflect.Descriptor instead.
+
+<a name="RegisterAgentResponse.GetDid"></a>
+### func \(\*RegisterAgentResponse\) [GetDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L674>)
+
+```go
+func (x *RegisterAgentResponse) GetDid() string
+```
+
+
+
+<a name="RegisterAgentResponse.GetErrorMessage"></a>
+### func \(\*RegisterAgentResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L688>)
+
+```go
+func (x *RegisterAgentResponse) GetErrorMessage() string
+```
+
+
+
+<a name="RegisterAgentResponse.GetStatus"></a>
+### func \(\*RegisterAgentResponse\) [GetStatus](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L681>)
+
+```go
+func (x *RegisterAgentResponse) GetStatus() AgentStatus
+```
+
+
+
+<a name="RegisterAgentResponse.ProtoMessage"></a>
+### func \(\*RegisterAgentResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L655>)
+
+```go
+func (*RegisterAgentResponse) ProtoMessage()
+```
+
+
+
+<a name="RegisterAgentResponse.ProtoReflect"></a>
+### func \(\*RegisterAgentResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L657>)
+
+```go
+func (x *RegisterAgentResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="RegisterAgentResponse.Reset"></a>
+### func \(\*RegisterAgentResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L644>)
+
+```go
+func (x *RegisterAgentResponse) Reset()
+```
+
+
+
+<a name="RegisterAgentResponse.String"></a>
+### func \(\*RegisterAgentResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L651>)
+
+```go
+func (x *RegisterAgentResponse) String() string
+```
+
+
+
+<a name="RegisteredAgent"></a>
+## type [RegisteredAgent](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L133-L149>)
+
+Registered agent information
+
+```go
+type RegisteredAgent struct {
+    Did           string            `protobuf:"bytes,1,opt,name=did,proto3" json:"did,omitempty"`
+    Name          string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+    Description   string            `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+    AgentCardJson string            `protobuf:"bytes,4,opt,name=agent_card_json,json=agentCardJson,proto3" json:"agent_card_json,omitempty"` // Full agent card as JSON
+    Status        AgentStatus       `protobuf:"varint,5,opt,name=status,proto3,enum=capiscio.v1.AgentStatus" json:"status,omitempty"`
+    Badge         *BadgeClaims      `protobuf:"bytes,6,opt,name=badge,proto3" json:"badge,omitempty"` // Trust badge if signed
+    Rating        Rating            `protobuf:"varint,7,opt,name=rating,proto3,enum=capiscio.v1.Rating" json:"rating,omitempty"`
+    RegisteredAt  *Timestamp        `protobuf:"bytes,8,opt,name=registered_at,json=registeredAt,proto3" json:"registered_at,omitempty"`
+    UpdatedAt     *Timestamp        `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+    Capabilities  []string          `protobuf:"bytes,10,rep,name=capabilities,proto3" json:"capabilities,omitempty"`
+    Tags          []string          `protobuf:"bytes,11,rep,name=tags,proto3" json:"tags,omitempty"`
+    Metadata      map[string]string `protobuf:"bytes,12,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="RegisteredAgent.Descriptor"></a>
+### func \(\*RegisteredAgent\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L177>)
+
+```go
+func (*RegisteredAgent) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use RegisteredAgent.ProtoReflect.Descriptor instead.
+
+<a name="RegisteredAgent.GetAgentCardJson"></a>
+### func \(\*RegisteredAgent\) [GetAgentCardJson](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L202>)
+
+```go
+func (x *RegisteredAgent) GetAgentCardJson() string
+```
+
+
+
+<a name="RegisteredAgent.GetBadge"></a>
+### func \(\*RegisteredAgent\) [GetBadge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L216>)
+
+```go
+func (x *RegisteredAgent) GetBadge() *BadgeClaims
+```
+
+
+
+<a name="RegisteredAgent.GetCapabilities"></a>
+### func \(\*RegisteredAgent\) [GetCapabilities](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L244>)
+
+```go
+func (x *RegisteredAgent) GetCapabilities() []string
+```
+
+
+
+<a name="RegisteredAgent.GetDescription"></a>
+### func \(\*RegisteredAgent\) [GetDescription](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L195>)
+
+```go
+func (x *RegisteredAgent) GetDescription() string
+```
+
+
+
+<a name="RegisteredAgent.GetDid"></a>
+### func \(\*RegisteredAgent\) [GetDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L181>)
+
+```go
+func (x *RegisteredAgent) GetDid() string
+```
+
+
+
+<a name="RegisteredAgent.GetMetadata"></a>
+### func \(\*RegisteredAgent\) [GetMetadata](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L258>)
+
+```go
+func (x *RegisteredAgent) GetMetadata() map[string]string
+```
+
+
+
+<a name="RegisteredAgent.GetName"></a>
+### func \(\*RegisteredAgent\) [GetName](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L188>)
+
+```go
+func (x *RegisteredAgent) GetName() string
+```
+
+
+
+<a name="RegisteredAgent.GetRating"></a>
+### func \(\*RegisteredAgent\) [GetRating](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L223>)
+
+```go
+func (x *RegisteredAgent) GetRating() Rating
+```
+
+
+
+<a name="RegisteredAgent.GetRegisteredAt"></a>
+### func \(\*RegisteredAgent\) [GetRegisteredAt](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L230>)
+
+```go
+func (x *RegisteredAgent) GetRegisteredAt() *Timestamp
+```
+
+
+
+<a name="RegisteredAgent.GetStatus"></a>
+### func \(\*RegisteredAgent\) [GetStatus](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L209>)
+
+```go
+func (x *RegisteredAgent) GetStatus() AgentStatus
+```
+
+
+
+<a name="RegisteredAgent.GetTags"></a>
+### func \(\*RegisteredAgent\) [GetTags](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L251>)
+
+```go
+func (x *RegisteredAgent) GetTags() []string
+```
+
+
+
+<a name="RegisteredAgent.GetUpdatedAt"></a>
+### func \(\*RegisteredAgent\) [GetUpdatedAt](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L237>)
+
+```go
+func (x *RegisteredAgent) GetUpdatedAt() *Timestamp
+```
+
+
+
+<a name="RegisteredAgent.ProtoMessage"></a>
+### func \(\*RegisteredAgent\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L162>)
+
+```go
+func (*RegisteredAgent) ProtoMessage()
+```
+
+
+
+<a name="RegisteredAgent.ProtoReflect"></a>
+### func \(\*RegisteredAgent\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L164>)
+
+```go
+func (x *RegisteredAgent) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="RegisteredAgent.Reset"></a>
+### func \(\*RegisteredAgent\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L151>)
+
+```go
+func (x *RegisteredAgent) Reset()
+```
+
+
+
+<a name="RegisteredAgent.String"></a>
+### func \(\*RegisteredAgent\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L158>)
+
+```go
+func (x *RegisteredAgent) String() string
+```
+
+
+
+<a name="RegistryServiceClient"></a>
+## type [RegistryServiceClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry_grpc.pb.go#L40-L59>)
+
+RegistryServiceClient is the client API for RegistryService service.
+
+For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+
+RegistryService handles agent registration and discovery
+
+```go
+type RegistryServiceClient interface {
+    // Get an agent card by DID
+    GetAgent(ctx context.Context, in *GetAgentRequest, opts ...grpc.CallOption) (*GetAgentResponse, error)
+    // Search for agents
+    SearchAgents(ctx context.Context, in *SearchAgentsRequest, opts ...grpc.CallOption) (*SearchAgentsResponse, error)
+    // Register a new agent
+    RegisterAgent(ctx context.Context, in *RegisterAgentRequest, opts ...grpc.CallOption) (*RegisterAgentResponse, error)
+    // Update an existing agent
+    UpdateAgent(ctx context.Context, in *UpdateAgentRequest, opts ...grpc.CallOption) (*UpdateAgentResponse, error)
+    // Deregister an agent
+    DeregisterAgent(ctx context.Context, in *DeregisterAgentRequest, opts ...grpc.CallOption) (*DeregisterAgentResponse, error)
+    // Verify agent registration
+    VerifyRegistration(ctx context.Context, in *VerifyRegistrationRequest, opts ...grpc.CallOption) (*VerifyRegistrationResponse, error)
+    // List agents (with pagination)
+    ListAgents(ctx context.Context, in *ListAgentsRequest, opts ...grpc.CallOption) (*ListAgentsResponse, error)
+    // Get registry statistics
+    GetStats(ctx context.Context, in *GetStatsRequest, opts ...grpc.CallOption) (*GetStatsResponse, error)
+    // Ping registry health
+    Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
+}
+```
+
+<a name="NewRegistryServiceClient"></a>
+### func [NewRegistryServiceClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry_grpc.pb.go#L65>)
+
+```go
+func NewRegistryServiceClient(cc grpc.ClientConnInterface) RegistryServiceClient
+```
+
+
+
+<a name="RegistryServiceServer"></a>
+## type [RegistryServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry_grpc.pb.go#L164-L184>)
+
+RegistryServiceServer is the server API for RegistryService service. All implementations must embed UnimplementedRegistryServiceServer for forward compatibility.
+
+RegistryService handles agent registration and discovery
+
+```go
+type RegistryServiceServer interface {
+    // Get an agent card by DID
+    GetAgent(context.Context, *GetAgentRequest) (*GetAgentResponse, error)
+    // Search for agents
+    SearchAgents(context.Context, *SearchAgentsRequest) (*SearchAgentsResponse, error)
+    // Register a new agent
+    RegisterAgent(context.Context, *RegisterAgentRequest) (*RegisterAgentResponse, error)
+    // Update an existing agent
+    UpdateAgent(context.Context, *UpdateAgentRequest) (*UpdateAgentResponse, error)
+    // Deregister an agent
+    DeregisterAgent(context.Context, *DeregisterAgentRequest) (*DeregisterAgentResponse, error)
+    // Verify agent registration
+    VerifyRegistration(context.Context, *VerifyRegistrationRequest) (*VerifyRegistrationResponse, error)
+    // List agents (with pagination)
+    ListAgents(context.Context, *ListAgentsRequest) (*ListAgentsResponse, error)
+    // Get registry statistics
+    GetStats(context.Context, *GetStatsRequest) (*GetStatsResponse, error)
+    // Ping registry health
+    Ping(context.Context, *PingRequest) (*PingResponse, error)
+    // contains filtered or unexported methods
+}
+```
+
+<a name="RemoveKeyRequest"></a>
+## type [RemoveKeyRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L362-L368>)
+
+Request to remove a key
+
+```go
+type RemoveKeyRequest struct {
+    Did   string `protobuf:"bytes,1,opt,name=did,proto3" json:"did,omitempty"`
+    KeyId string `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"` // Optional: if not set, removes all keys for DID
+    // contains filtered or unexported fields
+}
+```
+
+<a name="RemoveKeyRequest.Descriptor"></a>
+### func \(\*RemoveKeyRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L396>)
+
+```go
+func (*RemoveKeyRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use RemoveKeyRequest.ProtoReflect.Descriptor instead.
+
+<a name="RemoveKeyRequest.GetDid"></a>
+### func \(\*RemoveKeyRequest\) [GetDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L400>)
+
+```go
+func (x *RemoveKeyRequest) GetDid() string
+```
+
+
+
+<a name="RemoveKeyRequest.GetKeyId"></a>
+### func \(\*RemoveKeyRequest\) [GetKeyId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L407>)
+
+```go
+func (x *RemoveKeyRequest) GetKeyId() string
+```
+
+
+
+<a name="RemoveKeyRequest.ProtoMessage"></a>
+### func \(\*RemoveKeyRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L381>)
+
+```go
+func (*RemoveKeyRequest) ProtoMessage()
+```
+
+
+
+<a name="RemoveKeyRequest.ProtoReflect"></a>
+### func \(\*RemoveKeyRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L383>)
+
+```go
+func (x *RemoveKeyRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="RemoveKeyRequest.Reset"></a>
+### func \(\*RemoveKeyRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L370>)
+
+```go
+func (x *RemoveKeyRequest) Reset()
+```
+
+
+
+<a name="RemoveKeyRequest.String"></a>
+### func \(\*RemoveKeyRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L377>)
+
+```go
+func (x *RemoveKeyRequest) String() string
+```
+
+
+
+<a name="RemoveKeyResponse"></a>
+## type [RemoveKeyResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L415-L421>)
+
+Response for remove key
+
+```go
+type RemoveKeyResponse struct {
+    KeysRemoved  int32  `protobuf:"varint,1,opt,name=keys_removed,json=keysRemoved,proto3" json:"keys_removed,omitempty"`
+    ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="RemoveKeyResponse.Descriptor"></a>
+### func \(\*RemoveKeyResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L449>)
+
+```go
+func (*RemoveKeyResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use RemoveKeyResponse.ProtoReflect.Descriptor instead.
+
+<a name="RemoveKeyResponse.GetErrorMessage"></a>
+### func \(\*RemoveKeyResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L460>)
+
+```go
+func (x *RemoveKeyResponse) GetErrorMessage() string
+```
+
+
+
+<a name="RemoveKeyResponse.GetKeysRemoved"></a>
+### func \(\*RemoveKeyResponse\) [GetKeysRemoved](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L453>)
+
+```go
+func (x *RemoveKeyResponse) GetKeysRemoved() int32
+```
+
+
+
+<a name="RemoveKeyResponse.ProtoMessage"></a>
+### func \(\*RemoveKeyResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L434>)
+
+```go
+func (*RemoveKeyResponse) ProtoMessage()
+```
+
+
+
+<a name="RemoveKeyResponse.ProtoReflect"></a>
+### func \(\*RemoveKeyResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L436>)
+
+```go
+func (x *RemoveKeyResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="RemoveKeyResponse.Reset"></a>
+### func \(\*RemoveKeyResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L423>)
+
+```go
+func (x *RemoveKeyResponse) Reset()
+```
+
+
+
+<a name="RemoveKeyResponse.String"></a>
+### func \(\*RemoveKeyResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L430>)
+
+```go
+func (x *RemoveKeyResponse) String() string
+```
+
+
+
+<a name="RequestBadgeRequest"></a>
+## type [RequestBadgeRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L894-L912>)
+
+Request to obtain a badge from a Certificate Authority
+
+```go
+type RequestBadgeRequest struct {
+
+    // Agent ID (UUID) to request badge for
+    AgentId string `protobuf:"bytes,1,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
+    // CA URL (default: https://registry.capisc.io)
+    CaUrl string `protobuf:"bytes,2,opt,name=ca_url,json=caUrl,proto3" json:"ca_url,omitempty"`
+    // API key for authentication with the CA
+    ApiKey string `protobuf:"bytes,3,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
+    // Agent domain (optional, uses agent's registered domain if not provided)
+    Domain string `protobuf:"bytes,4,opt,name=domain,proto3" json:"domain,omitempty"`
+    // Requested TTL in seconds (default: 300, per RFC-002)
+    TtlSeconds int32 `protobuf:"varint,5,opt,name=ttl_seconds,json=ttlSeconds,proto3" json:"ttl_seconds,omitempty"`
+    // Requested trust level (1-4, default: 1)
+    TrustLevel TrustLevel `protobuf:"varint,6,opt,name=trust_level,json=trustLevel,proto3,enum=capiscio.v1.TrustLevel" json:"trust_level,omitempty"`
+    // Optional audience restrictions
+    Audience []string `protobuf:"bytes,7,rep,name=audience,proto3" json:"audience,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="RequestBadgeRequest.Descriptor"></a>
+### func \(\*RequestBadgeRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L940>)
+
+```go
+func (*RequestBadgeRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use RequestBadgeRequest.ProtoReflect.Descriptor instead.
+
+<a name="RequestBadgeRequest.GetAgentId"></a>
+### func \(\*RequestBadgeRequest\) [GetAgentId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L944>)
+
+```go
+func (x *RequestBadgeRequest) GetAgentId() string
+```
+
+
+
+<a name="RequestBadgeRequest.GetApiKey"></a>
+### func \(\*RequestBadgeRequest\) [GetApiKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L958>)
+
+```go
+func (x *RequestBadgeRequest) GetApiKey() string
+```
+
+
+
+<a name="RequestBadgeRequest.GetAudience"></a>
+### func \(\*RequestBadgeRequest\) [GetAudience](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L986>)
+
+```go
+func (x *RequestBadgeRequest) GetAudience() []string
+```
+
+
+
+<a name="RequestBadgeRequest.GetCaUrl"></a>
+### func \(\*RequestBadgeRequest\) [GetCaUrl](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L951>)
+
+```go
+func (x *RequestBadgeRequest) GetCaUrl() string
+```
+
+
+
+<a name="RequestBadgeRequest.GetDomain"></a>
+### func \(\*RequestBadgeRequest\) [GetDomain](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L965>)
+
+```go
+func (x *RequestBadgeRequest) GetDomain() string
+```
+
+
+
+<a name="RequestBadgeRequest.GetTrustLevel"></a>
+### func \(\*RequestBadgeRequest\) [GetTrustLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L979>)
+
+```go
+func (x *RequestBadgeRequest) GetTrustLevel() TrustLevel
+```
+
+
+
+<a name="RequestBadgeRequest.GetTtlSeconds"></a>
+### func \(\*RequestBadgeRequest\) [GetTtlSeconds](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L972>)
+
+```go
+func (x *RequestBadgeRequest) GetTtlSeconds() int32
+```
+
+
+
+<a name="RequestBadgeRequest.ProtoMessage"></a>
+### func \(\*RequestBadgeRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L925>)
+
+```go
+func (*RequestBadgeRequest) ProtoMessage()
+```
+
+
+
+<a name="RequestBadgeRequest.ProtoReflect"></a>
+### func \(\*RequestBadgeRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L927>)
+
+```go
+func (x *RequestBadgeRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="RequestBadgeRequest.Reset"></a>
+### func \(\*RequestBadgeRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L914>)
+
+```go
+func (x *RequestBadgeRequest) Reset()
+```
+
+
+
+<a name="RequestBadgeRequest.String"></a>
+### func \(\*RequestBadgeRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L921>)
+
+```go
+func (x *RequestBadgeRequest) String() string
+```
+
+
+
+<a name="RequestBadgeResponse"></a>
+## type [RequestBadgeResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L994-L1014>)
+
+Response from badge request
+
+```go
+type RequestBadgeResponse struct {
+
+    // Whether the request succeeded
+    Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+    // The signed badge token (JWS)
+    Token string `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
+    // Badge ID (jti)
+    Jti string `protobuf:"bytes,3,opt,name=jti,proto3" json:"jti,omitempty"`
+    // Subject DID
+    Subject string `protobuf:"bytes,4,opt,name=subject,proto3" json:"subject,omitempty"`
+    // Trust level assigned
+    TrustLevel TrustLevel `protobuf:"varint,5,opt,name=trust_level,json=trustLevel,proto3,enum=capiscio.v1.TrustLevel" json:"trust_level,omitempty"`
+    // When the badge expires (Unix timestamp)
+    ExpiresAt int64 `protobuf:"varint,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+    // Error message if success=false
+    Error string `protobuf:"bytes,7,opt,name=error,proto3" json:"error,omitempty"`
+    // Error code (RFC-002 §8.4 codes)
+    ErrorCode string `protobuf:"bytes,8,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="RequestBadgeResponse.Descriptor"></a>
+### func \(\*RequestBadgeResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1042>)
+
+```go
+func (*RequestBadgeResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use RequestBadgeResponse.ProtoReflect.Descriptor instead.
+
+<a name="RequestBadgeResponse.GetError"></a>
+### func \(\*RequestBadgeResponse\) [GetError](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1088>)
+
+```go
+func (x *RequestBadgeResponse) GetError() string
+```
+
+
+
+<a name="RequestBadgeResponse.GetErrorCode"></a>
+### func \(\*RequestBadgeResponse\) [GetErrorCode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1095>)
+
+```go
+func (x *RequestBadgeResponse) GetErrorCode() string
+```
+
+
+
+<a name="RequestBadgeResponse.GetExpiresAt"></a>
+### func \(\*RequestBadgeResponse\) [GetExpiresAt](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1081>)
+
+```go
+func (x *RequestBadgeResponse) GetExpiresAt() int64
+```
+
+
+
+<a name="RequestBadgeResponse.GetJti"></a>
+### func \(\*RequestBadgeResponse\) [GetJti](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1060>)
+
+```go
+func (x *RequestBadgeResponse) GetJti() string
+```
+
+
+
+<a name="RequestBadgeResponse.GetSubject"></a>
+### func \(\*RequestBadgeResponse\) [GetSubject](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1067>)
+
+```go
+func (x *RequestBadgeResponse) GetSubject() string
+```
+
+
+
+<a name="RequestBadgeResponse.GetSuccess"></a>
+### func \(\*RequestBadgeResponse\) [GetSuccess](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1046>)
+
+```go
+func (x *RequestBadgeResponse) GetSuccess() bool
+```
+
+
+
+<a name="RequestBadgeResponse.GetToken"></a>
+### func \(\*RequestBadgeResponse\) [GetToken](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1053>)
+
+```go
+func (x *RequestBadgeResponse) GetToken() string
+```
+
+
+
+<a name="RequestBadgeResponse.GetTrustLevel"></a>
+### func \(\*RequestBadgeResponse\) [GetTrustLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1074>)
+
+```go
+func (x *RequestBadgeResponse) GetTrustLevel() TrustLevel
+```
+
+
+
+<a name="RequestBadgeResponse.ProtoMessage"></a>
+### func \(\*RequestBadgeResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1027>)
+
+```go
+func (*RequestBadgeResponse) ProtoMessage()
+```
+
+
+
+<a name="RequestBadgeResponse.ProtoReflect"></a>
+### func \(\*RequestBadgeResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1029>)
+
+```go
+func (x *RequestBadgeResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="RequestBadgeResponse.Reset"></a>
+### func \(\*RequestBadgeResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1016>)
+
+```go
+func (x *RequestBadgeResponse) Reset()
+```
+
+
+
+<a name="RequestBadgeResponse.String"></a>
+### func \(\*RequestBadgeResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1023>)
+
+```go
+func (x *RequestBadgeResponse) String() string
+```
+
+
+
+<a name="RequestPoPBadgeRequest"></a>
+## type [RequestPoPBadgeRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1103-L1119>)
+
+Request to obtain a badge using the PoP protocol \(RFC\-003\)
+
+```go
+type RequestPoPBadgeRequest struct {
+
+    // Agent DID (e.g., did:web:registry.capisc.io:agents:my-agent or did:key:z6Mk...)
+    AgentDid string `protobuf:"bytes,1,opt,name=agent_did,json=agentDid,proto3" json:"agent_did,omitempty"`
+    // Private key in JWK format (JSON string) for signing the PoP proof
+    PrivateKeyJwk string `protobuf:"bytes,2,opt,name=private_key_jwk,json=privateKeyJwk,proto3" json:"private_key_jwk,omitempty"`
+    // CA URL (default: https://registry.capisc.io)
+    CaUrl string `protobuf:"bytes,3,opt,name=ca_url,json=caUrl,proto3" json:"ca_url,omitempty"`
+    // API key for authentication with the CA
+    ApiKey string `protobuf:"bytes,4,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
+    // Requested TTL in seconds (default: 300, per RFC-002)
+    TtlSeconds int32 `protobuf:"varint,5,opt,name=ttl_seconds,json=ttlSeconds,proto3" json:"ttl_seconds,omitempty"`
+    // Optional audience restrictions for the issued badge
+    Audience []string `protobuf:"bytes,6,rep,name=audience,proto3" json:"audience,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="RequestPoPBadgeRequest.Descriptor"></a>
+### func \(\*RequestPoPBadgeRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1147>)
+
+```go
+func (*RequestPoPBadgeRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use RequestPoPBadgeRequest.ProtoReflect.Descriptor instead.
+
+<a name="RequestPoPBadgeRequest.GetAgentDid"></a>
+### func \(\*RequestPoPBadgeRequest\) [GetAgentDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1151>)
+
+```go
+func (x *RequestPoPBadgeRequest) GetAgentDid() string
+```
+
+
+
+<a name="RequestPoPBadgeRequest.GetApiKey"></a>
+### func \(\*RequestPoPBadgeRequest\) [GetApiKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1172>)
+
+```go
+func (x *RequestPoPBadgeRequest) GetApiKey() string
+```
+
+
+
+<a name="RequestPoPBadgeRequest.GetAudience"></a>
+### func \(\*RequestPoPBadgeRequest\) [GetAudience](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1186>)
+
+```go
+func (x *RequestPoPBadgeRequest) GetAudience() []string
+```
+
+
+
+<a name="RequestPoPBadgeRequest.GetCaUrl"></a>
+### func \(\*RequestPoPBadgeRequest\) [GetCaUrl](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1165>)
+
+```go
+func (x *RequestPoPBadgeRequest) GetCaUrl() string
+```
+
+
+
+<a name="RequestPoPBadgeRequest.GetPrivateKeyJwk"></a>
+### func \(\*RequestPoPBadgeRequest\) [GetPrivateKeyJwk](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1158>)
+
+```go
+func (x *RequestPoPBadgeRequest) GetPrivateKeyJwk() string
+```
+
+
+
+<a name="RequestPoPBadgeRequest.GetTtlSeconds"></a>
+### func \(\*RequestPoPBadgeRequest\) [GetTtlSeconds](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1179>)
+
+```go
+func (x *RequestPoPBadgeRequest) GetTtlSeconds() int32
+```
+
+
+
+<a name="RequestPoPBadgeRequest.ProtoMessage"></a>
+### func \(\*RequestPoPBadgeRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1132>)
+
+```go
+func (*RequestPoPBadgeRequest) ProtoMessage()
+```
+
+
+
+<a name="RequestPoPBadgeRequest.ProtoReflect"></a>
+### func \(\*RequestPoPBadgeRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1134>)
+
+```go
+func (x *RequestPoPBadgeRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="RequestPoPBadgeRequest.Reset"></a>
+### func \(\*RequestPoPBadgeRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1121>)
+
+```go
+func (x *RequestPoPBadgeRequest) Reset()
+```
+
+
+
+<a name="RequestPoPBadgeRequest.String"></a>
+### func \(\*RequestPoPBadgeRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1128>)
+
+```go
+func (x *RequestPoPBadgeRequest) String() string
+```
+
+
+
+<a name="RequestPoPBadgeResponse"></a>
+## type [RequestPoPBadgeResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1194-L1218>)
+
+Response from PoP badge request
+
+```go
+type RequestPoPBadgeResponse struct {
+
+    // Whether the request succeeded
+    Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+    // The signed badge token (JWS)
+    Token string `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
+    // Badge ID (jti)
+    Jti string `protobuf:"bytes,3,opt,name=jti,proto3" json:"jti,omitempty"`
+    // Subject DID
+    Subject string `protobuf:"bytes,4,opt,name=subject,proto3" json:"subject,omitempty"`
+    // Trust level assigned
+    TrustLevel string `protobuf:"bytes,5,opt,name=trust_level,json=trustLevel,proto3" json:"trust_level,omitempty"`
+    // Assurance level (always "IAL-1" for PoP badges)
+    AssuranceLevel string `protobuf:"bytes,6,opt,name=assurance_level,json=assuranceLevel,proto3" json:"assurance_level,omitempty"`
+    // When the badge expires (Unix timestamp)
+    ExpiresAt int64 `protobuf:"varint,7,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+    // CNF claim (key binding)
+    Cnf map[string]string `protobuf:"bytes,8,rep,name=cnf,proto3" json:"cnf,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+    // Error message if success=false
+    Error string `protobuf:"bytes,9,opt,name=error,proto3" json:"error,omitempty"`
+    // Error code
+    ErrorCode string `protobuf:"bytes,10,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="RequestPoPBadgeResponse.Descriptor"></a>
+### func \(\*RequestPoPBadgeResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1246>)
+
+```go
+func (*RequestPoPBadgeResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use RequestPoPBadgeResponse.ProtoReflect.Descriptor instead.
+
+<a name="RequestPoPBadgeResponse.GetAssuranceLevel"></a>
+### func \(\*RequestPoPBadgeResponse\) [GetAssuranceLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1285>)
+
+```go
+func (x *RequestPoPBadgeResponse) GetAssuranceLevel() string
+```
+
+
+
+<a name="RequestPoPBadgeResponse.GetCnf"></a>
+### func \(\*RequestPoPBadgeResponse\) [GetCnf](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1299>)
+
+```go
+func (x *RequestPoPBadgeResponse) GetCnf() map[string]string
+```
+
+
+
+<a name="RequestPoPBadgeResponse.GetError"></a>
+### func \(\*RequestPoPBadgeResponse\) [GetError](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1306>)
+
+```go
+func (x *RequestPoPBadgeResponse) GetError() string
+```
+
+
+
+<a name="RequestPoPBadgeResponse.GetErrorCode"></a>
+### func \(\*RequestPoPBadgeResponse\) [GetErrorCode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1313>)
+
+```go
+func (x *RequestPoPBadgeResponse) GetErrorCode() string
+```
+
+
+
+<a name="RequestPoPBadgeResponse.GetExpiresAt"></a>
+### func \(\*RequestPoPBadgeResponse\) [GetExpiresAt](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1292>)
+
+```go
+func (x *RequestPoPBadgeResponse) GetExpiresAt() int64
+```
+
+
+
+<a name="RequestPoPBadgeResponse.GetJti"></a>
+### func \(\*RequestPoPBadgeResponse\) [GetJti](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1264>)
+
+```go
+func (x *RequestPoPBadgeResponse) GetJti() string
+```
+
+
+
+<a name="RequestPoPBadgeResponse.GetSubject"></a>
+### func \(\*RequestPoPBadgeResponse\) [GetSubject](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1271>)
+
+```go
+func (x *RequestPoPBadgeResponse) GetSubject() string
+```
+
+
+
+<a name="RequestPoPBadgeResponse.GetSuccess"></a>
+### func \(\*RequestPoPBadgeResponse\) [GetSuccess](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1250>)
+
+```go
+func (x *RequestPoPBadgeResponse) GetSuccess() bool
+```
+
+
+
+<a name="RequestPoPBadgeResponse.GetToken"></a>
+### func \(\*RequestPoPBadgeResponse\) [GetToken](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1257>)
+
+```go
+func (x *RequestPoPBadgeResponse) GetToken() string
+```
+
+
+
+<a name="RequestPoPBadgeResponse.GetTrustLevel"></a>
+### func \(\*RequestPoPBadgeResponse\) [GetTrustLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1278>)
+
+```go
+func (x *RequestPoPBadgeResponse) GetTrustLevel() string
+```
+
+
+
+<a name="RequestPoPBadgeResponse.ProtoMessage"></a>
+### func \(\*RequestPoPBadgeResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1231>)
+
+```go
+func (*RequestPoPBadgeResponse) ProtoMessage()
+```
+
+
+
+<a name="RequestPoPBadgeResponse.ProtoReflect"></a>
+### func \(\*RequestPoPBadgeResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1233>)
+
+```go
+func (x *RequestPoPBadgeResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="RequestPoPBadgeResponse.Reset"></a>
+### func \(\*RequestPoPBadgeResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1220>)
+
+```go
+func (x *RequestPoPBadgeResponse) Reset()
+```
+
+
+
+<a name="RequestPoPBadgeResponse.String"></a>
+### func \(\*RequestPoPBadgeResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1227>)
+
+```go
+func (x *RequestPoPBadgeResponse) String() string
+```
+
+
+
+<a name="RevocationEntry"></a>
+## type [RevocationEntry](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L86-L96>)
+
+Revocation entry
+
+```go
+type RevocationEntry struct {
+    Subject   string           `protobuf:"bytes,1,opt,name=subject,proto3" json:"subject,omitempty"`                                  // DID or key ID being revoked
+    Reason    RevocationReason `protobuf:"varint,2,opt,name=reason,proto3,enum=capiscio.v1.RevocationReason" json:"reason,omitempty"` // Reason for revocation
+    RevokedAt *Timestamp       `protobuf:"bytes,3,opt,name=revoked_at,json=revokedAt,proto3" json:"revoked_at,omitempty"`             // When revocation occurred
+    ExpiresAt *Timestamp       `protobuf:"bytes,4,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`             // Optional: when revocation expires
+    Issuer    string           `protobuf:"bytes,5,opt,name=issuer,proto3" json:"issuer,omitempty"`                                    // Who issued the revocation
+    Comment   string           `protobuf:"bytes,6,opt,name=comment,proto3" json:"comment,omitempty"`                                  // Optional comment
+    // contains filtered or unexported fields
+}
+```
+
+<a name="RevocationEntry.Descriptor"></a>
+### func \(\*RevocationEntry\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L124>)
+
+```go
+func (*RevocationEntry) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use RevocationEntry.ProtoReflect.Descriptor instead.
+
+<a name="RevocationEntry.GetComment"></a>
+### func \(\*RevocationEntry\) [GetComment](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L163>)
+
+```go
+func (x *RevocationEntry) GetComment() string
+```
+
+
+
+<a name="RevocationEntry.GetExpiresAt"></a>
+### func \(\*RevocationEntry\) [GetExpiresAt](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L149>)
+
+```go
+func (x *RevocationEntry) GetExpiresAt() *Timestamp
+```
+
+
+
+<a name="RevocationEntry.GetIssuer"></a>
+### func \(\*RevocationEntry\) [GetIssuer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L156>)
+
+```go
+func (x *RevocationEntry) GetIssuer() string
+```
+
+
+
+<a name="RevocationEntry.GetReason"></a>
+### func \(\*RevocationEntry\) [GetReason](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L135>)
+
+```go
+func (x *RevocationEntry) GetReason() RevocationReason
+```
+
+
+
+<a name="RevocationEntry.GetRevokedAt"></a>
+### func \(\*RevocationEntry\) [GetRevokedAt](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L142>)
+
+```go
+func (x *RevocationEntry) GetRevokedAt() *Timestamp
+```
+
+
+
+<a name="RevocationEntry.GetSubject"></a>
+### func \(\*RevocationEntry\) [GetSubject](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L128>)
+
+```go
+func (x *RevocationEntry) GetSubject() string
+```
+
+
+
+<a name="RevocationEntry.ProtoMessage"></a>
+### func \(\*RevocationEntry\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L109>)
+
+```go
+func (*RevocationEntry) ProtoMessage()
+```
+
+
+
+<a name="RevocationEntry.ProtoReflect"></a>
+### func \(\*RevocationEntry\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L111>)
+
+```go
+func (x *RevocationEntry) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="RevocationEntry.Reset"></a>
+### func \(\*RevocationEntry\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L98>)
+
+```go
+func (x *RevocationEntry) Reset()
+```
+
+
+
+<a name="RevocationEntry.String"></a>
+### func \(\*RevocationEntry\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L105>)
+
+```go
+func (x *RevocationEntry) String() string
+```
+
+
+
+<a name="RevocationReason"></a>
+## type [RevocationReason](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L27>)
+
+Revocation reason codes
+
+```go
+type RevocationReason int32
+```
+
+<a name="RevocationReason_REVOCATION_REASON_UNSPECIFIED"></a>
+
+```go
+const (
+    RevocationReason_REVOCATION_REASON_UNSPECIFIED            RevocationReason = 0
+    RevocationReason_REVOCATION_REASON_KEY_COMPROMISE         RevocationReason = 1
+    RevocationReason_REVOCATION_REASON_AFFILIATION_CHANGED    RevocationReason = 2
+    RevocationReason_REVOCATION_REASON_SUPERSEDED             RevocationReason = 3
+    RevocationReason_REVOCATION_REASON_CESSATION_OF_OPERATION RevocationReason = 4
+    RevocationReason_REVOCATION_REASON_PRIVILEGE_WITHDRAWN    RevocationReason = 5
+)
+```
+
+<a name="RevocationReason.Descriptor"></a>
+### func \(RevocationReason\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L68>)
+
+```go
+func (RevocationReason) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="RevocationReason.Enum"></a>
+### func \(RevocationReason\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L58>)
+
+```go
+func (x RevocationReason) Enum() *RevocationReason
+```
+
+
+
+<a name="RevocationReason.EnumDescriptor"></a>
+### func \(RevocationReason\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L81>)
+
+```go
+func (RevocationReason) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use RevocationReason.Descriptor instead.
+
+<a name="RevocationReason.Number"></a>
+### func \(RevocationReason\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L76>)
+
+```go
+func (x RevocationReason) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="RevocationReason.String"></a>
+### func \(RevocationReason\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L64>)
+
+```go
+func (x RevocationReason) String() string
+```
+
+
+
+<a name="RevocationReason.Type"></a>
+### func \(RevocationReason\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L72>)
+
+```go
+func (RevocationReason) Type() protoreflect.EnumType
+```
+
+
+
+<a name="RevocationServiceClient"></a>
+## type [RevocationServiceClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation_grpc.pb.go#L38-L53>)
+
+RevocationServiceClient is the client API for RevocationService service.
+
+For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+
+RevocationService manages revocation lists and checks
+
+```go
+type RevocationServiceClient interface {
+    // Check if a key is revoked
+    IsRevoked(ctx context.Context, in *IsRevokedRequest, opts ...grpc.CallOption) (*IsRevokedResponse, error)
+    // Add a revocation entry
+    Revoke(ctx context.Context, in *RevokeRequest, opts ...grpc.CallOption) (*RevokeResponse, error)
+    // Remove a revocation entry
+    Unrevoke(ctx context.Context, in *UnrevokeRequest, opts ...grpc.CallOption) (*UnrevokeResponse, error)
+    // List revoked entries
+    ListRevocations(ctx context.Context, in *ListRevocationsRequest, opts ...grpc.CallOption) (*ListRevocationsResponse, error)
+    // Fetch revocation list from URL
+    FetchRevocationList(ctx context.Context, in *FetchRevocationListRequest, opts ...grpc.CallOption) (*FetchRevocationListResponse, error)
+    // Clear the revocation cache
+    ClearCache(ctx context.Context, in *ClearCacheRequest, opts ...grpc.CallOption) (*ClearCacheResponse, error)
+    // Get cache statistics
+    GetCacheStats(ctx context.Context, in *GetCacheStatsRequest, opts ...grpc.CallOption) (*GetCacheStatsResponse, error)
+}
+```
+
+<a name="NewRevocationServiceClient"></a>
+### func [NewRevocationServiceClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation_grpc.pb.go#L59>)
+
+```go
+func NewRevocationServiceClient(cc grpc.ClientConnInterface) RevocationServiceClient
+```
+
+
+
+<a name="RevocationServiceServer"></a>
+## type [RevocationServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation_grpc.pb.go#L138-L154>)
+
+RevocationServiceServer is the server API for RevocationService service. All implementations must embed UnimplementedRevocationServiceServer for forward compatibility.
+
+RevocationService manages revocation lists and checks
+
+```go
+type RevocationServiceServer interface {
+    // Check if a key is revoked
+    IsRevoked(context.Context, *IsRevokedRequest) (*IsRevokedResponse, error)
+    // Add a revocation entry
+    Revoke(context.Context, *RevokeRequest) (*RevokeResponse, error)
+    // Remove a revocation entry
+    Unrevoke(context.Context, *UnrevokeRequest) (*UnrevokeResponse, error)
+    // List revoked entries
+    ListRevocations(context.Context, *ListRevocationsRequest) (*ListRevocationsResponse, error)
+    // Fetch revocation list from URL
+    FetchRevocationList(context.Context, *FetchRevocationListRequest) (*FetchRevocationListResponse, error)
+    // Clear the revocation cache
+    ClearCache(context.Context, *ClearCacheRequest) (*ClearCacheResponse, error)
+    // Get cache statistics
+    GetCacheStats(context.Context, *GetCacheStatsRequest) (*GetCacheStatsResponse, error)
+    // contains filtered or unexported methods
+}
+```
+
+<a name="RevokeRequest"></a>
+## type [RevokeRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L293-L300>)
+
+Request to revoke
+
+```go
+type RevokeRequest struct {
+    Subject string           `protobuf:"bytes,1,opt,name=subject,proto3" json:"subject,omitempty"`
+    Reason  RevocationReason `protobuf:"varint,2,opt,name=reason,proto3,enum=capiscio.v1.RevocationReason" json:"reason,omitempty"`
+    Comment string           `protobuf:"bytes,3,opt,name=comment,proto3" json:"comment,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="RevokeRequest.Descriptor"></a>
+### func \(\*RevokeRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L328>)
+
+```go
+func (*RevokeRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use RevokeRequest.ProtoReflect.Descriptor instead.
+
+<a name="RevokeRequest.GetComment"></a>
+### func \(\*RevokeRequest\) [GetComment](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L346>)
+
+```go
+func (x *RevokeRequest) GetComment() string
+```
+
+
+
+<a name="RevokeRequest.GetReason"></a>
+### func \(\*RevokeRequest\) [GetReason](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L339>)
+
+```go
+func (x *RevokeRequest) GetReason() RevocationReason
+```
+
+
+
+<a name="RevokeRequest.GetSubject"></a>
+### func \(\*RevokeRequest\) [GetSubject](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L332>)
+
+```go
+func (x *RevokeRequest) GetSubject() string
+```
+
+
+
+<a name="RevokeRequest.ProtoMessage"></a>
+### func \(\*RevokeRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L313>)
+
+```go
+func (*RevokeRequest) ProtoMessage()
+```
+
+
+
+<a name="RevokeRequest.ProtoReflect"></a>
+### func \(\*RevokeRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L315>)
+
+```go
+func (x *RevokeRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="RevokeRequest.Reset"></a>
+### func \(\*RevokeRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L302>)
+
+```go
+func (x *RevokeRequest) Reset()
+```
+
+
+
+<a name="RevokeRequest.String"></a>
+### func \(\*RevokeRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L309>)
+
+```go
+func (x *RevokeRequest) String() string
+```
+
+
+
+<a name="RevokeResponse"></a>
+## type [RevokeResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L354-L360>)
+
+Response for revoke
+
+```go
+type RevokeResponse struct {
+    Entry        *RevocationEntry `protobuf:"bytes,1,opt,name=entry,proto3" json:"entry,omitempty"`
+    ErrorMessage string           `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="RevokeResponse.Descriptor"></a>
+### func \(\*RevokeResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L388>)
+
+```go
+func (*RevokeResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use RevokeResponse.ProtoReflect.Descriptor instead.
+
+<a name="RevokeResponse.GetEntry"></a>
+### func \(\*RevokeResponse\) [GetEntry](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L392>)
+
+```go
+func (x *RevokeResponse) GetEntry() *RevocationEntry
+```
+
+
+
+<a name="RevokeResponse.GetErrorMessage"></a>
+### func \(\*RevokeResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L399>)
+
+```go
+func (x *RevokeResponse) GetErrorMessage() string
+```
+
+
+
+<a name="RevokeResponse.ProtoMessage"></a>
+### func \(\*RevokeResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L373>)
+
+```go
+func (*RevokeResponse) ProtoMessage()
+```
+
+
+
+<a name="RevokeResponse.ProtoReflect"></a>
+### func \(\*RevokeResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L375>)
+
+```go
+func (x *RevokeResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="RevokeResponse.Reset"></a>
+### func \(\*RevokeResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L362>)
+
+```go
+func (x *RevokeResponse) Reset()
+```
+
+
+
+<a name="RevokeResponse.String"></a>
+### func \(\*RevokeResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L369>)
+
+```go
+func (x *RevokeResponse) String() string
+```
+
+
+
+<a name="Rule"></a>
+## type [Rule](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L142-L153>)
+
+Individual rule definition
+
+```go
+type Rule struct {
+    Id          string        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+    Name        string        `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+    Description string        `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+    Category    ScoreCategory `protobuf:"varint,4,opt,name=category,proto3,enum=capiscio.v1.ScoreCategory" json:"category,omitempty"`
+    Severity    RuleSeverity  `protobuf:"varint,5,opt,name=severity,proto3,enum=capiscio.v1.RuleSeverity" json:"severity,omitempty"`
+    Weight      int32         `protobuf:"varint,6,opt,name=weight,proto3" json:"weight,omitempty"`        // Weight for scoring (0-100)
+    Expression  string        `protobuf:"bytes,7,opt,name=expression,proto3" json:"expression,omitempty"` // Rule expression/predicate
+    // contains filtered or unexported fields
+}
+```
+
+<a name="Rule.Descriptor"></a>
+### func \(\*Rule\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L181>)
+
+```go
+func (*Rule) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use Rule.ProtoReflect.Descriptor instead.
+
+<a name="Rule.GetCategory"></a>
+### func \(\*Rule\) [GetCategory](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L206>)
+
+```go
+func (x *Rule) GetCategory() ScoreCategory
+```
+
+
+
+<a name="Rule.GetDescription"></a>
+### func \(\*Rule\) [GetDescription](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L199>)
+
+```go
+func (x *Rule) GetDescription() string
+```
+
+
+
+<a name="Rule.GetExpression"></a>
+### func \(\*Rule\) [GetExpression](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L227>)
+
+```go
+func (x *Rule) GetExpression() string
+```
+
+
+
+<a name="Rule.GetId"></a>
+### func \(\*Rule\) [GetId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L185>)
+
+```go
+func (x *Rule) GetId() string
+```
+
+
+
+<a name="Rule.GetName"></a>
+### func \(\*Rule\) [GetName](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L192>)
+
+```go
+func (x *Rule) GetName() string
+```
+
+
+
+<a name="Rule.GetSeverity"></a>
+### func \(\*Rule\) [GetSeverity](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L213>)
+
+```go
+func (x *Rule) GetSeverity() RuleSeverity
+```
+
+
+
+<a name="Rule.GetWeight"></a>
+### func \(\*Rule\) [GetWeight](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L220>)
+
+```go
+func (x *Rule) GetWeight() int32
+```
+
+
+
+<a name="Rule.ProtoMessage"></a>
+### func \(\*Rule\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L166>)
+
+```go
+func (*Rule) ProtoMessage()
+```
+
+
+
+<a name="Rule.ProtoReflect"></a>
+### func \(\*Rule\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L168>)
+
+```go
+func (x *Rule) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="Rule.Reset"></a>
+### func \(\*Rule\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L155>)
+
+```go
+func (x *Rule) Reset()
+```
+
+
+
+<a name="Rule.String"></a>
+### func \(\*Rule\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L162>)
+
+```go
+func (x *Rule) String() string
+```
+
+
+
+<a name="RuleResult"></a>
+## type [RuleResult](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L320-L329>)
+
+Result of evaluating a single rule
+
+```go
+type RuleResult struct {
+    RuleId            string            `protobuf:"bytes,1,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
+    Passed            bool              `protobuf:"varint,2,opt,name=passed,proto3" json:"passed,omitempty"`
+    Message           string            `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+    ScoreContribution float64           `protobuf:"fixed64,4,opt,name=score_contribution,json=scoreContribution,proto3" json:"score_contribution,omitempty"` // Points contributed to final score
+    Details           map[string]string `protobuf:"bytes,5,rep,name=details,proto3" json:"details,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="RuleResult.Descriptor"></a>
+### func \(\*RuleResult\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L357>)
+
+```go
+func (*RuleResult) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use RuleResult.ProtoReflect.Descriptor instead.
+
+<a name="RuleResult.GetDetails"></a>
+### func \(\*RuleResult\) [GetDetails](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L389>)
+
+```go
+func (x *RuleResult) GetDetails() map[string]string
+```
+
+
+
+<a name="RuleResult.GetMessage"></a>
+### func \(\*RuleResult\) [GetMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L375>)
+
+```go
+func (x *RuleResult) GetMessage() string
+```
+
+
+
+<a name="RuleResult.GetPassed"></a>
+### func \(\*RuleResult\) [GetPassed](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L368>)
+
+```go
+func (x *RuleResult) GetPassed() bool
+```
+
+
+
+<a name="RuleResult.GetRuleId"></a>
+### func \(\*RuleResult\) [GetRuleId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L361>)
+
+```go
+func (x *RuleResult) GetRuleId() string
+```
+
+
+
+<a name="RuleResult.GetScoreContribution"></a>
+### func \(\*RuleResult\) [GetScoreContribution](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L382>)
+
+```go
+func (x *RuleResult) GetScoreContribution() float64
+```
+
+
+
+<a name="RuleResult.ProtoMessage"></a>
+### func \(\*RuleResult\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L342>)
+
+```go
+func (*RuleResult) ProtoMessage()
+```
+
+
+
+<a name="RuleResult.ProtoReflect"></a>
+### func \(\*RuleResult\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L344>)
+
+```go
+func (x *RuleResult) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="RuleResult.Reset"></a>
+### func \(\*RuleResult\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L331>)
+
+```go
+func (x *RuleResult) Reset()
+```
+
+
+
+<a name="RuleResult.String"></a>
+### func \(\*RuleResult\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L338>)
+
+```go
+func (x *RuleResult) String() string
+```
+
+
+
+<a name="RuleSet"></a>
+## type [RuleSet](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L235-L245>)
+
+Rule set containing multiple rules
+
+```go
+type RuleSet struct {
+    Id          string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+    Name        string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+    Version     string            `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+    Description string            `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+    Rules       []*Rule           `protobuf:"bytes,5,rep,name=rules,proto3" json:"rules,omitempty"`
+    Metadata    map[string]string `protobuf:"bytes,6,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="RuleSet.Descriptor"></a>
+### func \(\*RuleSet\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L273>)
+
+```go
+func (*RuleSet) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use RuleSet.ProtoReflect.Descriptor instead.
+
+<a name="RuleSet.GetDescription"></a>
+### func \(\*RuleSet\) [GetDescription](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L298>)
+
+```go
+func (x *RuleSet) GetDescription() string
+```
+
+
+
+<a name="RuleSet.GetId"></a>
+### func \(\*RuleSet\) [GetId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L277>)
+
+```go
+func (x *RuleSet) GetId() string
+```
+
+
+
+<a name="RuleSet.GetMetadata"></a>
+### func \(\*RuleSet\) [GetMetadata](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L312>)
+
+```go
+func (x *RuleSet) GetMetadata() map[string]string
+```
+
+
+
+<a name="RuleSet.GetName"></a>
+### func \(\*RuleSet\) [GetName](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L284>)
+
+```go
+func (x *RuleSet) GetName() string
+```
+
+
+
+<a name="RuleSet.GetRules"></a>
+### func \(\*RuleSet\) [GetRules](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L305>)
+
+```go
+func (x *RuleSet) GetRules() []*Rule
+```
+
+
+
+<a name="RuleSet.GetVersion"></a>
+### func \(\*RuleSet\) [GetVersion](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L291>)
+
+```go
+func (x *RuleSet) GetVersion() string
+```
+
+
+
+<a name="RuleSet.ProtoMessage"></a>
+### func \(\*RuleSet\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L258>)
+
+```go
+func (*RuleSet) ProtoMessage()
+```
+
+
+
+<a name="RuleSet.ProtoReflect"></a>
+### func \(\*RuleSet\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L260>)
+
+```go
+func (x *RuleSet) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="RuleSet.Reset"></a>
+### func \(\*RuleSet\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L247>)
+
+```go
+func (x *RuleSet) Reset()
+```
+
+
+
+<a name="RuleSet.String"></a>
+### func \(\*RuleSet\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L254>)
+
+```go
+func (x *RuleSet) String() string
+```
+
+
+
+<a name="RuleSeverity"></a>
+## type [RuleSeverity](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L86>)
+
+Rule severity for scoring
+
+```go
+type RuleSeverity int32
+```
+
+<a name="RuleSeverity_RULE_SEVERITY_UNSPECIFIED"></a>
+
+```go
+const (
+    RuleSeverity_RULE_SEVERITY_UNSPECIFIED RuleSeverity = 0
+    RuleSeverity_RULE_SEVERITY_INFO        RuleSeverity = 1
+    RuleSeverity_RULE_SEVERITY_WARNING     RuleSeverity = 2
+    RuleSeverity_RULE_SEVERITY_ERROR       RuleSeverity = 3
+    RuleSeverity_RULE_SEVERITY_CRITICAL    RuleSeverity = 4
+)
+```
+
+<a name="RuleSeverity.Descriptor"></a>
+### func \(RuleSeverity\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L124>)
+
+```go
+func (RuleSeverity) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="RuleSeverity.Enum"></a>
+### func \(RuleSeverity\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L114>)
+
+```go
+func (x RuleSeverity) Enum() *RuleSeverity
+```
+
+
+
+<a name="RuleSeverity.EnumDescriptor"></a>
+### func \(RuleSeverity\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L137>)
+
+```go
+func (RuleSeverity) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use RuleSeverity.Descriptor instead.
+
+<a name="RuleSeverity.Number"></a>
+### func \(RuleSeverity\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L132>)
+
+```go
+func (x RuleSeverity) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="RuleSeverity.String"></a>
+### func \(RuleSeverity\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L120>)
+
+```go
+func (x RuleSeverity) String() string
+```
+
+
+
+<a name="RuleSeverity.Type"></a>
+### func \(RuleSeverity\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L128>)
+
+```go
+func (RuleSeverity) Type() protoreflect.EnumType
+```
+
+
+
+<a name="ScoreAgentCardRequest"></a>
+## type [ScoreAgentCardRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L575-L582>)
+
+Request to score an agent card
+
+```go
+type ScoreAgentCardRequest struct {
+    AgentCardJson string          `protobuf:"bytes,1,opt,name=agent_card_json,json=agentCardJson,proto3" json:"agent_card_json,omitempty"`           // JSON of agent card
+    RuleSetId     string          `protobuf:"bytes,2,opt,name=rule_set_id,json=ruleSetId,proto3" json:"rule_set_id,omitempty"`                       // Optional: specific rule set
+    Categories    []ScoreCategory `protobuf:"varint,3,rep,packed,name=categories,proto3,enum=capiscio.v1.ScoreCategory" json:"categories,omitempty"` // Optional: limit to categories
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ScoreAgentCardRequest.Descriptor"></a>
+### func \(\*ScoreAgentCardRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L610>)
+
+```go
+func (*ScoreAgentCardRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ScoreAgentCardRequest.ProtoReflect.Descriptor instead.
+
+<a name="ScoreAgentCardRequest.GetAgentCardJson"></a>
+### func \(\*ScoreAgentCardRequest\) [GetAgentCardJson](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L614>)
+
+```go
+func (x *ScoreAgentCardRequest) GetAgentCardJson() string
+```
+
+
+
+<a name="ScoreAgentCardRequest.GetCategories"></a>
+### func \(\*ScoreAgentCardRequest\) [GetCategories](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L628>)
+
+```go
+func (x *ScoreAgentCardRequest) GetCategories() []ScoreCategory
+```
+
+
+
+<a name="ScoreAgentCardRequest.GetRuleSetId"></a>
+### func \(\*ScoreAgentCardRequest\) [GetRuleSetId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L621>)
+
+```go
+func (x *ScoreAgentCardRequest) GetRuleSetId() string
+```
+
+
+
+<a name="ScoreAgentCardRequest.ProtoMessage"></a>
+### func \(\*ScoreAgentCardRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L595>)
+
+```go
+func (*ScoreAgentCardRequest) ProtoMessage()
+```
+
+
+
+<a name="ScoreAgentCardRequest.ProtoReflect"></a>
+### func \(\*ScoreAgentCardRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L597>)
+
+```go
+func (x *ScoreAgentCardRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ScoreAgentCardRequest.Reset"></a>
+### func \(\*ScoreAgentCardRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L584>)
+
+```go
+func (x *ScoreAgentCardRequest) Reset()
+```
+
+
+
+<a name="ScoreAgentCardRequest.String"></a>
+### func \(\*ScoreAgentCardRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L591>)
+
+```go
+func (x *ScoreAgentCardRequest) String() string
+```
+
+
+
+<a name="ScoreAgentCardResponse"></a>
+## type [ScoreAgentCardResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L636-L642>)
+
+Response with score
+
+```go
+type ScoreAgentCardResponse struct {
+    Result       *ScoringResult `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
+    ErrorMessage string         `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ScoreAgentCardResponse.Descriptor"></a>
+### func \(\*ScoreAgentCardResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L670>)
+
+```go
+func (*ScoreAgentCardResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ScoreAgentCardResponse.ProtoReflect.Descriptor instead.
+
+<a name="ScoreAgentCardResponse.GetErrorMessage"></a>
+### func \(\*ScoreAgentCardResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L681>)
+
+```go
+func (x *ScoreAgentCardResponse) GetErrorMessage() string
+```
+
+
+
+<a name="ScoreAgentCardResponse.GetResult"></a>
+### func \(\*ScoreAgentCardResponse\) [GetResult](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L674>)
+
+```go
+func (x *ScoreAgentCardResponse) GetResult() *ScoringResult
+```
+
+
+
+<a name="ScoreAgentCardResponse.ProtoMessage"></a>
+### func \(\*ScoreAgentCardResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L655>)
+
+```go
+func (*ScoreAgentCardResponse) ProtoMessage()
+```
+
+
+
+<a name="ScoreAgentCardResponse.ProtoReflect"></a>
+### func \(\*ScoreAgentCardResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L657>)
+
+```go
+func (x *ScoreAgentCardResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ScoreAgentCardResponse.Reset"></a>
+### func \(\*ScoreAgentCardResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L644>)
+
+```go
+func (x *ScoreAgentCardResponse) Reset()
+```
+
+
+
+<a name="ScoreAgentCardResponse.String"></a>
+### func \(\*ScoreAgentCardResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L651>)
+
+```go
+func (x *ScoreAgentCardResponse) String() string
+```
+
+
+
+<a name="ScoreCategory"></a>
+## type [ScoreCategory](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L27>)
+
+Score categories
+
+```go
+type ScoreCategory int32
+```
+
+<a name="ScoreCategory_SCORE_CATEGORY_UNSPECIFIED"></a>
+
+```go
+const (
+    ScoreCategory_SCORE_CATEGORY_UNSPECIFIED  ScoreCategory = 0
+    ScoreCategory_SCORE_CATEGORY_IDENTITY     ScoreCategory = 1
+    ScoreCategory_SCORE_CATEGORY_CAPABILITIES ScoreCategory = 2
+    ScoreCategory_SCORE_CATEGORY_SECURITY     ScoreCategory = 3
+    ScoreCategory_SCORE_CATEGORY_COMPLIANCE   ScoreCategory = 4
+    ScoreCategory_SCORE_CATEGORY_TRANSPARENCY ScoreCategory = 5
+)
+```
+
+<a name="ScoreCategory.Descriptor"></a>
+### func \(ScoreCategory\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L68>)
+
+```go
+func (ScoreCategory) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="ScoreCategory.Enum"></a>
+### func \(ScoreCategory\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L58>)
+
+```go
+func (x ScoreCategory) Enum() *ScoreCategory
+```
+
+
+
+<a name="ScoreCategory.EnumDescriptor"></a>
+### func \(ScoreCategory\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L81>)
+
+```go
+func (ScoreCategory) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use ScoreCategory.Descriptor instead.
+
+<a name="ScoreCategory.Number"></a>
+### func \(ScoreCategory\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L76>)
+
+```go
+func (x ScoreCategory) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="ScoreCategory.String"></a>
+### func \(ScoreCategory\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L64>)
+
+```go
+func (x ScoreCategory) String() string
+```
+
+
+
+<a name="ScoreCategory.Type"></a>
+### func \(ScoreCategory\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L72>)
+
+```go
+func (ScoreCategory) Type() protoreflect.EnumType
+```
+
+
+
+<a name="ScoringResult"></a>
+## type [ScoringResult](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L474-L486>)
+
+Full scoring result
+
+```go
+type ScoringResult struct {
+    OverallScore   float64           `protobuf:"fixed64,1,opt,name=overall_score,json=overallScore,proto3" json:"overall_score,omitempty"` // 0.0 to 1.0
+    Rating         Rating            `protobuf:"varint,2,opt,name=rating,proto3,enum=capiscio.v1.Rating" json:"rating,omitempty"`          // Derived rating
+    Categories     []*CategoryScore  `protobuf:"bytes,3,rep,name=categories,proto3" json:"categories,omitempty"`
+    RuleResults    []*RuleResult     `protobuf:"bytes,4,rep,name=rule_results,json=ruleResults,proto3" json:"rule_results,omitempty"`
+    Validation     *ValidationResult `protobuf:"bytes,5,opt,name=validation,proto3" json:"validation,omitempty"` // Any validation issues found
+    ScoredAt       *Timestamp        `protobuf:"bytes,6,opt,name=scored_at,json=scoredAt,proto3" json:"scored_at,omitempty"`
+    RuleSetId      string            `protobuf:"bytes,7,opt,name=rule_set_id,json=ruleSetId,proto3" json:"rule_set_id,omitempty"`
+    RuleSetVersion string            `protobuf:"bytes,8,opt,name=rule_set_version,json=ruleSetVersion,proto3" json:"rule_set_version,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ScoringResult.Descriptor"></a>
+### func \(\*ScoringResult\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L514>)
+
+```go
+func (*ScoringResult) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ScoringResult.ProtoReflect.Descriptor instead.
+
+<a name="ScoringResult.GetCategories"></a>
+### func \(\*ScoringResult\) [GetCategories](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L532>)
+
+```go
+func (x *ScoringResult) GetCategories() []*CategoryScore
+```
+
+
+
+<a name="ScoringResult.GetOverallScore"></a>
+### func \(\*ScoringResult\) [GetOverallScore](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L518>)
+
+```go
+func (x *ScoringResult) GetOverallScore() float64
+```
+
+
+
+<a name="ScoringResult.GetRating"></a>
+### func \(\*ScoringResult\) [GetRating](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L525>)
+
+```go
+func (x *ScoringResult) GetRating() Rating
+```
+
+
+
+<a name="ScoringResult.GetRuleResults"></a>
+### func \(\*ScoringResult\) [GetRuleResults](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L539>)
+
+```go
+func (x *ScoringResult) GetRuleResults() []*RuleResult
+```
+
+
+
+<a name="ScoringResult.GetRuleSetId"></a>
+### func \(\*ScoringResult\) [GetRuleSetId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L560>)
+
+```go
+func (x *ScoringResult) GetRuleSetId() string
+```
+
+
+
+<a name="ScoringResult.GetRuleSetVersion"></a>
+### func \(\*ScoringResult\) [GetRuleSetVersion](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L567>)
+
+```go
+func (x *ScoringResult) GetRuleSetVersion() string
+```
+
+
+
+<a name="ScoringResult.GetScoredAt"></a>
+### func \(\*ScoringResult\) [GetScoredAt](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L553>)
+
+```go
+func (x *ScoringResult) GetScoredAt() *Timestamp
+```
+
+
+
+<a name="ScoringResult.GetValidation"></a>
+### func \(\*ScoringResult\) [GetValidation](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L546>)
+
+```go
+func (x *ScoringResult) GetValidation() *ValidationResult
+```
+
+
+
+<a name="ScoringResult.ProtoMessage"></a>
+### func \(\*ScoringResult\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L499>)
+
+```go
+func (*ScoringResult) ProtoMessage()
+```
+
+
+
+<a name="ScoringResult.ProtoReflect"></a>
+### func \(\*ScoringResult\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L501>)
+
+```go
+func (x *ScoringResult) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ScoringResult.Reset"></a>
+### func \(\*ScoringResult\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L488>)
+
+```go
+func (x *ScoringResult) Reset()
+```
+
+
+
+<a name="ScoringResult.String"></a>
+### func \(\*ScoringResult\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L495>)
+
+```go
+func (x *ScoringResult) String() string
+```
+
+
+
+<a name="ScoringServiceClient"></a>
+## type [ScoringServiceClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring_grpc.pb.go#L36-L47>)
+
+ScoringServiceClient is the client API for ScoringService service.
+
+For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+
+ScoringService evaluates agent cards and generates trust scores
+
+```go
+type ScoringServiceClient interface {
+    // Validate an agent card and generate a score
+    ScoreAgentCard(ctx context.Context, in *ScoreAgentCardRequest, opts ...grpc.CallOption) (*ScoreAgentCardResponse, error)
+    // Validate a single rule
+    ValidateRule(ctx context.Context, in *ValidateRuleRequest, opts ...grpc.CallOption) (*ValidateRuleResponse, error)
+    // Get available rule sets
+    ListRuleSets(ctx context.Context, in *ListRuleSetsRequest, opts ...grpc.CallOption) (*ListRuleSetsResponse, error)
+    // Get rule set details
+    GetRuleSet(ctx context.Context, in *GetRuleSetRequest, opts ...grpc.CallOption) (*GetRuleSetResponse, error)
+    // Calculate aggregate score from multiple validations
+    AggregateScores(ctx context.Context, in *AggregateScoresRequest, opts ...grpc.CallOption) (*AggregateScoresResponse, error)
+}
+```
+
+<a name="NewScoringServiceClient"></a>
+### func [NewScoringServiceClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring_grpc.pb.go#L53>)
+
+```go
+func NewScoringServiceClient(cc grpc.ClientConnInterface) ScoringServiceClient
+```
+
+
+
+<a name="ScoringServiceServer"></a>
+## type [ScoringServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring_grpc.pb.go#L112-L124>)
+
+ScoringServiceServer is the server API for ScoringService service. All implementations must embed UnimplementedScoringServiceServer for forward compatibility.
+
+ScoringService evaluates agent cards and generates trust scores
+
+```go
+type ScoringServiceServer interface {
+    // Validate an agent card and generate a score
+    ScoreAgentCard(context.Context, *ScoreAgentCardRequest) (*ScoreAgentCardResponse, error)
+    // Validate a single rule
+    ValidateRule(context.Context, *ValidateRuleRequest) (*ValidateRuleResponse, error)
+    // Get available rule sets
+    ListRuleSets(context.Context, *ListRuleSetsRequest) (*ListRuleSetsResponse, error)
+    // Get rule set details
+    GetRuleSet(context.Context, *GetRuleSetRequest) (*GetRuleSetResponse, error)
+    // Calculate aggregate score from multiple validations
+    AggregateScores(context.Context, *AggregateScoresRequest) (*AggregateScoresResponse, error)
+    // contains filtered or unexported methods
+}
+```
+
+<a name="SearchAgentsRequest"></a>
+## type [SearchAgentsRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L388-L402>)
+
+Search request
+
+```go
+type SearchAgentsRequest struct {
+    Query          string         `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`                                                                 // Free text query
+    Capabilities   []string       `protobuf:"bytes,2,rep,name=capabilities,proto3" json:"capabilities,omitempty"`                                                   // Filter by capabilities
+    Tags           []string       `protobuf:"bytes,3,rep,name=tags,proto3" json:"tags,omitempty"`                                                                   // Filter by tags
+    Operator       SearchOperator `protobuf:"varint,4,opt,name=operator,proto3,enum=capiscio.v1.SearchOperator" json:"operator,omitempty"`                          // How to combine filters
+    MinRating      Rating         `protobuf:"varint,5,opt,name=min_rating,json=minRating,proto3,enum=capiscio.v1.Rating" json:"min_rating,omitempty"`               // Minimum rating filter
+    StatusFilter   AgentStatus    `protobuf:"varint,6,opt,name=status_filter,json=statusFilter,proto3,enum=capiscio.v1.AgentStatus" json:"status_filter,omitempty"` // Status filter
+    Limit          int32          `protobuf:"varint,7,opt,name=limit,proto3" json:"limit,omitempty"`
+    Cursor         string         `protobuf:"bytes,8,opt,name=cursor,proto3" json:"cursor,omitempty"`
+    SortBy         string         `protobuf:"bytes,9,opt,name=sort_by,json=sortBy,proto3" json:"sort_by,omitempty"` // Field to sort by
+    SortDescending bool           `protobuf:"varint,10,opt,name=sort_descending,json=sortDescending,proto3" json:"sort_descending,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="SearchAgentsRequest.Descriptor"></a>
+### func \(\*SearchAgentsRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L430>)
+
+```go
+func (*SearchAgentsRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use SearchAgentsRequest.ProtoReflect.Descriptor instead.
+
+<a name="SearchAgentsRequest.GetCapabilities"></a>
+### func \(\*SearchAgentsRequest\) [GetCapabilities](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L441>)
+
+```go
+func (x *SearchAgentsRequest) GetCapabilities() []string
+```
+
+
+
+<a name="SearchAgentsRequest.GetCursor"></a>
+### func \(\*SearchAgentsRequest\) [GetCursor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L483>)
+
+```go
+func (x *SearchAgentsRequest) GetCursor() string
+```
+
+
+
+<a name="SearchAgentsRequest.GetLimit"></a>
+### func \(\*SearchAgentsRequest\) [GetLimit](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L476>)
+
+```go
+func (x *SearchAgentsRequest) GetLimit() int32
+```
+
+
+
+<a name="SearchAgentsRequest.GetMinRating"></a>
+### func \(\*SearchAgentsRequest\) [GetMinRating](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L462>)
+
+```go
+func (x *SearchAgentsRequest) GetMinRating() Rating
+```
+
+
+
+<a name="SearchAgentsRequest.GetOperator"></a>
+### func \(\*SearchAgentsRequest\) [GetOperator](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L455>)
+
+```go
+func (x *SearchAgentsRequest) GetOperator() SearchOperator
+```
+
+
+
+<a name="SearchAgentsRequest.GetQuery"></a>
+### func \(\*SearchAgentsRequest\) [GetQuery](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L434>)
+
+```go
+func (x *SearchAgentsRequest) GetQuery() string
+```
+
+
+
+<a name="SearchAgentsRequest.GetSortBy"></a>
+### func \(\*SearchAgentsRequest\) [GetSortBy](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L490>)
+
+```go
+func (x *SearchAgentsRequest) GetSortBy() string
+```
+
+
+
+<a name="SearchAgentsRequest.GetSortDescending"></a>
+### func \(\*SearchAgentsRequest\) [GetSortDescending](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L497>)
+
+```go
+func (x *SearchAgentsRequest) GetSortDescending() bool
+```
+
+
+
+<a name="SearchAgentsRequest.GetStatusFilter"></a>
+### func \(\*SearchAgentsRequest\) [GetStatusFilter](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L469>)
+
+```go
+func (x *SearchAgentsRequest) GetStatusFilter() AgentStatus
+```
+
+
+
+<a name="SearchAgentsRequest.GetTags"></a>
+### func \(\*SearchAgentsRequest\) [GetTags](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L448>)
+
+```go
+func (x *SearchAgentsRequest) GetTags() []string
+```
+
+
+
+<a name="SearchAgentsRequest.ProtoMessage"></a>
+### func \(\*SearchAgentsRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L415>)
+
+```go
+func (*SearchAgentsRequest) ProtoMessage()
+```
+
+
+
+<a name="SearchAgentsRequest.ProtoReflect"></a>
+### func \(\*SearchAgentsRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L417>)
+
+```go
+func (x *SearchAgentsRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="SearchAgentsRequest.Reset"></a>
+### func \(\*SearchAgentsRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L404>)
+
+```go
+func (x *SearchAgentsRequest) Reset()
+```
+
+
+
+<a name="SearchAgentsRequest.String"></a>
+### func \(\*SearchAgentsRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L411>)
+
+```go
+func (x *SearchAgentsRequest) String() string
+```
+
+
+
+<a name="SearchAgentsResponse"></a>
+## type [SearchAgentsResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L505-L512>)
+
+Search response
+
+```go
+type SearchAgentsResponse struct {
+    Agents     []*RegisteredAgent `protobuf:"bytes,1,rep,name=agents,proto3" json:"agents,omitempty"`
+    NextCursor string             `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
+    TotalCount int32              `protobuf:"varint,3,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="SearchAgentsResponse.Descriptor"></a>
+### func \(\*SearchAgentsResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L540>)
+
+```go
+func (*SearchAgentsResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use SearchAgentsResponse.ProtoReflect.Descriptor instead.
+
+<a name="SearchAgentsResponse.GetAgents"></a>
+### func \(\*SearchAgentsResponse\) [GetAgents](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L544>)
+
+```go
+func (x *SearchAgentsResponse) GetAgents() []*RegisteredAgent
+```
+
+
+
+<a name="SearchAgentsResponse.GetNextCursor"></a>
+### func \(\*SearchAgentsResponse\) [GetNextCursor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L551>)
+
+```go
+func (x *SearchAgentsResponse) GetNextCursor() string
+```
+
+
+
+<a name="SearchAgentsResponse.GetTotalCount"></a>
+### func \(\*SearchAgentsResponse\) [GetTotalCount](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L558>)
+
+```go
+func (x *SearchAgentsResponse) GetTotalCount() int32
+```
+
+
+
+<a name="SearchAgentsResponse.ProtoMessage"></a>
+### func \(\*SearchAgentsResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L525>)
+
+```go
+func (*SearchAgentsResponse) ProtoMessage()
+```
+
+
+
+<a name="SearchAgentsResponse.ProtoReflect"></a>
+### func \(\*SearchAgentsResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L527>)
+
+```go
+func (x *SearchAgentsResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="SearchAgentsResponse.Reset"></a>
+### func \(\*SearchAgentsResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L514>)
+
+```go
+func (x *SearchAgentsResponse) Reset()
+```
+
+
+
+<a name="SearchAgentsResponse.String"></a>
+### func \(\*SearchAgentsResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L521>)
+
+```go
+func (x *SearchAgentsResponse) String() string
+```
+
+
+
+<a name="SearchOperator"></a>
+## type [SearchOperator](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L83>)
+
+Search operator
+
+```go
+type SearchOperator int32
+```
+
+<a name="SearchOperator_SEARCH_OPERATOR_UNSPECIFIED"></a>
+
+```go
+const (
+    SearchOperator_SEARCH_OPERATOR_UNSPECIFIED SearchOperator = 0
+    SearchOperator_SEARCH_OPERATOR_AND         SearchOperator = 1
+    SearchOperator_SEARCH_OPERATOR_OR          SearchOperator = 2
+)
+```
+
+<a name="SearchOperator.Descriptor"></a>
+### func \(SearchOperator\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L115>)
+
+```go
+func (SearchOperator) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="SearchOperator.Enum"></a>
+### func \(SearchOperator\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L105>)
+
+```go
+func (x SearchOperator) Enum() *SearchOperator
+```
+
+
+
+<a name="SearchOperator.EnumDescriptor"></a>
+### func \(SearchOperator\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L128>)
+
+```go
+func (SearchOperator) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use SearchOperator.Descriptor instead.
+
+<a name="SearchOperator.Number"></a>
+### func \(SearchOperator\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L123>)
+
+```go
+func (x SearchOperator) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="SearchOperator.String"></a>
+### func \(SearchOperator\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L111>)
+
+```go
+func (x SearchOperator) String() string
+```
+
+
+
+<a name="SearchOperator.Type"></a>
+### func \(SearchOperator\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L119>)
+
+```go
+func (SearchOperator) Type() protoreflect.EnumType
+```
+
+
+
+<a name="SignAttachedRequest"></a>
+## type [SignAttachedRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L356-L365>)
+
+Request to sign with attached payload
+
+```go
+type SignAttachedRequest struct {
+    Payload       []byte            `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+    KeyId         string            `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
+    Format        SignatureFormat   `protobuf:"varint,3,opt,name=format,proto3,enum=capiscio.v1.SignatureFormat" json:"format,omitempty"`
+    Headers       map[string]string `protobuf:"bytes,4,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+    DetachPayload bool              `protobuf:"varint,5,opt,name=detach_payload,json=detachPayload,proto3" json:"detach_payload,omitempty"` // Whether to detach payload from JWS
+    // contains filtered or unexported fields
+}
+```
+
+<a name="SignAttachedRequest.Descriptor"></a>
+### func \(\*SignAttachedRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L393>)
+
+```go
+func (*SignAttachedRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use SignAttachedRequest.ProtoReflect.Descriptor instead.
+
+<a name="SignAttachedRequest.GetDetachPayload"></a>
+### func \(\*SignAttachedRequest\) [GetDetachPayload](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L425>)
+
+```go
+func (x *SignAttachedRequest) GetDetachPayload() bool
+```
+
+
+
+<a name="SignAttachedRequest.GetFormat"></a>
+### func \(\*SignAttachedRequest\) [GetFormat](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L411>)
+
+```go
+func (x *SignAttachedRequest) GetFormat() SignatureFormat
+```
+
+
+
+<a name="SignAttachedRequest.GetHeaders"></a>
+### func \(\*SignAttachedRequest\) [GetHeaders](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L418>)
+
+```go
+func (x *SignAttachedRequest) GetHeaders() map[string]string
+```
+
+
+
+<a name="SignAttachedRequest.GetKeyId"></a>
+### func \(\*SignAttachedRequest\) [GetKeyId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L404>)
+
+```go
+func (x *SignAttachedRequest) GetKeyId() string
+```
+
+
+
+<a name="SignAttachedRequest.GetPayload"></a>
+### func \(\*SignAttachedRequest\) [GetPayload](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L397>)
+
+```go
+func (x *SignAttachedRequest) GetPayload() []byte
+```
+
+
+
+<a name="SignAttachedRequest.ProtoMessage"></a>
+### func \(\*SignAttachedRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L378>)
+
+```go
+func (*SignAttachedRequest) ProtoMessage()
+```
+
+
+
+<a name="SignAttachedRequest.ProtoReflect"></a>
+### func \(\*SignAttachedRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L380>)
+
+```go
+func (x *SignAttachedRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="SignAttachedRequest.Reset"></a>
+### func \(\*SignAttachedRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L367>)
+
+```go
+func (x *SignAttachedRequest) Reset()
+```
+
+
+
+<a name="SignAttachedRequest.String"></a>
+### func \(\*SignAttachedRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L374>)
+
+```go
+func (x *SignAttachedRequest) String() string
+```
+
+
+
+<a name="SignAttachedResponse"></a>
+## type [SignAttachedResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L433-L439>)
+
+Response with attached signature
+
+```go
+type SignAttachedResponse struct {
+    Jws          string `protobuf:"bytes,1,opt,name=jws,proto3" json:"jws,omitempty"` // Complete JWS
+    ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="SignAttachedResponse.Descriptor"></a>
+### func \(\*SignAttachedResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L467>)
+
+```go
+func (*SignAttachedResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use SignAttachedResponse.ProtoReflect.Descriptor instead.
+
+<a name="SignAttachedResponse.GetErrorMessage"></a>
+### func \(\*SignAttachedResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L478>)
+
+```go
+func (x *SignAttachedResponse) GetErrorMessage() string
+```
+
+
+
+<a name="SignAttachedResponse.GetJws"></a>
+### func \(\*SignAttachedResponse\) [GetJws](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L471>)
+
+```go
+func (x *SignAttachedResponse) GetJws() string
+```
+
+
+
+<a name="SignAttachedResponse.ProtoMessage"></a>
+### func \(\*SignAttachedResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L452>)
+
+```go
+func (*SignAttachedResponse) ProtoMessage()
+```
+
+
+
+<a name="SignAttachedResponse.ProtoReflect"></a>
+### func \(\*SignAttachedResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L454>)
+
+```go
+func (x *SignAttachedResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="SignAttachedResponse.Reset"></a>
+### func \(\*SignAttachedResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L441>)
+
+```go
+func (x *SignAttachedResponse) Reset()
+```
+
+
+
+<a name="SignAttachedResponse.String"></a>
+### func \(\*SignAttachedResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L448>)
+
+```go
+func (x *SignAttachedResponse) String() string
+```
+
+
+
+<a name="SignBadgeRequest"></a>
+## type [SignBadgeRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L370-L379>)
+
+Request to sign a badge
+
+```go
+type SignBadgeRequest struct {
+    Claims *BadgeClaims `protobuf:"bytes,1,opt,name=claims,proto3" json:"claims,omitempty"`
+    // Private key in JWK format (JSON string)
+    PrivateKeyJwk string `protobuf:"bytes,2,opt,name=private_key_jwk,json=privateKeyJwk,proto3" json:"private_key_jwk,omitempty"`
+    // Key ID for the signing key
+    KeyId string `protobuf:"bytes,3,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="SignBadgeRequest.Descriptor"></a>
+### func \(\*SignBadgeRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L407>)
+
+```go
+func (*SignBadgeRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use SignBadgeRequest.ProtoReflect.Descriptor instead.
+
+<a name="SignBadgeRequest.GetClaims"></a>
+### func \(\*SignBadgeRequest\) [GetClaims](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L411>)
+
+```go
+func (x *SignBadgeRequest) GetClaims() *BadgeClaims
+```
+
+
+
+<a name="SignBadgeRequest.GetKeyId"></a>
+### func \(\*SignBadgeRequest\) [GetKeyId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L425>)
+
+```go
+func (x *SignBadgeRequest) GetKeyId() string
+```
+
+
+
+<a name="SignBadgeRequest.GetPrivateKeyJwk"></a>
+### func \(\*SignBadgeRequest\) [GetPrivateKeyJwk](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L418>)
+
+```go
+func (x *SignBadgeRequest) GetPrivateKeyJwk() string
+```
+
+
+
+<a name="SignBadgeRequest.ProtoMessage"></a>
+### func \(\*SignBadgeRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L392>)
+
+```go
+func (*SignBadgeRequest) ProtoMessage()
+```
+
+
+
+<a name="SignBadgeRequest.ProtoReflect"></a>
+### func \(\*SignBadgeRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L394>)
+
+```go
+func (x *SignBadgeRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="SignBadgeRequest.Reset"></a>
+### func \(\*SignBadgeRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L381>)
+
+```go
+func (x *SignBadgeRequest) Reset()
+```
+
+
+
+<a name="SignBadgeRequest.String"></a>
+### func \(\*SignBadgeRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L388>)
+
+```go
+func (x *SignBadgeRequest) String() string
+```
+
+
+
+<a name="SignBadgeResponse"></a>
+## type [SignBadgeResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L433-L439>)
+
+Response with signed badge
+
+```go
+type SignBadgeResponse struct {
+    Token  string       `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"` // Signed JWT token
+    Claims *BadgeClaims `protobuf:"bytes,2,opt,name=claims,proto3" json:"claims,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="SignBadgeResponse.Descriptor"></a>
+### func \(\*SignBadgeResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L467>)
+
+```go
+func (*SignBadgeResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use SignBadgeResponse.ProtoReflect.Descriptor instead.
+
+<a name="SignBadgeResponse.GetClaims"></a>
+### func \(\*SignBadgeResponse\) [GetClaims](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L478>)
+
+```go
+func (x *SignBadgeResponse) GetClaims() *BadgeClaims
+```
+
+
+
+<a name="SignBadgeResponse.GetToken"></a>
+### func \(\*SignBadgeResponse\) [GetToken](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L471>)
+
+```go
+func (x *SignBadgeResponse) GetToken() string
+```
+
+
+
+<a name="SignBadgeResponse.ProtoMessage"></a>
+### func \(\*SignBadgeResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L452>)
+
+```go
+func (*SignBadgeResponse) ProtoMessage()
+```
+
+
+
+<a name="SignBadgeResponse.ProtoReflect"></a>
+### func \(\*SignBadgeResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L454>)
+
+```go
+func (x *SignBadgeResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="SignBadgeResponse.Reset"></a>
+### func \(\*SignBadgeResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L441>)
+
+```go
+func (x *SignBadgeResponse) Reset()
+```
+
+
+
+<a name="SignBadgeResponse.String"></a>
+### func \(\*SignBadgeResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L448>)
+
+```go
+func (x *SignBadgeResponse) String() string
+```
+
+
+
+<a name="SignRequest"></a>
+## type [SignRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L80-L88>)
+
+Request to sign
+
+```go
+type SignRequest struct {
+    Payload []byte            `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+    KeyId   string            `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"` // Key to use for signing
+    Format  SignatureFormat   `protobuf:"varint,3,opt,name=format,proto3,enum=capiscio.v1.SignatureFormat" json:"format,omitempty"`
+    Headers map[string]string `protobuf:"bytes,4,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // Additional JWS headers
+    // contains filtered or unexported fields
+}
+```
+
+<a name="SignRequest.Descriptor"></a>
+### func \(\*SignRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L116>)
+
+```go
+func (*SignRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use SignRequest.ProtoReflect.Descriptor instead.
+
+<a name="SignRequest.GetFormat"></a>
+### func \(\*SignRequest\) [GetFormat](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L134>)
+
+```go
+func (x *SignRequest) GetFormat() SignatureFormat
+```
+
+
+
+<a name="SignRequest.GetHeaders"></a>
+### func \(\*SignRequest\) [GetHeaders](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L141>)
+
+```go
+func (x *SignRequest) GetHeaders() map[string]string
+```
+
+
+
+<a name="SignRequest.GetKeyId"></a>
+### func \(\*SignRequest\) [GetKeyId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L127>)
+
+```go
+func (x *SignRequest) GetKeyId() string
+```
+
+
+
+<a name="SignRequest.GetPayload"></a>
+### func \(\*SignRequest\) [GetPayload](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L120>)
+
+```go
+func (x *SignRequest) GetPayload() []byte
+```
+
+
+
+<a name="SignRequest.ProtoMessage"></a>
+### func \(\*SignRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L101>)
+
+```go
+func (*SignRequest) ProtoMessage()
+```
+
+
+
+<a name="SignRequest.ProtoReflect"></a>
+### func \(\*SignRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L103>)
+
+```go
+func (x *SignRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="SignRequest.Reset"></a>
+### func \(\*SignRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L90>)
+
+```go
+func (x *SignRequest) Reset()
+```
+
+
+
+<a name="SignRequest.String"></a>
+### func \(\*SignRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L97>)
+
+```go
+func (x *SignRequest) String() string
+```
+
+
+
+<a name="SignResponse"></a>
+## type [SignResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L149-L156>)
+
+Response with signature
+
+```go
+type SignResponse struct {
+    Signature       []byte `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"`
+    SignatureString string `protobuf:"bytes,2,opt,name=signature_string,json=signatureString,proto3" json:"signature_string,omitempty"` // String form if applicable
+    ErrorMessage    string `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="SignResponse.Descriptor"></a>
+### func \(\*SignResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L184>)
+
+```go
+func (*SignResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use SignResponse.ProtoReflect.Descriptor instead.
+
+<a name="SignResponse.GetErrorMessage"></a>
+### func \(\*SignResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L202>)
+
+```go
+func (x *SignResponse) GetErrorMessage() string
+```
+
+
+
+<a name="SignResponse.GetSignature"></a>
+### func \(\*SignResponse\) [GetSignature](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L188>)
+
+```go
+func (x *SignResponse) GetSignature() []byte
+```
+
+
+
+<a name="SignResponse.GetSignatureString"></a>
+### func \(\*SignResponse\) [GetSignatureString](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L195>)
+
+```go
+func (x *SignResponse) GetSignatureString() string
+```
+
+
+
+<a name="SignResponse.ProtoMessage"></a>
+### func \(\*SignResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L169>)
+
+```go
+func (*SignResponse) ProtoMessage()
+```
+
+
+
+<a name="SignResponse.ProtoReflect"></a>
+### func \(\*SignResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L171>)
+
+```go
+func (x *SignResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="SignResponse.Reset"></a>
+### func \(\*SignResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L158>)
+
+```go
+func (x *SignResponse) Reset()
+```
+
+
+
+<a name="SignResponse.String"></a>
+### func \(\*SignResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L165>)
+
+```go
+func (x *SignResponse) String() string
+```
+
+
+
+<a name="SignatureFormat"></a>
+## type [SignatureFormat](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L27>)
+
+Signature format
+
+```go
+type SignatureFormat int32
+```
+
+<a name="SignatureFormat_SIGNATURE_FORMAT_UNSPECIFIED"></a>
+
+```go
+const (
+    SignatureFormat_SIGNATURE_FORMAT_UNSPECIFIED SignatureFormat = 0
+    SignatureFormat_SIGNATURE_FORMAT_JWS_COMPACT SignatureFormat = 1
+    SignatureFormat_SIGNATURE_FORMAT_JWS_JSON    SignatureFormat = 2
+    SignatureFormat_SIGNATURE_FORMAT_RAW         SignatureFormat = 3
+)
+```
+
+<a name="SignatureFormat.Descriptor"></a>
+### func \(SignatureFormat\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L62>)
+
+```go
+func (SignatureFormat) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="SignatureFormat.Enum"></a>
+### func \(SignatureFormat\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L52>)
+
+```go
+func (x SignatureFormat) Enum() *SignatureFormat
+```
+
+
+
+<a name="SignatureFormat.EnumDescriptor"></a>
+### func \(SignatureFormat\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L75>)
+
+```go
+func (SignatureFormat) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use SignatureFormat.Descriptor instead.
+
+<a name="SignatureFormat.Number"></a>
+### func \(SignatureFormat\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L70>)
+
+```go
+func (x SignatureFormat) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="SignatureFormat.String"></a>
+### func \(SignatureFormat\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L58>)
+
+```go
+func (x SignatureFormat) String() string
+```
+
+
+
+<a name="SignatureFormat.Type"></a>
+### func \(SignatureFormat\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L66>)
+
+```go
+func (SignatureFormat) Type() protoreflect.EnumType
+```
+
+
+
+<a name="SimpleGuardServiceClient"></a>
+## type [SimpleGuardServiceClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard_grpc.pb.go#L39-L56>)
+
+SimpleGuardServiceClient is the client API for SimpleGuardService service.
+
+For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+
+SimpleGuardService provides simplified signing and verification
+
+```go
+type SimpleGuardServiceClient interface {
+    // Sign a message
+    Sign(ctx context.Context, in *SignRequest, opts ...grpc.CallOption) (*SignResponse, error)
+    // Verify a signed message
+    Verify(ctx context.Context, in *VerifyRequest, opts ...grpc.CallOption) (*VerifyResponse, error)
+    // Sign with attached payload (creates JWS)
+    SignAttached(ctx context.Context, in *SignAttachedRequest, opts ...grpc.CallOption) (*SignAttachedResponse, error)
+    // Verify with attached payload
+    VerifyAttached(ctx context.Context, in *VerifyAttachedRequest, opts ...grpc.CallOption) (*VerifyAttachedResponse, error)
+    // Generate a new key pair
+    GenerateKeyPair(ctx context.Context, in *GenerateKeyPairRequest, opts ...grpc.CallOption) (*GenerateKeyPairResponse, error)
+    // Load key from file
+    LoadKey(ctx context.Context, in *LoadKeyRequest, opts ...grpc.CallOption) (*LoadKeyResponse, error)
+    // Export key to file
+    ExportKey(ctx context.Context, in *ExportKeyRequest, opts ...grpc.CallOption) (*ExportKeyResponse, error)
+    // Get key info
+    GetKeyInfo(ctx context.Context, in *GetKeyInfoRequest, opts ...grpc.CallOption) (*GetKeyInfoResponse, error)
+}
+```
+
+<a name="NewSimpleGuardServiceClient"></a>
+### func [NewSimpleGuardServiceClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard_grpc.pb.go#L62>)
+
+```go
+func NewSimpleGuardServiceClient(cc grpc.ClientConnInterface) SimpleGuardServiceClient
+```
+
+
+
+<a name="SimpleGuardServiceServer"></a>
+## type [SimpleGuardServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard_grpc.pb.go#L151-L169>)
+
+SimpleGuardServiceServer is the server API for SimpleGuardService service. All implementations must embed UnimplementedSimpleGuardServiceServer for forward compatibility.
+
+SimpleGuardService provides simplified signing and verification
+
+```go
+type SimpleGuardServiceServer interface {
+    // Sign a message
+    Sign(context.Context, *SignRequest) (*SignResponse, error)
+    // Verify a signed message
+    Verify(context.Context, *VerifyRequest) (*VerifyResponse, error)
+    // Sign with attached payload (creates JWS)
+    SignAttached(context.Context, *SignAttachedRequest) (*SignAttachedResponse, error)
+    // Verify with attached payload
+    VerifyAttached(context.Context, *VerifyAttachedRequest) (*VerifyAttachedResponse, error)
+    // Generate a new key pair
+    GenerateKeyPair(context.Context, *GenerateKeyPairRequest) (*GenerateKeyPairResponse, error)
+    // Load key from file
+    LoadKey(context.Context, *LoadKeyRequest) (*LoadKeyResponse, error)
+    // Export key to file
+    ExportKey(context.Context, *ExportKeyRequest) (*ExportKeyResponse, error)
+    // Get key info
+    GetKeyInfo(context.Context, *GetKeyInfoRequest) (*GetKeyInfoResponse, error)
+    // contains filtered or unexported methods
+}
+```
+
+<a name="StartKeeperRequest"></a>
+## type [StartKeeperRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1321-L1347>)
+
+Request to start a badge keeper daemon
+
+```go
+type StartKeeperRequest struct {
+
+    // Mode: CA or self-signed
+    Mode KeeperMode `protobuf:"varint,1,opt,name=mode,proto3,enum=capiscio.v1.KeeperMode" json:"mode,omitempty"`
+    // Agent ID (required for CA mode)
+    AgentId string `protobuf:"bytes,2,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
+    // CA URL (default: https://registry.capisc.io)
+    CaUrl string `protobuf:"bytes,3,opt,name=ca_url,json=caUrl,proto3" json:"ca_url,omitempty"`
+    // API key for CA authentication (required for CA mode)
+    ApiKey string `protobuf:"bytes,4,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
+    // Output file path for the badge
+    OutputFile string `protobuf:"bytes,5,opt,name=output_file,json=outputFile,proto3" json:"output_file,omitempty"`
+    // Badge TTL in seconds (default: 300)
+    TtlSeconds int32 `protobuf:"varint,6,opt,name=ttl_seconds,json=ttlSeconds,proto3" json:"ttl_seconds,omitempty"`
+    // Time before expiry to renew, in seconds (default: 60)
+    RenewBeforeSeconds int32 `protobuf:"varint,7,opt,name=renew_before_seconds,json=renewBeforeSeconds,proto3" json:"renew_before_seconds,omitempty"`
+    // Check interval in seconds (default: 30)
+    CheckIntervalSeconds int32 `protobuf:"varint,8,opt,name=check_interval_seconds,json=checkIntervalSeconds,proto3" json:"check_interval_seconds,omitempty"`
+    // Private key path (required for self-sign mode, JWK file)
+    PrivateKeyPath string `protobuf:"bytes,9,opt,name=private_key_path,json=privateKeyPath,proto3" json:"private_key_path,omitempty"`
+    // Domain for the badge
+    Domain string `protobuf:"bytes,10,opt,name=domain,proto3" json:"domain,omitempty"`
+    // Trust level (for CA mode, 1-4; self-sign always 0)
+    TrustLevel TrustLevel `protobuf:"varint,11,opt,name=trust_level,json=trustLevel,proto3,enum=capiscio.v1.TrustLevel" json:"trust_level,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="StartKeeperRequest.Descriptor"></a>
+### func \(\*StartKeeperRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1375>)
+
+```go
+func (*StartKeeperRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use StartKeeperRequest.ProtoReflect.Descriptor instead.
+
+<a name="StartKeeperRequest.GetAgentId"></a>
+### func \(\*StartKeeperRequest\) [GetAgentId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1386>)
+
+```go
+func (x *StartKeeperRequest) GetAgentId() string
+```
+
+
+
+<a name="StartKeeperRequest.GetApiKey"></a>
+### func \(\*StartKeeperRequest\) [GetApiKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1400>)
+
+```go
+func (x *StartKeeperRequest) GetApiKey() string
+```
+
+
+
+<a name="StartKeeperRequest.GetCaUrl"></a>
+### func \(\*StartKeeperRequest\) [GetCaUrl](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1393>)
+
+```go
+func (x *StartKeeperRequest) GetCaUrl() string
+```
+
+
+
+<a name="StartKeeperRequest.GetCheckIntervalSeconds"></a>
+### func \(\*StartKeeperRequest\) [GetCheckIntervalSeconds](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1428>)
+
+```go
+func (x *StartKeeperRequest) GetCheckIntervalSeconds() int32
+```
+
+
+
+<a name="StartKeeperRequest.GetDomain"></a>
+### func \(\*StartKeeperRequest\) [GetDomain](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1442>)
+
+```go
+func (x *StartKeeperRequest) GetDomain() string
+```
+
+
+
+<a name="StartKeeperRequest.GetMode"></a>
+### func \(\*StartKeeperRequest\) [GetMode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1379>)
+
+```go
+func (x *StartKeeperRequest) GetMode() KeeperMode
+```
+
+
+
+<a name="StartKeeperRequest.GetOutputFile"></a>
+### func \(\*StartKeeperRequest\) [GetOutputFile](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1407>)
+
+```go
+func (x *StartKeeperRequest) GetOutputFile() string
+```
+
+
+
+<a name="StartKeeperRequest.GetPrivateKeyPath"></a>
+### func \(\*StartKeeperRequest\) [GetPrivateKeyPath](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1435>)
+
+```go
+func (x *StartKeeperRequest) GetPrivateKeyPath() string
+```
+
+
+
+<a name="StartKeeperRequest.GetRenewBeforeSeconds"></a>
+### func \(\*StartKeeperRequest\) [GetRenewBeforeSeconds](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1421>)
+
+```go
+func (x *StartKeeperRequest) GetRenewBeforeSeconds() int32
+```
+
+
+
+<a name="StartKeeperRequest.GetTrustLevel"></a>
+### func \(\*StartKeeperRequest\) [GetTrustLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1449>)
+
+```go
+func (x *StartKeeperRequest) GetTrustLevel() TrustLevel
+```
+
+
+
+<a name="StartKeeperRequest.GetTtlSeconds"></a>
+### func \(\*StartKeeperRequest\) [GetTtlSeconds](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1414>)
+
+```go
+func (x *StartKeeperRequest) GetTtlSeconds() int32
+```
+
+
+
+<a name="StartKeeperRequest.ProtoMessage"></a>
+### func \(\*StartKeeperRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1360>)
+
+```go
+func (*StartKeeperRequest) ProtoMessage()
+```
+
+
+
+<a name="StartKeeperRequest.ProtoReflect"></a>
+### func \(\*StartKeeperRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1362>)
+
+```go
+func (x *StartKeeperRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="StartKeeperRequest.Reset"></a>
+### func \(\*StartKeeperRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1349>)
+
+```go
+func (x *StartKeeperRequest) Reset()
+```
+
+
+
+<a name="StartKeeperRequest.String"></a>
+### func \(\*StartKeeperRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L1356>)
+
+```go
+func (x *StartKeeperRequest) String() string
+```
+
+
+
+<a name="Timestamp"></a>
+## type [Timestamp](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L139-L144>)
+
+Timestamp in RFC3339 format
+
+```go
+type Timestamp struct {
+    Value string `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"` // RFC3339 formatted timestamp
+    // contains filtered or unexported fields
+}
+```
+
+<a name="Timestamp.Descriptor"></a>
+### func \(\*Timestamp\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L172>)
+
+```go
+func (*Timestamp) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use Timestamp.ProtoReflect.Descriptor instead.
+
+<a name="Timestamp.GetValue"></a>
+### func \(\*Timestamp\) [GetValue](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L176>)
+
+```go
+func (x *Timestamp) GetValue() string
+```
+
+
+
+<a name="Timestamp.ProtoMessage"></a>
+### func \(\*Timestamp\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L157>)
+
+```go
+func (*Timestamp) ProtoMessage()
+```
+
+
+
+<a name="Timestamp.ProtoReflect"></a>
+### func \(\*Timestamp\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L159>)
+
+```go
+func (x *Timestamp) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="Timestamp.Reset"></a>
+### func \(\*Timestamp\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L146>)
+
+```go
+func (x *Timestamp) Reset()
+```
+
+
+
+<a name="Timestamp.String"></a>
+### func \(\*Timestamp\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L153>)
+
+```go
+func (x *Timestamp) String() string
+```
+
+
+
+<a name="TrustLevel"></a>
+## type [TrustLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L27>)
+
+Trust level for badges \(RFC\-002 v1.1\)
+
+```go
+type TrustLevel int32
+```
+
+<a name="TrustLevel_TRUST_LEVEL_UNSPECIFIED"></a>
+
+```go
+const (
+    TrustLevel_TRUST_LEVEL_UNSPECIFIED TrustLevel = 0
+    TrustLevel_TRUST_LEVEL_SELF_SIGNED TrustLevel = 1 // Self-signed (Level 0, did:key)
+    TrustLevel_TRUST_LEVEL_DV          TrustLevel = 2 // Domain Validated (Level 1)
+    TrustLevel_TRUST_LEVEL_OV          TrustLevel = 3 // Organization Validated (Level 2)
+    TrustLevel_TRUST_LEVEL_EV          TrustLevel = 4 // Extended Validated (Level 3)
+    TrustLevel_TRUST_LEVEL_CV          TrustLevel = 5 // Community Vouched (Level 4)
+)
+```
+
+<a name="TrustLevel.Descriptor"></a>
+### func \(TrustLevel\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L68>)
+
+```go
+func (TrustLevel) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="TrustLevel.Enum"></a>
+### func \(TrustLevel\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L58>)
+
+```go
+func (x TrustLevel) Enum() *TrustLevel
+```
+
+
+
+<a name="TrustLevel.EnumDescriptor"></a>
+### func \(TrustLevel\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L81>)
+
+```go
+func (TrustLevel) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use TrustLevel.Descriptor instead.
+
+<a name="TrustLevel.Number"></a>
+### func \(TrustLevel\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L76>)
+
+```go
+func (x TrustLevel) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="TrustLevel.String"></a>
+### func \(TrustLevel\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L64>)
+
+```go
+func (x TrustLevel) String() string
+```
+
+
+
+<a name="TrustLevel.Type"></a>
+### func \(TrustLevel\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L72>)
+
+```go
+func (TrustLevel) Type() protoreflect.EnumType
+```
+
+
+
+<a name="TrustStoreServiceClient"></a>
+## type [TrustStoreServiceClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust_grpc.pb.go#L39-L56>)
+
+TrustStoreServiceClient is the client API for TrustStoreService service.
+
+For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+
+TrustStoreService manages trusted keys and certificates
+
+```go
+type TrustStoreServiceClient interface {
+    // Add a trusted public key
+    AddKey(ctx context.Context, in *AddKeyRequest, opts ...grpc.CallOption) (*AddKeyResponse, error)
+    // Remove a trusted key
+    RemoveKey(ctx context.Context, in *RemoveKeyRequest, opts ...grpc.CallOption) (*RemoveKeyResponse, error)
+    // Get a key by DID
+    GetKey(ctx context.Context, in *GetKeyRequest, opts ...grpc.CallOption) (*GetKeyResponse, error)
+    // List all trusted keys
+    ListKeys(ctx context.Context, in *ListKeysRequest, opts ...grpc.CallOption) (*ListKeysResponse, error)
+    // Check if a key is trusted
+    IsTrusted(ctx context.Context, in *IsTrustedRequest, opts ...grpc.CallOption) (*IsTrustedResponse, error)
+    // Import keys from a directory
+    ImportFromDirectory(ctx context.Context, in *ImportFromDirectoryRequest, opts ...grpc.CallOption) (*ImportFromDirectoryResponse, error)
+    // Export keys to a directory
+    ExportToDirectory(ctx context.Context, in *ExportToDirectoryRequest, opts ...grpc.CallOption) (*ExportToDirectoryResponse, error)
+    // Clear all keys
+    Clear(ctx context.Context, in *ClearKeysRequest, opts ...grpc.CallOption) (*ClearKeysResponse, error)
+}
+```
+
+<a name="NewTrustStoreServiceClient"></a>
+### func [NewTrustStoreServiceClient](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust_grpc.pb.go#L62>)
+
+```go
+func NewTrustStoreServiceClient(cc grpc.ClientConnInterface) TrustStoreServiceClient
+```
+
+
+
+<a name="TrustStoreServiceServer"></a>
+## type [TrustStoreServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust_grpc.pb.go#L151-L169>)
+
+TrustStoreServiceServer is the server API for TrustStoreService service. All implementations must embed UnimplementedTrustStoreServiceServer for forward compatibility.
+
+TrustStoreService manages trusted keys and certificates
+
+```go
+type TrustStoreServiceServer interface {
+    // Add a trusted public key
+    AddKey(context.Context, *AddKeyRequest) (*AddKeyResponse, error)
+    // Remove a trusted key
+    RemoveKey(context.Context, *RemoveKeyRequest) (*RemoveKeyResponse, error)
+    // Get a key by DID
+    GetKey(context.Context, *GetKeyRequest) (*GetKeyResponse, error)
+    // List all trusted keys
+    ListKeys(context.Context, *ListKeysRequest) (*ListKeysResponse, error)
+    // Check if a key is trusted
+    IsTrusted(context.Context, *IsTrustedRequest) (*IsTrustedResponse, error)
+    // Import keys from a directory
+    ImportFromDirectory(context.Context, *ImportFromDirectoryRequest) (*ImportFromDirectoryResponse, error)
+    // Export keys to a directory
+    ExportToDirectory(context.Context, *ExportToDirectoryRequest) (*ExportToDirectoryResponse, error)
+    // Clear all keys
+    Clear(context.Context, *ClearKeysRequest) (*ClearKeysResponse, error)
+    // contains filtered or unexported methods
+}
+```
+
+<a name="TrustedKey"></a>
+## type [TrustedKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L139-L151>)
+
+Trusted key metadata
+
+```go
+type TrustedKey struct {
+    Did       string            `protobuf:"bytes,1,opt,name=did,proto3" json:"did,omitempty"`                                                                                     // DID associated with key
+    KeyId     string            `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`                                                                    // Key identifier
+    Algorithm KeyAlgorithm      `protobuf:"varint,3,opt,name=algorithm,proto3,enum=capiscio.v1.KeyAlgorithm" json:"algorithm,omitempty"`                                          // Key algorithm
+    PublicKey []byte            `protobuf:"bytes,4,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`                                                        // Public key bytes
+    Format    KeyFormat         `protobuf:"varint,5,opt,name=format,proto3,enum=capiscio.v1.KeyFormat" json:"format,omitempty"`                                                   // Key format
+    AddedAt   *Timestamp        `protobuf:"bytes,6,opt,name=added_at,json=addedAt,proto3" json:"added_at,omitempty"`                                                              // When key was added
+    ExpiresAt *Timestamp        `protobuf:"bytes,7,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`                                                        // Optional expiration
+    Metadata  map[string]string `protobuf:"bytes,8,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // Additional metadata
+    // contains filtered or unexported fields
+}
+```
+
+<a name="TrustedKey.Descriptor"></a>
+### func \(\*TrustedKey\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L179>)
+
+```go
+func (*TrustedKey) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use TrustedKey.ProtoReflect.Descriptor instead.
+
+<a name="TrustedKey.GetAddedAt"></a>
+### func \(\*TrustedKey\) [GetAddedAt](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L218>)
+
+```go
+func (x *TrustedKey) GetAddedAt() *Timestamp
+```
+
+
+
+<a name="TrustedKey.GetAlgorithm"></a>
+### func \(\*TrustedKey\) [GetAlgorithm](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L197>)
+
+```go
+func (x *TrustedKey) GetAlgorithm() KeyAlgorithm
+```
+
+
+
+<a name="TrustedKey.GetDid"></a>
+### func \(\*TrustedKey\) [GetDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L183>)
+
+```go
+func (x *TrustedKey) GetDid() string
+```
+
+
+
+<a name="TrustedKey.GetExpiresAt"></a>
+### func \(\*TrustedKey\) [GetExpiresAt](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L225>)
+
+```go
+func (x *TrustedKey) GetExpiresAt() *Timestamp
+```
+
+
+
+<a name="TrustedKey.GetFormat"></a>
+### func \(\*TrustedKey\) [GetFormat](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L211>)
+
+```go
+func (x *TrustedKey) GetFormat() KeyFormat
+```
+
+
+
+<a name="TrustedKey.GetKeyId"></a>
+### func \(\*TrustedKey\) [GetKeyId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L190>)
+
+```go
+func (x *TrustedKey) GetKeyId() string
+```
+
+
+
+<a name="TrustedKey.GetMetadata"></a>
+### func \(\*TrustedKey\) [GetMetadata](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L232>)
+
+```go
+func (x *TrustedKey) GetMetadata() map[string]string
+```
+
+
+
+<a name="TrustedKey.GetPublicKey"></a>
+### func \(\*TrustedKey\) [GetPublicKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L204>)
+
+```go
+func (x *TrustedKey) GetPublicKey() []byte
+```
+
+
+
+<a name="TrustedKey.ProtoMessage"></a>
+### func \(\*TrustedKey\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L164>)
+
+```go
+func (*TrustedKey) ProtoMessage()
+```
+
+
+
+<a name="TrustedKey.ProtoReflect"></a>
+### func \(\*TrustedKey\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L166>)
+
+```go
+func (x *TrustedKey) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="TrustedKey.Reset"></a>
+### func \(\*TrustedKey\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L153>)
+
+```go
+func (x *TrustedKey) Reset()
+```
+
+
+
+<a name="TrustedKey.String"></a>
+### func \(\*TrustedKey\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust.pb.go#L160>)
+
+```go
+func (x *TrustedKey) String() string
+```
+
+
+
+<a name="UnimplementedBadgeServiceServer"></a>
+## type [UnimplementedBadgeServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge_grpc.pb.go#L221>)
+
+UnimplementedBadgeServiceServer must be embedded to have forward compatible implementations.
+
+NOTE: this should be embedded by value instead of pointer to avoid a nil pointer dereference when methods are called.
+
+```go
+type UnimplementedBadgeServiceServer struct{}
+```
+
+<a name="UnimplementedBadgeServiceServer.CreateDVOrder"></a>
+### func \(UnimplementedBadgeServiceServer\) [CreateDVOrder](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge_grpc.pb.go#L241>)
+
+```go
+func (UnimplementedBadgeServiceServer) CreateDVOrder(context.Context, *CreateDVOrderRequest) (*CreateDVOrderResponse, error)
+```
+
+
+
+<a name="UnimplementedBadgeServiceServer.FinalizeDVOrder"></a>
+### func \(UnimplementedBadgeServiceServer\) [FinalizeDVOrder](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge_grpc.pb.go#L247>)
+
+```go
+func (UnimplementedBadgeServiceServer) FinalizeDVOrder(context.Context, *FinalizeDVOrderRequest) (*FinalizeDVOrderResponse, error)
+```
+
+
+
+<a name="UnimplementedBadgeServiceServer.GetDVOrder"></a>
+### func \(UnimplementedBadgeServiceServer\) [GetDVOrder](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge_grpc.pb.go#L244>)
+
+```go
+func (UnimplementedBadgeServiceServer) GetDVOrder(context.Context, *GetDVOrderRequest) (*GetDVOrderResponse, error)
+```
+
+
+
+<a name="UnimplementedBadgeServiceServer.ParseBadge"></a>
+### func \(UnimplementedBadgeServiceServer\) [ParseBadge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge_grpc.pb.go#L232>)
+
+```go
+func (UnimplementedBadgeServiceServer) ParseBadge(context.Context, *ParseBadgeRequest) (*ParseBadgeResponse, error)
+```
+
+
+
+<a name="UnimplementedBadgeServiceServer.RequestBadge"></a>
+### func \(UnimplementedBadgeServiceServer\) [RequestBadge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge_grpc.pb.go#L235>)
+
+```go
+func (UnimplementedBadgeServiceServer) RequestBadge(context.Context, *RequestBadgeRequest) (*RequestBadgeResponse, error)
+```
+
+
+
+<a name="UnimplementedBadgeServiceServer.RequestPoPBadge"></a>
+### func \(UnimplementedBadgeServiceServer\) [RequestPoPBadge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge_grpc.pb.go#L238>)
+
+```go
+func (UnimplementedBadgeServiceServer) RequestPoPBadge(context.Context, *RequestPoPBadgeRequest) (*RequestPoPBadgeResponse, error)
+```
+
+
+
+<a name="UnimplementedBadgeServiceServer.SignBadge"></a>
+### func \(UnimplementedBadgeServiceServer\) [SignBadge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge_grpc.pb.go#L223>)
+
+```go
+func (UnimplementedBadgeServiceServer) SignBadge(context.Context, *SignBadgeRequest) (*SignBadgeResponse, error)
+```
+
+
+
+<a name="UnimplementedBadgeServiceServer.StartKeeper"></a>
+### func \(UnimplementedBadgeServiceServer\) [StartKeeper](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge_grpc.pb.go#L250>)
+
+```go
+func (UnimplementedBadgeServiceServer) StartKeeper(*StartKeeperRequest, grpc.ServerStreamingServer[KeeperEvent]) error
+```
+
+
+
+<a name="UnimplementedBadgeServiceServer.VerifyBadge"></a>
+### func \(UnimplementedBadgeServiceServer\) [VerifyBadge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge_grpc.pb.go#L226>)
+
+```go
+func (UnimplementedBadgeServiceServer) VerifyBadge(context.Context, *VerifyBadgeRequest) (*VerifyBadgeResponse, error)
+```
+
+
+
+<a name="UnimplementedBadgeServiceServer.VerifyBadgeWithOptions"></a>
+### func \(UnimplementedBadgeServiceServer\) [VerifyBadgeWithOptions](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge_grpc.pb.go#L229>)
+
+```go
+func (UnimplementedBadgeServiceServer) VerifyBadgeWithOptions(context.Context, *VerifyBadgeWithOptionsRequest) (*VerifyBadgeResponse, error)
+```
+
+
+
+<a name="UnimplementedDIDServiceServer"></a>
+## type [UnimplementedDIDServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did_grpc.pb.go#L131>)
+
+UnimplementedDIDServiceServer must be embedded to have forward compatible implementations.
+
+NOTE: this should be embedded by value instead of pointer to avoid a nil pointer dereference when methods are called.
+
+```go
+type UnimplementedDIDServiceServer struct{}
+```
+
+<a name="UnimplementedDIDServiceServer.DocumentURL"></a>
+### func \(UnimplementedDIDServiceServer\) [DocumentURL](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did_grpc.pb.go#L142>)
+
+```go
+func (UnimplementedDIDServiceServer) DocumentURL(context.Context, *DocumentURLRequest) (*DocumentURLResponse, error)
+```
+
+
+
+<a name="UnimplementedDIDServiceServer.IsAgentDID"></a>
+### func \(UnimplementedDIDServiceServer\) [IsAgentDID](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did_grpc.pb.go#L145>)
+
+```go
+func (UnimplementedDIDServiceServer) IsAgentDID(context.Context, *IsAgentDIDRequest) (*IsAgentDIDResponse, error)
+```
+
+
+
+<a name="UnimplementedDIDServiceServer.NewAgentDID"></a>
+### func \(UnimplementedDIDServiceServer\) [NewAgentDID](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did_grpc.pb.go#L136>)
+
+```go
+func (UnimplementedDIDServiceServer) NewAgentDID(context.Context, *NewAgentDIDRequest) (*NewAgentDIDResponse, error)
+```
+
+
+
+<a name="UnimplementedDIDServiceServer.NewCapiscIOAgentDID"></a>
+### func \(UnimplementedDIDServiceServer\) [NewCapiscIOAgentDID](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did_grpc.pb.go#L139>)
+
+```go
+func (UnimplementedDIDServiceServer) NewCapiscIOAgentDID(context.Context, *NewCapiscIOAgentDIDRequest) (*NewAgentDIDResponse, error)
+```
+
+
+
+<a name="UnimplementedDIDServiceServer.Parse"></a>
+### func \(UnimplementedDIDServiceServer\) [Parse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did_grpc.pb.go#L133>)
+
+```go
+func (UnimplementedDIDServiceServer) Parse(context.Context, *ParseDIDRequest) (*ParseDIDResponse, error)
+```
+
+
+
+<a name="UnimplementedMCPServiceServer"></a>
+## type [UnimplementedMCPServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp_grpc.pb.go#L128>)
+
+UnimplementedMCPServiceServer must be embedded to have forward compatible implementations.
+
+NOTE: this should be embedded by value instead of pointer to avoid a nil pointer dereference when methods are called.
+
+```go
+type UnimplementedMCPServiceServer struct{}
+```
+
+<a name="UnimplementedMCPServiceServer.EvaluateToolAccess"></a>
+### func \(UnimplementedMCPServiceServer\) [EvaluateToolAccess](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp_grpc.pb.go#L130>)
+
+```go
+func (UnimplementedMCPServiceServer) EvaluateToolAccess(context.Context, *EvaluateToolAccessRequest) (*EvaluateToolAccessResponse, error)
+```
+
+
+
+<a name="UnimplementedMCPServiceServer.Health"></a>
+### func \(UnimplementedMCPServiceServer\) [Health](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp_grpc.pb.go#L139>)
+
+```go
+func (UnimplementedMCPServiceServer) Health(context.Context, *MCPHealthRequest) (*MCPHealthResponse, error)
+```
+
+
+
+<a name="UnimplementedMCPServiceServer.ParseServerIdentity"></a>
+### func \(UnimplementedMCPServiceServer\) [ParseServerIdentity](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp_grpc.pb.go#L136>)
+
+```go
+func (UnimplementedMCPServiceServer) ParseServerIdentity(context.Context, *ParseServerIdentityRequest) (*ParseServerIdentityResponse, error)
+```
+
+
+
+<a name="UnimplementedMCPServiceServer.VerifyServerIdentity"></a>
+### func \(UnimplementedMCPServiceServer\) [VerifyServerIdentity](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp_grpc.pb.go#L133>)
+
+```go
+func (UnimplementedMCPServiceServer) VerifyServerIdentity(context.Context, *VerifyServerIdentityRequest) (*VerifyServerIdentityResponse, error)
+```
+
+
+
+<a name="UnimplementedRegistryServiceServer"></a>
+## type [UnimplementedRegistryServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry_grpc.pb.go#L191>)
+
+UnimplementedRegistryServiceServer must be embedded to have forward compatible implementations.
+
+NOTE: this should be embedded by value instead of pointer to avoid a nil pointer dereference when methods are called.
+
+```go
+type UnimplementedRegistryServiceServer struct{}
+```
+
+<a name="UnimplementedRegistryServiceServer.DeregisterAgent"></a>
+### func \(UnimplementedRegistryServiceServer\) [DeregisterAgent](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry_grpc.pb.go#L205>)
+
+```go
+func (UnimplementedRegistryServiceServer) DeregisterAgent(context.Context, *DeregisterAgentRequest) (*DeregisterAgentResponse, error)
+```
+
+
+
+<a name="UnimplementedRegistryServiceServer.GetAgent"></a>
+### func \(UnimplementedRegistryServiceServer\) [GetAgent](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry_grpc.pb.go#L193>)
+
+```go
+func (UnimplementedRegistryServiceServer) GetAgent(context.Context, *GetAgentRequest) (*GetAgentResponse, error)
+```
+
+
+
+<a name="UnimplementedRegistryServiceServer.GetStats"></a>
+### func \(UnimplementedRegistryServiceServer\) [GetStats](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry_grpc.pb.go#L214>)
+
+```go
+func (UnimplementedRegistryServiceServer) GetStats(context.Context, *GetStatsRequest) (*GetStatsResponse, error)
+```
+
+
+
+<a name="UnimplementedRegistryServiceServer.ListAgents"></a>
+### func \(UnimplementedRegistryServiceServer\) [ListAgents](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry_grpc.pb.go#L211>)
+
+```go
+func (UnimplementedRegistryServiceServer) ListAgents(context.Context, *ListAgentsRequest) (*ListAgentsResponse, error)
+```
+
+
+
+<a name="UnimplementedRegistryServiceServer.Ping"></a>
+### func \(UnimplementedRegistryServiceServer\) [Ping](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry_grpc.pb.go#L217>)
+
+```go
+func (UnimplementedRegistryServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error)
+```
+
+
+
+<a name="UnimplementedRegistryServiceServer.RegisterAgent"></a>
+### func \(UnimplementedRegistryServiceServer\) [RegisterAgent](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry_grpc.pb.go#L199>)
+
+```go
+func (UnimplementedRegistryServiceServer) RegisterAgent(context.Context, *RegisterAgentRequest) (*RegisterAgentResponse, error)
+```
+
+
+
+<a name="UnimplementedRegistryServiceServer.SearchAgents"></a>
+### func \(UnimplementedRegistryServiceServer\) [SearchAgents](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry_grpc.pb.go#L196>)
+
+```go
+func (UnimplementedRegistryServiceServer) SearchAgents(context.Context, *SearchAgentsRequest) (*SearchAgentsResponse, error)
+```
+
+
+
+<a name="UnimplementedRegistryServiceServer.UpdateAgent"></a>
+### func \(UnimplementedRegistryServiceServer\) [UpdateAgent](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry_grpc.pb.go#L202>)
+
+```go
+func (UnimplementedRegistryServiceServer) UpdateAgent(context.Context, *UpdateAgentRequest) (*UpdateAgentResponse, error)
+```
+
+
+
+<a name="UnimplementedRegistryServiceServer.VerifyRegistration"></a>
+### func \(UnimplementedRegistryServiceServer\) [VerifyRegistration](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry_grpc.pb.go#L208>)
+
+```go
+func (UnimplementedRegistryServiceServer) VerifyRegistration(context.Context, *VerifyRegistrationRequest) (*VerifyRegistrationResponse, error)
+```
+
+
+
+<a name="UnimplementedRevocationServiceServer"></a>
+## type [UnimplementedRevocationServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation_grpc.pb.go#L161>)
+
+UnimplementedRevocationServiceServer must be embedded to have forward compatible implementations.
+
+NOTE: this should be embedded by value instead of pointer to avoid a nil pointer dereference when methods are called.
+
+```go
+type UnimplementedRevocationServiceServer struct{}
+```
+
+<a name="UnimplementedRevocationServiceServer.ClearCache"></a>
+### func \(UnimplementedRevocationServiceServer\) [ClearCache](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation_grpc.pb.go#L178>)
+
+```go
+func (UnimplementedRevocationServiceServer) ClearCache(context.Context, *ClearCacheRequest) (*ClearCacheResponse, error)
+```
+
+
+
+<a name="UnimplementedRevocationServiceServer.FetchRevocationList"></a>
+### func \(UnimplementedRevocationServiceServer\) [FetchRevocationList](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation_grpc.pb.go#L175>)
+
+```go
+func (UnimplementedRevocationServiceServer) FetchRevocationList(context.Context, *FetchRevocationListRequest) (*FetchRevocationListResponse, error)
+```
+
+
+
+<a name="UnimplementedRevocationServiceServer.GetCacheStats"></a>
+### func \(UnimplementedRevocationServiceServer\) [GetCacheStats](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation_grpc.pb.go#L181>)
+
+```go
+func (UnimplementedRevocationServiceServer) GetCacheStats(context.Context, *GetCacheStatsRequest) (*GetCacheStatsResponse, error)
+```
+
+
+
+<a name="UnimplementedRevocationServiceServer.IsRevoked"></a>
+### func \(UnimplementedRevocationServiceServer\) [IsRevoked](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation_grpc.pb.go#L163>)
+
+```go
+func (UnimplementedRevocationServiceServer) IsRevoked(context.Context, *IsRevokedRequest) (*IsRevokedResponse, error)
+```
+
+
+
+<a name="UnimplementedRevocationServiceServer.ListRevocations"></a>
+### func \(UnimplementedRevocationServiceServer\) [ListRevocations](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation_grpc.pb.go#L172>)
+
+```go
+func (UnimplementedRevocationServiceServer) ListRevocations(context.Context, *ListRevocationsRequest) (*ListRevocationsResponse, error)
+```
+
+
+
+<a name="UnimplementedRevocationServiceServer.Revoke"></a>
+### func \(UnimplementedRevocationServiceServer\) [Revoke](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation_grpc.pb.go#L166>)
+
+```go
+func (UnimplementedRevocationServiceServer) Revoke(context.Context, *RevokeRequest) (*RevokeResponse, error)
+```
+
+
+
+<a name="UnimplementedRevocationServiceServer.Unrevoke"></a>
+### func \(UnimplementedRevocationServiceServer\) [Unrevoke](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation_grpc.pb.go#L169>)
+
+```go
+func (UnimplementedRevocationServiceServer) Unrevoke(context.Context, *UnrevokeRequest) (*UnrevokeResponse, error)
+```
+
+
+
+<a name="UnimplementedScoringServiceServer"></a>
+## type [UnimplementedScoringServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring_grpc.pb.go#L131>)
+
+UnimplementedScoringServiceServer must be embedded to have forward compatible implementations.
+
+NOTE: this should be embedded by value instead of pointer to avoid a nil pointer dereference when methods are called.
+
+```go
+type UnimplementedScoringServiceServer struct{}
+```
+
+<a name="UnimplementedScoringServiceServer.AggregateScores"></a>
+### func \(UnimplementedScoringServiceServer\) [AggregateScores](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring_grpc.pb.go#L145>)
+
+```go
+func (UnimplementedScoringServiceServer) AggregateScores(context.Context, *AggregateScoresRequest) (*AggregateScoresResponse, error)
+```
+
+
+
+<a name="UnimplementedScoringServiceServer.GetRuleSet"></a>
+### func \(UnimplementedScoringServiceServer\) [GetRuleSet](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring_grpc.pb.go#L142>)
+
+```go
+func (UnimplementedScoringServiceServer) GetRuleSet(context.Context, *GetRuleSetRequest) (*GetRuleSetResponse, error)
+```
+
+
+
+<a name="UnimplementedScoringServiceServer.ListRuleSets"></a>
+### func \(UnimplementedScoringServiceServer\) [ListRuleSets](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring_grpc.pb.go#L139>)
+
+```go
+func (UnimplementedScoringServiceServer) ListRuleSets(context.Context, *ListRuleSetsRequest) (*ListRuleSetsResponse, error)
+```
+
+
+
+<a name="UnimplementedScoringServiceServer.ScoreAgentCard"></a>
+### func \(UnimplementedScoringServiceServer\) [ScoreAgentCard](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring_grpc.pb.go#L133>)
+
+```go
+func (UnimplementedScoringServiceServer) ScoreAgentCard(context.Context, *ScoreAgentCardRequest) (*ScoreAgentCardResponse, error)
+```
+
+
+
+<a name="UnimplementedScoringServiceServer.ValidateRule"></a>
+### func \(UnimplementedScoringServiceServer\) [ValidateRule](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring_grpc.pb.go#L136>)
+
+```go
+func (UnimplementedScoringServiceServer) ValidateRule(context.Context, *ValidateRuleRequest) (*ValidateRuleResponse, error)
+```
+
+
+
+<a name="UnimplementedSimpleGuardServiceServer"></a>
+## type [UnimplementedSimpleGuardServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard_grpc.pb.go#L176>)
+
+UnimplementedSimpleGuardServiceServer must be embedded to have forward compatible implementations.
+
+NOTE: this should be embedded by value instead of pointer to avoid a nil pointer dereference when methods are called.
+
+```go
+type UnimplementedSimpleGuardServiceServer struct{}
+```
+
+<a name="UnimplementedSimpleGuardServiceServer.ExportKey"></a>
+### func \(UnimplementedSimpleGuardServiceServer\) [ExportKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard_grpc.pb.go#L196>)
+
+```go
+func (UnimplementedSimpleGuardServiceServer) ExportKey(context.Context, *ExportKeyRequest) (*ExportKeyResponse, error)
+```
+
+
+
+<a name="UnimplementedSimpleGuardServiceServer.GenerateKeyPair"></a>
+### func \(UnimplementedSimpleGuardServiceServer\) [GenerateKeyPair](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard_grpc.pb.go#L190>)
+
+```go
+func (UnimplementedSimpleGuardServiceServer) GenerateKeyPair(context.Context, *GenerateKeyPairRequest) (*GenerateKeyPairResponse, error)
+```
+
+
+
+<a name="UnimplementedSimpleGuardServiceServer.GetKeyInfo"></a>
+### func \(UnimplementedSimpleGuardServiceServer\) [GetKeyInfo](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard_grpc.pb.go#L199>)
+
+```go
+func (UnimplementedSimpleGuardServiceServer) GetKeyInfo(context.Context, *GetKeyInfoRequest) (*GetKeyInfoResponse, error)
+```
+
+
+
+<a name="UnimplementedSimpleGuardServiceServer.LoadKey"></a>
+### func \(UnimplementedSimpleGuardServiceServer\) [LoadKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard_grpc.pb.go#L193>)
+
+```go
+func (UnimplementedSimpleGuardServiceServer) LoadKey(context.Context, *LoadKeyRequest) (*LoadKeyResponse, error)
+```
+
+
+
+<a name="UnimplementedSimpleGuardServiceServer.Sign"></a>
+### func \(UnimplementedSimpleGuardServiceServer\) [Sign](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard_grpc.pb.go#L178>)
+
+```go
+func (UnimplementedSimpleGuardServiceServer) Sign(context.Context, *SignRequest) (*SignResponse, error)
+```
+
+
+
+<a name="UnimplementedSimpleGuardServiceServer.SignAttached"></a>
+### func \(UnimplementedSimpleGuardServiceServer\) [SignAttached](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard_grpc.pb.go#L184>)
+
+```go
+func (UnimplementedSimpleGuardServiceServer) SignAttached(context.Context, *SignAttachedRequest) (*SignAttachedResponse, error)
+```
+
+
+
+<a name="UnimplementedSimpleGuardServiceServer.Verify"></a>
+### func \(UnimplementedSimpleGuardServiceServer\) [Verify](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard_grpc.pb.go#L181>)
+
+```go
+func (UnimplementedSimpleGuardServiceServer) Verify(context.Context, *VerifyRequest) (*VerifyResponse, error)
+```
+
+
+
+<a name="UnimplementedSimpleGuardServiceServer.VerifyAttached"></a>
+### func \(UnimplementedSimpleGuardServiceServer\) [VerifyAttached](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard_grpc.pb.go#L187>)
+
+```go
+func (UnimplementedSimpleGuardServiceServer) VerifyAttached(context.Context, *VerifyAttachedRequest) (*VerifyAttachedResponse, error)
+```
+
+
+
+<a name="UnimplementedTrustStoreServiceServer"></a>
+## type [UnimplementedTrustStoreServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust_grpc.pb.go#L176>)
+
+UnimplementedTrustStoreServiceServer must be embedded to have forward compatible implementations.
+
+NOTE: this should be embedded by value instead of pointer to avoid a nil pointer dereference when methods are called.
+
+```go
+type UnimplementedTrustStoreServiceServer struct{}
+```
+
+<a name="UnimplementedTrustStoreServiceServer.AddKey"></a>
+### func \(UnimplementedTrustStoreServiceServer\) [AddKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust_grpc.pb.go#L178>)
+
+```go
+func (UnimplementedTrustStoreServiceServer) AddKey(context.Context, *AddKeyRequest) (*AddKeyResponse, error)
+```
+
+
+
+<a name="UnimplementedTrustStoreServiceServer.Clear"></a>
+### func \(UnimplementedTrustStoreServiceServer\) [Clear](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust_grpc.pb.go#L199>)
+
+```go
+func (UnimplementedTrustStoreServiceServer) Clear(context.Context, *ClearKeysRequest) (*ClearKeysResponse, error)
+```
+
+
+
+<a name="UnimplementedTrustStoreServiceServer.ExportToDirectory"></a>
+### func \(UnimplementedTrustStoreServiceServer\) [ExportToDirectory](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust_grpc.pb.go#L196>)
+
+```go
+func (UnimplementedTrustStoreServiceServer) ExportToDirectory(context.Context, *ExportToDirectoryRequest) (*ExportToDirectoryResponse, error)
+```
+
+
+
+<a name="UnimplementedTrustStoreServiceServer.GetKey"></a>
+### func \(UnimplementedTrustStoreServiceServer\) [GetKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust_grpc.pb.go#L184>)
+
+```go
+func (UnimplementedTrustStoreServiceServer) GetKey(context.Context, *GetKeyRequest) (*GetKeyResponse, error)
+```
+
+
+
+<a name="UnimplementedTrustStoreServiceServer.ImportFromDirectory"></a>
+### func \(UnimplementedTrustStoreServiceServer\) [ImportFromDirectory](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust_grpc.pb.go#L193>)
+
+```go
+func (UnimplementedTrustStoreServiceServer) ImportFromDirectory(context.Context, *ImportFromDirectoryRequest) (*ImportFromDirectoryResponse, error)
+```
+
+
+
+<a name="UnimplementedTrustStoreServiceServer.IsTrusted"></a>
+### func \(UnimplementedTrustStoreServiceServer\) [IsTrusted](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust_grpc.pb.go#L190>)
+
+```go
+func (UnimplementedTrustStoreServiceServer) IsTrusted(context.Context, *IsTrustedRequest) (*IsTrustedResponse, error)
+```
+
+
+
+<a name="UnimplementedTrustStoreServiceServer.ListKeys"></a>
+### func \(UnimplementedTrustStoreServiceServer\) [ListKeys](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust_grpc.pb.go#L187>)
+
+```go
+func (UnimplementedTrustStoreServiceServer) ListKeys(context.Context, *ListKeysRequest) (*ListKeysResponse, error)
+```
+
+
+
+<a name="UnimplementedTrustStoreServiceServer.RemoveKey"></a>
+### func \(UnimplementedTrustStoreServiceServer\) [RemoveKey](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust_grpc.pb.go#L181>)
+
+```go
+func (UnimplementedTrustStoreServiceServer) RemoveKey(context.Context, *RemoveKeyRequest) (*RemoveKeyResponse, error)
+```
+
+
+
+<a name="UnrevokeRequest"></a>
+## type [UnrevokeRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L407-L412>)
+
+Request to unrevoke
+
+```go
+type UnrevokeRequest struct {
+    Subject string `protobuf:"bytes,1,opt,name=subject,proto3" json:"subject,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="UnrevokeRequest.Descriptor"></a>
+### func \(\*UnrevokeRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L440>)
+
+```go
+func (*UnrevokeRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use UnrevokeRequest.ProtoReflect.Descriptor instead.
+
+<a name="UnrevokeRequest.GetSubject"></a>
+### func \(\*UnrevokeRequest\) [GetSubject](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L444>)
+
+```go
+func (x *UnrevokeRequest) GetSubject() string
+```
+
+
+
+<a name="UnrevokeRequest.ProtoMessage"></a>
+### func \(\*UnrevokeRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L425>)
+
+```go
+func (*UnrevokeRequest) ProtoMessage()
+```
+
+
+
+<a name="UnrevokeRequest.ProtoReflect"></a>
+### func \(\*UnrevokeRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L427>)
+
+```go
+func (x *UnrevokeRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="UnrevokeRequest.Reset"></a>
+### func \(\*UnrevokeRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L414>)
+
+```go
+func (x *UnrevokeRequest) Reset()
+```
+
+
+
+<a name="UnrevokeRequest.String"></a>
+### func \(\*UnrevokeRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L421>)
+
+```go
+func (x *UnrevokeRequest) String() string
+```
+
+
+
+<a name="UnrevokeResponse"></a>
+## type [UnrevokeResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L452-L458>)
+
+Response for unrevoke
+
+```go
+type UnrevokeResponse struct {
+    WasRevoked   bool   `protobuf:"varint,1,opt,name=was_revoked,json=wasRevoked,proto3" json:"was_revoked,omitempty"`
+    ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="UnrevokeResponse.Descriptor"></a>
+### func \(\*UnrevokeResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L486>)
+
+```go
+func (*UnrevokeResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use UnrevokeResponse.ProtoReflect.Descriptor instead.
+
+<a name="UnrevokeResponse.GetErrorMessage"></a>
+### func \(\*UnrevokeResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L497>)
+
+```go
+func (x *UnrevokeResponse) GetErrorMessage() string
+```
+
+
+
+<a name="UnrevokeResponse.GetWasRevoked"></a>
+### func \(\*UnrevokeResponse\) [GetWasRevoked](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L490>)
+
+```go
+func (x *UnrevokeResponse) GetWasRevoked() bool
+```
+
+
+
+<a name="UnrevokeResponse.ProtoMessage"></a>
+### func \(\*UnrevokeResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L471>)
+
+```go
+func (*UnrevokeResponse) ProtoMessage()
+```
+
+
+
+<a name="UnrevokeResponse.ProtoReflect"></a>
+### func \(\*UnrevokeResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L473>)
+
+```go
+func (x *UnrevokeResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="UnrevokeResponse.Reset"></a>
+### func \(\*UnrevokeResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L460>)
+
+```go
+func (x *UnrevokeResponse) Reset()
+```
+
+
+
+<a name="UnrevokeResponse.String"></a>
+### func \(\*UnrevokeResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation.pb.go#L467>)
+
+```go
+func (x *UnrevokeResponse) String() string
+```
+
+
+
+<a name="UnsafeBadgeServiceServer"></a>
+## type [UnsafeBadgeServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge_grpc.pb.go#L259-L261>)
+
+UnsafeBadgeServiceServer may be embedded to opt out of forward compatibility for this service. Use of this interface is not recommended, as added methods to BadgeServiceServer will result in compilation errors.
+
+```go
+type UnsafeBadgeServiceServer interface {
+    // contains filtered or unexported methods
+}
+```
+
+<a name="UnsafeDIDServiceServer"></a>
+## type [UnsafeDIDServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/did_grpc.pb.go#L154-L156>)
+
+UnsafeDIDServiceServer may be embedded to opt out of forward compatibility for this service. Use of this interface is not recommended, as added methods to DIDServiceServer will result in compilation errors.
+
+```go
+type UnsafeDIDServiceServer interface {
+    // contains filtered or unexported methods
+}
+```
+
+<a name="UnsafeMCPServiceServer"></a>
+## type [UnsafeMCPServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp_grpc.pb.go#L148-L150>)
+
+UnsafeMCPServiceServer may be embedded to opt out of forward compatibility for this service. Use of this interface is not recommended, as added methods to MCPServiceServer will result in compilation errors.
+
+```go
+type UnsafeMCPServiceServer interface {
+    // contains filtered or unexported methods
+}
+```
+
+<a name="UnsafeRegistryServiceServer"></a>
+## type [UnsafeRegistryServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry_grpc.pb.go#L226-L228>)
+
+UnsafeRegistryServiceServer may be embedded to opt out of forward compatibility for this service. Use of this interface is not recommended, as added methods to RegistryServiceServer will result in compilation errors.
+
+```go
+type UnsafeRegistryServiceServer interface {
+    // contains filtered or unexported methods
+}
+```
+
+<a name="UnsafeRevocationServiceServer"></a>
+## type [UnsafeRevocationServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/revocation_grpc.pb.go#L190-L192>)
+
+UnsafeRevocationServiceServer may be embedded to opt out of forward compatibility for this service. Use of this interface is not recommended, as added methods to RevocationServiceServer will result in compilation errors.
+
+```go
+type UnsafeRevocationServiceServer interface {
+    // contains filtered or unexported methods
+}
+```
+
+<a name="UnsafeScoringServiceServer"></a>
+## type [UnsafeScoringServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring_grpc.pb.go#L154-L156>)
+
+UnsafeScoringServiceServer may be embedded to opt out of forward compatibility for this service. Use of this interface is not recommended, as added methods to ScoringServiceServer will result in compilation errors.
+
+```go
+type UnsafeScoringServiceServer interface {
+    // contains filtered or unexported methods
+}
+```
+
+<a name="UnsafeSimpleGuardServiceServer"></a>
+## type [UnsafeSimpleGuardServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard_grpc.pb.go#L208-L210>)
+
+UnsafeSimpleGuardServiceServer may be embedded to opt out of forward compatibility for this service. Use of this interface is not recommended, as added methods to SimpleGuardServiceServer will result in compilation errors.
+
+```go
+type UnsafeSimpleGuardServiceServer interface {
+    // contains filtered or unexported methods
+}
+```
+
+<a name="UnsafeTrustStoreServiceServer"></a>
+## type [UnsafeTrustStoreServiceServer](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/trust_grpc.pb.go#L208-L210>)
+
+UnsafeTrustStoreServiceServer may be embedded to opt out of forward compatibility for this service. Use of this interface is not recommended, as added methods to TrustStoreServiceServer will result in compilation errors.
+
+```go
+type UnsafeTrustStoreServiceServer interface {
+    // contains filtered or unexported methods
+}
+```
+
+<a name="UpdateAgentRequest"></a>
+## type [UpdateAgentRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L696-L705>)
+
+Update request
+
+```go
+type UpdateAgentRequest struct {
+    Did           string            `protobuf:"bytes,1,opt,name=did,proto3" json:"did,omitempty"`
+    AgentCardJson string            `protobuf:"bytes,2,opt,name=agent_card_json,json=agentCardJson,proto3" json:"agent_card_json,omitempty"`                                          // Optional: new agent card
+    SignedBadge   string            `protobuf:"bytes,3,opt,name=signed_badge,json=signedBadge,proto3" json:"signed_badge,omitempty"`                                                  // Optional: new badge
+    Tags          []string          `protobuf:"bytes,4,rep,name=tags,proto3" json:"tags,omitempty"`                                                                                   // Optional: new tags (replaces existing)
+    Metadata      map[string]string `protobuf:"bytes,5,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // Optional: new metadata (merges)
+    // contains filtered or unexported fields
+}
+```
+
+<a name="UpdateAgentRequest.Descriptor"></a>
+### func \(\*UpdateAgentRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L733>)
+
+```go
+func (*UpdateAgentRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use UpdateAgentRequest.ProtoReflect.Descriptor instead.
+
+<a name="UpdateAgentRequest.GetAgentCardJson"></a>
+### func \(\*UpdateAgentRequest\) [GetAgentCardJson](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L744>)
+
+```go
+func (x *UpdateAgentRequest) GetAgentCardJson() string
+```
+
+
+
+<a name="UpdateAgentRequest.GetDid"></a>
+### func \(\*UpdateAgentRequest\) [GetDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L737>)
+
+```go
+func (x *UpdateAgentRequest) GetDid() string
+```
+
+
+
+<a name="UpdateAgentRequest.GetMetadata"></a>
+### func \(\*UpdateAgentRequest\) [GetMetadata](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L765>)
+
+```go
+func (x *UpdateAgentRequest) GetMetadata() map[string]string
+```
+
+
+
+<a name="UpdateAgentRequest.GetSignedBadge"></a>
+### func \(\*UpdateAgentRequest\) [GetSignedBadge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L751>)
+
+```go
+func (x *UpdateAgentRequest) GetSignedBadge() string
+```
+
+
+
+<a name="UpdateAgentRequest.GetTags"></a>
+### func \(\*UpdateAgentRequest\) [GetTags](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L758>)
+
+```go
+func (x *UpdateAgentRequest) GetTags() []string
+```
+
+
+
+<a name="UpdateAgentRequest.ProtoMessage"></a>
+### func \(\*UpdateAgentRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L718>)
+
+```go
+func (*UpdateAgentRequest) ProtoMessage()
+```
+
+
+
+<a name="UpdateAgentRequest.ProtoReflect"></a>
+### func \(\*UpdateAgentRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L720>)
+
+```go
+func (x *UpdateAgentRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="UpdateAgentRequest.Reset"></a>
+### func \(\*UpdateAgentRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L707>)
+
+```go
+func (x *UpdateAgentRequest) Reset()
+```
+
+
+
+<a name="UpdateAgentRequest.String"></a>
+### func \(\*UpdateAgentRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L714>)
+
+```go
+func (x *UpdateAgentRequest) String() string
+```
+
+
+
+<a name="UpdateAgentResponse"></a>
+## type [UpdateAgentResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L773-L779>)
+
+Update response
+
+```go
+type UpdateAgentResponse struct {
+    Agent        *RegisteredAgent `protobuf:"bytes,1,opt,name=agent,proto3" json:"agent,omitempty"`
+    ErrorMessage string           `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="UpdateAgentResponse.Descriptor"></a>
+### func \(\*UpdateAgentResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L807>)
+
+```go
+func (*UpdateAgentResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use UpdateAgentResponse.ProtoReflect.Descriptor instead.
+
+<a name="UpdateAgentResponse.GetAgent"></a>
+### func \(\*UpdateAgentResponse\) [GetAgent](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L811>)
+
+```go
+func (x *UpdateAgentResponse) GetAgent() *RegisteredAgent
+```
+
+
+
+<a name="UpdateAgentResponse.GetErrorMessage"></a>
+### func \(\*UpdateAgentResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L818>)
+
+```go
+func (x *UpdateAgentResponse) GetErrorMessage() string
+```
+
+
+
+<a name="UpdateAgentResponse.ProtoMessage"></a>
+### func \(\*UpdateAgentResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L792>)
+
+```go
+func (*UpdateAgentResponse) ProtoMessage()
+```
+
+
+
+<a name="UpdateAgentResponse.ProtoReflect"></a>
+### func \(\*UpdateAgentResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L794>)
+
+```go
+func (x *UpdateAgentResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="UpdateAgentResponse.Reset"></a>
+### func \(\*UpdateAgentResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L781>)
+
+```go
+func (x *UpdateAgentResponse) Reset()
+```
+
+
+
+<a name="UpdateAgentResponse.String"></a>
+### func \(\*UpdateAgentResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L788>)
+
+```go
+func (x *UpdateAgentResponse) String() string
+```
+
+
+
+<a name="ValidateRuleRequest"></a>
+## type [ValidateRuleRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L689-L695>)
+
+Request to validate a single rule
+
+```go
+type ValidateRuleRequest struct {
+    RuleId        string `protobuf:"bytes,1,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
+    AgentCardJson string `protobuf:"bytes,2,opt,name=agent_card_json,json=agentCardJson,proto3" json:"agent_card_json,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ValidateRuleRequest.Descriptor"></a>
+### func \(\*ValidateRuleRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L723>)
+
+```go
+func (*ValidateRuleRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ValidateRuleRequest.ProtoReflect.Descriptor instead.
+
+<a name="ValidateRuleRequest.GetAgentCardJson"></a>
+### func \(\*ValidateRuleRequest\) [GetAgentCardJson](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L734>)
+
+```go
+func (x *ValidateRuleRequest) GetAgentCardJson() string
+```
+
+
+
+<a name="ValidateRuleRequest.GetRuleId"></a>
+### func \(\*ValidateRuleRequest\) [GetRuleId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L727>)
+
+```go
+func (x *ValidateRuleRequest) GetRuleId() string
+```
+
+
+
+<a name="ValidateRuleRequest.ProtoMessage"></a>
+### func \(\*ValidateRuleRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L708>)
+
+```go
+func (*ValidateRuleRequest) ProtoMessage()
+```
+
+
+
+<a name="ValidateRuleRequest.ProtoReflect"></a>
+### func \(\*ValidateRuleRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L710>)
+
+```go
+func (x *ValidateRuleRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ValidateRuleRequest.Reset"></a>
+### func \(\*ValidateRuleRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L697>)
+
+```go
+func (x *ValidateRuleRequest) Reset()
+```
+
+
+
+<a name="ValidateRuleRequest.String"></a>
+### func \(\*ValidateRuleRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L704>)
+
+```go
+func (x *ValidateRuleRequest) String() string
+```
+
+
+
+<a name="ValidateRuleResponse"></a>
+## type [ValidateRuleResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L742-L748>)
+
+Response for single rule validation
+
+```go
+type ValidateRuleResponse struct {
+    Result       *RuleResult `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
+    ErrorMessage string      `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ValidateRuleResponse.Descriptor"></a>
+### func \(\*ValidateRuleResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L776>)
+
+```go
+func (*ValidateRuleResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ValidateRuleResponse.ProtoReflect.Descriptor instead.
+
+<a name="ValidateRuleResponse.GetErrorMessage"></a>
+### func \(\*ValidateRuleResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L787>)
+
+```go
+func (x *ValidateRuleResponse) GetErrorMessage() string
+```
+
+
+
+<a name="ValidateRuleResponse.GetResult"></a>
+### func \(\*ValidateRuleResponse\) [GetResult](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L780>)
+
+```go
+func (x *ValidateRuleResponse) GetResult() *RuleResult
+```
+
+
+
+<a name="ValidateRuleResponse.ProtoMessage"></a>
+### func \(\*ValidateRuleResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L761>)
+
+```go
+func (*ValidateRuleResponse) ProtoMessage()
+```
+
+
+
+<a name="ValidateRuleResponse.ProtoReflect"></a>
+### func \(\*ValidateRuleResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L763>)
+
+```go
+func (x *ValidateRuleResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ValidateRuleResponse.Reset"></a>
+### func \(\*ValidateRuleResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L750>)
+
+```go
+func (x *ValidateRuleResponse) Reset()
+```
+
+
+
+<a name="ValidateRuleResponse.String"></a>
+### func \(\*ValidateRuleResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/scoring.pb.go#L757>)
+
+```go
+func (x *ValidateRuleResponse) String() string
+```
+
+
+
+<a name="ValidationIssue"></a>
+## type [ValidationIssue](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L282-L291>)
+
+A single validation issue
+
+```go
+type ValidationIssue struct {
+    Field    string             `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
+    Message  string             `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+    Severity ValidationSeverity `protobuf:"varint,3,opt,name=severity,proto3,enum=capiscio.v1.ValidationSeverity" json:"severity,omitempty"`
+    Code     string             `protobuf:"bytes,4,opt,name=code,proto3" json:"code,omitempty"`
+    Details  string             `protobuf:"bytes,5,opt,name=details,proto3" json:"details,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ValidationIssue.Descriptor"></a>
+### func \(\*ValidationIssue\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L319>)
+
+```go
+func (*ValidationIssue) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ValidationIssue.ProtoReflect.Descriptor instead.
+
+<a name="ValidationIssue.GetCode"></a>
+### func \(\*ValidationIssue\) [GetCode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L344>)
+
+```go
+func (x *ValidationIssue) GetCode() string
+```
+
+
+
+<a name="ValidationIssue.GetDetails"></a>
+### func \(\*ValidationIssue\) [GetDetails](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L351>)
+
+```go
+func (x *ValidationIssue) GetDetails() string
+```
+
+
+
+<a name="ValidationIssue.GetField"></a>
+### func \(\*ValidationIssue\) [GetField](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L323>)
+
+```go
+func (x *ValidationIssue) GetField() string
+```
+
+
+
+<a name="ValidationIssue.GetMessage"></a>
+### func \(\*ValidationIssue\) [GetMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L330>)
+
+```go
+func (x *ValidationIssue) GetMessage() string
+```
+
+
+
+<a name="ValidationIssue.GetSeverity"></a>
+### func \(\*ValidationIssue\) [GetSeverity](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L337>)
+
+```go
+func (x *ValidationIssue) GetSeverity() ValidationSeverity
+```
+
+
+
+<a name="ValidationIssue.ProtoMessage"></a>
+### func \(\*ValidationIssue\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L304>)
+
+```go
+func (*ValidationIssue) ProtoMessage()
+```
+
+
+
+<a name="ValidationIssue.ProtoReflect"></a>
+### func \(\*ValidationIssue\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L306>)
+
+```go
+func (x *ValidationIssue) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ValidationIssue.Reset"></a>
+### func \(\*ValidationIssue\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L293>)
+
+```go
+func (x *ValidationIssue) Reset()
+```
+
+
+
+<a name="ValidationIssue.String"></a>
+### func \(\*ValidationIssue\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L300>)
+
+```go
+func (x *ValidationIssue) String() string
+```
+
+
+
+<a name="ValidationResult"></a>
+## type [ValidationResult](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L359-L366>)
+
+Generic validation result
+
+```go
+type ValidationResult struct {
+    Valid       bool               `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`
+    Issues      []*ValidationIssue `protobuf:"bytes,2,rep,name=issues,proto3" json:"issues,omitempty"`
+    ValidatedAt string             `protobuf:"bytes,3,opt,name=validated_at,json=validatedAt,proto3" json:"validated_at,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="ValidationResult.Descriptor"></a>
+### func \(\*ValidationResult\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L394>)
+
+```go
+func (*ValidationResult) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use ValidationResult.ProtoReflect.Descriptor instead.
+
+<a name="ValidationResult.GetIssues"></a>
+### func \(\*ValidationResult\) [GetIssues](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L405>)
+
+```go
+func (x *ValidationResult) GetIssues() []*ValidationIssue
+```
+
+
+
+<a name="ValidationResult.GetValid"></a>
+### func \(\*ValidationResult\) [GetValid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L398>)
+
+```go
+func (x *ValidationResult) GetValid() bool
+```
+
+
+
+<a name="ValidationResult.GetValidatedAt"></a>
+### func \(\*ValidationResult\) [GetValidatedAt](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L412>)
+
+```go
+func (x *ValidationResult) GetValidatedAt() string
+```
+
+
+
+<a name="ValidationResult.ProtoMessage"></a>
+### func \(\*ValidationResult\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L379>)
+
+```go
+func (*ValidationResult) ProtoMessage()
+```
+
+
+
+<a name="ValidationResult.ProtoReflect"></a>
+### func \(\*ValidationResult\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L381>)
+
+```go
+func (x *ValidationResult) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="ValidationResult.Reset"></a>
+### func \(\*ValidationResult\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L368>)
+
+```go
+func (x *ValidationResult) Reset()
+```
+
+
+
+<a name="ValidationResult.String"></a>
+### func \(\*ValidationResult\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L375>)
+
+```go
+func (x *ValidationResult) String() string
+```
+
+
+
+<a name="ValidationSeverity"></a>
+## type [ValidationSeverity](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L27>)
+
+Validation severity levels
+
+```go
+type ValidationSeverity int32
+```
+
+<a name="ValidationSeverity_VALIDATION_SEVERITY_UNSPECIFIED"></a>
+
+```go
+const (
+    ValidationSeverity_VALIDATION_SEVERITY_UNSPECIFIED ValidationSeverity = 0
+    ValidationSeverity_VALIDATION_SEVERITY_INFO        ValidationSeverity = 1
+    ValidationSeverity_VALIDATION_SEVERITY_WARNING     ValidationSeverity = 2
+    ValidationSeverity_VALIDATION_SEVERITY_ERROR       ValidationSeverity = 3
+)
+```
+
+<a name="ValidationSeverity.Descriptor"></a>
+### func \(ValidationSeverity\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L62>)
+
+```go
+func (ValidationSeverity) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="ValidationSeverity.Enum"></a>
+### func \(ValidationSeverity\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L52>)
+
+```go
+func (x ValidationSeverity) Enum() *ValidationSeverity
+```
+
+
+
+<a name="ValidationSeverity.EnumDescriptor"></a>
+### func \(ValidationSeverity\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L75>)
+
+```go
+func (ValidationSeverity) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use ValidationSeverity.Descriptor instead.
+
+<a name="ValidationSeverity.Number"></a>
+### func \(ValidationSeverity\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L70>)
+
+```go
+func (x ValidationSeverity) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="ValidationSeverity.String"></a>
+### func \(ValidationSeverity\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L58>)
+
+```go
+func (x ValidationSeverity) String() string
+```
+
+
+
+<a name="ValidationSeverity.Type"></a>
+### func \(ValidationSeverity\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/common.pb.go#L66>)
+
+```go
+func (ValidationSeverity) Type() protoreflect.EnumType
+```
+
+
+
+<a name="VerifyAttachedRequest"></a>
+## type [VerifyAttachedRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L486-L493>)
+
+Request to verify attached
+
+```go
+type VerifyAttachedRequest struct {
+    Jws             string `protobuf:"bytes,1,opt,name=jws,proto3" json:"jws,omitempty"`
+    DetachedPayload []byte `protobuf:"bytes,2,opt,name=detached_payload,json=detachedPayload,proto3" json:"detached_payload,omitempty"` // If payload was detached
+    ExpectedSigner  string `protobuf:"bytes,3,opt,name=expected_signer,json=expectedSigner,proto3" json:"expected_signer,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="VerifyAttachedRequest.Descriptor"></a>
+### func \(\*VerifyAttachedRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L521>)
+
+```go
+func (*VerifyAttachedRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use VerifyAttachedRequest.ProtoReflect.Descriptor instead.
+
+<a name="VerifyAttachedRequest.GetDetachedPayload"></a>
+### func \(\*VerifyAttachedRequest\) [GetDetachedPayload](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L532>)
+
+```go
+func (x *VerifyAttachedRequest) GetDetachedPayload() []byte
+```
+
+
+
+<a name="VerifyAttachedRequest.GetExpectedSigner"></a>
+### func \(\*VerifyAttachedRequest\) [GetExpectedSigner](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L539>)
+
+```go
+func (x *VerifyAttachedRequest) GetExpectedSigner() string
+```
+
+
+
+<a name="VerifyAttachedRequest.GetJws"></a>
+### func \(\*VerifyAttachedRequest\) [GetJws](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L525>)
+
+```go
+func (x *VerifyAttachedRequest) GetJws() string
+```
+
+
+
+<a name="VerifyAttachedRequest.ProtoMessage"></a>
+### func \(\*VerifyAttachedRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L506>)
+
+```go
+func (*VerifyAttachedRequest) ProtoMessage()
+```
+
+
+
+<a name="VerifyAttachedRequest.ProtoReflect"></a>
+### func \(\*VerifyAttachedRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L508>)
+
+```go
+func (x *VerifyAttachedRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="VerifyAttachedRequest.Reset"></a>
+### func \(\*VerifyAttachedRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L495>)
+
+```go
+func (x *VerifyAttachedRequest) Reset()
+```
+
+
+
+<a name="VerifyAttachedRequest.String"></a>
+### func \(\*VerifyAttachedRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L502>)
+
+```go
+func (x *VerifyAttachedRequest) String() string
+```
+
+
+
+<a name="VerifyAttachedResponse"></a>
+## type [VerifyAttachedResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L547-L557>)
+
+Response for attached verification
+
+```go
+type VerifyAttachedResponse struct {
+    Valid        bool              `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`
+    Payload      []byte            `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"` // Extracted payload
+    SignerDid    string            `protobuf:"bytes,3,opt,name=signer_did,json=signerDid,proto3" json:"signer_did,omitempty"`
+    KeyId        string            `protobuf:"bytes,4,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
+    Validation   *ValidationResult `protobuf:"bytes,5,opt,name=validation,proto3" json:"validation,omitempty"`
+    ErrorMessage string            `protobuf:"bytes,6,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="VerifyAttachedResponse.Descriptor"></a>
+### func \(\*VerifyAttachedResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L585>)
+
+```go
+func (*VerifyAttachedResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use VerifyAttachedResponse.ProtoReflect.Descriptor instead.
+
+<a name="VerifyAttachedResponse.GetErrorMessage"></a>
+### func \(\*VerifyAttachedResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L624>)
+
+```go
+func (x *VerifyAttachedResponse) GetErrorMessage() string
+```
+
+
+
+<a name="VerifyAttachedResponse.GetKeyId"></a>
+### func \(\*VerifyAttachedResponse\) [GetKeyId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L610>)
+
+```go
+func (x *VerifyAttachedResponse) GetKeyId() string
+```
+
+
+
+<a name="VerifyAttachedResponse.GetPayload"></a>
+### func \(\*VerifyAttachedResponse\) [GetPayload](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L596>)
+
+```go
+func (x *VerifyAttachedResponse) GetPayload() []byte
+```
+
+
+
+<a name="VerifyAttachedResponse.GetSignerDid"></a>
+### func \(\*VerifyAttachedResponse\) [GetSignerDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L603>)
+
+```go
+func (x *VerifyAttachedResponse) GetSignerDid() string
+```
+
+
+
+<a name="VerifyAttachedResponse.GetValid"></a>
+### func \(\*VerifyAttachedResponse\) [GetValid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L589>)
+
+```go
+func (x *VerifyAttachedResponse) GetValid() bool
+```
+
+
+
+<a name="VerifyAttachedResponse.GetValidation"></a>
+### func \(\*VerifyAttachedResponse\) [GetValidation](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L617>)
+
+```go
+func (x *VerifyAttachedResponse) GetValidation() *ValidationResult
+```
+
+
+
+<a name="VerifyAttachedResponse.ProtoMessage"></a>
+### func \(\*VerifyAttachedResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L570>)
+
+```go
+func (*VerifyAttachedResponse) ProtoMessage()
+```
+
+
+
+<a name="VerifyAttachedResponse.ProtoReflect"></a>
+### func \(\*VerifyAttachedResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L572>)
+
+```go
+func (x *VerifyAttachedResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="VerifyAttachedResponse.Reset"></a>
+### func \(\*VerifyAttachedResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L559>)
+
+```go
+func (x *VerifyAttachedResponse) Reset()
+```
+
+
+
+<a name="VerifyAttachedResponse.String"></a>
+### func \(\*VerifyAttachedResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L566>)
+
+```go
+func (x *VerifyAttachedResponse) String() string
+```
+
+
+
+<a name="VerifyBadgeRequest"></a>
+## type [VerifyBadgeRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L486-L493>)
+
+Request to verify a badge
+
+```go
+type VerifyBadgeRequest struct {
+    Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+    // Public key in JWK format (JSON string) - optional if JWKS URL used
+    PublicKeyJwk string `protobuf:"bytes,2,opt,name=public_key_jwk,json=publicKeyJwk,proto3" json:"public_key_jwk,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="VerifyBadgeRequest.Descriptor"></a>
+### func \(\*VerifyBadgeRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L521>)
+
+```go
+func (*VerifyBadgeRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use VerifyBadgeRequest.ProtoReflect.Descriptor instead.
+
+<a name="VerifyBadgeRequest.GetPublicKeyJwk"></a>
+### func \(\*VerifyBadgeRequest\) [GetPublicKeyJwk](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L532>)
+
+```go
+func (x *VerifyBadgeRequest) GetPublicKeyJwk() string
+```
+
+
+
+<a name="VerifyBadgeRequest.GetToken"></a>
+### func \(\*VerifyBadgeRequest\) [GetToken](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L525>)
+
+```go
+func (x *VerifyBadgeRequest) GetToken() string
+```
+
+
+
+<a name="VerifyBadgeRequest.ProtoMessage"></a>
+### func \(\*VerifyBadgeRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L506>)
+
+```go
+func (*VerifyBadgeRequest) ProtoMessage()
+```
+
+
+
+<a name="VerifyBadgeRequest.ProtoReflect"></a>
+### func \(\*VerifyBadgeRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L508>)
+
+```go
+func (x *VerifyBadgeRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="VerifyBadgeRequest.Reset"></a>
+### func \(\*VerifyBadgeRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L495>)
+
+```go
+func (x *VerifyBadgeRequest) Reset()
+```
+
+
+
+<a name="VerifyBadgeRequest.String"></a>
+### func \(\*VerifyBadgeRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L502>)
+
+```go
+func (x *VerifyBadgeRequest) String() string
+```
+
+
+
+<a name="VerifyBadgeResponse"></a>
+## type [VerifyBadgeResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L711-L721>)
+
+Badge verification result
+
+```go
+type VerifyBadgeResponse struct {
+    Valid        bool         `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`
+    Claims       *BadgeClaims `protobuf:"bytes,2,opt,name=claims,proto3" json:"claims,omitempty"`
+    ModeUsed     VerifyMode   `protobuf:"varint,3,opt,name=mode_used,json=modeUsed,proto3,enum=capiscio.v1.VerifyMode" json:"mode_used,omitempty"`
+    Warnings     []string     `protobuf:"bytes,4,rep,name=warnings,proto3" json:"warnings,omitempty"`
+    ErrorCode    string       `protobuf:"bytes,5,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+    ErrorMessage string       `protobuf:"bytes,6,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="VerifyBadgeResponse.Descriptor"></a>
+### func \(\*VerifyBadgeResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L749>)
+
+```go
+func (*VerifyBadgeResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use VerifyBadgeResponse.ProtoReflect.Descriptor instead.
+
+<a name="VerifyBadgeResponse.GetClaims"></a>
+### func \(\*VerifyBadgeResponse\) [GetClaims](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L760>)
+
+```go
+func (x *VerifyBadgeResponse) GetClaims() *BadgeClaims
+```
+
+
+
+<a name="VerifyBadgeResponse.GetErrorCode"></a>
+### func \(\*VerifyBadgeResponse\) [GetErrorCode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L781>)
+
+```go
+func (x *VerifyBadgeResponse) GetErrorCode() string
+```
+
+
+
+<a name="VerifyBadgeResponse.GetErrorMessage"></a>
+### func \(\*VerifyBadgeResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L788>)
+
+```go
+func (x *VerifyBadgeResponse) GetErrorMessage() string
+```
+
+
+
+<a name="VerifyBadgeResponse.GetModeUsed"></a>
+### func \(\*VerifyBadgeResponse\) [GetModeUsed](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L767>)
+
+```go
+func (x *VerifyBadgeResponse) GetModeUsed() VerifyMode
+```
+
+
+
+<a name="VerifyBadgeResponse.GetValid"></a>
+### func \(\*VerifyBadgeResponse\) [GetValid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L753>)
+
+```go
+func (x *VerifyBadgeResponse) GetValid() bool
+```
+
+
+
+<a name="VerifyBadgeResponse.GetWarnings"></a>
+### func \(\*VerifyBadgeResponse\) [GetWarnings](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L774>)
+
+```go
+func (x *VerifyBadgeResponse) GetWarnings() []string
+```
+
+
+
+<a name="VerifyBadgeResponse.ProtoMessage"></a>
+### func \(\*VerifyBadgeResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L734>)
+
+```go
+func (*VerifyBadgeResponse) ProtoMessage()
+```
+
+
+
+<a name="VerifyBadgeResponse.ProtoReflect"></a>
+### func \(\*VerifyBadgeResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L736>)
+
+```go
+func (x *VerifyBadgeResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="VerifyBadgeResponse.Reset"></a>
+### func \(\*VerifyBadgeResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L723>)
+
+```go
+func (x *VerifyBadgeResponse) Reset()
+```
+
+
+
+<a name="VerifyBadgeResponse.String"></a>
+### func \(\*VerifyBadgeResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L730>)
+
+```go
+func (x *VerifyBadgeResponse) String() string
+```
+
+
+
+<a name="VerifyBadgeWithOptionsRequest"></a>
+## type [VerifyBadgeWithOptionsRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L658-L664>)
+
+Request to verify with options
+
+```go
+type VerifyBadgeWithOptionsRequest struct {
+    Token   string         `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+    Options *VerifyOptions `protobuf:"bytes,2,opt,name=options,proto3" json:"options,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="VerifyBadgeWithOptionsRequest.Descriptor"></a>
+### func \(\*VerifyBadgeWithOptionsRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L692>)
+
+```go
+func (*VerifyBadgeWithOptionsRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use VerifyBadgeWithOptionsRequest.ProtoReflect.Descriptor instead.
+
+<a name="VerifyBadgeWithOptionsRequest.GetOptions"></a>
+### func \(\*VerifyBadgeWithOptionsRequest\) [GetOptions](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L703>)
+
+```go
+func (x *VerifyBadgeWithOptionsRequest) GetOptions() *VerifyOptions
+```
+
+
+
+<a name="VerifyBadgeWithOptionsRequest.GetToken"></a>
+### func \(\*VerifyBadgeWithOptionsRequest\) [GetToken](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L696>)
+
+```go
+func (x *VerifyBadgeWithOptionsRequest) GetToken() string
+```
+
+
+
+<a name="VerifyBadgeWithOptionsRequest.ProtoMessage"></a>
+### func \(\*VerifyBadgeWithOptionsRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L677>)
+
+```go
+func (*VerifyBadgeWithOptionsRequest) ProtoMessage()
+```
+
+
+
+<a name="VerifyBadgeWithOptionsRequest.ProtoReflect"></a>
+### func \(\*VerifyBadgeWithOptionsRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L679>)
+
+```go
+func (x *VerifyBadgeWithOptionsRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="VerifyBadgeWithOptionsRequest.Reset"></a>
+### func \(\*VerifyBadgeWithOptionsRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L666>)
+
+```go
+func (x *VerifyBadgeWithOptionsRequest) Reset()
+```
+
+
+
+<a name="VerifyBadgeWithOptionsRequest.String"></a>
+### func \(\*VerifyBadgeWithOptionsRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L673>)
+
+```go
+func (x *VerifyBadgeWithOptionsRequest) String() string
+```
+
+
+
+<a name="VerifyMode"></a>
+## type [VerifyMode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L86>)
+
+Verification mode
+
+```go
+type VerifyMode int32
+```
+
+<a name="VerifyMode_VERIFY_MODE_UNSPECIFIED"></a>
+
+```go
+const (
+    VerifyMode_VERIFY_MODE_UNSPECIFIED VerifyMode = 0
+    VerifyMode_VERIFY_MODE_OFFLINE     VerifyMode = 1 // Local verification only
+    VerifyMode_VERIFY_MODE_ONLINE      VerifyMode = 2 // Full online checks
+    VerifyMode_VERIFY_MODE_HYBRID      VerifyMode = 3 // Online if cache stale
+)
+```
+
+<a name="VerifyMode.Descriptor"></a>
+### func \(VerifyMode\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L121>)
+
+```go
+func (VerifyMode) Descriptor() protoreflect.EnumDescriptor
+```
+
+
+
+<a name="VerifyMode.Enum"></a>
+### func \(VerifyMode\) [Enum](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L111>)
+
+```go
+func (x VerifyMode) Enum() *VerifyMode
+```
+
+
+
+<a name="VerifyMode.EnumDescriptor"></a>
+### func \(VerifyMode\) [EnumDescriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L134>)
+
+```go
+func (VerifyMode) EnumDescriptor() ([]byte, []int)
+```
+
+Deprecated: Use VerifyMode.Descriptor instead.
+
+<a name="VerifyMode.Number"></a>
+### func \(VerifyMode\) [Number](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L129>)
+
+```go
+func (x VerifyMode) Number() protoreflect.EnumNumber
+```
+
+
+
+<a name="VerifyMode.String"></a>
+### func \(VerifyMode\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L117>)
+
+```go
+func (x VerifyMode) String() string
+```
+
+
+
+<a name="VerifyMode.Type"></a>
+### func \(VerifyMode\) [Type](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L125>)
+
+```go
+func (VerifyMode) Type() protoreflect.EnumType
+```
+
+
+
+<a name="VerifyOptions"></a>
+## type [VerifyOptions](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L540-L555>)
+
+Options for badge verification
+
+```go
+type VerifyOptions struct {
+    Mode                  VerifyMode `protobuf:"varint,1,opt,name=mode,proto3,enum=capiscio.v1.VerifyMode" json:"mode,omitempty"`
+    TrustedIssuers        []string   `protobuf:"bytes,2,rep,name=trusted_issuers,json=trustedIssuers,proto3" json:"trusted_issuers,omitempty"`
+    Audience              string     `protobuf:"bytes,3,opt,name=audience,proto3" json:"audience,omitempty"`
+    SkipRevocation        bool       `protobuf:"varint,4,opt,name=skip_revocation,json=skipRevocation,proto3" json:"skip_revocation,omitempty"`
+    SkipAgentStatus       bool       `protobuf:"varint,5,opt,name=skip_agent_status,json=skipAgentStatus,proto3" json:"skip_agent_status,omitempty"`
+    ClockToleranceSeconds int64      `protobuf:"varint,6,opt,name=clock_tolerance_seconds,json=clockToleranceSeconds,proto3" json:"clock_tolerance_seconds,omitempty"`
+    RegistryUrl           string     `protobuf:"bytes,7,opt,name=registry_url,json=registryUrl,proto3" json:"registry_url,omitempty"`
+    AcceptSelfSigned      bool       `protobuf:"varint,8,opt,name=accept_self_signed,json=acceptSelfSigned,proto3" json:"accept_self_signed,omitempty"` // Accept Level 0 did:key badges
+    // RFC-002 v1.3 §7.5: Staleness fail-closed behavior
+    FailOpen              bool  `protobuf:"varint,9,opt,name=fail_open,json=failOpen,proto3" json:"fail_open,omitempty"`                                           // If true, allow verification when cache is stale (default: false)
+    StaleThresholdSeconds int64 `protobuf:"varint,10,opt,name=stale_threshold_seconds,json=staleThresholdSeconds,proto3" json:"stale_threshold_seconds,omitempty"` // Max staleness before fail-closed (default: 300 = 5 min)
+    // contains filtered or unexported fields
+}
+```
+
+<a name="VerifyOptions.Descriptor"></a>
+### func \(\*VerifyOptions\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L583>)
+
+```go
+func (*VerifyOptions) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use VerifyOptions.ProtoReflect.Descriptor instead.
+
+<a name="VerifyOptions.GetAcceptSelfSigned"></a>
+### func \(\*VerifyOptions\) [GetAcceptSelfSigned](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L636>)
+
+```go
+func (x *VerifyOptions) GetAcceptSelfSigned() bool
+```
+
+
+
+<a name="VerifyOptions.GetAudience"></a>
+### func \(\*VerifyOptions\) [GetAudience](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L601>)
+
+```go
+func (x *VerifyOptions) GetAudience() string
+```
+
+
+
+<a name="VerifyOptions.GetClockToleranceSeconds"></a>
+### func \(\*VerifyOptions\) [GetClockToleranceSeconds](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L622>)
+
+```go
+func (x *VerifyOptions) GetClockToleranceSeconds() int64
+```
+
+
+
+<a name="VerifyOptions.GetFailOpen"></a>
+### func \(\*VerifyOptions\) [GetFailOpen](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L643>)
+
+```go
+func (x *VerifyOptions) GetFailOpen() bool
+```
+
+
+
+<a name="VerifyOptions.GetMode"></a>
+### func \(\*VerifyOptions\) [GetMode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L587>)
+
+```go
+func (x *VerifyOptions) GetMode() VerifyMode
+```
+
+
+
+<a name="VerifyOptions.GetRegistryUrl"></a>
+### func \(\*VerifyOptions\) [GetRegistryUrl](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L629>)
+
+```go
+func (x *VerifyOptions) GetRegistryUrl() string
+```
+
+
+
+<a name="VerifyOptions.GetSkipAgentStatus"></a>
+### func \(\*VerifyOptions\) [GetSkipAgentStatus](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L615>)
+
+```go
+func (x *VerifyOptions) GetSkipAgentStatus() bool
+```
+
+
+
+<a name="VerifyOptions.GetSkipRevocation"></a>
+### func \(\*VerifyOptions\) [GetSkipRevocation](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L608>)
+
+```go
+func (x *VerifyOptions) GetSkipRevocation() bool
+```
+
+
+
+<a name="VerifyOptions.GetStaleThresholdSeconds"></a>
+### func \(\*VerifyOptions\) [GetStaleThresholdSeconds](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L650>)
+
+```go
+func (x *VerifyOptions) GetStaleThresholdSeconds() int64
+```
+
+
+
+<a name="VerifyOptions.GetTrustedIssuers"></a>
+### func \(\*VerifyOptions\) [GetTrustedIssuers](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L594>)
+
+```go
+func (x *VerifyOptions) GetTrustedIssuers() []string
+```
+
+
+
+<a name="VerifyOptions.ProtoMessage"></a>
+### func \(\*VerifyOptions\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L568>)
+
+```go
+func (*VerifyOptions) ProtoMessage()
+```
+
+
+
+<a name="VerifyOptions.ProtoReflect"></a>
+### func \(\*VerifyOptions\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L570>)
+
+```go
+func (x *VerifyOptions) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="VerifyOptions.Reset"></a>
+### func \(\*VerifyOptions\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L557>)
+
+```go
+func (x *VerifyOptions) Reset()
+```
+
+
+
+<a name="VerifyOptions.String"></a>
+### func \(\*VerifyOptions\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/badge.pb.go#L564>)
+
+```go
+func (x *VerifyOptions) String() string
+```
+
+
+
+<a name="VerifyRegistrationRequest"></a>
+## type [VerifyRegistrationRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L932-L939>)
+
+Verify registration request
+
+```go
+type VerifyRegistrationRequest struct {
+    Did         string `protobuf:"bytes,1,opt,name=did,proto3" json:"did,omitempty"`
+    VerifyBadge bool   `protobuf:"varint,2,opt,name=verify_badge,json=verifyBadge,proto3" json:"verify_badge,omitempty"`
+    VerifyKeys  bool   `protobuf:"varint,3,opt,name=verify_keys,json=verifyKeys,proto3" json:"verify_keys,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="VerifyRegistrationRequest.Descriptor"></a>
+### func \(\*VerifyRegistrationRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L967>)
+
+```go
+func (*VerifyRegistrationRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use VerifyRegistrationRequest.ProtoReflect.Descriptor instead.
+
+<a name="VerifyRegistrationRequest.GetDid"></a>
+### func \(\*VerifyRegistrationRequest\) [GetDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L971>)
+
+```go
+func (x *VerifyRegistrationRequest) GetDid() string
+```
+
+
+
+<a name="VerifyRegistrationRequest.GetVerifyBadge"></a>
+### func \(\*VerifyRegistrationRequest\) [GetVerifyBadge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L978>)
+
+```go
+func (x *VerifyRegistrationRequest) GetVerifyBadge() bool
+```
+
+
+
+<a name="VerifyRegistrationRequest.GetVerifyKeys"></a>
+### func \(\*VerifyRegistrationRequest\) [GetVerifyKeys](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L985>)
+
+```go
+func (x *VerifyRegistrationRequest) GetVerifyKeys() bool
+```
+
+
+
+<a name="VerifyRegistrationRequest.ProtoMessage"></a>
+### func \(\*VerifyRegistrationRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L952>)
+
+```go
+func (*VerifyRegistrationRequest) ProtoMessage()
+```
+
+
+
+<a name="VerifyRegistrationRequest.ProtoReflect"></a>
+### func \(\*VerifyRegistrationRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L954>)
+
+```go
+func (x *VerifyRegistrationRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="VerifyRegistrationRequest.Reset"></a>
+### func \(\*VerifyRegistrationRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L941>)
+
+```go
+func (x *VerifyRegistrationRequest) Reset()
+```
+
+
+
+<a name="VerifyRegistrationRequest.String"></a>
+### func \(\*VerifyRegistrationRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L948>)
+
+```go
+func (x *VerifyRegistrationRequest) String() string
+```
+
+
+
+<a name="VerifyRegistrationResponse"></a>
+## type [VerifyRegistrationResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L993-L1002>)
+
+Verify registration response
+
+```go
+type VerifyRegistrationResponse struct {
+    IsRegistered bool              `protobuf:"varint,1,opt,name=is_registered,json=isRegistered,proto3" json:"is_registered,omitempty"`
+    BadgeValid   bool              `protobuf:"varint,2,opt,name=badge_valid,json=badgeValid,proto3" json:"badge_valid,omitempty"`
+    KeysValid    bool              `protobuf:"varint,3,opt,name=keys_valid,json=keysValid,proto3" json:"keys_valid,omitempty"`
+    Validation   *ValidationResult `protobuf:"bytes,4,opt,name=validation,proto3" json:"validation,omitempty"`
+    ErrorMessage string            `protobuf:"bytes,5,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="VerifyRegistrationResponse.Descriptor"></a>
+### func \(\*VerifyRegistrationResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1030>)
+
+```go
+func (*VerifyRegistrationResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use VerifyRegistrationResponse.ProtoReflect.Descriptor instead.
+
+<a name="VerifyRegistrationResponse.GetBadgeValid"></a>
+### func \(\*VerifyRegistrationResponse\) [GetBadgeValid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1041>)
+
+```go
+func (x *VerifyRegistrationResponse) GetBadgeValid() bool
+```
+
+
+
+<a name="VerifyRegistrationResponse.GetErrorMessage"></a>
+### func \(\*VerifyRegistrationResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1062>)
+
+```go
+func (x *VerifyRegistrationResponse) GetErrorMessage() string
+```
+
+
+
+<a name="VerifyRegistrationResponse.GetIsRegistered"></a>
+### func \(\*VerifyRegistrationResponse\) [GetIsRegistered](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1034>)
+
+```go
+func (x *VerifyRegistrationResponse) GetIsRegistered() bool
+```
+
+
+
+<a name="VerifyRegistrationResponse.GetKeysValid"></a>
+### func \(\*VerifyRegistrationResponse\) [GetKeysValid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1048>)
+
+```go
+func (x *VerifyRegistrationResponse) GetKeysValid() bool
+```
+
+
+
+<a name="VerifyRegistrationResponse.GetValidation"></a>
+### func \(\*VerifyRegistrationResponse\) [GetValidation](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1055>)
+
+```go
+func (x *VerifyRegistrationResponse) GetValidation() *ValidationResult
+```
+
+
+
+<a name="VerifyRegistrationResponse.ProtoMessage"></a>
+### func \(\*VerifyRegistrationResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1015>)
+
+```go
+func (*VerifyRegistrationResponse) ProtoMessage()
+```
+
+
+
+<a name="VerifyRegistrationResponse.ProtoReflect"></a>
+### func \(\*VerifyRegistrationResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1017>)
+
+```go
+func (x *VerifyRegistrationResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="VerifyRegistrationResponse.Reset"></a>
+### func \(\*VerifyRegistrationResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1004>)
+
+```go
+func (x *VerifyRegistrationResponse) Reset()
+```
+
+
+
+<a name="VerifyRegistrationResponse.String"></a>
+### func \(\*VerifyRegistrationResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/registry.pb.go#L1011>)
+
+```go
+func (x *VerifyRegistrationResponse) String() string
+```
+
+
+
+<a name="VerifyRequest"></a>
+## type [VerifyRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L210-L218>)
+
+Request to verify
+
+```go
+type VerifyRequest struct {
+    Payload         []byte `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+    Signature       []byte `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
+    SignatureString string `protobuf:"bytes,3,opt,name=signature_string,json=signatureString,proto3" json:"signature_string,omitempty"` // Alternative to bytes
+    ExpectedSigner  string `protobuf:"bytes,4,opt,name=expected_signer,json=expectedSigner,proto3" json:"expected_signer,omitempty"`    // Optional: expected signer DID
+    // contains filtered or unexported fields
+}
+```
+
+<a name="VerifyRequest.Descriptor"></a>
+### func \(\*VerifyRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L246>)
+
+```go
+func (*VerifyRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use VerifyRequest.ProtoReflect.Descriptor instead.
+
+<a name="VerifyRequest.GetExpectedSigner"></a>
+### func \(\*VerifyRequest\) [GetExpectedSigner](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L271>)
+
+```go
+func (x *VerifyRequest) GetExpectedSigner() string
+```
+
+
+
+<a name="VerifyRequest.GetPayload"></a>
+### func \(\*VerifyRequest\) [GetPayload](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L250>)
+
+```go
+func (x *VerifyRequest) GetPayload() []byte
+```
+
+
+
+<a name="VerifyRequest.GetSignature"></a>
+### func \(\*VerifyRequest\) [GetSignature](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L257>)
+
+```go
+func (x *VerifyRequest) GetSignature() []byte
+```
+
+
+
+<a name="VerifyRequest.GetSignatureString"></a>
+### func \(\*VerifyRequest\) [GetSignatureString](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L264>)
+
+```go
+func (x *VerifyRequest) GetSignatureString() string
+```
+
+
+
+<a name="VerifyRequest.ProtoMessage"></a>
+### func \(\*VerifyRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L231>)
+
+```go
+func (*VerifyRequest) ProtoMessage()
+```
+
+
+
+<a name="VerifyRequest.ProtoReflect"></a>
+### func \(\*VerifyRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L233>)
+
+```go
+func (x *VerifyRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="VerifyRequest.Reset"></a>
+### func \(\*VerifyRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L220>)
+
+```go
+func (x *VerifyRequest) Reset()
+```
+
+
+
+<a name="VerifyRequest.String"></a>
+### func \(\*VerifyRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L227>)
+
+```go
+func (x *VerifyRequest) String() string
+```
+
+
+
+<a name="VerifyResponse"></a>
+## type [VerifyResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L279-L288>)
+
+Response for verification
+
+```go
+type VerifyResponse struct {
+    Valid        bool              `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`
+    SignerDid    string            `protobuf:"bytes,2,opt,name=signer_did,json=signerDid,proto3" json:"signer_did,omitempty"` // Extracted signer DID
+    KeyId        string            `protobuf:"bytes,3,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`             // Key used for verification
+    Validation   *ValidationResult `protobuf:"bytes,4,opt,name=validation,proto3" json:"validation,omitempty"`
+    ErrorMessage string            `protobuf:"bytes,5,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="VerifyResponse.Descriptor"></a>
+### func \(\*VerifyResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L316>)
+
+```go
+func (*VerifyResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use VerifyResponse.ProtoReflect.Descriptor instead.
+
+<a name="VerifyResponse.GetErrorMessage"></a>
+### func \(\*VerifyResponse\) [GetErrorMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L348>)
+
+```go
+func (x *VerifyResponse) GetErrorMessage() string
+```
+
+
+
+<a name="VerifyResponse.GetKeyId"></a>
+### func \(\*VerifyResponse\) [GetKeyId](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L334>)
+
+```go
+func (x *VerifyResponse) GetKeyId() string
+```
+
+
+
+<a name="VerifyResponse.GetSignerDid"></a>
+### func \(\*VerifyResponse\) [GetSignerDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L327>)
+
+```go
+func (x *VerifyResponse) GetSignerDid() string
+```
+
+
+
+<a name="VerifyResponse.GetValid"></a>
+### func \(\*VerifyResponse\) [GetValid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L320>)
+
+```go
+func (x *VerifyResponse) GetValid() bool
+```
+
+
+
+<a name="VerifyResponse.GetValidation"></a>
+### func \(\*VerifyResponse\) [GetValidation](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L341>)
+
+```go
+func (x *VerifyResponse) GetValidation() *ValidationResult
+```
+
+
+
+<a name="VerifyResponse.ProtoMessage"></a>
+### func \(\*VerifyResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L301>)
+
+```go
+func (*VerifyResponse) ProtoMessage()
+```
+
+
+
+<a name="VerifyResponse.ProtoReflect"></a>
+### func \(\*VerifyResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L303>)
+
+```go
+func (x *VerifyResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="VerifyResponse.Reset"></a>
+### func \(\*VerifyResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L290>)
+
+```go
+func (x *VerifyResponse) Reset()
+```
+
+
+
+<a name="VerifyResponse.String"></a>
+### func \(\*VerifyResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/simpleguard.pb.go#L297>)
+
+```go
+func (x *VerifyResponse) String() string
+```
+
+
+
+<a name="VerifyServerIdentityRequest"></a>
+## type [VerifyServerIdentityRequest](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L658-L672>)
+
+Request to verify server identity
+
+```go
+type VerifyServerIdentityRequest struct {
+
+    // Disclosed server DID
+    ServerDid string `protobuf:"bytes,1,opt,name=server_did,json=serverDid,proto3" json:"server_did,omitempty"`
+    // Server trust badge (JWS), optional
+    ServerBadge string `protobuf:"bytes,2,opt,name=server_badge,json=serverBadge,proto3" json:"server_badge,omitempty"`
+    // HTTP origin for origin binding (empty for stdio)
+    TransportOrigin string `protobuf:"bytes,3,opt,name=transport_origin,json=transportOrigin,proto3" json:"transport_origin,omitempty"`
+    // URL path for did:web path binding
+    EndpointPath string `protobuf:"bytes,4,opt,name=endpoint_path,json=endpointPath,proto3" json:"endpoint_path,omitempty"`
+    // Verification configuration
+    Config *MCPVerifyConfig `protobuf:"bytes,5,opt,name=config,proto3" json:"config,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="VerifyServerIdentityRequest.Descriptor"></a>
+### func \(\*VerifyServerIdentityRequest\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L700>)
+
+```go
+func (*VerifyServerIdentityRequest) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use VerifyServerIdentityRequest.ProtoReflect.Descriptor instead.
+
+<a name="VerifyServerIdentityRequest.GetConfig"></a>
+### func \(\*VerifyServerIdentityRequest\) [GetConfig](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L732>)
+
+```go
+func (x *VerifyServerIdentityRequest) GetConfig() *MCPVerifyConfig
+```
+
+
+
+<a name="VerifyServerIdentityRequest.GetEndpointPath"></a>
+### func \(\*VerifyServerIdentityRequest\) [GetEndpointPath](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L725>)
+
+```go
+func (x *VerifyServerIdentityRequest) GetEndpointPath() string
+```
+
+
+
+<a name="VerifyServerIdentityRequest.GetServerBadge"></a>
+### func \(\*VerifyServerIdentityRequest\) [GetServerBadge](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L711>)
+
+```go
+func (x *VerifyServerIdentityRequest) GetServerBadge() string
+```
+
+
+
+<a name="VerifyServerIdentityRequest.GetServerDid"></a>
+### func \(\*VerifyServerIdentityRequest\) [GetServerDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L704>)
+
+```go
+func (x *VerifyServerIdentityRequest) GetServerDid() string
+```
+
+
+
+<a name="VerifyServerIdentityRequest.GetTransportOrigin"></a>
+### func \(\*VerifyServerIdentityRequest\) [GetTransportOrigin](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L718>)
+
+```go
+func (x *VerifyServerIdentityRequest) GetTransportOrigin() string
+```
+
+
+
+<a name="VerifyServerIdentityRequest.ProtoMessage"></a>
+### func \(\*VerifyServerIdentityRequest\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L685>)
+
+```go
+func (*VerifyServerIdentityRequest) ProtoMessage()
+```
+
+
+
+<a name="VerifyServerIdentityRequest.ProtoReflect"></a>
+### func \(\*VerifyServerIdentityRequest\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L687>)
+
+```go
+func (x *VerifyServerIdentityRequest) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="VerifyServerIdentityRequest.Reset"></a>
+### func \(\*VerifyServerIdentityRequest\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L674>)
+
+```go
+func (x *VerifyServerIdentityRequest) Reset()
+```
+
+
+
+<a name="VerifyServerIdentityRequest.String"></a>
+### func \(\*VerifyServerIdentityRequest\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L681>)
+
+```go
+func (x *VerifyServerIdentityRequest) String() string
+```
+
+
+
+<a name="VerifyServerIdentityResponse"></a>
+## type [VerifyServerIdentityResponse](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L822-L838>)
+
+Response from server identity verification
+
+```go
+type VerifyServerIdentityResponse struct {
+
+    // Server classification state (RFC-007 §5.2)
+    State MCPServerState `protobuf:"varint,1,opt,name=state,proto3,enum=capiscio.v1.MCPServerState" json:"state,omitempty"`
+    // Trust level (only set for VERIFIED_PRINCIPAL)
+    TrustLevel int32 `protobuf:"varint,2,opt,name=trust_level,json=trustLevel,proto3" json:"trust_level,omitempty"`
+    // Confirmed server DID
+    ServerDid string `protobuf:"bytes,3,opt,name=server_did,json=serverDid,proto3" json:"server_did,omitempty"`
+    // Badge ID if present
+    BadgeJti string `protobuf:"bytes,4,opt,name=badge_jti,json=badgeJti,proto3" json:"badge_jti,omitempty"`
+    // Error code (only set on verification failure)
+    ErrorCode MCPServerErrorCode `protobuf:"varint,5,opt,name=error_code,json=errorCode,proto3,enum=capiscio.v1.MCPServerErrorCode" json:"error_code,omitempty"`
+    // Human-readable error detail
+    ErrorDetail string `protobuf:"bytes,6,opt,name=error_detail,json=errorDetail,proto3" json:"error_detail,omitempty"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="VerifyServerIdentityResponse.Descriptor"></a>
+### func \(\*VerifyServerIdentityResponse\) [Descriptor](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L866>)
+
+```go
+func (*VerifyServerIdentityResponse) Descriptor() ([]byte, []int)
+```
+
+Deprecated: Use VerifyServerIdentityResponse.ProtoReflect.Descriptor instead.
+
+<a name="VerifyServerIdentityResponse.GetBadgeJti"></a>
+### func \(\*VerifyServerIdentityResponse\) [GetBadgeJti](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L891>)
+
+```go
+func (x *VerifyServerIdentityResponse) GetBadgeJti() string
+```
+
+
+
+<a name="VerifyServerIdentityResponse.GetErrorCode"></a>
+### func \(\*VerifyServerIdentityResponse\) [GetErrorCode](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L898>)
+
+```go
+func (x *VerifyServerIdentityResponse) GetErrorCode() MCPServerErrorCode
+```
+
+
+
+<a name="VerifyServerIdentityResponse.GetErrorDetail"></a>
+### func \(\*VerifyServerIdentityResponse\) [GetErrorDetail](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L905>)
+
+```go
+func (x *VerifyServerIdentityResponse) GetErrorDetail() string
+```
+
+
+
+<a name="VerifyServerIdentityResponse.GetServerDid"></a>
+### func \(\*VerifyServerIdentityResponse\) [GetServerDid](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L884>)
+
+```go
+func (x *VerifyServerIdentityResponse) GetServerDid() string
+```
+
+
+
+<a name="VerifyServerIdentityResponse.GetState"></a>
+### func \(\*VerifyServerIdentityResponse\) [GetState](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L870>)
+
+```go
+func (x *VerifyServerIdentityResponse) GetState() MCPServerState
+```
+
+
+
+<a name="VerifyServerIdentityResponse.GetTrustLevel"></a>
+### func \(\*VerifyServerIdentityResponse\) [GetTrustLevel](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L877>)
+
+```go
+func (x *VerifyServerIdentityResponse) GetTrustLevel() int32
+```
+
+
+
+<a name="VerifyServerIdentityResponse.ProtoMessage"></a>
+### func \(\*VerifyServerIdentityResponse\) [ProtoMessage](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L851>)
+
+```go
+func (*VerifyServerIdentityResponse) ProtoMessage()
+```
+
+
+
+<a name="VerifyServerIdentityResponse.ProtoReflect"></a>
+### func \(\*VerifyServerIdentityResponse\) [ProtoReflect](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L853>)
+
+```go
+func (x *VerifyServerIdentityResponse) ProtoReflect() protoreflect.Message
+```
+
+
+
+<a name="VerifyServerIdentityResponse.Reset"></a>
+### func \(\*VerifyServerIdentityResponse\) [Reset](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L840>)
+
+```go
+func (x *VerifyServerIdentityResponse) Reset()
+```
+
+
+
+<a name="VerifyServerIdentityResponse.String"></a>
+### func \(\*VerifyServerIdentityResponse\) [String](<https://github.com/capiscio/capiscio-core/blob/main/pkg/rpc/gen/capiscio/v1/mcp.pb.go#L847>)
+
+```go
+func (x *VerifyServerIdentityResponse) String() string
+```
+
+
 
 Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
