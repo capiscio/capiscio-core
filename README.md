@@ -121,6 +121,69 @@ curl -H "X-Capiscio-Badge: $(cat badge.jwt)" http://localhost:8080/api/v1/agent
 curl http://localhost:8080/api/v1/agent
 ```
 
+## 🐳 Docker
+
+The **CapiscIO Guard** is available as a Docker image for easy deployment:
+
+```bash
+docker pull capiscio/guard
+```
+
+### Quick Start with Docker
+
+```bash
+# Run the gateway in front of your agent
+docker run -p 8080:8080 capiscio/guard \
+  gateway start \
+  --port 8080 \
+  --target http://host.docker.internal:3000 \
+  --registry-url https://registry.capisc.io
+```
+
+### Docker Compose
+
+```yaml
+version: '3.8'
+services:
+  guard:
+    image: capiscio/guard:latest
+    ports:
+      - "8080:8080"
+    command:
+      - gateway
+      - start
+      - --port=8080
+      - --target=http://agent:3000
+      - --registry-url=https://registry.capisc.io
+    depends_on:
+      - agent
+  
+  agent:
+    image: your-agent:latest
+    # Your agent runs on internal port 3000
+```
+
+### Available Tags
+
+| Tag | Description |
+|-----|-------------|
+| `latest` | Latest stable release |
+| `vX.Y.Z` | Specific version (e.g., `v2.3.0`) |
+| `vX.Y` | Latest patch for minor version |
+| `vX` | Latest for major version |
+
+### Building Locally
+
+```bash
+# Clone and build
+git clone https://github.com/capiscio/capiscio-core.git
+cd capiscio-core
+make docker-build
+
+# Test locally
+make docker-run TARGET=http://localhost:3000
+```
+
 ### 7. gRPC Server (SDK Integration)
 
 The gRPC server provides programmatic access to all CapiscIO functionality for SDKs in Python, Node.js, and other languages. The SDKs automatically manage the gRPC server process.

@@ -1,7 +1,38 @@
-.PHONY: all build-cli build-python test clean proto docs
+.PHONY: all build-cli build-python test clean proto docs docker docker-build docker-run
 
 all: build-cli build-python
 
+# =============================================================================
+# Docker targets for capiscio/guard
+# =============================================================================
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+DOCKER_IMAGE := capiscio/guard
+
+docker: docker-build  ## Build Docker image (alias)
+
+docker-build:  ## Build Docker image locally
+	@echo "Building Docker image $(DOCKER_IMAGE):$(VERSION)..."
+	docker build \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg COMMIT=$(COMMIT) \
+		-t $(DOCKER_IMAGE):$(VERSION) \
+		-t $(DOCKER_IMAGE):latest \
+		.
+
+docker-run:  ## Run Docker image locally (example)
+	@echo "Running $(DOCKER_IMAGE):latest..."
+	@echo "Usage: make docker-run TARGET=http://localhost:3000"
+	docker run --rm -p 8080:8080 $(DOCKER_IMAGE):latest \
+		gateway start --port 8080 --target $(TARGET) --registry-url https://registry.capisc.io
+
+docker-push:  ## Push Docker image to registry (requires docker login)
+	docker push $(DOCKER_IMAGE):$(VERSION)
+	docker push $(DOCKER_IMAGE):latest
+
+# =============================================================================
+# Build targets
+# =============================================================================
 proto:
 	@echo "Generating protobuf files..."
 	cd proto && buf generate
