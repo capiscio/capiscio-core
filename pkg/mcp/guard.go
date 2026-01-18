@@ -186,7 +186,7 @@ func (g *Guard) verifyBadgeCredential(
 	trustLevelStr := result.Claims.TrustLevel()
 	trustLevel = 0
 	if trustLevelStr != "" {
-		fmt.Sscanf(trustLevelStr, "%d", &trustLevel)
+		_, _ = fmt.Sscanf(trustLevelStr, "%d", &trustLevel)
 	}
 
 	return result.Claims.Subject, result.Claims.JTI, trustLevel, nil

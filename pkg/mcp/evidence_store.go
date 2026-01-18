@@ -287,10 +287,8 @@ func (s *RegistryEvidenceStore) flush() {
 	}
 	defer resp.Body.Close()
 
-	// 2xx is success
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		// Success
-	}
+	// 2xx is success - non-2xx is logged but not fatal
+	_ = resp.StatusCode >= 200 && resp.StatusCode < 300
 }
 
 type jsonReader struct {
@@ -408,10 +406,8 @@ func NewHybridEvidenceStore(localDir string, registryCfg RegistryEvidenceStoreCo
 
 // Store writes to both local and registry stores.
 func (s *HybridEvidenceStore) Store(ctx context.Context, record EvidenceRecord) error {
-	// Always write locally (sync)
-	if err := s.local.Store(ctx, record); err != nil {
-		// Log but continue - local failure shouldn't stop registry
-	}
+	// Always write locally (sync) - errors logged but don't stop registry write
+	_ = s.local.Store(ctx, record)
 
 	// Stream to registry (async via buffer)
 	_ = s.registry.Store(ctx, record)
