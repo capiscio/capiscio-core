@@ -88,12 +88,12 @@ var issueCmd = &cobra.Command{
 	Short: "Issue a new Trust Badge",
 	Long: `Issue a new Trust Badge.
 
-Trust Levels:
-  0 - Self-signed (did:key, iss == sub) - implied by --self-sign
-  1 - Domain Validated (DV) - requires registry CA
-  2 - Organization Validated (OV) - requires registry CA  
-  3 - Extended Validated (EV) - requires registry CA
-  4 - Community Vouched (CV) - requires registry CA
+Trust Levels (RFC-002 §5):
+  0 - Self-Signed (SS) - did:key, iss == sub - implied by --self-sign
+  1 - Registered (REG) - account registration with CA
+  2 - Domain Validated (DV) - DNS/HTTP domain ownership proof
+  3 - Organization Validated (OV) - legal entity verification
+  4 - Extended Validated (EV) - manual review + security audit
 
 Examples:
   # Self-signed badge (level 0 implied)
@@ -1283,7 +1283,7 @@ func init() {
 	issueCmd.Flags().StringVar(&issueIssuer, "iss", "did:web:registry.capisc.io", "Issuer DID (auto-set to did:key for level 0)")
 	issueCmd.Flags().StringVar(&issueDomain, "domain", "example.com", "Agent Domain")
 	issueCmd.Flags().DurationVar(&issueExpiry, "exp", 5*time.Minute, "Expiration duration (default 5m per RFC-002)")
-	issueCmd.Flags().StringVar(&issueLevel, "level", "1", "Trust level (0=self-signed, 1=DV, 2=OV, 3=EV, 4=CV)")
+	issueCmd.Flags().StringVar(&issueLevel, "level", "1", "Trust level (0=SS, 1=REG, 2=DV, 3=OV, 4=EV per RFC-002)")
 	issueCmd.Flags().StringVar(&issueAudience, "aud", "", "Audience (comma-separated URLs)")
 	issueCmd.Flags().BoolVar(&issueSelfSign, "self-sign", false, "Issue self-signed badge (implies level 0)")
 	issueCmd.Flags().StringVar(&keyFile, "key", "", "Path to private key file (optional, auto-generates if not provided)")
@@ -1292,7 +1292,7 @@ func init() {
 	keepCmd.Flags().StringVar(&keepAgentID, "agent-id", "", "Agent ID (UUID) to request badges for")
 	keepCmd.Flags().StringVar(&issueDomain, "domain", "", "Agent domain (optional, uses agent's registered domain)")
 	keepCmd.Flags().DurationVar(&issueExpiry, "exp", 5*time.Minute, "Badge expiration duration")
-	keepCmd.Flags().StringVar(&issueLevel, "level", "1", "Trust level (1=DV, 2=OV, 3=EV, 4=CV)")
+	keepCmd.Flags().StringVar(&issueLevel, "level", "1", "Trust level (1=REG, 2=DV, 3=OV, 4=EV per RFC-002)")
 	keepCmd.Flags().StringVar(&keyFile, "key", "", "Path to private key file (required for --self-sign)")
 	keepCmd.Flags().StringVar(&keepOutFile, "out", "badge.jwt", "Output file path for badge")
 	keepCmd.Flags().DurationVar(&keepRenewBefore, "renew-before", 1*time.Minute, "Time before expiry to renew")

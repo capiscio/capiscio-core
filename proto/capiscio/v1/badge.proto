@@ -41,14 +41,16 @@ service BadgeService {
   rpc StartKeeper(StartKeeperRequest) returns (stream KeeperEvent);
 }
 
-// Trust level for badges (RFC-002 v1.1)
+// Trust level for badges (RFC-002 §5)
+// NOTE: Proto enum ordinals (1-5) map to RFC-002 level strings ("0"-"4")
+// The badge JWT `vc.credentialSubject.level` uses the RFC string values
 enum TrustLevel {
   TRUST_LEVEL_UNSPECIFIED = 0;
-  TRUST_LEVEL_SELF_SIGNED = 1;  // Self-signed (Level 0, did:key)
-  TRUST_LEVEL_DV = 2;           // Domain Validated (Level 1)
-  TRUST_LEVEL_OV = 3;           // Organization Validated (Level 2)
-  TRUST_LEVEL_EV = 4;           // Extended Validated (Level 3)
-  TRUST_LEVEL_CV = 5;           // Community Vouched (Level 4)
+  TRUST_LEVEL_SELF_SIGNED = 1;  // RFC-002 Level "0": Self-Signed (SS) - did:key, iss == sub
+  TRUST_LEVEL_DV = 2;           // RFC-002 Level "1": Registered (REG) - account registration
+  TRUST_LEVEL_OV = 3;           // RFC-002 Level "2": Domain Validated (DV) - DNS/HTTP proof
+  TRUST_LEVEL_EV = 4;           // RFC-002 Level "3": Organization Validated (OV) - legal entity
+  TRUST_LEVEL_CV = 5;           // RFC-002 Level "4": Extended Validated (EV) - security audit
 }
 
 // Badge claims structure
