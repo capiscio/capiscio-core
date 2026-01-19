@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-01-18
+
+### Added
+- **Docker Image**: Official `capiscio/guard` Docker image for sidecar deployment (~15MB, distroless)
+- **GitHub Actions**: Automated Docker build/push workflow for multi-arch (amd64/arm64)
+- **MCP Service**: Server identity operations via MCP protocol
+
+### Changed
+- Updated badge command and proto definitions
+
 ## [2.3.1] - 2025-01-14
 
 ### Fixed
