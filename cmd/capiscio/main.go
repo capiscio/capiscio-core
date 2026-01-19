@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version = "2.3.1"
+var version = "2.4.0"
 
 var rootCmd = &cobra.Command{
 	Use:   "capiscio",
