@@ -140,6 +140,53 @@ capiscio badge keep --ca https://registry.capisc.io --api-key $API_KEY
 
 ---
 
+### `init`
+
+Initialize a new CapiscIO agent identity. This is the "Let's Encrypt" style setup for agents - one command does everything: generates keys, derives a DID, registers with the server, and creates an agent card.
+
+```bash
+capiscio init [flags]
+```
+
+**Options:**
+- `--api-key <string>`: CapiscIO API key (prefer `CAPISCIO_API_KEY` env var for security).
+- `--agent-id <uuid>`: Agent ID (UUID). If omitted, will use first agent from registry.
+- `--name <string>`: Agent name (for display purposes).
+- `--server <url>`: CapiscIO registry server URL (default "https://registry.capisc.io").
+- `--output <path>`: Output directory (default "~/.capiscio/keys/{agent-id}/").
+- `--auto-badge`: Automatically request initial Trust Badge (default false, use `badge keep` instead).
+- `--force`: Overwrite existing keys (use with caution!).
+
+**Output Files:**
+- `private.jwk` - Ed25519 private key (0600 permissions - keep secret!)
+- `public.jwk` - Ed25519 public key
+- `did.txt` - The agent's did:key identifier
+- `agent-card.json` - A2A-compliant agent card with x-capiscio extension
+
+**Examples:**
+```bash
+# Initialize using environment variable (recommended)
+export CAPISCIO_API_KEY=sk_live_...
+capiscio init --agent-id my-agent-001
+
+# Initialize with specific agent name
+capiscio init --agent-id my-agent-001 --name "My Research Agent"
+
+# Initialize with custom output directory
+capiscio init --agent-id my-agent-001 --output ./my-agent-keys/
+
+# Re-initialize (overwrite existing keys - use with caution!)
+capiscio init --agent-id my-agent-001 --force
+```
+
+**Security Notes:**
+- The API key can be provided via the `CAPISCIO_API_KEY` environment variable (recommended) or the `--api-key` flag. The environment variable is preferred as CLI arguments are visible in process listings.
+- Private keys are created with 0600 permissions (owner read/write only).
+- Always keep your `private.jwk` secret and backed up.
+- Using `--force` will invalidate any existing badges signed with the previous key.
+
+---
+
 ### `key`
 
 Manage cryptographic keys.

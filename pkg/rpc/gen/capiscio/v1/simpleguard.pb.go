@@ -1196,6 +1196,200 @@ func (x *GetKeyInfoResponse) GetErrorMessage() string {
 	return ""
 }
 
+// Request to initialize agent identity
+type InitRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ApiKey        string                 `protobuf:"bytes,1,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`                                                                 // API key for server authentication
+	AgentId       string                 `protobuf:"bytes,2,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`                                                              // Agent UUID to register DID for
+	ServerUrl     string                 `protobuf:"bytes,3,opt,name=server_url,json=serverUrl,proto3" json:"server_url,omitempty"`                                                        // CapiscIO server URL (default: https://api.capisc.io)
+	OutputDir     string                 `protobuf:"bytes,4,opt,name=output_dir,json=outputDir,proto3" json:"output_dir,omitempty"`                                                        // Directory for generated files (default: .capiscio)
+	Force         bool                   `protobuf:"varint,5,opt,name=force,proto3" json:"force,omitempty"`                                                                                // Overwrite existing files
+	Algorithm     KeyAlgorithm           `protobuf:"varint,6,opt,name=algorithm,proto3,enum=capiscio.v1.KeyAlgorithm" json:"algorithm,omitempty"`                                          // Key algorithm (default: Ed25519)
+	Metadata      map[string]string      `protobuf:"bytes,7,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // Additional metadata for agent card
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InitRequest) Reset() {
+	*x = InitRequest{}
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InitRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InitRequest) ProtoMessage() {}
+
+func (x *InitRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InitRequest.ProtoReflect.Descriptor instead.
+func (*InitRequest) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_simpleguard_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *InitRequest) GetApiKey() string {
+	if x != nil {
+		return x.ApiKey
+	}
+	return ""
+}
+
+func (x *InitRequest) GetAgentId() string {
+	if x != nil {
+		return x.AgentId
+	}
+	return ""
+}
+
+func (x *InitRequest) GetServerUrl() string {
+	if x != nil {
+		return x.ServerUrl
+	}
+	return ""
+}
+
+func (x *InitRequest) GetOutputDir() string {
+	if x != nil {
+		return x.OutputDir
+	}
+	return ""
+}
+
+func (x *InitRequest) GetForce() bool {
+	if x != nil {
+		return x.Force
+	}
+	return false
+}
+
+func (x *InitRequest) GetAlgorithm() KeyAlgorithm {
+	if x != nil {
+		return x.Algorithm
+	}
+	return KeyAlgorithm_KEY_ALGORITHM_UNSPECIFIED
+}
+
+func (x *InitRequest) GetMetadata() map[string]string {
+	if x != nil {
+		return x.Metadata
+	}
+	return nil
+}
+
+// Response from init
+type InitResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Did            string                 `protobuf:"bytes,1,opt,name=did,proto3" json:"did,omitempty"`                                               // Generated did:key URI
+	AgentId        string                 `protobuf:"bytes,2,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`                        // Registered agent ID
+	PrivateKeyPath string                 `protobuf:"bytes,3,opt,name=private_key_path,json=privateKeyPath,proto3" json:"private_key_path,omitempty"` // Path to private key file
+	PublicKeyPath  string                 `protobuf:"bytes,4,opt,name=public_key_path,json=publicKeyPath,proto3" json:"public_key_path,omitempty"`    // Path to public key file
+	AgentCardPath  string                 `protobuf:"bytes,5,opt,name=agent_card_path,json=agentCardPath,proto3" json:"agent_card_path,omitempty"`    // Path to agent card JSON
+	AgentCardJson  string                 `protobuf:"bytes,6,opt,name=agent_card_json,json=agentCardJson,proto3" json:"agent_card_json,omitempty"`    // Agent card contents as JSON string
+	Registered     bool                   `protobuf:"varint,7,opt,name=registered,proto3" json:"registered,omitempty"`                                // Whether DID was registered with server
+	ErrorMessage   string                 `protobuf:"bytes,8,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`         // Error if any
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *InitResponse) Reset() {
+	*x = InitResponse{}
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InitResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InitResponse) ProtoMessage() {}
+
+func (x *InitResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InitResponse.ProtoReflect.Descriptor instead.
+func (*InitResponse) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_simpleguard_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *InitResponse) GetDid() string {
+	if x != nil {
+		return x.Did
+	}
+	return ""
+}
+
+func (x *InitResponse) GetAgentId() string {
+	if x != nil {
+		return x.AgentId
+	}
+	return ""
+}
+
+func (x *InitResponse) GetPrivateKeyPath() string {
+	if x != nil {
+		return x.PrivateKeyPath
+	}
+	return ""
+}
+
+func (x *InitResponse) GetPublicKeyPath() string {
+	if x != nil {
+		return x.PublicKeyPath
+	}
+	return ""
+}
+
+func (x *InitResponse) GetAgentCardPath() string {
+	if x != nil {
+		return x.AgentCardPath
+	}
+	return ""
+}
+
+func (x *InitResponse) GetAgentCardJson() string {
+	if x != nil {
+		return x.AgentCardJson
+	}
+	return ""
+}
+
+func (x *InitResponse) GetRegistered() bool {
+	if x != nil {
+		return x.Registered
+	}
+	return false
+}
+
+func (x *InitResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
 var File_capiscio_v1_simpleguard_proto protoreflect.FileDescriptor
 
 const file_capiscio_v1_simpleguard_proto_rawDesc = "" +
@@ -1308,12 +1502,36 @@ const file_capiscio_v1_simpleguard_proto_rawDesc = "" +
 	"\rerror_message\x18\b \x01(\tR\ferrorMessage\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01*\x8e\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xcf\x02\n" +
+	"\vInitRequest\x12\x17\n" +
+	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\x12\x19\n" +
+	"\bagent_id\x18\x02 \x01(\tR\aagentId\x12\x1d\n" +
+	"\n" +
+	"server_url\x18\x03 \x01(\tR\tserverUrl\x12\x1d\n" +
+	"\n" +
+	"output_dir\x18\x04 \x01(\tR\toutputDir\x12\x14\n" +
+	"\x05force\x18\x05 \x01(\bR\x05force\x127\n" +
+	"\talgorithm\x18\x06 \x01(\x0e2\x19.capiscio.v1.KeyAlgorithmR\talgorithm\x12B\n" +
+	"\bmetadata\x18\a \x03(\v2&.capiscio.v1.InitRequest.MetadataEntryR\bmetadata\x1a;\n" +
+	"\rMetadataEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa2\x02\n" +
+	"\fInitResponse\x12\x10\n" +
+	"\x03did\x18\x01 \x01(\tR\x03did\x12\x19\n" +
+	"\bagent_id\x18\x02 \x01(\tR\aagentId\x12(\n" +
+	"\x10private_key_path\x18\x03 \x01(\tR\x0eprivateKeyPath\x12&\n" +
+	"\x0fpublic_key_path\x18\x04 \x01(\tR\rpublicKeyPath\x12&\n" +
+	"\x0fagent_card_path\x18\x05 \x01(\tR\ragentCardPath\x12&\n" +
+	"\x0fagent_card_json\x18\x06 \x01(\tR\ragentCardJson\x12\x1e\n" +
+	"\n" +
+	"registered\x18\a \x01(\bR\n" +
+	"registered\x12#\n" +
+	"\rerror_message\x18\b \x01(\tR\ferrorMessage*\x8e\x01\n" +
 	"\x0fSignatureFormat\x12 \n" +
 	"\x1cSIGNATURE_FORMAT_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cSIGNATURE_FORMAT_JWS_COMPACT\x10\x01\x12\x1d\n" +
 	"\x19SIGNATURE_FORMAT_JWS_JSON\x10\x02\x12\x18\n" +
-	"\x14SIGNATURE_FORMAT_RAW\x10\x032\x83\x05\n" +
+	"\x14SIGNATURE_FORMAT_RAW\x10\x032\xc0\x05\n" +
 	"\x12SimpleGuardService\x12;\n" +
 	"\x04Sign\x12\x18.capiscio.v1.SignRequest\x1a\x19.capiscio.v1.SignResponse\x12A\n" +
 	"\x06Verify\x12\x1a.capiscio.v1.VerifyRequest\x1a\x1b.capiscio.v1.VerifyResponse\x12S\n" +
@@ -1323,7 +1541,8 @@ const file_capiscio_v1_simpleguard_proto_rawDesc = "" +
 	"\aLoadKey\x12\x1b.capiscio.v1.LoadKeyRequest\x1a\x1c.capiscio.v1.LoadKeyResponse\x12J\n" +
 	"\tExportKey\x12\x1d.capiscio.v1.ExportKeyRequest\x1a\x1e.capiscio.v1.ExportKeyResponse\x12M\n" +
 	"\n" +
-	"GetKeyInfo\x12\x1e.capiscio.v1.GetKeyInfoRequest\x1a\x1f.capiscio.v1.GetKeyInfoResponseB\xb6\x01\n" +
+	"GetKeyInfo\x12\x1e.capiscio.v1.GetKeyInfoRequest\x1a\x1f.capiscio.v1.GetKeyInfoResponse\x12;\n" +
+	"\x04Init\x12\x18.capiscio.v1.InitRequest\x1a\x19.capiscio.v1.InitResponseB\xb6\x01\n" +
 	"\x0fcom.capiscio.v1B\x10SimpleguardProtoP\x01ZDgithub.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1;capisciov1\xa2\x02\x03CXX\xaa\x02\vCapiscio.V1\xca\x02\vCapiscio\\V1\xe2\x02\x17Capiscio\\V1\\GPBMetadata\xea\x02\fCapiscio::V1b\x06proto3"
 
 var (
@@ -1339,7 +1558,7 @@ func file_capiscio_v1_simpleguard_proto_rawDescGZIP() []byte {
 }
 
 var file_capiscio_v1_simpleguard_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_capiscio_v1_simpleguard_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_capiscio_v1_simpleguard_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_capiscio_v1_simpleguard_proto_goTypes = []any{
 	(SignatureFormat)(0),            // 0: capiscio.v1.SignatureFormat
 	(*SignRequest)(nil),             // 1: capiscio.v1.SignRequest
@@ -1358,52 +1577,59 @@ var file_capiscio_v1_simpleguard_proto_goTypes = []any{
 	(*ExportKeyResponse)(nil),       // 14: capiscio.v1.ExportKeyResponse
 	(*GetKeyInfoRequest)(nil),       // 15: capiscio.v1.GetKeyInfoRequest
 	(*GetKeyInfoResponse)(nil),      // 16: capiscio.v1.GetKeyInfoResponse
-	nil,                             // 17: capiscio.v1.SignRequest.HeadersEntry
-	nil,                             // 18: capiscio.v1.SignAttachedRequest.HeadersEntry
-	nil,                             // 19: capiscio.v1.GenerateKeyPairRequest.MetadataEntry
-	nil,                             // 20: capiscio.v1.GetKeyInfoResponse.MetadataEntry
-	(*ValidationResult)(nil),        // 21: capiscio.v1.ValidationResult
-	(KeyAlgorithm)(0),               // 22: capiscio.v1.KeyAlgorithm
-	(KeyFormat)(0),                  // 23: capiscio.v1.KeyFormat
-	(*Timestamp)(nil),               // 24: capiscio.v1.Timestamp
+	(*InitRequest)(nil),             // 17: capiscio.v1.InitRequest
+	(*InitResponse)(nil),            // 18: capiscio.v1.InitResponse
+	nil,                             // 19: capiscio.v1.SignRequest.HeadersEntry
+	nil,                             // 20: capiscio.v1.SignAttachedRequest.HeadersEntry
+	nil,                             // 21: capiscio.v1.GenerateKeyPairRequest.MetadataEntry
+	nil,                             // 22: capiscio.v1.GetKeyInfoResponse.MetadataEntry
+	nil,                             // 23: capiscio.v1.InitRequest.MetadataEntry
+	(*ValidationResult)(nil),        // 24: capiscio.v1.ValidationResult
+	(KeyAlgorithm)(0),               // 25: capiscio.v1.KeyAlgorithm
+	(KeyFormat)(0),                  // 26: capiscio.v1.KeyFormat
+	(*Timestamp)(nil),               // 27: capiscio.v1.Timestamp
 }
 var file_capiscio_v1_simpleguard_proto_depIdxs = []int32{
 	0,  // 0: capiscio.v1.SignRequest.format:type_name -> capiscio.v1.SignatureFormat
-	17, // 1: capiscio.v1.SignRequest.headers:type_name -> capiscio.v1.SignRequest.HeadersEntry
-	21, // 2: capiscio.v1.VerifyResponse.validation:type_name -> capiscio.v1.ValidationResult
+	19, // 1: capiscio.v1.SignRequest.headers:type_name -> capiscio.v1.SignRequest.HeadersEntry
+	24, // 2: capiscio.v1.VerifyResponse.validation:type_name -> capiscio.v1.ValidationResult
 	0,  // 3: capiscio.v1.SignAttachedRequest.format:type_name -> capiscio.v1.SignatureFormat
-	18, // 4: capiscio.v1.SignAttachedRequest.headers:type_name -> capiscio.v1.SignAttachedRequest.HeadersEntry
-	21, // 5: capiscio.v1.VerifyAttachedResponse.validation:type_name -> capiscio.v1.ValidationResult
-	22, // 6: capiscio.v1.GenerateKeyPairRequest.algorithm:type_name -> capiscio.v1.KeyAlgorithm
-	19, // 7: capiscio.v1.GenerateKeyPairRequest.metadata:type_name -> capiscio.v1.GenerateKeyPairRequest.MetadataEntry
-	22, // 8: capiscio.v1.GenerateKeyPairResponse.algorithm:type_name -> capiscio.v1.KeyAlgorithm
-	23, // 9: capiscio.v1.LoadKeyRequest.format:type_name -> capiscio.v1.KeyFormat
-	22, // 10: capiscio.v1.LoadKeyResponse.algorithm:type_name -> capiscio.v1.KeyAlgorithm
-	23, // 11: capiscio.v1.ExportKeyRequest.format:type_name -> capiscio.v1.KeyFormat
-	22, // 12: capiscio.v1.GetKeyInfoResponse.algorithm:type_name -> capiscio.v1.KeyAlgorithm
-	24, // 13: capiscio.v1.GetKeyInfoResponse.created_at:type_name -> capiscio.v1.Timestamp
-	20, // 14: capiscio.v1.GetKeyInfoResponse.metadata:type_name -> capiscio.v1.GetKeyInfoResponse.MetadataEntry
-	1,  // 15: capiscio.v1.SimpleGuardService.Sign:input_type -> capiscio.v1.SignRequest
-	3,  // 16: capiscio.v1.SimpleGuardService.Verify:input_type -> capiscio.v1.VerifyRequest
-	5,  // 17: capiscio.v1.SimpleGuardService.SignAttached:input_type -> capiscio.v1.SignAttachedRequest
-	7,  // 18: capiscio.v1.SimpleGuardService.VerifyAttached:input_type -> capiscio.v1.VerifyAttachedRequest
-	9,  // 19: capiscio.v1.SimpleGuardService.GenerateKeyPair:input_type -> capiscio.v1.GenerateKeyPairRequest
-	11, // 20: capiscio.v1.SimpleGuardService.LoadKey:input_type -> capiscio.v1.LoadKeyRequest
-	13, // 21: capiscio.v1.SimpleGuardService.ExportKey:input_type -> capiscio.v1.ExportKeyRequest
-	15, // 22: capiscio.v1.SimpleGuardService.GetKeyInfo:input_type -> capiscio.v1.GetKeyInfoRequest
-	2,  // 23: capiscio.v1.SimpleGuardService.Sign:output_type -> capiscio.v1.SignResponse
-	4,  // 24: capiscio.v1.SimpleGuardService.Verify:output_type -> capiscio.v1.VerifyResponse
-	6,  // 25: capiscio.v1.SimpleGuardService.SignAttached:output_type -> capiscio.v1.SignAttachedResponse
-	8,  // 26: capiscio.v1.SimpleGuardService.VerifyAttached:output_type -> capiscio.v1.VerifyAttachedResponse
-	10, // 27: capiscio.v1.SimpleGuardService.GenerateKeyPair:output_type -> capiscio.v1.GenerateKeyPairResponse
-	12, // 28: capiscio.v1.SimpleGuardService.LoadKey:output_type -> capiscio.v1.LoadKeyResponse
-	14, // 29: capiscio.v1.SimpleGuardService.ExportKey:output_type -> capiscio.v1.ExportKeyResponse
-	16, // 30: capiscio.v1.SimpleGuardService.GetKeyInfo:output_type -> capiscio.v1.GetKeyInfoResponse
-	23, // [23:31] is the sub-list for method output_type
-	15, // [15:23] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	20, // 4: capiscio.v1.SignAttachedRequest.headers:type_name -> capiscio.v1.SignAttachedRequest.HeadersEntry
+	24, // 5: capiscio.v1.VerifyAttachedResponse.validation:type_name -> capiscio.v1.ValidationResult
+	25, // 6: capiscio.v1.GenerateKeyPairRequest.algorithm:type_name -> capiscio.v1.KeyAlgorithm
+	21, // 7: capiscio.v1.GenerateKeyPairRequest.metadata:type_name -> capiscio.v1.GenerateKeyPairRequest.MetadataEntry
+	25, // 8: capiscio.v1.GenerateKeyPairResponse.algorithm:type_name -> capiscio.v1.KeyAlgorithm
+	26, // 9: capiscio.v1.LoadKeyRequest.format:type_name -> capiscio.v1.KeyFormat
+	25, // 10: capiscio.v1.LoadKeyResponse.algorithm:type_name -> capiscio.v1.KeyAlgorithm
+	26, // 11: capiscio.v1.ExportKeyRequest.format:type_name -> capiscio.v1.KeyFormat
+	25, // 12: capiscio.v1.GetKeyInfoResponse.algorithm:type_name -> capiscio.v1.KeyAlgorithm
+	27, // 13: capiscio.v1.GetKeyInfoResponse.created_at:type_name -> capiscio.v1.Timestamp
+	22, // 14: capiscio.v1.GetKeyInfoResponse.metadata:type_name -> capiscio.v1.GetKeyInfoResponse.MetadataEntry
+	25, // 15: capiscio.v1.InitRequest.algorithm:type_name -> capiscio.v1.KeyAlgorithm
+	23, // 16: capiscio.v1.InitRequest.metadata:type_name -> capiscio.v1.InitRequest.MetadataEntry
+	1,  // 17: capiscio.v1.SimpleGuardService.Sign:input_type -> capiscio.v1.SignRequest
+	3,  // 18: capiscio.v1.SimpleGuardService.Verify:input_type -> capiscio.v1.VerifyRequest
+	5,  // 19: capiscio.v1.SimpleGuardService.SignAttached:input_type -> capiscio.v1.SignAttachedRequest
+	7,  // 20: capiscio.v1.SimpleGuardService.VerifyAttached:input_type -> capiscio.v1.VerifyAttachedRequest
+	9,  // 21: capiscio.v1.SimpleGuardService.GenerateKeyPair:input_type -> capiscio.v1.GenerateKeyPairRequest
+	11, // 22: capiscio.v1.SimpleGuardService.LoadKey:input_type -> capiscio.v1.LoadKeyRequest
+	13, // 23: capiscio.v1.SimpleGuardService.ExportKey:input_type -> capiscio.v1.ExportKeyRequest
+	15, // 24: capiscio.v1.SimpleGuardService.GetKeyInfo:input_type -> capiscio.v1.GetKeyInfoRequest
+	17, // 25: capiscio.v1.SimpleGuardService.Init:input_type -> capiscio.v1.InitRequest
+	2,  // 26: capiscio.v1.SimpleGuardService.Sign:output_type -> capiscio.v1.SignResponse
+	4,  // 27: capiscio.v1.SimpleGuardService.Verify:output_type -> capiscio.v1.VerifyResponse
+	6,  // 28: capiscio.v1.SimpleGuardService.SignAttached:output_type -> capiscio.v1.SignAttachedResponse
+	8,  // 29: capiscio.v1.SimpleGuardService.VerifyAttached:output_type -> capiscio.v1.VerifyAttachedResponse
+	10, // 30: capiscio.v1.SimpleGuardService.GenerateKeyPair:output_type -> capiscio.v1.GenerateKeyPairResponse
+	12, // 31: capiscio.v1.SimpleGuardService.LoadKey:output_type -> capiscio.v1.LoadKeyResponse
+	14, // 32: capiscio.v1.SimpleGuardService.ExportKey:output_type -> capiscio.v1.ExportKeyResponse
+	16, // 33: capiscio.v1.SimpleGuardService.GetKeyInfo:output_type -> capiscio.v1.GetKeyInfoResponse
+	18, // 34: capiscio.v1.SimpleGuardService.Init:output_type -> capiscio.v1.InitResponse
+	26, // [26:35] is the sub-list for method output_type
+	17, // [17:26] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_capiscio_v1_simpleguard_proto_init() }
@@ -1419,7 +1645,7 @@ func file_capiscio_v1_simpleguard_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capiscio_v1_simpleguard_proto_rawDesc), len(file_capiscio_v1_simpleguard_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   20,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

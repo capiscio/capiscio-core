@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"bytes"
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
@@ -10,6 +11,8 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
@@ -492,4 +495,171 @@ func mustMarshalPKCS8(key ed25519.PrivateKey) []byte {
 		panic(err)
 	}
 	return data
+}
+
+// initKeyResult holds the result of key generation.
+type initKeyResult struct {
+	didKey      string
+	privKeyPath string
+	pubKeyPath  string
+	pubJWK      jose.JSONWebKey
+	pubJWKBytes []byte
+}
+
+// initPrepareDir validates and creates the output directory.
+func initPrepareDir(outputDir string, force bool) (string, error) {
+	if outputDir == "" {
+		outputDir = ".capiscio"
+	}
+	privKeyPath := filepath.Join(outputDir, "private.jwk")
+	if _, err := os.Stat(privKeyPath); err == nil && !force {
+		return "", fmt.Errorf("identity already exists at %s (use force=true to overwrite)", outputDir)
+	}
+	if err := os.MkdirAll(outputDir, 0700); err != nil {
+		return "", fmt.Errorf("failed to create output directory: %v", err)
+	}
+	return outputDir, nil
+}
+
+// initGenerateAndSaveKeys generates Ed25519 keys and saves them to disk.
+func initGenerateAndSaveKeys(outputDir string) (*initKeyResult, error) {
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate key pair: %v", err)
+	}
+
+	didKey := did.NewKeyDID(pub)
+	jwk := jose.JSONWebKey{Key: priv, KeyID: didKey, Algorithm: string(jose.EdDSA), Use: "sig"}
+
+	jwkBytes, err := json.MarshalIndent(jwk, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal JWK: %v", err)
+	}
+
+	pubJWK := jwk.Public()
+	pubJWKBytes, err := json.MarshalIndent(pubJWK, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal public JWK: %v", err)
+	}
+
+	privKeyPath := filepath.Join(outputDir, "private.jwk")
+	if err := os.WriteFile(privKeyPath, jwkBytes, 0600); err != nil {
+		return nil, fmt.Errorf("failed to write private key: %v", err)
+	}
+
+	pubKeyPath := filepath.Join(outputDir, "public.jwk")
+	if err := os.WriteFile(pubKeyPath, pubJWKBytes, 0644); err != nil {
+		return nil, fmt.Errorf("failed to write public key: %v", err)
+	}
+
+	return &initKeyResult{
+		didKey: didKey, privKeyPath: privKeyPath, pubKeyPath: pubKeyPath,
+		pubJWK: pubJWK, pubJWKBytes: pubJWKBytes,
+	}, nil
+}
+
+// initBuildAgentCard creates the agent card structure.
+func initBuildAgentCard(didKey, agentID string, pubJWK jose.JSONWebKey, metadata map[string]string) map[string]interface{} {
+	agentCard := map[string]interface{}{
+		"@context":    "https://capisc.io/ns/agent-card/v1",
+		"id":          didKey,
+		"name":        fmt.Sprintf("Agent %s", agentID),
+		"description": "CapiscIO verified agent",
+		"created":     time.Now().UTC().Format(time.RFC3339),
+		"verificationMethods": []map[string]interface{}{
+			{"id": fmt.Sprintf("%s#keys-1", didKey), "type": "JsonWebKey2020", "controller": didKey, "publicKeyJwk": pubJWK},
+		},
+	}
+	if agentID != "" {
+		agentCard["capiscio:agentId"] = agentID
+	}
+	for k, v := range metadata {
+		agentCard[k] = v
+	}
+	return agentCard
+}
+
+// Init initializes agent identity - one-call setup (Let's Encrypt style).
+// Generates key pair, derives DID, registers with server, creates agent card.
+func (s *SimpleGuardService) Init(_ context.Context, req *pb.InitRequest) (*pb.InitResponse, error) {
+	serverURL := req.ServerUrl
+	if serverURL == "" {
+		serverURL = "https://api.capisc.io"
+	}
+
+	outputDir, err := initPrepareDir(req.OutputDir, req.Force)
+	if err != nil {
+		return &pb.InitResponse{ErrorMessage: err.Error()}, nil
+	}
+
+	keys, err := initGenerateAndSaveKeys(outputDir)
+	if err != nil {
+		return &pb.InitResponse{ErrorMessage: err.Error()}, nil
+	}
+
+	registered := false
+	if req.ApiKey != "" && req.AgentId != "" {
+		if err := s.registerDIDWithServer(serverURL, req.ApiKey, req.AgentId, keys.didKey, keys.pubJWKBytes); err != nil {
+			return &pb.InitResponse{
+				Did: keys.didKey, PrivateKeyPath: keys.privKeyPath, PublicKeyPath: keys.pubKeyPath,
+				ErrorMessage: fmt.Sprintf("key generated but registration failed: %v", err),
+			}, nil
+		}
+		registered = true
+	}
+
+	agentCard := initBuildAgentCard(keys.didKey, req.AgentId, keys.pubJWK, req.Metadata)
+	agentCardBytes, err := json.MarshalIndent(agentCard, "", "  ")
+	if err != nil {
+		return &pb.InitResponse{ErrorMessage: fmt.Sprintf("failed to marshal agent card: %v", err)}, nil
+	}
+
+	agentCardPath := filepath.Join(outputDir, "agent-card.json")
+	if err := os.WriteFile(agentCardPath, agentCardBytes, 0644); err != nil {
+		return &pb.InitResponse{ErrorMessage: fmt.Sprintf("failed to write agent card: %v", err)}, nil
+	}
+
+	return &pb.InitResponse{
+		Did: keys.didKey, AgentId: req.AgentId,
+		PrivateKeyPath: keys.privKeyPath, PublicKeyPath: keys.pubKeyPath,
+		AgentCardPath: agentCardPath, AgentCardJson: string(agentCardBytes),
+		Registered: registered,
+	}, nil
+}
+
+// registerDIDWithServer registers DID with the CapiscIO server.
+func (s *SimpleGuardService) registerDIDWithServer(serverURL, apiKey, agentID, didKey string, publicKeyJWK []byte) error {
+	url := fmt.Sprintf("%s/v1/agents/%s/dids", serverURL, agentID)
+
+	payload := map[string]interface{}{
+		"did":        didKey,
+		"public_key": json.RawMessage(publicKeyJWK),
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", apiKey))
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("server returned %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	return nil
 }

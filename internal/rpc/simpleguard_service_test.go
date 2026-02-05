@@ -537,3 +537,194 @@ func TestSimpleGuardService_SignWithPublicKeyOnly(t *testing.T) {
 		t.Error("expected error when signing with public key only")
 	}
 }
+
+// Tests for Init helper functions (coverage boost)
+
+func TestInitPrepareDir(t *testing.T) {
+	tests := []struct {
+		name       string
+		outputDir  string
+		force      bool
+		wantErr    bool
+		setupFunc  func(dir string)
+	}{
+		{
+			name:      "uses provided directory",
+			outputDir: "",
+			force:     false,
+			wantErr:   false,
+		},
+		{
+			name:      "errors if keys exist and force=false",
+			outputDir: "",
+			force:     false,
+			wantErr:   true,
+			setupFunc: func(dir string) {
+				os.WriteFile(filepath.Join(dir, "private.jwk"), []byte("key"), 0600)
+			},
+		},
+		{
+			name:      "overwrites if keys exist and force=true",
+			outputDir: "",
+			force:     true,
+			wantErr:   false,
+			setupFunc: func(dir string) {
+				os.WriteFile(filepath.Join(dir, "private.jwk"), []byte("key"), 0600)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			outputDir := tt.outputDir
+			if outputDir == "" {
+				outputDir = t.TempDir()
+			}
+			if tt.setupFunc != nil {
+				tt.setupFunc(outputDir)
+			}
+
+			resolvedDir, err := initPrepareDir(outputDir, tt.force)
+			if tt.wantErr {
+				if err == nil {
+					t.Error("expected error but got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+				return
+			}
+			if resolvedDir == "" {
+				t.Error("expected non-empty directory path")
+			}
+			// Check directory exists
+			info, err := os.Stat(resolvedDir)
+			if err != nil {
+				t.Errorf("directory should exist: %v", err)
+			} else if !info.IsDir() {
+				t.Error("path should be a directory")
+			}
+		})
+	}
+}
+
+func TestInitGenerateAndSaveKeys(t *testing.T) {
+	t.Run("generates keys and saves to directory", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		result, err := initGenerateAndSaveKeys(tmpDir)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Check result fields
+		if result.didKey == "" {
+			t.Error("expected non-empty didKey")
+		}
+		if result.privKeyPath == "" {
+			t.Error("expected non-empty privKeyPath")
+		}
+		if result.pubKeyPath == "" {
+			t.Error("expected non-empty pubKeyPath")
+		}
+		if result.pubJWK.Key == nil {
+			t.Error("expected non-nil pubJWK")
+		}
+
+		// Check files exist
+		if _, err := os.Stat(result.privKeyPath); err != nil {
+			t.Errorf("private.jwk should exist: %v", err)
+		}
+		if _, err := os.Stat(result.pubKeyPath); err != nil {
+			t.Errorf("public.jwk should exist: %v", err)
+		}
+
+		// Check file permissions
+		info, _ := os.Stat(result.privKeyPath)
+		if info.Mode().Perm() != 0600 {
+			t.Errorf("private.jwk should have 0600 permissions, got %v", info.Mode().Perm())
+		}
+	})
+
+	t.Run("returns valid did:key format", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		result, err := initGenerateAndSaveKeys(tmpDir)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if len(result.didKey) < 10 || result.didKey[:8] != "did:key:" {
+			t.Errorf("didKey should start with 'did:key:', got %s", result.didKey)
+		}
+	})
+}
+
+func TestInitBuildAgentCard(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// First generate keys to get a valid pubJWK
+	result, err := initGenerateAndSaveKeys(tmpDir)
+	if err != nil {
+		t.Fatalf("failed to generate keys: %v", err)
+	}
+
+	tests := []struct {
+		name     string
+		didKey   string
+		agentID  string
+		metadata map[string]string
+	}{
+		{
+			name:     "basic agent card",
+			didKey:   result.didKey,
+			agentID:  "test-agent-id",
+			metadata: nil,
+		},
+		{
+			name:    "agent card with metadata",
+			didKey:  result.didKey,
+			agentID: "test-agent-id",
+			metadata: map[string]string{
+				"name":        "Test Agent",
+				"description": "A test agent",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			card := initBuildAgentCard(tt.didKey, tt.agentID, result.pubJWK, tt.metadata)
+
+			// Check required fields
+			if card["@context"] == nil {
+				t.Error("agent card should have @context")
+			}
+			if card["id"] == nil {
+				t.Error("agent card should have id")
+			}
+			if card["name"] == nil {
+				t.Error("agent card should have name")
+			}
+			if card["description"] == nil {
+				t.Error("agent card should have description")
+			}
+			if card["created"] == nil {
+				t.Error("agent card should have created")
+			}
+
+			// Check verification methods
+			vm, ok := card["verificationMethods"].([]map[string]interface{})
+			if !ok || len(vm) == 0 {
+				t.Error("agent card should have verificationMethods")
+			}
+
+			// Check capiscio:agentId
+			if tt.agentID != "" {
+				if card["capiscio:agentId"] != tt.agentID {
+					t.Errorf("capiscio:agentId = %v, want %v", card["capiscio:agentId"], tt.agentID)
+				}
+			}
+		})
+	}
+}

@@ -35,7 +35,30 @@ Building authentication for AI Agents is hard. OAuth is complex, API keys are in
 go install github.com/capiscio/capiscio-core/cmd/capiscio@v1.0.2
 ```
 
-### 2. Issue a Trust Badge (Identity)
+### 2. Initialize Your Agent (One Command)
+
+The easiest way to get started is with the `init` command - a "Let's Encrypt" style setup:
+
+```bash
+# Set your API key (get one at https://app.capisc.io)
+export CAPISCIO_API_KEY=sk_live_...
+
+# Initialize your agent (generates keys, derives DID, registers with server)
+capiscio init --agent-id my-agent-001
+
+# Start the badge keeper for automatic renewal
+capiscio badge keep --agent-id my-agent-001
+```
+
+This creates:
+- `~/.capiscio/keys/{agent-id}/private.jwk` - Keep this secret!
+- `~/.capiscio/keys/{agent-id}/public.jwk`
+- `~/.capiscio/keys/{agent-id}/did.txt`
+- `~/.capiscio/keys/{agent-id}/agent-card.json`
+
+### Alternative: Manual Setup
+
+#### Issue a Trust Badge (Identity)
 
 You can generate an ephemeral key for testing, or create a persistent key pair for production.
 
