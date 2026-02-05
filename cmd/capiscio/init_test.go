@@ -262,3 +262,242 @@ func TestServerURLValidation(t *testing.T) {
 		})
 	}
 }
+
+func TestResolveAPIKey(t *testing.T) {
+	// Save and restore original values
+	origEnv := os.Getenv("CAPISCIO_API_KEY")
+	origFlag := initAPIKey
+	defer func() {
+		os.Setenv("CAPISCIO_API_KEY", origEnv)
+		initAPIKey = origFlag
+	}()
+
+	t.Run("from environment variable", func(t *testing.T) {
+		os.Setenv("CAPISCIO_API_KEY", "env-api-key")
+		initAPIKey = ""
+		key, err := resolveAPIKey()
+		require.NoError(t, err)
+		assert.Equal(t, "env-api-key", key)
+	})
+
+	t.Run("from flag when env empty", func(t *testing.T) {
+		os.Setenv("CAPISCIO_API_KEY", "")
+		initAPIKey = "flag-api-key"
+		key, err := resolveAPIKey()
+		require.NoError(t, err)
+		assert.Equal(t, "flag-api-key", key)
+	})
+
+	t.Run("env takes precedence over flag", func(t *testing.T) {
+		os.Setenv("CAPISCIO_API_KEY", "env-key")
+		initAPIKey = "flag-key"
+		key, err := resolveAPIKey()
+		require.NoError(t, err)
+		assert.Equal(t, "env-key", key)
+	})
+
+	t.Run("error when both empty", func(t *testing.T) {
+		os.Setenv("CAPISCIO_API_KEY", "")
+		initAPIKey = ""
+		_, err := resolveAPIKey()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "API key required")
+	})
+}
+
+func TestValidateServerURL(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"https://registry.capisc.io/", "https://registry.capisc.io"},
+		{"https://registry.capisc.io", "https://registry.capisc.io"},
+		{"http://localhost:8080/", "http://localhost:8080"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.input, func(t *testing.T) {
+			result := validateServerURL(tc.input)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+func TestSetupOutputDir(t *testing.T) {
+	// Save and restore original values
+	origOutputDir := initOutputDir
+	origForce := initForce
+	defer func() {
+		initOutputDir = origOutputDir
+		initForce = origForce
+	}()
+
+	t.Run("creates directory if not exists", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		initOutputDir = filepath.Join(tmpDir, "new-agent")
+		initForce = false
+
+		dir, err := setupOutputDir("test-agent-id")
+		require.NoError(t, err)
+		assert.Equal(t, initOutputDir, dir)
+
+		// Check directory was created
+		info, err := os.Stat(dir)
+		require.NoError(t, err)
+		assert.True(t, info.IsDir())
+	})
+
+	t.Run("error if keys exist without force", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		initOutputDir = tmpDir
+		initForce = false
+
+		// Create existing private key
+		err := os.WriteFile(filepath.Join(tmpDir, "private.jwk"), []byte("key"), 0600)
+		require.NoError(t, err)
+
+		_, err = setupOutputDir("test-agent-id")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "keys already exist")
+	})
+
+	t.Run("allows overwrite with force", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		initOutputDir = tmpDir
+		initForce = true
+
+		// Create existing private key
+		err := os.WriteFile(filepath.Join(tmpDir, "private.jwk"), []byte("key"), 0600)
+		require.NoError(t, err)
+
+		dir, err := setupOutputDir("test-agent-id")
+		require.NoError(t, err)
+		assert.Equal(t, tmpDir, dir)
+	})
+
+	t.Run("uses default directory if not specified", func(t *testing.T) {
+		initOutputDir = ""
+		initForce = true
+
+		dir, err := setupOutputDir("test-agent-123")
+		require.NoError(t, err)
+		assert.Contains(t, dir, ".capiscio")
+		assert.Contains(t, dir, "test-agent-123")
+
+		// Cleanup
+		os.RemoveAll(dir)
+	})
+}
+
+func TestGenerateAndSaveKeys(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	pub, priv, didKey, pubJwk, err := generateAndSaveKeys(tmpDir)
+	require.NoError(t, err)
+
+	// Verify outputs
+	assert.NotNil(t, pub)
+	assert.NotNil(t, priv)
+	assert.True(t, len(didKey) > 0)
+	assert.Contains(t, didKey, "did:key:z6Mk")
+	assert.NotNil(t, pubJwk.Key)
+
+	// Verify files were created
+	privateKeyPath := filepath.Join(tmpDir, "private.jwk")
+	publicKeyPath := filepath.Join(tmpDir, "public.jwk")
+	didPath := filepath.Join(tmpDir, "did.txt")
+
+	// Check private key
+	privInfo, err := os.Stat(privateKeyPath)
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0600), privInfo.Mode().Perm())
+
+	// Check public key
+	pubInfo, err := os.Stat(publicKeyPath)
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0644), pubInfo.Mode().Perm())
+
+	// Check DID file
+	didContent, err := os.ReadFile(didPath)
+	require.NoError(t, err)
+	assert.Contains(t, string(didContent), didKey)
+
+	// Verify JWK files are valid JSON
+	var jwk jose.JSONWebKey
+	privBytes, _ := os.ReadFile(privateKeyPath)
+	err = json.Unmarshal(privBytes, &jwk)
+	require.NoError(t, err)
+	assert.Equal(t, didKey, jwk.KeyID)
+}
+
+func TestSaveAgentCard(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	pub, _, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	didKey := did.NewKeyDID(pub)
+	pubJwk := jose.JSONWebKey{
+		Key:       pub,
+		KeyID:     didKey,
+		Algorithm: string(jose.EdDSA),
+		Use:       "sig",
+	}
+
+	err = saveAgentCard(tmpDir, "agent-123", "Test Agent", didKey, "https://registry.capisc.io", pubJwk)
+	require.NoError(t, err)
+
+	// Verify file was created
+	cardPath := filepath.Join(tmpDir, "agent-card.json")
+	cardBytes, err := os.ReadFile(cardPath)
+	require.NoError(t, err)
+
+	var card map[string]interface{}
+	err = json.Unmarshal(cardBytes, &card)
+	require.NoError(t, err)
+
+	assert.Equal(t, "Test Agent", card["name"])
+	xcapiscio := card["x-capiscio"].(map[string]interface{})
+	assert.Equal(t, didKey, xcapiscio["did"])
+	assert.Equal(t, "agent-123", xcapiscio["agentId"])
+}
+
+func TestResolveAgentID(t *testing.T) {
+	// Save and restore original values
+	origAgentID := initAgentID
+	origAgentName := initAgentName
+	defer func() {
+		initAgentID = origAgentID
+		initAgentName = origAgentName
+	}()
+
+	t.Run("uses provided agent ID", func(t *testing.T) {
+		initAgentID = "explicit-agent-id"
+		initAgentName = "Explicit Name"
+
+		id, name, err := resolveAgentID("http://localhost:8080", "api-key")
+		require.NoError(t, err)
+		assert.Equal(t, "explicit-agent-id", id)
+		assert.Equal(t, "Explicit Name", name)
+	})
+
+	t.Run("fetches from server when not provided", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"data": []map[string]string{
+					{"id": "fetched-agent-id", "name": "Fetched Agent"},
+				},
+			})
+		}))
+		defer server.Close()
+
+		initAgentID = ""
+		initAgentName = ""
+
+		id, name, err := resolveAgentID(server.URL, "api-key")
+		require.NoError(t, err)
+		assert.Equal(t, "fetched-agent-id", id)
+		assert.Equal(t, "Fetched Agent", name)
+	})
+}
