@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/capiscio/capiscio-core/v2/pkg/did"
@@ -75,13 +76,47 @@ func TestCreateAgentCardDefaultName(t *testing.T) {
 	assert.Equal(t, "Agent-12345678", card["name"])
 }
 
+func TestCreateAgentCardShortID(t *testing.T) {
+	// Test edge case where agentID is less than 8 characters
+	pub, _, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	didKey := did.NewKeyDID(pub)
+	pubJwk := jose.JSONWebKey{
+		Key:       pub,
+		KeyID:     didKey,
+		Algorithm: string(jose.EdDSA),
+		Use:       "sig",
+	}
+
+	// Test with various short IDs
+	testCases := []struct {
+		agentID  string
+		expected string
+	}{
+		{"abc", "Agent-abc"},
+		{"ab", "Agent-ab"},
+		{"a", "Agent-a"},
+		{"", "Agent-"},
+		{"12345678", "Agent-12345678"}, // exactly 8 chars
+		{"123456789", "Agent-12345678"}, // 9 chars, should truncate
+	}
+
+	for _, tc := range testCases {
+		t.Run("agentID="+tc.agentID, func(t *testing.T) {
+			card := createAgentCard(tc.agentID, "", didKey, "https://registry.capisc.io", pubJwk)
+			assert.Equal(t, tc.expected, card["name"])
+		})
+	}
+}
+
 func TestFetchFirstAgent(t *testing.T) {
 	// Mock server that returns an agent list
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/v1/agents" {
-			// Check auth header
-			authHeader := r.Header.Get("X-Capiscio-Registry-Key")
-			if authHeader == "" {
+			// Check auth header (Bearer token)
+			authHeader := r.Header.Get("Authorization")
+			if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
@@ -133,24 +168,25 @@ func TestFetchFirstAgentAuthError(t *testing.T) {
 
 func TestRegisterDID(t *testing.T) {
 	var received struct {
-		DID       string `json:"did"`
-		PublicKey string `json:"publicKey"`
+		DID       string          `json:"did"`
+		PublicKey json.RawMessage `json:"public_key"`
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "PUT" {
+		if r.Method != "POST" {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
 
-		// Check path
-		if r.URL.Path != "/v1/agents/test-agent-123" {
+		// Check path - should be POST /v1/agents/{id}/dids
+		if r.URL.Path != "/v1/agents/test-agent-123/dids" {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		// Check auth
-		if r.Header.Get("X-Capiscio-Registry-Key") == "" {
+		// Check Bearer auth
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -244,21 +280,23 @@ func TestInitForceFlag(t *testing.T) {
 
 func TestServerURLValidation(t *testing.T) {
 	tests := []struct {
-		url      string
-		isSecure bool
+		name      string
+		url       string
+		expected  string
+		wantWarn  bool // expects warning for non-HTTPS
 	}{
-		{"https://registry.capisc.io", true},
-		{"https://localhost:8443", true},
-		{"http://localhost:8080", true}, // localhost is allowed
-		{"http://registry.capisc.io", false},
-		{"http://example.com", false},
+		{"HTTPS URL", "https://registry.capisc.io", "https://registry.capisc.io", false},
+		{"HTTPS with trailing slash", "https://registry.capisc.io/", "https://registry.capisc.io", false},
+		{"HTTP localhost 8080", "http://localhost:8080", "http://localhost:8080", false},
+		{"HTTP localhost other port", "http://localhost:3000", "http://localhost:3000", false},
+		{"HTTP 127.0.0.1", "http://127.0.0.1:8080", "http://127.0.0.1:8080", false},
+		{"HTTP non-localhost", "http://example.com", "http://example.com", true},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.url, func(t *testing.T) {
-			// Check HTTPS or localhost exception
-			isSecure := tc.url[:8] == "https://" || tc.url == "http://localhost:8080"
-			assert.Equal(t, tc.isSecure, isSecure)
+		t.Run(tc.name, func(t *testing.T) {
+			result := validateServerURL(tc.url)
+			assert.Equal(t, tc.expected, result)
 		})
 	}
 }

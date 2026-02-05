@@ -165,7 +165,9 @@ func resolveAPIKey() (string, error) {
 // validateServerURL validates and normalizes the server URL.
 func validateServerURL(url string) string {
 	serverURL := strings.TrimSuffix(url, "/")
-	if !strings.HasPrefix(serverURL, "https://") && serverURL != "http://localhost:8080" {
+	if !strings.HasPrefix(serverURL, "https://") &&
+		!strings.HasPrefix(serverURL, "http://localhost:") &&
+		!strings.HasPrefix(serverURL, "http://127.0.0.1:") {
 		fmt.Fprintln(os.Stderr, "⚠️  Warning: Using non-HTTPS server URL. This is insecure for production!")
 	}
 	return serverURL
@@ -227,7 +229,10 @@ func generateAndSaveKeys(outputDir string) (ed25519.PublicKey, ed25519.PrivateKe
 	pubJwk := jose.JSONWebKey{Key: pub, KeyID: didKey, Algorithm: string(jose.EdDSA), Use: "sig"}
 
 	// Save private key
-	privBytes, _ := json.MarshalIndent(privJwk, "", "  ")
+	privBytes, err := json.MarshalIndent(privJwk, "", "  ")
+	if err != nil {
+		return nil, nil, "", jose.JSONWebKey{}, fmt.Errorf("failed to marshal private key: %w", err)
+	}
 	privateKeyPath := filepath.Join(outputDir, "private.jwk")
 	if err := os.WriteFile(privateKeyPath, privBytes, 0600); err != nil {
 		return nil, nil, "", jose.JSONWebKey{}, fmt.Errorf("failed to write private key: %w", err)
@@ -235,7 +240,10 @@ func generateAndSaveKeys(outputDir string) (ed25519.PublicKey, ed25519.PrivateKe
 	fmt.Printf("✅ Private key saved: %s (0600)\n", privateKeyPath)
 
 	// Save public key
-	pubBytes, _ := json.MarshalIndent(pubJwk, "", "  ")
+	pubBytes, err := json.MarshalIndent(pubJwk, "", "  ")
+	if err != nil {
+		return nil, nil, "", jose.JSONWebKey{}, fmt.Errorf("failed to marshal public key: %w", err)
+	}
 	publicKeyPath := filepath.Join(outputDir, "public.jwk")
 	if err := os.WriteFile(publicKeyPath, pubBytes, 0644); err != nil {
 		return nil, nil, "", jose.JSONWebKey{}, fmt.Errorf("failed to write public key: %w", err)
@@ -314,7 +322,7 @@ func fetchFirstAgent(serverURL, apiKey string) (id string, name string, err erro
 	if err != nil {
 		return "", "", err
 	}
-	req.Header.Set("X-Capiscio-Registry-Key", apiKey)
+	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 30 * time.Second}
@@ -348,26 +356,32 @@ func fetchFirstAgent(serverURL, apiKey string) (id string, name string, err erro
 
 // registerDID registers the DID with the server
 func registerDID(serverURL, apiKey, agentID, didKey string, pub ed25519.PublicKey) error {
-	// Prepare public key as base64 for registration
+	// Prepare public key as JWK for registration
 	pubJwk := jose.JSONWebKey{
 		Key:       pub,
 		KeyID:     didKey,
 		Algorithm: string(jose.EdDSA),
 		Use:       "sig",
 	}
-	pubJwkBytes, _ := json.Marshal(pubJwk)
+	pubJwkBytes, err := json.Marshal(pubJwk)
+	if err != nil {
+		return fmt.Errorf("failed to marshal public key JWK: %w", err)
+	}
 
 	payload := map[string]interface{}{
-		"did":       didKey,
-		"publicKey": string(pubJwkBytes),
+		"did":        didKey,
+		"public_key": json.RawMessage(pubJwkBytes),
 	}
-	body, _ := json.Marshal(payload)
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal DID registration payload: %w", err)
+	}
 
-	req, err := http.NewRequest("PUT", serverURL+"/v1/agents/"+agentID, bytes.NewReader(body))
+	req, err := http.NewRequest("POST", strings.TrimRight(serverURL, "/")+"/v1/agents/"+agentID+"/dids", bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
-	req.Header.Set("X-Capiscio-Registry-Key", apiKey)
+	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 30 * time.Second}
@@ -388,14 +402,18 @@ func registerDID(serverURL, apiKey, agentID, didKey string, pub ed25519.PublicKe
 // createAgentCard creates an A2A-compliant agent card
 func createAgentCard(agentID, name, didKey, serverURL string, pubJwk jose.JSONWebKey) map[string]interface{} {
 	if name == "" {
-		name = "Agent-" + agentID[:8]
+		prefix := agentID
+		if len(prefix) > 8 {
+			prefix = prefix[:8]
+		}
+		name = "Agent-" + prefix
 	}
 
 	return map[string]interface{}{
 		"name":            name,
 		"version":         "1.0.0",
 		"protocolVersion": "0.3.0",
-		"url":             "http://localhost:8000",
+		"url":             serverURL,
 		"description":     "CapiscIO-enabled A2A agent",
 		"capabilities": map[string]bool{
 			"streaming":              false,
@@ -418,7 +436,8 @@ func createAgentCard(agentID, name, didKey, serverURL string, pubJwk jose.JSONWe
 }
 
 // requestInitialBadge requests an initial badge from the registry
-func requestInitialBadge(serverURL, apiKey, agentID, didKey string, priv ed25519.PrivateKey, outputPath string) error {
+// Note: priv is reserved for future PoP implementation
+func requestInitialBadge(serverURL, apiKey, agentID, didKey string, _ ed25519.PrivateKey, outputPath string) error {
 	// Request badge via POST /v1/agents/{id}/badge
 	// Note: For production use with PoP, use `capiscio badge keep` instead
 	
@@ -426,7 +445,7 @@ func requestInitialBadge(serverURL, apiKey, agentID, didKey string, priv ed25519
 	if err != nil {
 		return err
 	}
-	req.Header.Set("X-Capiscio-Registry-Key", apiKey)
+	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 30 * time.Second}
