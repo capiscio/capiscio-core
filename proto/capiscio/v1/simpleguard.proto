@@ -33,6 +33,10 @@ service SimpleGuardService {
   
   // Get key info
   rpc GetKeyInfo(GetKeyInfoRequest) returns (GetKeyInfoResponse);
+  
+  // Initialize agent identity (Let's Encrypt style one-call setup)
+  // Generates key pair, derives DID, registers with server, creates agent card
+  rpc Init(InitRequest) returns (InitResponse);
 }
 
 // Signature format
@@ -171,4 +175,27 @@ message GetKeyInfoResponse {
   Timestamp created_at = 6;
   map<string, string> metadata = 7;
   string error_message = 8;
+}
+
+// Request to initialize agent identity
+message InitRequest {
+  string api_key = 1;             // API key for server authentication
+  string agent_id = 2;            // Agent UUID to register DID for
+  string server_url = 3;          // CapiscIO server URL (default: https://api.capisc.io)
+  string output_dir = 4;          // Directory for generated files (default: .capiscio)
+  bool force = 5;                 // Overwrite existing files
+  KeyAlgorithm algorithm = 6;     // Key algorithm (default: Ed25519)
+  map<string, string> metadata = 7;  // Additional metadata for agent card
+}
+
+// Response from init
+message InitResponse {
+  string did = 1;                 // Generated did:key URI
+  string agent_id = 2;            // Registered agent ID
+  string private_key_path = 3;    // Path to private key file
+  string public_key_path = 4;     // Path to public key file
+  string agent_card_path = 5;     // Path to agent card JSON
+  string agent_card_json = 6;     // Agent card contents as JSON string
+  bool registered = 7;            // Whether DID was registered with server
+  string error_message = 8;       // Error if any
 }
