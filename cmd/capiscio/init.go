@@ -103,29 +103,83 @@ func init() {
 }
 
 func runInit(cmd *cobra.Command, _ []string) error {
-	// 1. Resolve API key (env var takes precedence for security)
+	// 1. Resolve API key
+	apiKey, err := resolveAPIKey()
+	if err != nil {
+		return err
+	}
+
+	// 2. Validate server URL
+	serverURL := validateServerURL(initServerURL)
+
+	// 3. Resolve agent ID
+	agentID, agentName, err := resolveAgentID(serverURL, apiKey)
+	if err != nil {
+		return err
+	}
+
+	// 4. Set up output directory
+	outputDir, err := setupOutputDir(agentID)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("📁 Output directory: %s\n", outputDir)
+
+	// 5. Generate keys and save
+	pub, priv, didKey, pubJwk, err := generateAndSaveKeys(outputDir)
+	if err != nil {
+		return err
+	}
+
+	// 6. Register DID with server
+	registerDIDWithWarning(serverURL, apiKey, agentID, didKey, pub)
+
+	// 7. Create and save agent card
+	if err := saveAgentCard(outputDir, agentID, agentName, didKey, serverURL, pubJwk); err != nil {
+		return err
+	}
+
+	// 8. Request initial badge (if auto-badge enabled)
+	if initAutoBadge {
+		requestBadgeWithWarning(serverURL, apiKey, agentID, didKey, priv, outputDir)
+	}
+
+	// 9. Print summary
+	printInitSummary(agentID, didKey, outputDir)
+
+	return nil
+}
+
+// resolveAPIKey gets API key from environment or flag.
+func resolveAPIKey() (string, error) {
 	apiKey := os.Getenv("CAPISCIO_API_KEY")
 	if apiKey == "" {
 		apiKey = initAPIKey
 	}
 	if apiKey == "" {
-		return fmt.Errorf("API key required. Set CAPISCIO_API_KEY environment variable or use --api-key flag.\nGet your API key at https://app.capisc.io")
+		return "", fmt.Errorf("API key required. Set CAPISCIO_API_KEY environment variable or use --api-key flag.\nGet your API key at https://app.capisc.io")
 	}
+	return apiKey, nil
+}
 
-	// 2. Validate server URL (security: enforce HTTPS in production)
-	serverURL := strings.TrimSuffix(initServerURL, "/")
+// validateServerURL validates and normalizes the server URL.
+func validateServerURL(url string) string {
+	serverURL := strings.TrimSuffix(url, "/")
 	if !strings.HasPrefix(serverURL, "https://") && serverURL != "http://localhost:8080" {
 		fmt.Fprintln(os.Stderr, "⚠️  Warning: Using non-HTTPS server URL. This is insecure for production!")
 	}
+	return serverURL
+}
 
-	// 3. Resolve agent ID (fetch from registry if not provided)
+// resolveAgentID resolves agent ID from flag or fetches from registry.
+func resolveAgentID(serverURL, apiKey string) (string, string, error) {
 	agentID := initAgentID
 	agentName := initAgentName
 	if agentID == "" {
 		fmt.Println("🔍 No agent ID provided, looking up agents from registry...")
 		id, name, err := fetchFirstAgent(serverURL, apiKey)
 		if err != nil {
-			return fmt.Errorf("failed to fetch agent: %w\nCreate an agent at https://app.capisc.io or provide --agent-id", err)
+			return "", "", fmt.Errorf("failed to fetch agent: %w\nCreate an agent at https://app.capisc.io or provide --agent-id", err)
 		}
 		agentID = id
 		if agentName == "" {
@@ -133,84 +187,73 @@ func runInit(cmd *cobra.Command, _ []string) error {
 		}
 		fmt.Printf("📋 Using agent: %s (%s)\n", agentName, agentID)
 	}
+	return agentID, agentName, nil
+}
 
-	// 4. Set up output directory
+// setupOutputDir creates and validates the output directory.
+func setupOutputDir(agentID string) (string, error) {
 	outputDir := initOutputDir
 	if outputDir == "" {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
-			return fmt.Errorf("failed to get home directory: %w", err)
+			return "", fmt.Errorf("failed to get home directory: %w", err)
 		}
 		outputDir = filepath.Join(homeDir, ".capiscio", "keys", agentID)
 	}
 
-	// Check if directory exists and has keys
 	privateKeyPath := filepath.Join(outputDir, "private.jwk")
 	if _, err := os.Stat(privateKeyPath); err == nil && !initForce {
-		return fmt.Errorf("keys already exist at %s. Use --force to overwrite (this will invalidate existing badges!)", outputDir)
+		return "", fmt.Errorf("keys already exist at %s. Use --force to overwrite (this will invalidate existing badges!)", outputDir)
 	}
 
-	// Create directory
 	if err := os.MkdirAll(outputDir, 0700); err != nil {
-		return fmt.Errorf("failed to create output directory: %w", err)
+		return "", fmt.Errorf("failed to create output directory: %w", err)
 	}
+	return outputDir, nil
+}
 
-	fmt.Printf("📁 Output directory: %s\n", outputDir)
-
-	// 5. Generate Ed25519 keypair
+// generateAndSaveKeys generates Ed25519 keypair and saves to disk.
+func generateAndSaveKeys(outputDir string) (ed25519.PublicKey, ed25519.PrivateKey, string, jose.JSONWebKey, error) {
 	fmt.Println("🔑 Generating Ed25519 keypair...")
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
-		return fmt.Errorf("failed to generate key: %w", err)
+		return nil, nil, "", jose.JSONWebKey{}, fmt.Errorf("failed to generate key: %w", err)
 	}
 
-	// 6. Derive did:key
 	didKey := did.NewKeyDID(pub)
 	fmt.Printf("🆔 DID: %s\n", didKey)
 
-	// 7. Create JWKs
-	privJwk := jose.JSONWebKey{
-		Key:       priv,
-		KeyID:     didKey,
-		Algorithm: string(jose.EdDSA),
-		Use:       "sig",
-	}
-	pubJwk := jose.JSONWebKey{
-		Key:       pub,
-		KeyID:     didKey,
-		Algorithm: string(jose.EdDSA),
-		Use:       "sig",
-	}
+	privJwk := jose.JSONWebKey{Key: priv, KeyID: didKey, Algorithm: string(jose.EdDSA), Use: "sig"}
+	pubJwk := jose.JSONWebKey{Key: pub, KeyID: didKey, Algorithm: string(jose.EdDSA), Use: "sig"}
 
-	// 8. Save private key (0600 - owner read/write only)
-	privBytes, err := json.MarshalIndent(privJwk, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal private key: %w", err)
-	}
+	// Save private key
+	privBytes, _ := json.MarshalIndent(privJwk, "", "  ")
+	privateKeyPath := filepath.Join(outputDir, "private.jwk")
 	if err := os.WriteFile(privateKeyPath, privBytes, 0600); err != nil {
-		return fmt.Errorf("failed to write private key: %w", err)
+		return nil, nil, "", jose.JSONWebKey{}, fmt.Errorf("failed to write private key: %w", err)
 	}
 	fmt.Printf("✅ Private key saved: %s (0600)\n", privateKeyPath)
 
-	// 9. Save public key (0644 - world readable)
+	// Save public key
+	pubBytes, _ := json.MarshalIndent(pubJwk, "", "  ")
 	publicKeyPath := filepath.Join(outputDir, "public.jwk")
-	pubBytes, err := json.MarshalIndent(pubJwk, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal public key: %w", err)
-	}
 	if err := os.WriteFile(publicKeyPath, pubBytes, 0644); err != nil {
-		return fmt.Errorf("failed to write public key: %w", err)
+		return nil, nil, "", jose.JSONWebKey{}, fmt.Errorf("failed to write public key: %w", err)
 	}
 	fmt.Printf("✅ Public key saved: %s\n", publicKeyPath)
 
-	// 10. Save DID
+	// Save DID
 	didPath := filepath.Join(outputDir, "did.txt")
 	if err := os.WriteFile(didPath, []byte(didKey+"\n"), 0644); err != nil {
-		return fmt.Errorf("failed to write DID: %w", err)
+		return nil, nil, "", jose.JSONWebKey{}, fmt.Errorf("failed to write DID: %w", err)
 	}
 	fmt.Printf("✅ DID saved: %s\n", didPath)
 
-	// 11. Register DID with server
+	return pub, priv, didKey, pubJwk, nil
+}
+
+// registerDIDWithWarning attempts DID registration and prints warning on failure.
+func registerDIDWithWarning(serverURL, apiKey, agentID, didKey string, pub ed25519.PublicKey) {
 	fmt.Println("📡 Registering DID with registry...")
 	if err := registerDID(serverURL, apiKey, agentID, didKey, pub); err != nil {
 		fmt.Fprintf(os.Stderr, "⚠️  Warning: Failed to register DID: %v\n", err)
@@ -218,8 +261,10 @@ func runInit(cmd *cobra.Command, _ []string) error {
 	} else {
 		fmt.Println("✅ DID registered with registry")
 	}
+}
 
-	// 12. Create agent-card.json
+// saveAgentCard creates and saves the agent card.
+func saveAgentCard(outputDir, agentID, agentName, didKey, serverURL string, pubJwk jose.JSONWebKey) error {
 	agentCardPath := filepath.Join(outputDir, "agent-card.json")
 	agentCard := createAgentCard(agentID, agentName, didKey, serverURL, pubJwk)
 	cardBytes, err := json.MarshalIndent(agentCard, "", "  ")
@@ -230,20 +275,23 @@ func runInit(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("failed to write agent card: %w", err)
 	}
 	fmt.Printf("✅ Agent card saved: %s\n", agentCardPath)
+	return nil
+}
 
-	// 13. Request initial badge (if auto-badge enabled)
-	if initAutoBadge {
-		fmt.Println("🏷️  Requesting initial Trust Badge...")
-		badgePath := filepath.Join(outputDir, "badge.jwt")
-		if err := requestInitialBadge(serverURL, apiKey, agentID, didKey, priv, badgePath); err != nil {
-			fmt.Fprintf(os.Stderr, "⚠️  Warning: Failed to request badge: %v\n", err)
-			fmt.Fprintln(os.Stderr, "   You can request a badge later with: capiscio badge keep")
-		} else {
-			fmt.Printf("✅ Badge saved: %s\n", badgePath)
-		}
+// requestBadgeWithWarning attempts badge request and prints warning on failure.
+func requestBadgeWithWarning(serverURL, apiKey, agentID, didKey string, priv ed25519.PrivateKey, outputDir string) {
+	fmt.Println("🏷️  Requesting initial Trust Badge...")
+	badgePath := filepath.Join(outputDir, "badge.jwt")
+	if err := requestInitialBadge(serverURL, apiKey, agentID, didKey, priv, badgePath); err != nil {
+		fmt.Fprintf(os.Stderr, "⚠️  Warning: Failed to request badge: %v\n", err)
+		fmt.Fprintln(os.Stderr, "   You can request a badge later with: capiscio badge keep")
+	} else {
+		fmt.Printf("✅ Badge saved: %s\n", badgePath)
 	}
+}
 
-	// 14. Print summary
+// printInitSummary prints the initialization summary.
+func printInitSummary(agentID, didKey, outputDir string) {
 	fmt.Println()
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println("✅ Agent initialized successfully!")
@@ -258,8 +306,6 @@ func runInit(cmd *cobra.Command, _ []string) error {
 	fmt.Printf("     capiscio badge keep --agent-id %s\n", agentID)
 	fmt.Println("  3. Use the SDK: agent = CapiscIO.connect(api_key=...)")
 	fmt.Println()
-
-	return nil
 }
 
 // fetchFirstAgent fetches the first agent from the registry
