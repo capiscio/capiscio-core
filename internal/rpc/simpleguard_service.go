@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -599,7 +600,7 @@ func (s *SimpleGuardService) Init(_ context.Context, req *pb.InitRequest) (*pb.I
 
 	registered := false
 	if req.ApiKey != "" && req.AgentId != "" {
-		if err := s.registerDIDWithServer(serverURL, req.ApiKey, req.AgentId, keys.didKey, keys.pubJWKBytes); err != nil {
+		if err := s.registerDIDWithServer(serverURL, req.ApiKey, req.AgentId, keys.didKey); err != nil {
 			return &pb.InitResponse{
 				Did: keys.didKey, PrivateKeyPath: keys.privKeyPath, PublicKeyPath: keys.pubKeyPath,
 				ErrorMessage: fmt.Sprintf("key generated but registration failed: %v", err),
@@ -629,8 +630,10 @@ func (s *SimpleGuardService) Init(_ context.Context, req *pb.InitRequest) (*pb.I
 
 // registerDIDWithServer registers DID with the CapiscIO server.
 // Uses PUT /v1/sdk/agents/{id} to update the agent's DID.
-func (s *SimpleGuardService) registerDIDWithServer(serverURL, apiKey, agentID, didKey string, publicKeyJWK []byte) error {
-	url := fmt.Sprintf("%s/v1/sdk/agents/%s", serverURL, agentID)
+func (s *SimpleGuardService) registerDIDWithServer(serverURL, apiKey, agentID, didKey string) error {
+	// Normalize URL to prevent double-slash issues
+	normalizedURL := strings.TrimRight(serverURL, "/")
+	url := fmt.Sprintf("%s/v1/sdk/agents/%s", normalizedURL, agentID)
 
 	payload := map[string]interface{}{
 		"did": didKey,
