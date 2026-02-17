@@ -167,35 +167,37 @@ func TestFetchFirstAgentAuthError(t *testing.T) {
 }
 
 func TestRegisterDID(t *testing.T) {
-	var received struct {
-		DID       string          `json:"did"`
-		PublicKey json.RawMessage `json:"public_key"`
-	}
+	receivedDID := make(chan string, 1)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
+		// Check method - should be PUT
+		if r.Method != http.MethodPut {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
 
-		// Check path - should be POST /v1/agents/{id}/dids
-		if r.URL.Path != "/v1/agents/test-agent-123/dids" {
+		// Check path - should be PUT /v1/sdk/agents/{id}
+		if r.URL.Path != "/v1/sdk/agents/test-agent-123" {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		// Check Bearer auth
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		// Check X-Capiscio-Registry-Key header
+		apiKey := r.Header.Get("X-Capiscio-Registry-Key")
+		if apiKey == "" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		// Parse body
-		if err := json.NewDecoder(r.Body).Decode(&received); err != nil {
+		var body struct {
+			DID string `json:"did"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		receivedDID <- body.DID
 
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -203,10 +205,10 @@ func TestRegisterDID(t *testing.T) {
 
 	// Generate test keys
 	pub := make([]byte, 32) // Mock Ed25519 public key
-	
+
 	err := registerDID(server.URL, "test-api-key", "test-agent-123", "did:key:z6MkTest", pub)
 	require.NoError(t, err)
-	assert.Equal(t, "did:key:z6MkTest", received.DID)
+	assert.Equal(t, "did:key:z6MkTest", <-receivedDID)
 }
 
 func TestRegisterDIDServerError(t *testing.T) {

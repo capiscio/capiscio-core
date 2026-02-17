@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -599,7 +600,7 @@ func (s *SimpleGuardService) Init(_ context.Context, req *pb.InitRequest) (*pb.I
 
 	registered := false
 	if req.ApiKey != "" && req.AgentId != "" {
-		if err := s.registerDIDWithServer(serverURL, req.ApiKey, req.AgentId, keys.didKey, keys.pubJWKBytes); err != nil {
+		if err := s.registerDIDWithServer(serverURL, req.ApiKey, req.AgentId, keys.didKey); err != nil {
 			return &pb.InitResponse{
 				Did: keys.didKey, PrivateKeyPath: keys.privKeyPath, PublicKeyPath: keys.pubKeyPath,
 				ErrorMessage: fmt.Sprintf("key generated but registration failed: %v", err),
@@ -628,12 +629,14 @@ func (s *SimpleGuardService) Init(_ context.Context, req *pb.InitRequest) (*pb.I
 }
 
 // registerDIDWithServer registers DID with the CapiscIO server.
-func (s *SimpleGuardService) registerDIDWithServer(serverURL, apiKey, agentID, didKey string, publicKeyJWK []byte) error {
-	url := fmt.Sprintf("%s/v1/agents/%s/dids", serverURL, agentID)
+// Uses PUT /v1/sdk/agents/{id} to update the agent's DID.
+func (s *SimpleGuardService) registerDIDWithServer(serverURL, apiKey, agentID, didKey string) error {
+	// Normalize URL to prevent double-slash issues
+	normalizedURL := strings.TrimRight(serverURL, "/")
+	url := fmt.Sprintf("%s/v1/sdk/agents/%s", normalizedURL, agentID)
 
 	payload := map[string]interface{}{
-		"did":        didKey,
-		"public_key": json.RawMessage(publicKeyJWK),
+		"did": didKey,
 	}
 
 	body, err := json.Marshal(payload)
@@ -641,13 +644,13 @@ func (s *SimpleGuardService) registerDIDWithServer(serverURL, apiKey, agentID, d
 		return fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	req, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", apiKey))
+	req.Header.Set("X-Capiscio-Registry-Key", apiKey)
 
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)

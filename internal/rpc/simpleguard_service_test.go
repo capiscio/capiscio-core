@@ -2,6 +2,9 @@ package rpc
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -727,4 +730,100 @@ func TestInitBuildAgentCard(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestRegisterDIDWithServer tests the DID registration with the SDK endpoint
+func TestRegisterDIDWithServer(t *testing.T) {
+	svc := NewSimpleGuardService()
+
+	t.Run("successful registration", func(t *testing.T) {
+		type capturedRequest struct {
+			Method string
+			Path   string
+			APIKey string
+			DID    string
+		}
+		captured := make(chan capturedRequest, 1)
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var body struct {
+				DID string `json:"did"`
+			}
+			json.NewDecoder(r.Body).Decode(&body)
+			captured <- capturedRequest{
+				Method: r.Method,
+				Path:   r.URL.Path,
+				APIKey: r.Header.Get("X-Capiscio-Registry-Key"),
+				DID:    body.DID,
+			}
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
+
+		err := svc.registerDIDWithServer(server.URL, "test-api-key", "agent-123", "did:key:z6MkTest")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		req := <-captured
+		if req.Method != http.MethodPut {
+			t.Errorf("method = %v, want PUT", req.Method)
+		}
+		if req.Path != "/v1/sdk/agents/agent-123" {
+			t.Errorf("path = %v, want /v1/sdk/agents/agent-123", req.Path)
+		}
+		if req.APIKey != "test-api-key" {
+			t.Errorf("API key = %v, want test-api-key", req.APIKey)
+		}
+		if req.DID != "did:key:z6MkTest" {
+			t.Errorf("DID = %v, want did:key:z6MkTest", req.DID)
+		}
+	})
+
+	t.Run("normalizes URL with trailing slash", func(t *testing.T) {
+		pathChan := make(chan string, 1)
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			pathChan <- r.URL.Path
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
+
+		// Add trailing slash to server URL
+		err := svc.registerDIDWithServer(server.URL+"/", "key", "agent-id", "did:key:test")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Should not have double slash
+		gotPath := <-pathChan
+		if gotPath != "/v1/sdk/agents/agent-id" {
+			t.Errorf("path = %v, want /v1/sdk/agents/agent-id (no double slash)", gotPath)
+		}
+	})
+
+	t.Run("server error returns error", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error": "internal error"}`))
+		}))
+		defer server.Close()
+
+		err := svc.registerDIDWithServer(server.URL, "key", "agent-id", "did:key:test")
+		if err == nil {
+			t.Error("expected error for server error response")
+		}
+	})
+
+	t.Run("401 unauthorized returns error", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusUnauthorized)
+		}))
+		defer server.Close()
+
+		err := svc.registerDIDWithServer(server.URL, "bad-key", "agent-id", "did:key:test")
+		if err == nil {
+			t.Error("expected error for unauthorized response")
+		}
+	})
 }

@@ -354,34 +354,26 @@ func fetchFirstAgent(serverURL, apiKey string) (id string, name string, err erro
 	return result.Data[0].ID, result.Data[0].Name, nil
 }
 
-// registerDID registers the DID with the server
+// registerDID registers the DID with the server using the SDK endpoint.
+// Uses PUT /v1/sdk/agents/{id} with X-Capiscio-Registry-Key header.
+// The pub parameter is retained for backward compatibility but is currently unused
+// as the server no longer requires the public key for SDK registration.
 func registerDID(serverURL, apiKey, agentID, didKey string, pub ed25519.PublicKey) error {
-	// Prepare public key as JWK for registration
-	pubJwk := jose.JSONWebKey{
-		Key:       pub,
-		KeyID:     didKey,
-		Algorithm: string(jose.EdDSA),
-		Use:       "sig",
-	}
-	pubJwkBytes, err := json.Marshal(pubJwk)
-	if err != nil {
-		return fmt.Errorf("failed to marshal public key JWK: %w", err)
-	}
+	_ = pub
 
 	payload := map[string]interface{}{
-		"did":        didKey,
-		"public_key": json.RawMessage(pubJwkBytes),
+		"did": didKey,
 	}
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("failed to marshal DID registration payload: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", strings.TrimRight(serverURL, "/")+"/v1/agents/"+agentID+"/dids", bytes.NewReader(body))
+	req, err := http.NewRequest(http.MethodPut, strings.TrimRight(serverURL, "/")+"/v1/sdk/agents/"+agentID, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("X-Capiscio-Registry-Key", apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 30 * time.Second}
