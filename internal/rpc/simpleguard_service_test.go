@@ -2,6 +2,9 @@ package rpc
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -727,4 +730,89 @@ func TestInitBuildAgentCard(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestRegisterDIDWithServer tests the DID registration with the SDK endpoint
+func TestRegisterDIDWithServer(t *testing.T) {
+	svc := NewSimpleGuardService()
+
+	t.Run("successful registration", func(t *testing.T) {
+		var received struct {
+			DID string `json:"did"`
+		}
+		var gotMethod, gotPath, gotAPIKey string
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			gotMethod = r.Method
+			gotPath = r.URL.Path
+			gotAPIKey = r.Header.Get("X-Capiscio-Registry-Key")
+			json.NewDecoder(r.Body).Decode(&received)
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
+
+		err := svc.registerDIDWithServer(server.URL, "test-api-key", "agent-123", "did:key:z6MkTest")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if gotMethod != http.MethodPut {
+			t.Errorf("method = %v, want PUT", gotMethod)
+		}
+		if gotPath != "/v1/sdk/agents/agent-123" {
+			t.Errorf("path = %v, want /v1/sdk/agents/agent-123", gotPath)
+		}
+		if gotAPIKey != "test-api-key" {
+			t.Errorf("API key = %v, want test-api-key", gotAPIKey)
+		}
+		if received.DID != "did:key:z6MkTest" {
+			t.Errorf("DID = %v, want did:key:z6MkTest", received.DID)
+		}
+	})
+
+	t.Run("normalizes URL with trailing slash", func(t *testing.T) {
+		var gotPath string
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			gotPath = r.URL.Path
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
+
+		// Add trailing slash to server URL
+		err := svc.registerDIDWithServer(server.URL+"/", "key", "agent-id", "did:key:test")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Should not have double slash
+		if gotPath != "/v1/sdk/agents/agent-id" {
+			t.Errorf("path = %v, want /v1/sdk/agents/agent-id (no double slash)", gotPath)
+		}
+	})
+
+	t.Run("server error returns error", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error": "internal error"}`))
+		}))
+		defer server.Close()
+
+		err := svc.registerDIDWithServer(server.URL, "key", "agent-id", "did:key:test")
+		if err == nil {
+			t.Error("expected error for server error response")
+		}
+	})
+
+	t.Run("401 unauthorized returns error", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusUnauthorized)
+		}))
+		defer server.Close()
+
+		err := svc.registerDIDWithServer(server.URL, "bad-key", "agent-id", "did:key:test")
+		if err == nil {
+			t.Error("expected error for unauthorized response")
+		}
+	})
 }

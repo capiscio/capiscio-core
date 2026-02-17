@@ -168,25 +168,25 @@ func TestFetchFirstAgentAuthError(t *testing.T) {
 
 func TestRegisterDID(t *testing.T) {
 	var received struct {
-		DID       string          `json:"did"`
-		PublicKey json.RawMessage `json:"public_key"`
+		DID string `json:"did"`
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
+		// Check method - should be PUT
+		if r.Method != http.MethodPut {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
 
-		// Check path - should be POST /v1/agents/{id}/dids
-		if r.URL.Path != "/v1/agents/test-agent-123/dids" {
+		// Check path - should be PUT /v1/sdk/agents/{id}
+		if r.URL.Path != "/v1/sdk/agents/test-agent-123" {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		// Check Bearer auth
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		// Check X-Capiscio-Registry-Key header
+		apiKey := r.Header.Get("X-Capiscio-Registry-Key")
+		if apiKey == "" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -203,7 +203,7 @@ func TestRegisterDID(t *testing.T) {
 
 	// Generate test keys
 	pub := make([]byte, 32) // Mock Ed25519 public key
-	
+
 	err := registerDID(server.URL, "test-api-key", "test-agent-123", "did:key:z6MkTest", pub)
 	require.NoError(t, err)
 	assert.Equal(t, "did:key:z6MkTest", received.DID)
