@@ -356,9 +356,10 @@ func fetchFirstAgent(serverURL, apiKey string) (id string, name string, err erro
 
 // registerDID registers the DID with the server using the SDK endpoint.
 // Uses PUT /v1/sdk/agents/{id} with X-Capiscio-Registry-Key header.
+// The pub parameter is retained for backward compatibility but is currently unused
+// as the server no longer requires the public key for SDK registration.
 func registerDID(serverURL, apiKey, agentID, didKey string, pub ed25519.PublicKey) error {
-	// Note: public key is no longer sent - server doesn't require it for SDK registration
-	_ = pub // Kept in signature for backward compatibility
+	_ = pub
 
 	payload := map[string]interface{}{
 		"did": didKey,

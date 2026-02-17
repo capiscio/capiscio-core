@@ -737,16 +737,25 @@ func TestRegisterDIDWithServer(t *testing.T) {
 	svc := NewSimpleGuardService()
 
 	t.Run("successful registration", func(t *testing.T) {
-		var received struct {
-			DID string `json:"did"`
+		type capturedRequest struct {
+			Method string
+			Path   string
+			APIKey string
+			DID    string
 		}
-		var gotMethod, gotPath, gotAPIKey string
+		captured := make(chan capturedRequest, 1)
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			gotMethod = r.Method
-			gotPath = r.URL.Path
-			gotAPIKey = r.Header.Get("X-Capiscio-Registry-Key")
-			json.NewDecoder(r.Body).Decode(&received)
+			var body struct {
+				DID string `json:"did"`
+			}
+			json.NewDecoder(r.Body).Decode(&body)
+			captured <- capturedRequest{
+				Method: r.Method,
+				Path:   r.URL.Path,
+				APIKey: r.Header.Get("X-Capiscio-Registry-Key"),
+				DID:    body.DID,
+			}
 			w.WriteHeader(http.StatusOK)
 		}))
 		defer server.Close()
@@ -756,25 +765,26 @@ func TestRegisterDIDWithServer(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if gotMethod != http.MethodPut {
-			t.Errorf("method = %v, want PUT", gotMethod)
+		req := <-captured
+		if req.Method != http.MethodPut {
+			t.Errorf("method = %v, want PUT", req.Method)
 		}
-		if gotPath != "/v1/sdk/agents/agent-123" {
-			t.Errorf("path = %v, want /v1/sdk/agents/agent-123", gotPath)
+		if req.Path != "/v1/sdk/agents/agent-123" {
+			t.Errorf("path = %v, want /v1/sdk/agents/agent-123", req.Path)
 		}
-		if gotAPIKey != "test-api-key" {
-			t.Errorf("API key = %v, want test-api-key", gotAPIKey)
+		if req.APIKey != "test-api-key" {
+			t.Errorf("API key = %v, want test-api-key", req.APIKey)
 		}
-		if received.DID != "did:key:z6MkTest" {
-			t.Errorf("DID = %v, want did:key:z6MkTest", received.DID)
+		if req.DID != "did:key:z6MkTest" {
+			t.Errorf("DID = %v, want did:key:z6MkTest", req.DID)
 		}
 	})
 
 	t.Run("normalizes URL with trailing slash", func(t *testing.T) {
-		var gotPath string
+		pathChan := make(chan string, 1)
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			gotPath = r.URL.Path
+			pathChan <- r.URL.Path
 			w.WriteHeader(http.StatusOK)
 		}))
 		defer server.Close()
@@ -786,6 +796,7 @@ func TestRegisterDIDWithServer(t *testing.T) {
 		}
 
 		// Should not have double slash
+		gotPath := <-pathChan
 		if gotPath != "/v1/sdk/agents/agent-id" {
 			t.Errorf("path = %v, want /v1/sdk/agents/agent-id (no double slash)", gotPath)
 		}

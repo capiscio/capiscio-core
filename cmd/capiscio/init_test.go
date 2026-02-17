@@ -167,9 +167,7 @@ func TestFetchFirstAgentAuthError(t *testing.T) {
 }
 
 func TestRegisterDID(t *testing.T) {
-	var received struct {
-		DID string `json:"did"`
-	}
+	receivedDID := make(chan string, 1)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check method - should be PUT
@@ -192,10 +190,14 @@ func TestRegisterDID(t *testing.T) {
 		}
 
 		// Parse body
-		if err := json.NewDecoder(r.Body).Decode(&received); err != nil {
+		var body struct {
+			DID string `json:"did"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		receivedDID <- body.DID
 
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -206,7 +208,7 @@ func TestRegisterDID(t *testing.T) {
 
 	err := registerDID(server.URL, "test-api-key", "test-agent-123", "did:key:z6MkTest", pub)
 	require.NoError(t, err)
-	assert.Equal(t, "did:key:z6MkTest", received.DID)
+	assert.Equal(t, "did:key:z6MkTest", <-receivedDID)
 }
 
 func TestRegisterDIDServerError(t *testing.T) {
