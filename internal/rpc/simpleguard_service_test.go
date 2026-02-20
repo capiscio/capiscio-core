@@ -766,11 +766,11 @@ func TestRegisterDIDWithServer(t *testing.T) {
 		}
 
 		req := <-captured
-		if req.Method != http.MethodPut {
-			t.Errorf("method = %v, want PUT", req.Method)
+		if req.Method != http.MethodPatch {
+			t.Errorf("method = %v, want PATCH", req.Method)
 		}
-		if req.Path != "/v1/sdk/agents/agent-123" {
-			t.Errorf("path = %v, want /v1/sdk/agents/agent-123", req.Path)
+		if req.Path != "/v1/sdk/agents/agent-123/identity" {
+			t.Errorf("path = %v, want /v1/sdk/agents/agent-123/identity", req.Path)
 		}
 		if req.APIKey != "test-api-key" {
 			t.Errorf("API key = %v, want test-api-key", req.APIKey)
@@ -797,8 +797,8 @@ func TestRegisterDIDWithServer(t *testing.T) {
 
 		// Should not have double slash
 		gotPath := <-pathChan
-		if gotPath != "/v1/sdk/agents/agent-id" {
-			t.Errorf("path = %v, want /v1/sdk/agents/agent-id (no double slash)", gotPath)
+		if gotPath != "/v1/sdk/agents/agent-id/identity" {
+			t.Errorf("path = %v, want /v1/sdk/agents/agent-id/identity (no double slash)", gotPath)
 		}
 	})
 
