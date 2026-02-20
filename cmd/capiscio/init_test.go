@@ -170,14 +170,14 @@ func TestRegisterDID(t *testing.T) {
 	receivedDID := make(chan string, 1)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Check method - should be PUT
-		if r.Method != http.MethodPut {
+		// Check method - should be PATCH (RFC-003 §9.5)
+		if r.Method != http.MethodPatch {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
 
-		// Check path - should be PUT /v1/sdk/agents/{id}
-		if r.URL.Path != "/v1/sdk/agents/test-agent-123" {
+		// Check path - should be PATCH /v1/sdk/agents/{id}/identity
+		if r.URL.Path != "/v1/sdk/agents/test-agent-123/identity" {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -222,6 +222,20 @@ func TestRegisterDIDServerError(t *testing.T) {
 	err := registerDID(server.URL, "test-api-key", "agent-id", "did:key:z6MkTest", pub)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "500")
+}
+
+func TestRegisterDIDConflict409(t *testing.T) {
+	// 409 Conflict means identity already registered (RFC-003 §9.5 immutability)
+	// This should NOT be treated as an error
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(map[string]string{"error": "identity already set"})
+	}))
+	defer server.Close()
+
+	pub := make([]byte, 32)
+	err := registerDID(server.URL, "test-api-key", "agent-id", "did:key:z6MkTest", pub)
+	assert.NoError(t, err) // 409 should NOT return an error
 }
 
 func TestInitOutputDirectory(t *testing.T) {

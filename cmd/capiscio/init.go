@@ -355,7 +355,7 @@ func fetchFirstAgent(serverURL, apiKey string) (id string, name string, err erro
 }
 
 // registerDID registers the DID with the server using the SDK endpoint.
-// Uses PUT /v1/sdk/agents/{id} with X-Capiscio-Registry-Key header.
+// Uses PATCH /v1/sdk/agents/{id}/identity with X-Capiscio-Registry-Key header (RFC-003 §9.5).
 // The pub parameter is retained for backward compatibility but is currently unused
 // as the server no longer requires the public key for SDK registration.
 func registerDID(serverURL, apiKey, agentID, didKey string, pub ed25519.PublicKey) error {
@@ -369,7 +369,7 @@ func registerDID(serverURL, apiKey, agentID, didKey string, pub ed25519.PublicKe
 		return fmt.Errorf("failed to marshal DID registration payload: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPut, strings.TrimRight(serverURL, "/")+"/v1/sdk/agents/"+agentID, bytes.NewReader(body))
+	req, err := http.NewRequest(http.MethodPatch, strings.TrimRight(serverURL, "/")+"/v1/sdk/agents/"+agentID+"/identity", bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -382,6 +382,11 @@ func registerDID(serverURL, apiKey, agentID, didKey string, pub ed25519.PublicKe
 		return fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
+
+	// 409 Conflict means identity already registered (RFC-003 §9.5 immutability) - not an error
+	if resp.StatusCode == http.StatusConflict {
+		return nil
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)

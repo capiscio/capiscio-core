@@ -45,7 +45,7 @@ These rules are non-negotiable. Violating them will cause production issues.
 - Gateway functionality (sidecar mode)
 - CLI tools for developers
 
-**Current Version**: v2.2.0 ✅
+**Current Version**: v2.4.0 ✅
 
 ## Architecture
 
@@ -327,9 +327,9 @@ make fmt
 ### Releasing
 
 ```bash
-# Tag release
-git tag v2.2.0
-git push origin v2.2.0
+# Tag release (example)
+git tag v2.4.0
+git push origin v2.4.0
 
 # Build binaries
 make release
@@ -472,14 +472,15 @@ func (g *GatewayValidator) ValidateRequest(req *http.Request) error {
 ## Version Alignment
 
 This package MUST stay aligned with:
-- capiscio-python v2.2.0
-- capiscio-node v2.2.0
+- capiscio-python v2.4.0
+- capiscio-node v2.4.0
+- capiscio-sdk-python v2.4.1
 - validate-a2a (uses this version)
 
 When releasing, update:
 1. `cmd/capiscio/main.go` version constant
 2. `README.md` version badges
-3. Git tag (v2.2.0)
+3. Git tag (v2.4.0)
 4. GitHub release notes
 
 ## References

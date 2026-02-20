@@ -629,11 +629,11 @@ func (s *SimpleGuardService) Init(_ context.Context, req *pb.InitRequest) (*pb.I
 }
 
 // registerDIDWithServer registers DID with the CapiscIO server.
-// Uses PUT /v1/sdk/agents/{id} to update the agent's DID.
+// Uses PATCH /v1/sdk/agents/{id}/identity to update only the agent's DID (RFC-003).
 func (s *SimpleGuardService) registerDIDWithServer(serverURL, apiKey, agentID, didKey string) error {
 	// Normalize URL to prevent double-slash issues
 	normalizedURL := strings.TrimRight(serverURL, "/")
-	url := fmt.Sprintf("%s/v1/sdk/agents/%s", normalizedURL, agentID)
+	url := fmt.Sprintf("%s/v1/sdk/agents/%s/identity", normalizedURL, agentID)
 
 	payload := map[string]interface{}{
 		"did": didKey,
@@ -644,7 +644,7 @@ func (s *SimpleGuardService) registerDIDWithServer(serverURL, apiKey, agentID, d
 		return fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(body))
+	req, err := http.NewRequest(http.MethodPatch, url, bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -658,6 +658,11 @@ func (s *SimpleGuardService) registerDIDWithServer(serverURL, apiKey, agentID, d
 		return fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
+
+	// 409 Conflict means identity already exists (RFC-003 §9.5 immutability) - not an error
+	if resp.StatusCode == http.StatusConflict {
+		return nil // Identity already registered, this is expected
+	}
 
 	if resp.StatusCode >= 400 {
 		respBody, _ := io.ReadAll(resp.Body)
