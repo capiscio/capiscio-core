@@ -5,20 +5,12 @@ managed:
     - file_option: go_package_prefix
       value: github.com/capiscio/capiscio-core/pkg/rpc/gen
 plugins:
-  # Go - pinned versions to prevent CI drift
+  # Go only - pinned versions to prevent CI drift
+  # Python SDKs (capiscio-sdk-python, capiscio-mcp-python) manage their own
+  # protobuf generation with correct import paths for their package structure
   - remote: buf.build/protocolbuffers/go:v1.36.6
     out: ../pkg/rpc/gen
     opt: paths=source_relative
   - remote: buf.build/grpc/go:v1.6.0
     out: ../pkg/rpc/gen
     opt: paths=source_relative
-  # Python (capiscio-sdk-python) - pinned versions
-  - remote: buf.build/protocolbuffers/python:v30.2
-    out: ../../capiscio-sdk-python/capiscio_sdk/_rpc/gen
-  - remote: buf.build/grpc/python:v1.78.0
-    out: ../../capiscio-sdk-python/capiscio_sdk/_rpc/gen
-  # Python (capiscio-mcp-python) - pinned versions
-  - remote: buf.build/protocolbuffers/python:v30.2
-    out: ../../capiscio-mcp-python/capiscio_mcp/_proto/gen
-  - remote: buf.build/grpc/python:v1.78.0
-    out: ../../capiscio-mcp-python/capiscio_mcp/_proto/gen
