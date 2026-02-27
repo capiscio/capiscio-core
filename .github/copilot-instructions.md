@@ -43,6 +43,10 @@ These rules are non-negotiable. Violating them will cause production issues.
 - Badge verification and validation
 - DID resolution and JWKS operations
 - Gateway functionality (sidecar mode)
+- SimpleGuard signing/verification (gRPC service for SDKs)
+- MCP server identity management
+- Agent Card validation
+- Trust scoring and revocation
 - CLI tools for developers
 
 **Current Version**: v2.4.0 ✅
@@ -52,24 +56,26 @@ These rules are non-negotiable. Violating them will cause production issues.
 ```
 capiscio-core/
 ├── cmd/
-│   └── capiscio/           # CLI entry point
+│   └── capiscio/           # CLI entry point (cobra)
 ├── pkg/
-│   ├── badge/              # Badge operations
-│   │   ├── schema.go       # Badge structure (RFC-002 + RFC-003)
-│   │   ├── verifier.go     # Signature and trust verification
-│   │   ├── issuer.go       # Badge issuance logic
-│   │   ├── keeper.go       # State management and persistence
-│   │   ├── client.go       # Client-facing badge helpers
-│   │   └── errors.go       # Badge-specific error types
-│   ├── did/                # DID resolution
-│   │   └── did.go          # did:web and did:key support
-│   ├── crypto/             # Cryptographic utilities & JWKS operations
-│   │   ├── jwks.go         # JWKS fetch/caching and key management
-│   │   └── verifier.go     # JWS verification
-│   ├── gateway/            # Gateway/sidecar mode
-│   │   └── middleware.go   # Badge validation middleware
+│   ├── badge/              # Badge operations (schema, verifier, issuer, keeper, client, errors)
+│   ├── did/                # DID resolution (did:web, did:key)
+│   ├── crypto/             # Cryptographic utilities, JWKS, JWS verification
+│   ├── gateway/            # Gateway/sidecar mode (badge validation middleware)
+│   ├── simpleguard/        # SimpleGuard signing/verification (gRPC service)
+│   ├── agentcard/          # Agent Card schema and validation
+│   ├── mcp/                # MCP server identity management
+│   ├── pop/                # Proof of Possession (RFC-003)
+│   ├── protocol/           # A2A protocol utilities
+│   ├── registry/           # Registry client
+│   ├── revocation/         # Badge revocation lists
+│   ├── scoring/            # Trust scoring engine
+│   ├── trust/              # Trust store operations
+│   ├── report/             # Validation report generation
+│   └── rpc/                # gRPC service definitions
 ├── internal/
 │   └── rpc/                # Internal RPC utilities
+├── proto/                  # Protobuf definitions
 └── bindings/               # Language bindings (optional)
 ```
 
