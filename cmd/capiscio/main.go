@@ -8,14 +8,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version = "2.4.0"
+var (
+	version = "2.4.0"
+	commit  = "unknown"
+)
 
 var rootCmd = &cobra.Command{
 	Use:   "capiscio",
 	Short: "CapiscIO Core Engine CLI",
 	Long: `The core engine for the CapiscIO ecosystem.
 Validates Agent Cards, verifies signatures, and scores agent trust and availability.`,
-	Version: version,
+	Version: fmt.Sprintf("%s (commit: %s)", version, commit),
 }
 
 func main() {
