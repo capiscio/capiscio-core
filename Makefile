@@ -45,7 +45,8 @@ docs:
 build-cli:
 	@echo "Building CLI..."
 	@mkdir -p bin
-	go build -o bin/capiscio ./cmd/capiscio
+	go build -ldflags="-w -s -X main.version=$(VERSION) -X main.commit=$(COMMIT)" \
+		-o bin/capiscio ./cmd/capiscio
 
 build-python:
 	@echo "Building Python bindings..."
