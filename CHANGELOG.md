@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-03-16
+
+### Added
+- **`capiscio init` Command**: Let's Encrypt-style one-command agent setup (#32)
+
+### Fixed
+- Strip debug symbols from CLI binary to reduce distribution size (#38)
+- Pin buf plugin versions to prevent CI drift (#36)
+- Use correct PATCH `/v1/sdk/agents/{id}/identity` endpoint for DID registration (#34, #33)
+
 ## [2.4.0] - 2026-01-18
 
 ### Added
