@@ -22,11 +22,11 @@ type DecisionCache interface {
 }
 
 // CacheKeyComponents builds a deterministic cache key from PIP request fields.
-// Key includes: subject.did + subject.badge_jti + action.operation + resource.identifier.
-func CacheKeyComponents(did, badgeJTI, operation, resourceID string) string {
+// Key includes: subject.did + subject.badge_jti + action.operation + resource.identifier + enforcement_mode.
+func CacheKeyComponents(did, badgeJTI, operation, resourceID string, extra ...string) string {
 	h := sha256.New()
 	// Use a separator that cannot appear in DIDs or operation strings
-	for _, s := range []string{did, badgeJTI, operation, resourceID} {
+	for _, s := range append([]string{did, badgeJTI, operation, resourceID}, extra...) {
 		fmt.Fprintf(h, "%s\x00", s)
 	}
 	return fmt.Sprintf("%x", h.Sum(nil))

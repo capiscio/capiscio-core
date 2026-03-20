@@ -18,11 +18,19 @@ option go_package = "github.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1";
 
 import "google/protobuf/timestamp.proto";
 
-// MCPService provides unified MCP security operations (RFC-006 + RFC-007)
+// MCPService provides unified MCP security operations (RFC-005, RFC-006, RFC-007)
 service MCPService {
   // RFC-006: Evaluate tool access and emit evidence atomically
   // Single RPC returns both decision and evidence to avoid partial failures
   rpc EvaluateToolAccess(EvaluateToolAccessRequest) returns (EvaluateToolAccessResponse);
+  
+  // RFC-005: Centralized policy decision via PDP
+  // Go core owns decision logic, cache, break-glass, telemetry.
+  // SDK callers own obligation execution and response propagation.
+  // NEVER returns an RPC error for PDP unreachability — encodes the outcome
+  // in the response (ALLOW_OBSERVE + error_code) so SDKs don't need to
+  // distinguish transport errors from policy outcomes.
+  rpc EvaluatePolicyDecision(PolicyDecisionRequest) returns (PolicyDecisionResponse);
   
   // RFC-007: Verify server identity from disclosed DID + badge
   rpc VerifyServerIdentity(VerifyServerIdentityRequest) returns (VerifyServerIdentityResponse);
@@ -127,6 +135,129 @@ message EvaluateToolAccessResponse {
 message MCPObligation {
   string type = 1;
   string params_json = 2;             // opaque JSON
+}
+
+// ============================================================================
+// RFC-005: Centralized Policy Decision
+// ============================================================================
+
+// Request for centralized policy decision.
+// The Go core handles: PDP query, decision cache, break-glass override,
+// enforcement mode logic, and telemetry emission.
+// The SDK caller handles: obligation execution, response propagation,
+// and surface-specific error handling.
+message PolicyDecisionRequest {
+  // Subject identity (from badge verification, already completed by SDK)
+  PolicySubject subject = 1;
+
+  // What is being attempted
+  PolicyAction action = 2;
+
+  // Target resource
+  PolicyResource resource = 3;
+
+  // PDP and PEP configuration
+  PolicyConfig config = 4;
+
+  // Optional break-glass override token (compact JWS, EdDSA)
+  string breakglass_token = 5;
+}
+
+// Subject attributes for policy evaluation.
+// SDK extracts these from the verified badge before calling this RPC.
+message PolicySubject {
+  string did = 1;              // Badge sub (agent DID)
+  string badge_jti = 2;       // Badge jti
+  string ial = 3;             // Badge ial
+  string trust_level = 4;     // Badge vc.credentialSubject.level ("1", "2", "3")
+  int64 badge_exp = 5;        // Badge exp (Unix seconds) — bounds cache TTL
+}
+
+// Action attributes for policy evaluation.
+message PolicyAction {
+  string operation = 1;                  // tool name, HTTP method+route, etc.
+  string capability_class = 2;          // empty in badge-only mode (RFC-008)
+}
+
+// Resource attributes for policy evaluation.
+message PolicyResource {
+  string identifier = 1;               // target resource URI
+}
+
+// PEP-level configuration for the policy decision.
+message PolicyConfig {
+  // PDP endpoint URL. If empty, RPC returns ALLOW (badge-only mode).
+  string pdp_endpoint = 1;
+
+  // PDP query timeout in milliseconds. 0 or negative → 500ms default.
+  int32 pdp_timeout_ms = 2;
+
+  // Enforcement mode: EM-OBSERVE, EM-GUARD, EM-DELEGATE, EM-STRICT.
+  // Empty → EM-OBSERVE.
+  string enforcement_mode = 3;
+
+  // PEP identifier (included in PDP requests for audit).
+  string pep_id = 4;
+
+  // Workspace identifier (included in PDP requests).
+  string workspace = 5;
+
+  // Break-glass Ed25519 public key (raw 32 bytes).
+  // Must be separate from CA badge-signing key.
+  // Server-side configuration provides the key material directly;
+  // no filesystem paths cross the RPC boundary.
+  bytes breakglass_public_key = 6;
+}
+
+// Response from centralized policy decision.
+// This is ALWAYS a successful RPC response — PDP unreachability is encoded
+// in the response fields, never as a gRPC error. SDKs should not need to
+// distinguish transport errors from policy outcomes.
+message PolicyDecisionResponse {
+  // Policy decision: "ALLOW", "DENY", or "ALLOW_OBSERVE".
+  // ALLOW_OBSERVE indicates PDP was unreachable in EM-OBSERVE mode.
+  string decision = 1;
+
+  // Globally unique decision ID from the PDP.
+  // Synthetic IDs (e.g., "pdp-unavailable", "breakglass-override", "cache-hit")
+  // are used when the PDP was not consulted.
+  string decision_id = 2;
+
+  // Human-readable reason (populated on DENY or when PDP provides one).
+  string reason = 3;
+
+  // Cache TTL in seconds from PDP response. 0 if not cacheable.
+  int32 ttl = 4;
+
+  // Obligations the SDK must execute. Obligation *decision* and *registry
+  // enforcement* is done by the Go core per the EM matrix. Only obligations
+  // that the core determined should proceed are returned here.
+  // For EM-OBSERVE: all obligations are returned (for logging).
+  // For EM-STRICT: only if all known, all succeeded in core pre-check.
+  repeated MCPObligation obligations = 5;
+
+  // Enforcement mode that was applied for this decision.
+  string enforcement_mode = 6;
+
+  // Whether this decision came from cache (vs live PDP query).
+  bool cache_hit = 7;
+
+  // Whether a break-glass override was applied.
+  bool breakglass_override = 8;
+
+  // Break-glass token JTI (for audit trail, only set when override applied).
+  string breakglass_jti = 9;
+
+  // Error code when PDP could not be consulted.
+  // Empty string when PDP responded normally.
+  // Values: "pdp_unavailable", "pdp_timeout", "pdp_invalid_response".
+  string error_code = 10;
+
+  // PDP query latency in milliseconds (0 if cache hit or PDP not consulted).
+  int64 pdp_latency_ms = 11;
+
+  // Transaction ID (UUID v7) assigned to this decision.
+  string txn_id = 12;
 }
 
 // Access decision enum
