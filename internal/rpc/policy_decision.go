@@ -55,48 +55,11 @@ func (s *MCPService) EvaluatePolicyDecision(
 	}
 
 	txnID := generateTxnID()
-	now := time.Now().UTC()
-	nowStr := now.Format(time.RFC3339)
 
-	// Build PIP request from proto fields
-	subject := req.GetSubject()
+	pipReq := buildPIPRequest(req, txnID, em)
+
 	action := req.GetAction()
-	resource := req.GetResource()
-
-	pipReq := &pip.DecisionRequest{
-		PIPVersion: pip.PIPVersion,
-		Subject: pip.SubjectAttributes{
-			DID:        subject.GetDid(),
-			BadgeJTI:   subject.GetBadgeJti(),
-			IAL:        subject.GetIal(),
-			TrustLevel: subject.GetTrustLevel(),
-		},
-		Action: pip.ActionAttributes{
-			Operation: action.GetOperation(),
-		},
-		Resource: pip.ResourceAttributes{
-			Identifier: resource.GetIdentifier(),
-		},
-		Context: pip.ContextAttributes{
-			TxnID:           txnID,
-			EnforcementMode: em.String(),
-		},
-		Environment: pip.EnvironmentAttrs{
-			Time: &nowStr,
-		},
-	}
-
-	// Set optional fields
-	if action.GetCapabilityClass() != "" {
-		cc := action.GetCapabilityClass()
-		pipReq.Action.CapabilityClass = &cc
-	}
-	if cfg.PepId != "" {
-		pipReq.Environment.PEPID = &cfg.PepId
-	}
-	if cfg.Workspace != "" {
-		pipReq.Environment.Workspace = &cfg.Workspace
-	}
+	subject := req.GetSubject()
 
 	// Check break-glass override
 	if req.BreakglassToken != "" {
@@ -112,7 +75,7 @@ func (s *MCPService) EvaluatePolicyDecision(
 		subject.GetDid(),
 		subject.GetBadgeJti(),
 		action.GetOperation(),
-		resource.GetIdentifier(),
+		req.GetResource().GetIdentifier(),
 	)
 	if s.decisionCache != nil {
 		if cached, ok := s.decisionCache.Get(cacheKey); ok {
@@ -318,6 +281,55 @@ func (s *MCPService) buildLiveResponse(
 	resp.Decision = pip.DecisionAllow
 
 	return resp
+}
+
+// buildPIPRequest constructs a PIP DecisionRequest from the proto request fields.
+func buildPIPRequest(req *pb.PolicyDecisionRequest, txnID string, em pip.EnforcementMode) *pip.DecisionRequest {
+	cfg := req.GetConfig()
+	subject := req.GetSubject()
+	action := req.GetAction()
+	resource := req.GetResource()
+
+	now := time.Now().UTC()
+	nowStr := now.Format(time.RFC3339)
+
+	pipReq := &pip.DecisionRequest{
+		PIPVersion: pip.PIPVersion,
+		Subject: pip.SubjectAttributes{
+			DID:        subject.GetDid(),
+			BadgeJTI:   subject.GetBadgeJti(),
+			IAL:        subject.GetIal(),
+			TrustLevel: subject.GetTrustLevel(),
+		},
+		Action: pip.ActionAttributes{
+			Operation: action.GetOperation(),
+		},
+		Resource: pip.ResourceAttributes{
+			Identifier: resource.GetIdentifier(),
+		},
+		Context: pip.ContextAttributes{
+			TxnID:           txnID,
+			EnforcementMode: em.String(),
+		},
+		Environment: pip.EnvironmentAttrs{
+			Time: &nowStr,
+		},
+	}
+
+	if action.GetCapabilityClass() != "" {
+		cc := action.GetCapabilityClass()
+		pipReq.Action.CapabilityClass = &cc
+	}
+	if cfg.GetPepId() != "" {
+		pepID := cfg.GetPepId()
+		pipReq.Environment.PEPID = &pepID
+	}
+	if cfg.GetWorkspace() != "" {
+		ws := cfg.GetWorkspace()
+		pipReq.Environment.Workspace = &ws
+	}
+
+	return pipReq
 }
 
 // obligationsToProto converts pip.Obligation slice to proto MCPObligation slice.
