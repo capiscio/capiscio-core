@@ -31,21 +31,29 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MCPService_EvaluateToolAccess_FullMethodName   = "/capiscio.v1.MCPService/EvaluateToolAccess"
-	MCPService_VerifyServerIdentity_FullMethodName = "/capiscio.v1.MCPService/VerifyServerIdentity"
-	MCPService_ParseServerIdentity_FullMethodName  = "/capiscio.v1.MCPService/ParseServerIdentity"
-	MCPService_Health_FullMethodName               = "/capiscio.v1.MCPService/Health"
+	MCPService_EvaluateToolAccess_FullMethodName     = "/capiscio.v1.MCPService/EvaluateToolAccess"
+	MCPService_EvaluatePolicyDecision_FullMethodName = "/capiscio.v1.MCPService/EvaluatePolicyDecision"
+	MCPService_VerifyServerIdentity_FullMethodName   = "/capiscio.v1.MCPService/VerifyServerIdentity"
+	MCPService_ParseServerIdentity_FullMethodName    = "/capiscio.v1.MCPService/ParseServerIdentity"
+	MCPService_Health_FullMethodName                 = "/capiscio.v1.MCPService/Health"
 )
 
 // MCPServiceClient is the client API for MCPService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// MCPService provides unified MCP security operations (RFC-006 + RFC-007)
+// MCPService provides unified MCP security operations (RFC-005, RFC-006, RFC-007)
 type MCPServiceClient interface {
 	// RFC-006: Evaluate tool access and emit evidence atomically
 	// Single RPC returns both decision and evidence to avoid partial failures
 	EvaluateToolAccess(ctx context.Context, in *EvaluateToolAccessRequest, opts ...grpc.CallOption) (*EvaluateToolAccessResponse, error)
+	// RFC-005: Centralized policy decision via PDP
+	// Go core owns decision logic, cache, break-glass, telemetry.
+	// SDK callers own obligation execution and response propagation.
+	// NEVER returns an RPC error for PDP unreachability — encodes the outcome
+	// in the response (ALLOW_OBSERVE + error_code) so SDKs don't need to
+	// distinguish transport errors from policy outcomes.
+	EvaluatePolicyDecision(ctx context.Context, in *PolicyDecisionRequest, opts ...grpc.CallOption) (*PolicyDecisionResponse, error)
 	// RFC-007: Verify server identity from disclosed DID + badge
 	VerifyServerIdentity(ctx context.Context, in *VerifyServerIdentityRequest, opts ...grpc.CallOption) (*VerifyServerIdentityResponse, error)
 	// RFC-007: Extract server identity from transport headers/meta
@@ -66,6 +74,16 @@ func (c *mCPServiceClient) EvaluateToolAccess(ctx context.Context, in *EvaluateT
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EvaluateToolAccessResponse)
 	err := c.cc.Invoke(ctx, MCPService_EvaluateToolAccess_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mCPServiceClient) EvaluatePolicyDecision(ctx context.Context, in *PolicyDecisionRequest, opts ...grpc.CallOption) (*PolicyDecisionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PolicyDecisionResponse)
+	err := c.cc.Invoke(ctx, MCPService_EvaluatePolicyDecision_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -106,11 +124,18 @@ func (c *mCPServiceClient) Health(ctx context.Context, in *MCPHealthRequest, opt
 // All implementations must embed UnimplementedMCPServiceServer
 // for forward compatibility.
 //
-// MCPService provides unified MCP security operations (RFC-006 + RFC-007)
+// MCPService provides unified MCP security operations (RFC-005, RFC-006, RFC-007)
 type MCPServiceServer interface {
 	// RFC-006: Evaluate tool access and emit evidence atomically
 	// Single RPC returns both decision and evidence to avoid partial failures
 	EvaluateToolAccess(context.Context, *EvaluateToolAccessRequest) (*EvaluateToolAccessResponse, error)
+	// RFC-005: Centralized policy decision via PDP
+	// Go core owns decision logic, cache, break-glass, telemetry.
+	// SDK callers own obligation execution and response propagation.
+	// NEVER returns an RPC error for PDP unreachability — encodes the outcome
+	// in the response (ALLOW_OBSERVE + error_code) so SDKs don't need to
+	// distinguish transport errors from policy outcomes.
+	EvaluatePolicyDecision(context.Context, *PolicyDecisionRequest) (*PolicyDecisionResponse, error)
 	// RFC-007: Verify server identity from disclosed DID + badge
 	VerifyServerIdentity(context.Context, *VerifyServerIdentityRequest) (*VerifyServerIdentityResponse, error)
 	// RFC-007: Extract server identity from transport headers/meta
@@ -129,6 +154,9 @@ type UnimplementedMCPServiceServer struct{}
 
 func (UnimplementedMCPServiceServer) EvaluateToolAccess(context.Context, *EvaluateToolAccessRequest) (*EvaluateToolAccessResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method EvaluateToolAccess not implemented")
+}
+func (UnimplementedMCPServiceServer) EvaluatePolicyDecision(context.Context, *PolicyDecisionRequest) (*PolicyDecisionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method EvaluatePolicyDecision not implemented")
 }
 func (UnimplementedMCPServiceServer) VerifyServerIdentity(context.Context, *VerifyServerIdentityRequest) (*VerifyServerIdentityResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method VerifyServerIdentity not implemented")
@@ -174,6 +202,24 @@ func _MCPService_EvaluateToolAccess_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MCPServiceServer).EvaluateToolAccess(ctx, req.(*EvaluateToolAccessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MCPService_EvaluatePolicyDecision_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PolicyDecisionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MCPServiceServer).EvaluatePolicyDecision(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MCPService_EvaluatePolicyDecision_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MCPServiceServer).EvaluatePolicyDecision(ctx, req.(*PolicyDecisionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -242,6 +288,10 @@ var MCPService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EvaluateToolAccess",
 			Handler:    _MCPService_EvaluateToolAccess_Handler,
+		},
+		{
+			MethodName: "EvaluatePolicyDecision",
+			Handler:    _MCPService_EvaluatePolicyDecision_Handler,
 		},
 		{
 			MethodName: "VerifyServerIdentity",

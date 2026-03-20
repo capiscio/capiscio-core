@@ -11,14 +11,17 @@ import (
 
 	"github.com/capiscio/capiscio-core/v2/pkg/badge"
 	"github.com/capiscio/capiscio-core/v2/pkg/mcp"
+	"github.com/capiscio/capiscio-core/v2/pkg/pip"
 	"github.com/capiscio/capiscio-core/v2/pkg/registry"
 	pb "github.com/capiscio/capiscio-core/v2/pkg/rpc/gen/capiscio/v1"
 )
 
-// MCPService implements the MCPServiceServer interface for RFC-006 and RFC-007.
+// MCPService implements the MCPServiceServer interface for RFC-005, RFC-006, and RFC-007.
 type MCPService struct {
 	pb.UnimplementedMCPServiceServer
-	service *mcp.Service
+	service       *mcp.Service
+	decisionCache pip.DecisionCache
+	obligationReg *pip.ObligationRegistry
 }
 
 // MCPServiceConfig configures the MCP service
@@ -114,7 +117,9 @@ func NewMCPServiceWithConfig(cfg MCPServiceConfig) (*MCPService, error) {
 	}
 
 	return &MCPService{
-		service: mcp.NewService(deps),
+		service:       mcp.NewService(deps),
+		decisionCache: pip.NewInMemoryCache(),
+		obligationReg: pip.NewObligationRegistry(nil),
 	}, nil
 }
 
