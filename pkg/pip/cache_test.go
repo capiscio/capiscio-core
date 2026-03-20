@@ -5,6 +5,13 @@ import (
 	"time"
 )
 
+// withNowFunc injects a clock function for testing.
+func withNowFunc(fn func() time.Time) InMemoryCacheOption {
+	return func(c *InMemoryCache) {
+		c.nowFunc = fn
+	}
+}
+
 func TestCacheKeyComponents(t *testing.T) {
 	key1 := CacheKeyComponents("did:web:a", "jti-1", "GET /v1/test", "/v1/test/123")
 	key2 := CacheKeyComponents("did:web:a", "jti-1", "GET /v1/test", "/v1/test/123")

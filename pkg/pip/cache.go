@@ -63,13 +63,6 @@ func WithCacheDeny(enabled bool) InMemoryCacheOption {
 	}
 }
 
-// withNowFunc injects a clock function for testing.
-func withNowFunc(fn func() time.Time) InMemoryCacheOption {
-	return func(c *InMemoryCache) {
-		c.nowFunc = fn
-	}
-}
-
 // NewInMemoryCache creates a new in-memory decision cache.
 func NewInMemoryCache(opts ...InMemoryCacheOption) *InMemoryCache {
 	c := &InMemoryCache{
