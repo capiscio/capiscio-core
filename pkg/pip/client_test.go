@@ -58,6 +58,18 @@ func TestHTTPPDPClient_Success(t *testing.T) {
 	}
 }
 
+func TestHTTPPDPClient_ZeroTimeoutDefaults(t *testing.T) {
+	client := NewHTTPPDPClient("http://localhost:9999", 0)
+	if client.client.Timeout != DefaultPDPTimeout {
+		t.Errorf("timeout = %v, want DefaultPDPTimeout (%v)", client.client.Timeout, DefaultPDPTimeout)
+	}
+
+	clientNeg := NewHTTPPDPClient("http://localhost:9999", -1*time.Second)
+	if clientNeg.client.Timeout != DefaultPDPTimeout {
+		t.Errorf("negative timeout = %v, want DefaultPDPTimeout (%v)", clientNeg.client.Timeout, DefaultPDPTimeout)
+	}
+}
+
 func TestHTTPPDPClient_PEPIDHeader(t *testing.T) {
 	var gotPEPID string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

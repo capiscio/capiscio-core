@@ -76,17 +76,30 @@ func NewInMemoryCache(opts ...InMemoryCacheOption) *InMemoryCache {
 }
 
 // Get retrieves a cached decision if it exists and has not expired.
+// Expired entries are evicted on read to prevent unbounded memory growth.
 func (c *InMemoryCache) Get(key string) (*DecisionResponse, bool) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+	now := c.nowFunc()
 
+	c.mu.RLock()
 	entry, ok := c.entries[key]
+	c.mu.RUnlock()
+
 	if !ok {
 		return nil, false
 	}
-	if c.nowFunc().After(entry.expiresAt) {
+
+	if now.After(entry.expiresAt) {
+		// Upgrade to write lock and evict the expired entry.
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		// Re-check under write lock in case it was updated concurrently.
+		entry, ok = c.entries[key]
+		if ok && now.After(entry.expiresAt) {
+			delete(c.entries, key)
+		}
 		return nil, false
 	}
+
 	return entry.resp, true
 }
 

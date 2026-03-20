@@ -50,7 +50,11 @@ func NewObligationRegistry(logger *slog.Logger) *ObligationRegistry {
 }
 
 // Register adds an obligation handler to the registry.
+// Panics if handler is nil to fail fast at setup time rather than at enforcement time.
 func (r *ObligationRegistry) Register(handler ObligationHandler) {
+	if handler == nil {
+		panic("pip: attempted to register nil ObligationHandler")
+	}
 	r.handlers = append(r.handlers, handler)
 }
 

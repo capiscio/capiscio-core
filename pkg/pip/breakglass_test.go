@@ -1,12 +1,69 @@
 package pip
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/json"
+	"math/big"
 	"testing"
 	"time"
 )
 
+// generateTestKey creates an ECDSA P-256 key pair for testing.
+func generateTestKey() (*ecdsa.PrivateKey, *ecdsa.PublicKey, error) {
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, nil, err
+	}
+	return priv, &priv.PublicKey, nil
+}
+
+// signTestToken creates a simple signed token for testing purposes.
+// Uses ECDSA P-256 with fixed-width r/s encoding. NOT a real JWS.
+func signTestToken(priv *ecdsa.PrivateKey, token *BreakGlassToken) ([]byte, error) {
+	payload, err := json.Marshal(token)
+	if err != nil {
+		return nil, err
+	}
+	hash := sha256.Sum256(payload)
+	r, s, err := ecdsa.Sign(rand.Reader, priv, hash[:])
+	if err != nil {
+		return nil, err
+	}
+	// Fixed-width encoding: pad r and s to curve byte size (32 bytes for P-256)
+	byteLen := (priv.Curve.Params().BitSize + 7) / 8
+	sig := make([]byte, 2*byteLen)
+	rBytes := r.Bytes()
+	sBytes := s.Bytes()
+	copy(sig[byteLen-len(rBytes):byteLen], rBytes)
+	copy(sig[2*byteLen-len(sBytes):], sBytes)
+	return append(payload, sig...), nil
+}
+
+// verifyTestSignature verifies the fixed-width test signature format.
+func verifyTestSignature(pub *ecdsa.PublicKey, signed []byte, token *BreakGlassToken) bool {
+	payload, err := json.Marshal(token)
+	if err != nil {
+		return false
+	}
+	if len(signed) <= len(payload) {
+		return false
+	}
+	sigBytes := signed[len(payload):]
+	hash := sha256.Sum256(payload)
+	byteLen := (pub.Curve.Params().BitSize + 7) / 8
+	if len(sigBytes) != 2*byteLen {
+		return false
+	}
+	r := new(big.Int).SetBytes(sigBytes[:byteLen])
+	s := new(big.Int).SetBytes(sigBytes[byteLen:])
+	return ecdsa.Verify(pub, hash[:], r, s)
+}
+
 func TestBreakGlassValidator_ValidToken(t *testing.T) {
-	_, pub, err := GenerateTestKey()
+	_, pub, err := generateTestKey()
 	if err != nil {
 		t.Fatalf("generate key: %v", err)
 	}
@@ -31,7 +88,7 @@ func TestBreakGlassValidator_ValidToken(t *testing.T) {
 }
 
 func TestBreakGlassValidator_ExpiredToken(t *testing.T) {
-	_, pub, _ := GenerateTestKey()
+	_, pub, _ := generateTestKey()
 	now := time.Now().UTC()
 	v := NewBreakGlassValidator(pub)
 	v.nowFunc = func() time.Time { return now }
@@ -52,7 +109,7 @@ func TestBreakGlassValidator_ExpiredToken(t *testing.T) {
 }
 
 func TestBreakGlassValidator_FutureToken(t *testing.T) {
-	_, pub, _ := GenerateTestKey()
+	_, pub, _ := generateTestKey()
 	now := time.Now().UTC()
 	v := NewBreakGlassValidator(pub)
 	v.nowFunc = func() time.Time { return now }
@@ -73,7 +130,7 @@ func TestBreakGlassValidator_FutureToken(t *testing.T) {
 }
 
 func TestBreakGlassValidator_MissingFields(t *testing.T) {
-	_, pub, _ := GenerateTestKey()
+	_, pub, _ := generateTestKey()
 	v := NewBreakGlassValidator(pub)
 
 	tests := []struct {
@@ -97,7 +154,7 @@ func TestBreakGlassValidator_MissingFields(t *testing.T) {
 }
 
 func TestBreakGlassValidator_ScopeMatching(t *testing.T) {
-	_, pub, _ := GenerateTestKey()
+	_, pub, _ := generateTestKey()
 	v := NewBreakGlassValidator(pub)
 
 	tests := []struct {
@@ -143,6 +200,13 @@ func TestBreakGlassValidator_ScopeMatching(t *testing.T) {
 			matches: false,
 		},
 		{
+			name:    "route prefix without path boundary",
+			scope:   BreakGlassScope{Methods: []string{"*"}, Routes: []string{"/v1/agents"}},
+			method:  "GET",
+			route:   "/v1/agentsX",
+			matches: false,
+		},
+		{
 			name:    "multiple methods — one matches",
 			scope:   BreakGlassScope{Methods: []string{"GET", "POST"}, Routes: []string{"*"}},
 			method:  "POST",
@@ -184,7 +248,7 @@ func TestBreakGlassValidator_ScopeMatching(t *testing.T) {
 }
 
 func TestBreakGlassValidator_NilTokenScope(t *testing.T) {
-	_, pub, _ := GenerateTestKey()
+	_, pub, _ := generateTestKey()
 	v := NewBreakGlassValidator(pub)
 
 	if v.MatchesScope(nil, "GET", "/test") {
@@ -193,7 +257,7 @@ func TestBreakGlassValidator_NilTokenScope(t *testing.T) {
 }
 
 func TestBreakGlassValidator_PublicKey(t *testing.T) {
-	_, pub, _ := GenerateTestKey()
+	_, pub, _ := generateTestKey()
 	v := NewBreakGlassValidator(pub)
 
 	if v.PublicKey() != pub {

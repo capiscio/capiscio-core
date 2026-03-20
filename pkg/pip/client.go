@@ -62,7 +62,11 @@ func WithHTTPClient(hc *http.Client) HTTPPDPClientOption {
 // NewHTTPPDPClient creates an HTTP-based PDP client.
 // endpoint is the PDP evaluation URL.
 // timeout controls the HTTP client timeout (use DefaultPDPTimeout if unsure).
+// If timeout is <= 0, DefaultPDPTimeout is used to prevent indefinite hangs.
 func NewHTTPPDPClient(endpoint string, timeout time.Duration, opts ...HTTPPDPClientOption) *HTTPPDPClient {
+	if timeout <= 0 {
+		timeout = DefaultPDPTimeout
+	}
 	c := &HTTPPDPClient{
 		endpoint: endpoint,
 		client: &http.Client{

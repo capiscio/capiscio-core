@@ -28,6 +28,16 @@ func newMockHandler(t string, err error) *mockHandler {
 	return &mockHandler{supportedType: t, handleErr: err}
 }
 
+func TestObligationRegistry_RegisterNilPanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("Register(nil) should panic")
+		}
+	}()
+	reg := NewObligationRegistry(slog.Default())
+	reg.Register(nil)
+}
+
 func TestObligationRegistry_EMObserve(t *testing.T) {
 	logger := slog.Default()
 	reg := NewObligationRegistry(logger)

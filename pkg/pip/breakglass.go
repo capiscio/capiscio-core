@@ -2,13 +2,7 @@ package pip
 
 import (
 	"crypto"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/json"
 	"fmt"
-	"math/big"
 	"time"
 )
 
@@ -114,8 +108,9 @@ func (v *BreakGlassValidator) MatchesScope(token *BreakGlassToken, method, route
 		if r == "*" || r == route {
 			return true
 		}
-		// Prefix matching: "/v1/agents" matches "/v1/agents/abc-123"
-		if len(r) > 0 && len(route) > len(r) && route[:len(r)] == r {
+		// Path-prefix matching: "/v1/agents" matches "/v1/agents/abc-123"
+		// but NOT "/v1/agentsX" — require '/' boundary after the prefix.
+		if len(r) > 0 && len(route) > len(r) && route[:len(r)] == r && route[len(r)] == '/' {
 			return true
 		}
 	}
@@ -128,47 +123,4 @@ func (v *BreakGlassValidator) PublicKey() crypto.PublicKey {
 	return v.publicKey
 }
 
-// GenerateTestKey creates an ECDSA P-256 key pair for testing.
-// NOT for production use.
-func GenerateTestKey() (*ecdsa.PrivateKey, *ecdsa.PublicKey, error) {
-	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		return nil, nil, err
-	}
-	return priv, &priv.PublicKey, nil
-}
 
-// SignTestToken creates a simple signed token for testing purposes.
-// Uses ECDSA P-256. NOT a real JWS — for unit tests only.
-func SignTestToken(priv *ecdsa.PrivateKey, token *BreakGlassToken) ([]byte, error) {
-	payload, err := json.Marshal(token)
-	if err != nil {
-		return nil, err
-	}
-	hash := sha256.Sum256(payload)
-	r, s, err := ecdsa.Sign(rand.Reader, priv, hash[:])
-	if err != nil {
-		return nil, err
-	}
-	// Return payload + signature concatenated (test format only)
-	sig := append(r.Bytes(), s.Bytes()...)
-	return append(payload, sig...), nil
-}
-
-// VerifyTestSignature verifies the simple test signature format.
-// NOT for production — use go-jose JWS verification in production.
-func VerifyTestSignature(pub *ecdsa.PublicKey, signed []byte, token *BreakGlassToken) bool {
-	payload, err := json.Marshal(token)
-	if err != nil {
-		return false
-	}
-	if len(signed) <= len(payload) {
-		return false
-	}
-	sigBytes := signed[len(payload):]
-	hash := sha256.Sum256(payload)
-	half := len(sigBytes) / 2
-	r := new(big.Int).SetBytes(sigBytes[:half])
-	s := new(big.Int).SetBytes(sigBytes[half:])
-	return ecdsa.Verify(pub, hash[:], r, s)
-}
