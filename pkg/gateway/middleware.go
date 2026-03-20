@@ -70,209 +70,279 @@ type PolicyEvent struct {
 // Implementations should be non-blocking.
 type PolicyEventCallback func(event PolicyEvent, req *pip.DecisionRequest)
 
+// pep is the internal Policy Enforcement Point handler.
+type pep struct {
+	verifier    *badge.Verifier
+	config      PEPConfig
+	logger      *slog.Logger
+	bgValidator *pip.BreakGlassValidator
+	callbacks   []PolicyEventCallback
+	next        http.Handler
+}
+
 // NewPolicyMiddleware creates a full PEP middleware (RFC-005).
 // When PEPConfig.PDPClient is nil, operates in badge-only mode (identical to NewAuthMiddleware).
 func NewPolicyMiddleware(verifier *badge.Verifier, config PEPConfig, next http.Handler, callbacks ...PolicyEventCallback) http.Handler {
-	logger := config.Logger
-	if logger == nil {
-		logger = slog.Default()
+	p := &pep{
+		verifier:  verifier,
+		config:    config,
+		next:      next,
+		callbacks: callbacks,
+		logger:    config.Logger,
 	}
-
-	var bgValidator *pip.BreakGlassValidator
+	if p.logger == nil {
+		p.logger = slog.Default()
+	}
 	if config.BreakGlassKey != nil {
-		bgValidator = pip.NewBreakGlassValidator(config.BreakGlassKey)
+		p.bgValidator = pip.NewBreakGlassValidator(config.BreakGlassKey)
+	}
+	return http.HandlerFunc(p.serveHTTP)
+}
+
+// serveHTTP implements the PEP request flow: authenticate → break-glass → cache → PDP → enforce.
+func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
+	// --- 1. Extract and verify badge (authentication) ---
+	token := ExtractBadge(r)
+	if token == "" {
+		http.Error(w, "Missing Trust Badge", http.StatusUnauthorized)
+		return
 	}
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// --- 1. Extract and verify badge (authentication) ---
-		token := ExtractBadge(r)
-		if token == "" {
-			http.Error(w, "Missing Trust Badge", http.StatusUnauthorized)
-			return
+	claims, err := p.verifier.Verify(r.Context(), token)
+	if err != nil {
+		p.logger.WarnContext(r.Context(), "badge verification failed", slog.String("error", err.Error()))
+		http.Error(w, "Invalid Trust Badge", http.StatusUnauthorized)
+		return
+	}
+
+	// Forward verified identity to upstream
+	r.Header.Set("X-Capiscio-Subject", claims.Subject)
+	r.Header.Set("X-Capiscio-Issuer", claims.Issuer)
+
+	// If no PDP configured, operate in badge-only mode
+	if p.config.PDPClient == nil {
+		p.next.ServeHTTP(w, r)
+		return
+	}
+
+	// --- 2-3. Build PIP request ---
+	pipReq := p.buildPIPRequest(r, claims)
+
+	// --- 4. Check break-glass override ---
+	if p.handleBreakGlass(w, r, pipReq) {
+		return
+	}
+
+	// --- 5-9. Cache → PDP → enforce → obligations ---
+	p.evaluatePolicy(w, r, claims, pipReq)
+}
+
+// buildPIPRequest constructs the PIP decision request from the HTTP request and badge claims.
+func (p *pep) buildPIPRequest(r *http.Request, claims *badge.Claims) *pip.DecisionRequest {
+	txnID := r.Header.Get(pip.TxnIDHeader)
+	if txnID == "" {
+		txnID = uuid.Must(uuid.NewV7()).String()
+	}
+	r.Header.Set(pip.TxnIDHeader, txnID)
+
+	now := time.Now().UTC()
+	nowStr := now.Format(time.RFC3339)
+	return &pip.DecisionRequest{
+		PIPVersion: pip.PIPVersion,
+		Subject: pip.SubjectAttributes{
+			DID:        claims.Subject,
+			BadgeJTI:   claims.JTI,
+			IAL:        claims.IAL,
+			TrustLevel: claims.TrustLevel(),
+		},
+		Action: pip.ActionAttributes{
+			Operation: r.Method + " " + r.URL.Path,
+		},
+		Resource: pip.ResourceAttributes{
+			Identifier: r.URL.Path,
+		},
+		Context: pip.ContextAttributes{
+			TxnID:           txnID,
+			EnforcementMode: p.config.EnforcementMode.String(),
+		},
+		Environment: pip.EnvironmentAttrs{
+			PEPID:     strPtr(p.config.PEPID),
+			Workspace: strPtr(p.config.Workspace),
+			Time:      &nowStr,
+		},
+	}
+}
+
+// handleBreakGlass checks for a valid break-glass override token.
+// Returns true if the request was handled (break-glass token was valid).
+func (p *pep) handleBreakGlass(w http.ResponseWriter, r *http.Request, pipReq *pip.DecisionRequest) bool {
+	if p.bgValidator == nil {
+		return false
+	}
+
+	bgToken := extractBreakGlass(r, p.bgValidator)
+	if bgToken == nil {
+		return false
+	}
+
+	p.logger.WarnContext(r.Context(), "break-glass override active",
+		slog.String(pip.TelemetryOverrideJTI, bgToken.JTI),
+		slog.String("operator", bgToken.SUB),
+		slog.String("reason", bgToken.Reason))
+
+	emitPolicyEvent(p.callbacks, PolicyEvent{
+		Decision:    pip.DecisionAllow,
+		DecisionID:  "breakglass:" + bgToken.JTI,
+		Override:    true,
+		OverrideJTI: bgToken.JTI,
+	}, pipReq)
+	p.next.ServeHTTP(w, r)
+	return true
+}
+
+// evaluatePolicy handles cache lookup, PDP query, decision enforcement, and obligations.
+func (p *pep) evaluatePolicy(w http.ResponseWriter, r *http.Request, claims *badge.Claims, pipReq *pip.DecisionRequest) {
+	cacheKey := pip.CacheKeyComponents(claims.Subject, claims.JTI, pipReq.Action.Operation, pipReq.Resource.Identifier)
+	event := PolicyEvent{}
+
+	// --- 5. Check cache ---
+	if p.handleCachedDecision(w, r, cacheKey, &event, pipReq) {
+		return
+	}
+
+	// --- 6. Query PDP ---
+	start := time.Now()
+	resp, pdpErr := p.config.PDPClient.Evaluate(r.Context(), pipReq)
+	event.PDPLatencyMs = time.Since(start).Milliseconds()
+
+	if pdpErr != nil {
+		p.logger.ErrorContext(r.Context(), "PDP unavailable",
+			slog.String(pip.TelemetryErrorCode, pip.ErrorCodePDPUnavailable),
+			slog.String("error", pdpErr.Error()),
+			slog.String("enforcement_mode", p.config.EnforcementMode.String()))
+		p.handlePDPUnavailable(w, r, &event, pipReq)
+		return
+	}
+
+	event.Decision = resp.Decision
+	event.DecisionID = resp.DecisionID
+	event.Obligations = obligationTypes(resp.Obligations)
+
+	// --- 7. Cache the response ---
+	if p.config.DecisionCache != nil {
+		maxTTL := time.Until(time.Unix(claims.Expiry, 0))
+		if maxTTL > 0 {
+			p.config.DecisionCache.Put(cacheKey, resp, maxTTL)
 		}
+	}
 
-		claims, err := verifier.Verify(r.Context(), token)
-		if err != nil {
-			logger.WarnContext(r.Context(), "badge verification failed", slog.String("error", err.Error()))
-			http.Error(w, "Invalid Trust Badge", http.StatusUnauthorized)
-			return
-		}
+	// --- 8. Enforce decision ---
+	if resp.Decision == pip.DecisionDeny {
+		p.handlePDPDeny(w, r, resp, &event, pipReq)
+		return
+	}
 
-		// Forward verified identity to upstream
-		r.Header.Set("X-Capiscio-Subject", claims.Subject)
-		r.Header.Set("X-Capiscio-Issuer", claims.Issuer)
+	// --- 9. Handle obligations ---
+	if p.enforceObligations(w, r, resp.Obligations, &event, pipReq) {
+		return
+	}
 
-		// If no PDP configured, operate in badge-only mode
-		if config.PDPClient == nil {
-			next.ServeHTTP(w, r)
-			return
-		}
+	emitPolicyEvent(p.callbacks, event, pipReq)
+	p.next.ServeHTTP(w, r)
+}
 
-		// --- 2. Resolve txn_id (RFC-004 header or generate UUID v7) ---
-		txnID := r.Header.Get(pip.TxnIDHeader)
-		if txnID == "" {
-			txnID = uuid.Must(uuid.NewV7()).String()
-		}
-		r.Header.Set(pip.TxnIDHeader, txnID)
+// handleCachedDecision serves a cached PDP decision if available.
+// Returns true if the request was handled from cache.
+func (p *pep) handleCachedDecision(w http.ResponseWriter, r *http.Request, cacheKey string, event *PolicyEvent, pipReq *pip.DecisionRequest) bool {
+	if p.config.DecisionCache == nil {
+		return false
+	}
 
-		// --- 3. Build PIP request ---
-		now := time.Now().UTC()
-		nowStr := now.Format(time.RFC3339)
-		pipReq := &pip.DecisionRequest{
-			PIPVersion: pip.PIPVersion,
-			Subject: pip.SubjectAttributes{
-				DID:        claims.Subject,
-				BadgeJTI:   claims.JTI,
-				IAL:        claims.IAL,
-				TrustLevel: claims.TrustLevel(),
-			},
-			Action: pip.ActionAttributes{
-				Operation: r.Method + " " + r.URL.Path,
-			},
-			Resource: pip.ResourceAttributes{
-				Identifier: r.URL.Path,
-			},
-			Context: pip.ContextAttributes{
-				TxnID:           txnID,
-				EnforcementMode: config.EnforcementMode.String(),
-			},
-			Environment: pip.EnvironmentAttrs{
-				PEPID:     strPtr(config.PEPID),
-				Workspace: strPtr(config.Workspace),
-				Time:      &nowStr,
-			},
-		}
+	cached, ok := p.config.DecisionCache.Get(cacheKey)
+	if !ok {
+		return false
+	}
 
-		event := PolicyEvent{}
+	event.Decision = cached.Decision
+	event.DecisionID = cached.DecisionID
+	event.CacheHit = true
+	event.Obligations = obligationTypes(cached.Obligations)
 
-		// --- 4. Check break-glass override ---
-		if bgValidator != nil {
-			if bgToken := extractBreakGlass(r, bgValidator); bgToken != nil {
-				logger.WarnContext(r.Context(), "break-glass override active",
-					slog.String(pip.TelemetryOverrideJTI, bgToken.JTI),
-					slog.String("operator", bgToken.SUB),
-					slog.String("reason", bgToken.Reason))
+	if cached.Decision == pip.DecisionDeny {
+		emitPolicyEvent(p.callbacks, *event, pipReq)
+		http.Error(w, "Access denied by policy", http.StatusForbidden)
+		return true
+	}
 
-				event.Decision = pip.DecisionAllow
-				event.DecisionID = "breakglass:" + bgToken.JTI
-				event.Override = true
-				event.OverrideJTI = bgToken.JTI
-				emitPolicyEvent(callbacks, event, pipReq)
-				next.ServeHTTP(w, r)
-				return
-			}
-		}
-
-		// --- 5. Check cache ---
-		cacheKey := pip.CacheKeyComponents(claims.Subject, claims.JTI, pipReq.Action.Operation, pipReq.Resource.Identifier)
-		if config.DecisionCache != nil {
-			if cached, ok := config.DecisionCache.Get(cacheKey); ok {
-				event.Decision = cached.Decision
-				event.DecisionID = cached.DecisionID
-				event.CacheHit = true
-				event.Obligations = obligationTypes(cached.Obligations)
-
-				if cached.Decision == pip.DecisionDeny {
-					emitPolicyEvent(callbacks, event, pipReq)
-					http.Error(w, "Access denied by policy", http.StatusForbidden)
-					return
-				}
-
-				// Handle obligations from cached response
-				if config.ObligationReg != nil && len(cached.Obligations) > 0 {
-					oblResult := config.ObligationReg.Enforce(r.Context(), config.EnforcementMode, cached.Obligations)
-					if !oblResult.Proceed {
-						event.Decision = pip.DecisionDeny
-						emitPolicyEvent(callbacks, event, pipReq)
-						http.Error(w, "Access denied: obligation enforcement failed", http.StatusForbidden)
-						return
-					}
-				}
-
-				emitPolicyEvent(callbacks, event, pipReq)
-				next.ServeHTTP(w, r)
-				return
-			}
-		}
-
-		// --- 6. Query PDP ---
-		start := time.Now()
-		resp, pdpErr := config.PDPClient.Evaluate(r.Context(), pipReq)
-		event.PDPLatencyMs = time.Since(start).Milliseconds()
-
-		if pdpErr != nil {
-			// PDP unavailable — handle per enforcement mode (RFC-005 §7.4)
-			event.ErrorCode = pip.ErrorCodePDPUnavailable
-			logger.ErrorContext(r.Context(), "PDP unavailable",
-				slog.String(pip.TelemetryErrorCode, pip.ErrorCodePDPUnavailable),
-				slog.String("error", pdpErr.Error()),
-				slog.String("enforcement_mode", config.EnforcementMode.String()))
-
-			if config.EnforcementMode == pip.EMObserve {
-				event.Decision = pip.DecisionObserve
-				event.DecisionID = "pdp-unavailable"
-				emitPolicyEvent(callbacks, event, pipReq)
-				next.ServeHTTP(w, r)
-				return
-			}
-			// EM-GUARD, EM-DELEGATE, EM-STRICT: fail-closed
+	if p.config.ObligationReg != nil && len(cached.Obligations) > 0 {
+		oblResult := p.config.ObligationReg.Enforce(r.Context(), p.config.EnforcementMode, cached.Obligations)
+		if !oblResult.Proceed {
 			event.Decision = pip.DecisionDeny
-			event.DecisionID = "pdp-unavailable"
-			emitPolicyEvent(callbacks, event, pipReq)
-			http.Error(w, "Access denied: policy service unavailable", http.StatusForbidden)
-			return
+			emitPolicyEvent(p.callbacks, *event, pipReq)
+			http.Error(w, "Access denied: obligation enforcement failed", http.StatusForbidden)
+			return true
 		}
+	}
 
-		event.Decision = resp.Decision
-		event.DecisionID = resp.DecisionID
-		event.Obligations = obligationTypes(resp.Obligations)
+	emitPolicyEvent(p.callbacks, *event, pipReq)
+	p.next.ServeHTTP(w, r)
+	return true
+}
 
-		// --- 7. Cache the response ---
-		if config.DecisionCache != nil {
-			maxTTL := time.Until(time.Unix(claims.Expiry, 0))
-			if maxTTL > 0 {
-				config.DecisionCache.Put(cacheKey, resp, maxTTL)
-			}
+// handlePDPUnavailable handles PDP unreachability per enforcement mode (RFC-005 §7.4).
+func (p *pep) handlePDPUnavailable(w http.ResponseWriter, r *http.Request, event *PolicyEvent, pipReq *pip.DecisionRequest) {
+	event.ErrorCode = pip.ErrorCodePDPUnavailable
+
+	if p.config.EnforcementMode == pip.EMObserve {
+		event.Decision = pip.DecisionObserve
+		event.DecisionID = "pdp-unavailable"
+		emitPolicyEvent(p.callbacks, *event, pipReq)
+		p.next.ServeHTTP(w, r)
+		return
+	}
+
+	// EM-GUARD, EM-DELEGATE, EM-STRICT: fail-closed
+	event.Decision = pip.DecisionDeny
+	event.DecisionID = "pdp-unavailable"
+	emitPolicyEvent(p.callbacks, *event, pipReq)
+	http.Error(w, "Access denied: policy service unavailable", http.StatusForbidden)
+}
+
+// handlePDPDeny handles a DENY decision from the PDP per enforcement mode.
+func (p *pep) handlePDPDeny(w http.ResponseWriter, r *http.Request, resp *pip.DecisionResponse, event *PolicyEvent, pipReq *pip.DecisionRequest) {
+	switch p.config.EnforcementMode {
+	case pip.EMObserve:
+		p.logger.InfoContext(r.Context(), "PDP DENY in EM-OBSERVE (allowing)",
+			slog.String(pip.TelemetryDecisionID, resp.DecisionID))
+		event.Decision = pip.DecisionObserve
+		emitPolicyEvent(p.callbacks, *event, pipReq)
+		p.next.ServeHTTP(w, r)
+	default:
+		reason := "Access denied by policy"
+		if resp.Reason != "" {
+			reason = resp.Reason
 		}
+		emitPolicyEvent(p.callbacks, *event, pipReq)
+		http.Error(w, reason, http.StatusForbidden)
+	}
+}
 
-		// --- 8. Enforce decision ---
-		if resp.Decision == pip.DecisionDeny {
-			switch config.EnforcementMode {
-			case pip.EMObserve:
-				// Log only, allow through
-				logger.InfoContext(r.Context(), "PDP DENY in EM-OBSERVE (allowing)",
-					slog.String(pip.TelemetryDecisionID, resp.DecisionID))
-				event.Decision = pip.DecisionObserve
-				emitPolicyEvent(callbacks, event, pipReq)
-				next.ServeHTTP(w, r)
-				return
-			default:
-				// EM-GUARD, EM-DELEGATE, EM-STRICT: block
-				reason := "Access denied by policy"
-				if resp.Reason != "" {
-					reason = resp.Reason
-				}
-				emitPolicyEvent(callbacks, event, pipReq)
-				http.Error(w, reason, http.StatusForbidden)
-				return
-			}
-		}
+// enforceObligations attempts to enforce obligations from the PDP response.
+// Returns true if the request was denied due to obligation failure.
+func (p *pep) enforceObligations(w http.ResponseWriter, r *http.Request, obligations []pip.Obligation, event *PolicyEvent, pipReq *pip.DecisionRequest) bool {
+	if p.config.ObligationReg == nil || len(obligations) == 0 {
+		return false
+	}
 
-		// --- 9. Handle obligations ---
-		if config.ObligationReg != nil && len(resp.Obligations) > 0 {
-			oblResult := config.ObligationReg.Enforce(r.Context(), config.EnforcementMode, resp.Obligations)
-			if !oblResult.Proceed {
-				event.Decision = pip.DecisionDeny
-				emitPolicyEvent(callbacks, event, pipReq)
-				http.Error(w, "Access denied: obligation enforcement failed", http.StatusForbidden)
-				return
-			}
-		}
+	oblResult := p.config.ObligationReg.Enforce(r.Context(), p.config.EnforcementMode, obligations)
+	if !oblResult.Proceed {
+		event.Decision = pip.DecisionDeny
+		emitPolicyEvent(p.callbacks, *event, pipReq)
+		http.Error(w, "Access denied: obligation enforcement failed", http.StatusForbidden)
+		return true
+	}
 
-		// --- 10. Emit telemetry and forward ---
-		emitPolicyEvent(callbacks, event, pipReq)
-		next.ServeHTTP(w, r)
-	})
+	return false
 }
 
 // ExtractBadge retrieves the badge from headers.
