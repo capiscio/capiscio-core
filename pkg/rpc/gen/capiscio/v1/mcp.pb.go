@@ -1066,11 +1066,13 @@ type PolicyConfig struct {
 	PepId string `protobuf:"bytes,4,opt,name=pep_id,json=pepId,proto3" json:"pep_id,omitempty"`
 	// Workspace identifier (included in PDP requests).
 	Workspace string `protobuf:"bytes,5,opt,name=workspace,proto3" json:"workspace,omitempty"`
-	// Path to break-glass Ed25519 public key file (raw 32 bytes).
+	// Break-glass Ed25519 public key (raw 32 bytes).
 	// Must be separate from CA badge-signing key.
-	BreakglassPublicKeyPath string `protobuf:"bytes,6,opt,name=breakglass_public_key_path,json=breakglassPublicKeyPath,proto3" json:"breakglass_public_key_path,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Server-side configuration provides the key material directly;
+	// no filesystem paths cross the RPC boundary.
+	BreakglassPublicKey []byte `protobuf:"bytes,6,opt,name=breakglass_public_key,json=breakglassPublicKey,proto3" json:"breakglass_public_key,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *PolicyConfig) Reset() {
@@ -1138,11 +1140,11 @@ func (x *PolicyConfig) GetWorkspace() string {
 	return ""
 }
 
-func (x *PolicyConfig) GetBreakglassPublicKeyPath() string {
+func (x *PolicyConfig) GetBreakglassPublicKey() []byte {
 	if x != nil {
-		return x.BreakglassPublicKeyPath
+		return x.BreakglassPublicKey
 	}
-	return ""
+	return nil
 }
 
 // Response from centralized policy decision.
@@ -1995,14 +1997,14 @@ const file_capiscio_v1_mcp_proto_rawDesc = "" +
 	"\x0ePolicyResource\x12\x1e\n" +
 	"\n" +
 	"identifier\x18\x01 \x01(\tR\n" +
-	"identifier\"\xf4\x01\n" +
+	"identifier\"\xeb\x01\n" +
 	"\fPolicyConfig\x12!\n" +
 	"\fpdp_endpoint\x18\x01 \x01(\tR\vpdpEndpoint\x12$\n" +
 	"\x0epdp_timeout_ms\x18\x02 \x01(\x05R\fpdpTimeoutMs\x12)\n" +
 	"\x10enforcement_mode\x18\x03 \x01(\tR\x0fenforcementMode\x12\x15\n" +
 	"\x06pep_id\x18\x04 \x01(\tR\x05pepId\x12\x1c\n" +
-	"\tworkspace\x18\x05 \x01(\tR\tworkspace\x12;\n" +
-	"\x1abreakglass_public_key_path\x18\x06 \x01(\tR\x17breakglassPublicKeyPath\"\xb9\x03\n" +
+	"\tworkspace\x18\x05 \x01(\tR\tworkspace\x122\n" +
+	"\x15breakglass_public_key\x18\x06 \x01(\fR\x13breakglassPublicKey\"\xb9\x03\n" +
 	"\x16PolicyDecisionResponse\x12\x1a\n" +
 	"\bdecision\x18\x01 \x01(\tR\bdecision\x12\x1f\n" +
 	"\vdecision_id\x18\x02 \x01(\tR\n" +

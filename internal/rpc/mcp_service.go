@@ -21,7 +21,6 @@ type MCPService struct {
 	pb.UnimplementedMCPServiceServer
 	service       *mcp.Service
 	decisionCache pip.DecisionCache
-	obligationReg *pip.ObligationRegistry
 }
 
 // MCPServiceConfig configures the MCP service
@@ -119,7 +118,6 @@ func NewMCPServiceWithConfig(cfg MCPServiceConfig) (*MCPService, error) {
 	return &MCPService{
 		service:       mcp.NewService(deps),
 		decisionCache: pip.NewInMemoryCache(),
-		obligationReg: pip.NewObligationRegistry(nil),
 	}, nil
 }
 

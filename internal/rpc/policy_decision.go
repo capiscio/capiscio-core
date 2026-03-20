@@ -2,12 +2,14 @@
 package rpc
 
 import (
-	"bytes"
 	"context"
 	"crypto/ed25519"
+	"errors"
 	"fmt"
 	"log/slog"
-	"os"
+	"net"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -34,21 +36,22 @@ func (s *MCPService) EvaluatePolicyDecision(
 		cfg = &pb.PolicyConfig{}
 	}
 
+	// Validate enforcement mode upfront so badge-only mode gets the same
+	// config error behaviour as the PDP path.
+	modeStr := enforcementModeOrDefault(cfg.EnforcementMode)
+	em, err := pip.ParseEnforcementMode(modeStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid enforcement_mode %q: %w", cfg.EnforcementMode, err)
+	}
+
 	// Badge-only mode: no PDP configured, pass through.
 	if cfg.PdpEndpoint == "" {
 		return &pb.PolicyDecisionResponse{
 			Decision:        pip.DecisionAllow,
 			DecisionId:      "no-pdp-configured",
-			EnforcementMode: enforcementModeOrDefault(cfg.EnforcementMode),
+			EnforcementMode: modeStr,
 			TxnId:           generateTxnID(),
 		}, nil
-	}
-
-	// Parse enforcement mode
-	em, err := pip.ParseEnforcementMode(enforcementModeOrDefault(cfg.EnforcementMode))
-	if err != nil {
-		// Invalid enforcement mode is a config error, not a policy outcome
-		return nil, fmt.Errorf("invalid enforcement_mode %q: %w", cfg.EnforcementMode, err)
 	}
 
 	txnID := generateTxnID()
@@ -135,7 +138,7 @@ func (s *MCPService) EvaluatePolicyDecision(
 	// Validate PDP response
 	if !pip.ValidDecision(resp.Decision) || resp.DecisionID == "" {
 		return s.handlePDPUnavailable(
-			fmt.Errorf("non-compliant PDP response: decision=%q decision_id=%q", resp.Decision, resp.DecisionID),
+			&invalidPDPResponseError{decision: resp.Decision, decisionID: resp.DecisionID},
 			em, txnID, latencyMs,
 		), nil
 	}
@@ -160,16 +163,19 @@ func (s *MCPService) handleBreakGlass(
 	txnID string,
 	em pip.EnforcementMode,
 ) *pb.PolicyDecisionResponse {
-	if cfg.BreakglassPublicKeyPath == "" {
+	if len(cfg.BreakglassPublicKey) == 0 {
 		slog.Warn("break-glass token provided but no public key configured")
 		return nil
 	}
 
-	pubKey, err := parseBreakGlassKey(cfg.BreakglassPublicKeyPath)
-	if err != nil {
-		slog.Error("failed to load break-glass public key", slog.String("error", err.Error()))
+	if len(cfg.BreakglassPublicKey) != ed25519.PublicKeySize {
+		slog.Error("break-glass public key has wrong size",
+			slog.Int("expected", ed25519.PublicKeySize),
+			slog.Int("got", len(cfg.BreakglassPublicKey)),
+		)
 		return nil
 	}
+	pubKey := ed25519.PublicKey(cfg.BreakglassPublicKey)
 
 	bgToken, err := pip.ParseBreakGlassJWS(token, pubKey)
 	if err != nil {
@@ -211,14 +217,22 @@ func (s *MCPService) handlePDPUnavailable(
 	txnID string,
 	latencyMs int64,
 ) *pb.PolicyDecisionResponse {
-	errMsg := pdpErr.Error()
+	// Log the raw error server-side for debugging; expose only the error_code
+	// and a stable reason to callers so internal network details don't leak.
+	slog.Warn("PDP query failed",
+		slog.String("txn_id", txnID),
+		slog.String("error", pdpErr.Error()),
+	)
+
+	errCode := classifyPDPError(pdpErr)
+
 	if em == pip.EMObserve {
 		return &pb.PolicyDecisionResponse{
 			Decision:        pip.DecisionObserve,
 			DecisionId:      "pdp-unavailable",
-			Reason:          errMsg,
+			Reason:          "policy service unavailable",
 			EnforcementMode: em.String(),
-			ErrorCode:       "pdp_unavailable",
+			ErrorCode:       errCode,
 			PdpLatencyMs:    latencyMs,
 			TxnId:           txnID,
 		}
@@ -227,9 +241,9 @@ func (s *MCPService) handlePDPUnavailable(
 	return &pb.PolicyDecisionResponse{
 		Decision:        pip.DecisionDeny,
 		DecisionId:      "pdp-unavailable",
-		Reason:          fmt.Sprintf("policy service unavailable: %s", errMsg),
+		Reason:          "policy service unavailable",
 		EnforcementMode: em.String(),
-		ErrorCode:       "pdp_unavailable",
+		ErrorCode:       errCode,
 		PdpLatencyMs:    latencyMs,
 		TxnId:           txnID,
 	}
@@ -296,19 +310,12 @@ func (s *MCPService) buildLiveResponse(
 		return resp
 	}
 
-	// ALLOW — run obligation enforcement through the registry
+	// ALLOW — obligations are returned to the caller for enforcement.
+	// Obligation execution is context-dependent (rate limiting needs the
+	// SDK's HTTP layer, logging needs the SDK's logger) so the Go core
+	// only returns them; the SDK decides how to handle each type per the
+	// enforcement mode it already knows.
 	resp.Decision = pip.DecisionAllow
-
-	if s.obligationReg != nil && len(pdpResp.Obligations) > 0 {
-		oblResult := s.obligationReg.Enforce(ctx_background(), em, pdpResp.Obligations)
-		if !oblResult.Proceed {
-			// Obligation enforcement failed — decision flips to DENY
-			resp.Decision = pip.DecisionDeny
-			if len(oblResult.Errors) > 0 {
-				resp.Reason = fmt.Sprintf("obligation enforcement failed: %s", oblResult.Errors[0].Message)
-			}
-		}
-	}
 
 	return resp
 }
@@ -328,17 +335,42 @@ func obligationsToProto(obligations []pip.Obligation) []*pb.MCPObligation {
 	return result
 }
 
-// parseBreakGlassKey reads a raw Ed25519 public key from a file.
-func parseBreakGlassKey(path string) (ed25519.PublicKey, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("read break-glass key: %w", err)
+// invalidPDPResponseError indicates the PDP returned a non-compliant response.
+type invalidPDPResponseError struct {
+	decision   string
+	decisionID string
+}
+
+func (e *invalidPDPResponseError) Error() string {
+	return fmt.Sprintf("non-compliant PDP response: decision=%q decision_id=%q", e.decision, e.decisionID)
+}
+
+// classifyPDPError maps a PDP error to a specific error_code string.
+func classifyPDPError(err error) string {
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		return "pdp_timeout"
 	}
-	data = bytes.TrimSpace(data)
-	if len(data) != ed25519.PublicKeySize {
-		return nil, fmt.Errorf("break-glass key must be %d bytes, got %d", ed25519.PublicKeySize, len(data))
+	// net/http timeout errors (Client.Timeout) expose a Timeout() method
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) && urlErr.Timeout() {
+		return "pdp_timeout"
 	}
-	return ed25519.PublicKey(data), nil
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return "pdp_timeout"
+	}
+	// Errors from our handler or from the PDP client about non-compliant responses
+	var invResp *invalidPDPResponseError
+	if errors.As(err, &invResp) {
+		return "pdp_invalid_response"
+	}
+	// The HTTPPDPClient validates decision/decision_id — those errors
+	// contain specific substrings we can match for classification.
+	errMsg := err.Error()
+	if strings.Contains(errMsg, "invalid decision") || strings.Contains(errMsg, "empty decision_id") || strings.Contains(errMsg, "unmarshal") {
+		return "pdp_invalid_response"
+	}
+	return "pdp_unavailable"
 }
 
 // enforcementModeOrDefault returns the enforcement mode string or "EM-OBSERVE" if empty.
@@ -367,11 +399,4 @@ func badgeExpTTL(badgeExp int64) time.Duration {
 		return 0
 	}
 	return remaining
-}
-
-// ctx_background returns a background context for internal operations
-// like obligation enforcement where the original request context is appropriate
-// but we alias it for clarity.
-func ctx_background() context.Context {
-	return context.Background()
 }

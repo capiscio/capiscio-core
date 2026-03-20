@@ -2,6 +2,8 @@ package rpc
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-jose/go-jose/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -74,13 +77,15 @@ func basicRequest(pdpEndpoint string) *pb.PolicyDecisionRequest {
 	}
 }
 
-func newTestService() *MCPService {
-	svc, _ := NewMCPServiceWithConfig(MCPServiceConfig{})
+func newTestService(t *testing.T) *MCPService {
+	t.Helper()
+	svc, err := NewMCPServiceWithConfig(MCPServiceConfig{})
+	require.NoError(t, err, "newTestService: failed to create MCPService")
 	return svc
 }
 
 func TestEvaluatePolicyDecision_NoPDP(t *testing.T) {
-	svc := newTestService()
+	svc := newTestService(t)
 
 	req := &pb.PolicyDecisionRequest{
 		Subject: &pb.PolicySubject{Did: "did:web:test"},
@@ -101,7 +106,7 @@ func TestEvaluatePolicyDecision_PDPAllow(t *testing.T) {
 	pdp := mockPDP(t, "ALLOW", "dec-allow-1", "", nil, nil)
 	defer pdp.Close()
 
-	svc := newTestService()
+	svc := newTestService(t)
 	req := basicRequest(pdp.URL)
 
 	resp, err := svc.EvaluatePolicyDecision(context.Background(), req)
@@ -119,7 +124,7 @@ func TestEvaluatePolicyDecision_PDPDeny_Guard(t *testing.T) {
 	pdp := mockPDP(t, "DENY", "dec-deny-1", "insufficient trust", nil, nil)
 	defer pdp.Close()
 
-	svc := newTestService()
+	svc := newTestService(t)
 	req := basicRequest(pdp.URL)
 	req.Config.EnforcementMode = "EM-GUARD"
 
@@ -134,7 +139,7 @@ func TestEvaluatePolicyDecision_PDPDeny_Observe(t *testing.T) {
 	pdp := mockPDP(t, "DENY", "dec-deny-2", "denied by policy", nil, nil)
 	defer pdp.Close()
 
-	svc := newTestService()
+	svc := newTestService(t)
 	req := basicRequest(pdp.URL)
 	req.Config.EnforcementMode = "EM-OBSERVE"
 
@@ -148,7 +153,7 @@ func TestEvaluatePolicyDecision_PDPUnavailable_FailClosed(t *testing.T) {
 	pdp := mockPDPError(t, http.StatusInternalServerError)
 	defer pdp.Close()
 
-	svc := newTestService()
+	svc := newTestService(t)
 	req := basicRequest(pdp.URL)
 	req.Config.EnforcementMode = "EM-STRICT"
 
@@ -163,7 +168,7 @@ func TestEvaluatePolicyDecision_PDPUnavailable_Observe(t *testing.T) {
 	pdp := mockPDPError(t, http.StatusInternalServerError)
 	defer pdp.Close()
 
-	svc := newTestService()
+	svc := newTestService(t)
 	req := basicRequest(pdp.URL)
 	req.Config.EnforcementMode = "EM-OBSERVE"
 
@@ -178,7 +183,7 @@ func TestEvaluatePolicyDecision_PDPTimeout(t *testing.T) {
 	pdp := mockPDPSlow(t, 2*time.Second)
 	defer pdp.Close()
 
-	svc := newTestService()
+	svc := newTestService(t)
 	req := basicRequest(pdp.URL)
 	req.Config.PdpTimeoutMs = 50 // 50ms timeout, PDP takes 2s
 	req.Config.EnforcementMode = "EM-DELEGATE"
@@ -186,11 +191,11 @@ func TestEvaluatePolicyDecision_PDPTimeout(t *testing.T) {
 	resp, err := svc.EvaluatePolicyDecision(context.Background(), req)
 	require.NoError(t, err, "PDP timeout must not produce an RPC error")
 	assert.Equal(t, pip.DecisionDeny, resp.Decision)
-	assert.Equal(t, "pdp_unavailable", resp.ErrorCode)
+	assert.Equal(t, "pdp_timeout", resp.ErrorCode)
 }
 
 func TestEvaluatePolicyDecision_InvalidEnforcementMode(t *testing.T) {
-	svc := newTestService()
+	svc := newTestService(t)
 	req := basicRequest("http://localhost:9999")
 	req.Config.EnforcementMode = "INVALID-MODE"
 
@@ -200,7 +205,7 @@ func TestEvaluatePolicyDecision_InvalidEnforcementMode(t *testing.T) {
 }
 
 func TestEvaluatePolicyDecision_DefaultEnforcementMode(t *testing.T) {
-	svc := newTestService()
+	svc := newTestService(t)
 
 	req := &pb.PolicyDecisionRequest{
 		Subject:  &pb.PolicySubject{Did: "did:web:test"},
@@ -215,7 +220,7 @@ func TestEvaluatePolicyDecision_DefaultEnforcementMode(t *testing.T) {
 }
 
 func TestEvaluatePolicyDecision_NilConfig(t *testing.T) {
-	svc := newTestService()
+	svc := newTestService(t)
 
 	req := &pb.PolicyDecisionRequest{
 		Subject:  &pb.PolicySubject{Did: "did:web:test"},
@@ -238,7 +243,7 @@ func TestEvaluatePolicyDecision_WithObligations(t *testing.T) {
 	pdp := mockPDP(t, "ALLOW", "dec-obl-1", "", nil, obligations)
 	defer pdp.Close()
 
-	svc := newTestService()
+	svc := newTestService(t)
 	req := basicRequest(pdp.URL)
 
 	resp, err := svc.EvaluatePolicyDecision(context.Background(), req)
@@ -262,7 +267,7 @@ func TestEvaluatePolicyDecision_CacheHit(t *testing.T) {
 	}))
 	defer pdp.Close()
 
-	svc := newTestService()
+	svc := newTestService(t)
 	req := basicRequest(pdp.URL)
 
 	// First call: cache miss
@@ -285,7 +290,7 @@ func TestEvaluatePolicyDecision_CachedDeny_Observe(t *testing.T) {
 	defer pdp.Close()
 
 	// Create service with DENY caching enabled
-	svc := newTestService()
+	svc := newTestService(t)
 	svc.decisionCache = pip.NewInMemoryCache(pip.WithCacheDeny(true))
 
 	req := basicRequest(pdp.URL)
@@ -309,14 +314,14 @@ func TestEvaluatePolicyDecision_InvalidPDPResponse(t *testing.T) {
 	pdp := mockPDP(t, "MAYBE", "dec-invalid", "", nil, nil)
 	defer pdp.Close()
 
-	svc := newTestService()
+	svc := newTestService(t)
 	req := basicRequest(pdp.URL)
 	req.Config.EnforcementMode = "EM-DELEGATE"
 
 	resp, err := svc.EvaluatePolicyDecision(context.Background(), req)
 	require.NoError(t, err, "Invalid PDP response must not produce an RPC error")
 	assert.Equal(t, pip.DecisionDeny, resp.Decision)
-	assert.Equal(t, "pdp_unavailable", resp.ErrorCode)
+	assert.Equal(t, "pdp_invalid_response", resp.ErrorCode)
 }
 
 func TestEvaluatePolicyDecision_EmptyDecisionID(t *testing.T) {
@@ -324,13 +329,13 @@ func TestEvaluatePolicyDecision_EmptyDecisionID(t *testing.T) {
 	pdp := mockPDP(t, "ALLOW", "", "", nil, nil)
 	defer pdp.Close()
 
-	svc := newTestService()
+	svc := newTestService(t)
 	req := basicRequest(pdp.URL)
 
 	resp, err := svc.EvaluatePolicyDecision(context.Background(), req)
 	require.NoError(t, err)
 	assert.Equal(t, pip.DecisionDeny, resp.Decision)
-	assert.Equal(t, "pdp_unavailable", resp.ErrorCode)
+	assert.Equal(t, "pdp_invalid_response", resp.ErrorCode)
 }
 
 func TestEvaluatePolicyDecision_WithTTL(t *testing.T) {
@@ -338,7 +343,7 @@ func TestEvaluatePolicyDecision_WithTTL(t *testing.T) {
 	pdp := mockPDP(t, "ALLOW", "dec-ttl-1", "", &ttl, nil)
 	defer pdp.Close()
 
-	svc := newTestService()
+	svc := newTestService(t)
 	req := basicRequest(pdp.URL)
 
 	resp, err := svc.EvaluatePolicyDecision(context.Background(), req)
@@ -350,7 +355,7 @@ func TestEvaluatePolicyDecision_ZeroTimeout(t *testing.T) {
 	pdp := mockPDP(t, "ALLOW", "dec-timeout-0", "", nil, nil)
 	defer pdp.Close()
 
-	svc := newTestService()
+	svc := newTestService(t)
 	req := basicRequest(pdp.URL)
 	req.Config.PdpTimeoutMs = 0 // Should default to 500ms, not hang
 
@@ -375,7 +380,7 @@ func TestEvaluatePolicyDecision_AllEnforcementModes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.mode, func(t *testing.T) {
-			svc := newTestService()
+			svc := newTestService(t)
 			req := basicRequest(pdp.URL)
 			req.Config.EnforcementMode = tt.mode
 
@@ -387,7 +392,7 @@ func TestEvaluatePolicyDecision_AllEnforcementModes(t *testing.T) {
 }
 
 func TestEvaluatePolicyDecision_TxnIDIsUUID(t *testing.T) {
-	svc := newTestService()
+	svc := newTestService(t)
 
 	req := &pb.PolicyDecisionRequest{
 		Subject:  &pb.PolicySubject{Did: "did:web:test"},
@@ -410,7 +415,7 @@ func TestEvaluatePolicyDecision_PDPSeesCorrectRequest(t *testing.T) {
 	}))
 	defer pdp.Close()
 
-	svc := newTestService()
+	svc := newTestService(t)
 	req := &pb.PolicyDecisionRequest{
 		Subject: &pb.PolicySubject{
 			Did:        "did:web:agent.test",
@@ -468,4 +473,181 @@ func TestObligationsToProto(t *testing.T) {
 		assert.Equal(t, "rate_limit", result[0].Type)
 		assert.Equal(t, `{"max": 100}`, result[0].ParamsJson)
 	})
+}
+
+// ---------------------------------------------------------------------------
+// Break-glass helpers and tests
+// ---------------------------------------------------------------------------
+
+// signBreakGlassJWS creates a compact JWS signed with the given Ed25519 private key.
+func signBreakGlassJWS(t *testing.T, privKey ed25519.PrivateKey, token *pip.BreakGlassToken) string {
+	t.Helper()
+	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.EdDSA, Key: privKey}, nil)
+	require.NoError(t, err, "create JWS signer")
+
+	payload, err := json.Marshal(token)
+	require.NoError(t, err, "marshal break-glass token")
+
+	jws, err := signer.Sign(payload)
+	require.NoError(t, err, "sign break-glass token")
+
+	compact, err := jws.CompactSerialize()
+	require.NoError(t, err, "serialize JWS")
+	return compact
+}
+
+func generateBGKeyPair(t *testing.T) (ed25519.PublicKey, ed25519.PrivateKey) {
+	t.Helper()
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err, "generate ed25519 key pair")
+	return pub, priv
+}
+
+func validBreakGlassToken() *pip.BreakGlassToken {
+	return &pip.BreakGlassToken{
+		JTI:    "bg-test-001",
+		IAT:    time.Now().Add(-1 * time.Minute).Unix(),
+		EXP:    time.Now().Add(10 * time.Minute).Unix(),
+		ISS:    "admin@example.com",
+		SUB:    "oncall-operator",
+		Reason: "emergency database maintenance",
+		Scope:  pip.BreakGlassScope{Methods: []string{"*"}, Routes: []string{"*"}},
+	}
+}
+
+func TestEvaluatePolicyDecision_BreakGlass_Valid(t *testing.T) {
+	pubKey, privKey := generateBGKeyPair(t)
+
+	pdp := mockPDP(t, "DENY", "dec-deny-bg", "denied by policy", nil, nil)
+	defer pdp.Close()
+
+	bgToken := validBreakGlassToken()
+	jws := signBreakGlassJWS(t, privKey, bgToken)
+
+	svc := newTestService(t)
+	req := basicRequest(pdp.URL)
+	req.Config.BreakglassPublicKey = []byte(pubKey)
+	req.BreakglassToken = jws
+
+	resp, err := svc.EvaluatePolicyDecision(context.Background(), req)
+	require.NoError(t, err)
+	assert.Equal(t, pip.DecisionAllow, resp.Decision)
+	assert.True(t, resp.BreakglassOverride)
+	assert.Equal(t, "bg-test-001", resp.BreakglassJti)
+	assert.Equal(t, "emergency database maintenance", resp.Reason)
+	assert.Contains(t, resp.DecisionId, "breakglass:")
+}
+
+func TestEvaluatePolicyDecision_BreakGlass_WrongKey(t *testing.T) {
+	_, privKey := generateBGKeyPair(t)
+	wrongPub, _ := generateBGKeyPair(t) // different key pair
+
+	pdp := mockPDP(t, "ALLOW", "dec-allow-bg", "", nil, nil)
+	defer pdp.Close()
+
+	bgToken := validBreakGlassToken()
+	jws := signBreakGlassJWS(t, privKey, bgToken)
+
+	svc := newTestService(t)
+	req := basicRequest(pdp.URL)
+	req.Config.BreakglassPublicKey = []byte(wrongPub) // wrong key
+	req.BreakglassToken = jws
+
+	// Break-glass fails silently, falls through to normal PDP path
+	resp, err := svc.EvaluatePolicyDecision(context.Background(), req)
+	require.NoError(t, err)
+	assert.False(t, resp.BreakglassOverride)
+	assert.Equal(t, pip.DecisionAllow, resp.Decision) // PDP allows
+	assert.Equal(t, "dec-allow-bg", resp.DecisionId)  // from PDP, not break-glass
+}
+
+func TestEvaluatePolicyDecision_BreakGlass_NoKeyConfigured(t *testing.T) {
+	pdp := mockPDP(t, "ALLOW", "dec-allow-nokey", "", nil, nil)
+	defer pdp.Close()
+
+	svc := newTestService(t)
+	req := basicRequest(pdp.URL)
+	// No BreakglassPublicKey configured
+	req.BreakglassToken = "some-token"
+
+	resp, err := svc.EvaluatePolicyDecision(context.Background(), req)
+	require.NoError(t, err)
+	assert.False(t, resp.BreakglassOverride)
+	assert.Equal(t, "dec-allow-nokey", resp.DecisionId) // fell through to PDP
+}
+
+func TestEvaluatePolicyDecision_BreakGlass_ScopeMismatch(t *testing.T) {
+	pubKey, privKey := generateBGKeyPair(t)
+
+	pdp := mockPDP(t, "DENY", "dec-deny-scope", "denied", nil, nil)
+	defer pdp.Close()
+
+	bgToken := validBreakGlassToken()
+	bgToken.Scope = pip.BreakGlassScope{
+		Methods: []string{"*"},
+		Routes:  []string{"/admin/*"}, // does NOT cover "read_file"
+	}
+	jws := signBreakGlassJWS(t, privKey, bgToken)
+
+	svc := newTestService(t)
+	req := basicRequest(pdp.URL)
+	req.Config.BreakglassPublicKey = []byte(pubKey)
+	req.BreakglassToken = jws
+
+	resp, err := svc.EvaluatePolicyDecision(context.Background(), req)
+	require.NoError(t, err)
+	assert.False(t, resp.BreakglassOverride)
+	assert.Equal(t, pip.DecisionDeny, resp.Decision) // PDP DENY, scope didn't match
+}
+
+func TestEvaluatePolicyDecision_BreakGlass_BadKeySize(t *testing.T) {
+	pdp := mockPDP(t, "ALLOW", "dec-allow-badkey", "", nil, nil)
+	defer pdp.Close()
+
+	svc := newTestService(t)
+	req := basicRequest(pdp.URL)
+	req.Config.BreakglassPublicKey = []byte("too-short") // wrong size
+	req.BreakglassToken = "some-token"
+
+	resp, err := svc.EvaluatePolicyDecision(context.Background(), req)
+	require.NoError(t, err)
+	assert.False(t, resp.BreakglassOverride)
+	assert.Equal(t, "dec-allow-badkey", resp.DecisionId) // fell through to PDP
+}
+
+func TestEvaluatePolicyDecision_InvalidEnforcementMode_NoPDP(t *testing.T) {
+	svc := newTestService(t)
+	req := &pb.PolicyDecisionRequest{
+		Subject:  &pb.PolicySubject{Did: "did:web:test"},
+		Action:   &pb.PolicyAction{Operation: "test"},
+		Resource: &pb.PolicyResource{Identifier: "/test"},
+		Config:   &pb.PolicyConfig{EnforcementMode: "INVALID"},
+	}
+
+	_, err := svc.EvaluatePolicyDecision(context.Background(), req)
+	require.Error(t, err, "Invalid enforcement mode should error even without PDP")
+	assert.Contains(t, err.Error(), "invalid enforcement_mode")
+}
+
+func TestClassifyPDPError(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected string
+	}{
+		{"context deadline", context.DeadlineExceeded, "pdp_timeout"},
+		{"context canceled", context.Canceled, "pdp_timeout"},
+		{"invalid PDP response", &invalidPDPResponseError{decision: "MAYBE"}, "pdp_invalid_response"},
+		{"invalid decision message", fmt.Errorf("pip: pdp returned invalid decision %q", "MAYBE"), "pdp_invalid_response"},
+		{"empty decision_id message", fmt.Errorf("pip: pdp returned empty decision_id"), "pdp_invalid_response"},
+		{"unmarshal error", fmt.Errorf("pip: unmarshal pdp response: invalid json"), "pdp_invalid_response"},
+		{"generic network error", fmt.Errorf("connection refused"), "pdp_unavailable"},
+		{"wrapped timeout", fmt.Errorf("pip: pdp request failed: %w", context.DeadlineExceeded), "pdp_timeout"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, classifyPDPError(tt.err))
+		})
+	}
 }

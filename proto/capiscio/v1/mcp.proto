@@ -202,9 +202,11 @@ message PolicyConfig {
   // Workspace identifier (included in PDP requests).
   string workspace = 5;
 
-  // Path to break-glass Ed25519 public key file (raw 32 bytes).
+  // Break-glass Ed25519 public key (raw 32 bytes).
   // Must be separate from CA badge-signing key.
-  string breakglass_public_key_path = 6;
+  // Server-side configuration provides the key material directly;
+  // no filesystem paths cross the RPC boundary.
+  bytes breakglass_public_key = 6;
 }
 
 // Response from centralized policy decision.
