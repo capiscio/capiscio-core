@@ -11,6 +11,7 @@ permissions:
 jobs:
   build-cli:
     name: Build CLI
+    if: "!contains(github.ref, '-')"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -47,6 +48,7 @@ jobs:
 
   test:
     name: Run Tests
+    if: "!contains(github.ref, '-')"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
