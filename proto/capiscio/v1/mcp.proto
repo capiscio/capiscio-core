@@ -60,6 +60,18 @@ message EvaluateToolAccessRequest {
   // Optional policy configuration
   string policy_version = 6;
   EvaluateConfig config = 7;
+
+  // RFC-005: PDP integration context (badge-only mode: all empty/zero)
+  string enforcement_mode = 8;           // EM-OBSERVE, EM-GUARD, EM-DELEGATE, EM-STRICT
+  // Field 9 reserved for future use between logical groups
+  reserved 9;
+
+  // RFC-008: Authority Envelope context (future, all empty for now)
+  string capability_class = 10;          // reserved for envelope
+  string envelope_id = 11;              // reserved for envelope
+  int32 delegation_depth = 12;          // reserved for envelope
+  string constraints_json = 13;         // reserved for envelope
+  string parent_constraints_json = 14;  // reserved for envelope
 }
 
 // Configuration for tool access evaluation
@@ -103,6 +115,18 @@ message EvaluateToolAccessResponse {
   
   // Timestamp of evaluation
   google.protobuf.Timestamp timestamp = 10;
+
+  // RFC-005: Policy decision context
+  string policy_decision_id = 11;       // from PDP response
+  string policy_decision = 12;          // ALLOW, DENY, or ALLOW_OBSERVE
+  string enforcement_mode = 13;         // mode used for this evaluation
+  repeated MCPObligation obligations = 14; // obligations from PDP
+}
+
+// Obligation returned by PDP (RFC-005 §7.1)
+message MCPObligation {
+  string type = 1;
+  string params_json = 2;             // opaque JSON
 }
 
 // Access decision enum
