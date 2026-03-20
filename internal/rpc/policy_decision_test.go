@@ -294,15 +294,14 @@ func TestEvaluatePolicyDecision_CachedDeny_Observe(t *testing.T) {
 	svc.decisionCache = pip.NewInMemoryCache(pip.WithCacheDeny(true))
 
 	req := basicRequest(pdp.URL)
-	req.Config.EnforcementMode = "EM-GUARD"
+	req.Config.EnforcementMode = "EM-OBSERVE"
 
-	// First call — caches the DENY
+	// First call — caches the DENY under EM-OBSERVE key
 	resp1, err := svc.EvaluatePolicyDecision(context.Background(), req)
 	require.NoError(t, err)
-	assert.Equal(t, pip.DecisionDeny, resp1.Decision)
+	assert.Equal(t, pip.DecisionObserve, resp1.Decision)
 
-	// Second call with EM-OBSERVE — cached DENY becomes ALLOW_OBSERVE
-	req.Config.EnforcementMode = "EM-OBSERVE"
+	// Second call with same EM-OBSERVE — cached DENY returned as ALLOW_OBSERVE
 	resp2, err := svc.EvaluatePolicyDecision(context.Background(), req)
 	require.NoError(t, err)
 	assert.Equal(t, pip.DecisionObserve, resp2.Decision)
@@ -636,7 +635,7 @@ func TestClassifyPDPError(t *testing.T) {
 		expected string
 	}{
 		{"context deadline", context.DeadlineExceeded, "pdp_timeout"},
-		{"context canceled", context.Canceled, "pdp_timeout"},
+		{"context canceled", context.Canceled, "pdp_unavailable"},
 		{"invalid PDP response", &invalidPDPResponseError{decision: "MAYBE"}, "pdp_invalid_response"},
 		{"invalid decision message", fmt.Errorf("pip: pdp returned invalid decision %q", "MAYBE"), "pdp_invalid_response"},
 		{"empty decision_id message", fmt.Errorf("pip: pdp returned empty decision_id"), "pdp_invalid_response"},

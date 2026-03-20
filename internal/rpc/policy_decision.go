@@ -63,7 +63,7 @@ func (s *MCPService) EvaluatePolicyDecision(
 
 	// Check break-glass override
 	if req.BreakglassToken != "" {
-		bgResp := s.handleBreakGlass(req.BreakglassToken, cfg, action.GetOperation(), pipReq, txnID, em)
+		bgResp := s.handleBreakGlass(req.BreakglassToken, cfg, action.GetOperation(), txnID, em)
 		if bgResp != nil {
 			return bgResp, nil
 		}
@@ -76,6 +76,7 @@ func (s *MCPService) EvaluatePolicyDecision(
 		subject.GetBadgeJti(),
 		action.GetOperation(),
 		req.GetResource().GetIdentifier(),
+		em.String(),
 	)
 	if s.decisionCache != nil {
 		if cached, ok := s.decisionCache.Get(cacheKey); ok {
@@ -84,29 +85,17 @@ func (s *MCPService) EvaluatePolicyDecision(
 	}
 
 	// Query PDP
-	pdpTimeout := time.Duration(cfg.PdpTimeoutMs) * time.Millisecond
-	if pdpTimeout <= 0 {
-		pdpTimeout = pip.DefaultPDPTimeout
-	}
-	client := pip.NewHTTPPDPClient(cfg.PdpEndpoint, pdpTimeout, pip.WithPEPID(cfg.PepId))
-
-	start := time.Now()
-	resp, pdpErr := client.Evaluate(ctx, pipReq)
-	latencyMs := time.Since(start).Milliseconds()
-
+	resp, latencyMs, pdpErr := s.queryPDP(ctx, cfg, pipReq)
 	if pdpErr != nil {
+		// Client-initiated cancellation should propagate as an RPC error,
+		// not a synthetic policy response.
+		if errors.Is(pdpErr, context.Canceled) {
+			return nil, pdpErr
+		}
 		return s.handlePDPUnavailable(pdpErr, em, txnID, latencyMs), nil
 	}
 
-	// Validate PDP response
-	if !pip.ValidDecision(resp.Decision) || resp.DecisionID == "" {
-		return s.handlePDPUnavailable(
-			&invalidPDPResponseError{decision: resp.Decision, decisionID: resp.DecisionID},
-			em, txnID, latencyMs,
-		), nil
-	}
-
-	// Cache the decision (cache handles DENY skip and TTL bounding)
+	// Cache the decision
 	if s.decisionCache != nil {
 		maxTTL := badgeExpTTL(subject.GetBadgeExp())
 		s.decisionCache.Put(cacheKey, resp, maxTTL)
@@ -116,13 +105,43 @@ func (s *MCPService) EvaluatePolicyDecision(
 	return s.buildLiveResponse(resp, em, txnID, latencyMs), nil
 }
 
+// queryPDP creates an HTTP PDP client, queries it, and validates the response.
+// Returns the validated response and latency on success; returns an error on
+// any failure (client cancellation, PDP unreachable, or non-compliant response).
+func (s *MCPService) queryPDP(
+	ctx context.Context,
+	cfg *pb.PolicyConfig,
+	pipReq *pip.DecisionRequest,
+) (*pip.DecisionResponse, int64, error) {
+	pdpTimeout := time.Duration(cfg.PdpTimeoutMs) * time.Millisecond
+	if pdpTimeout <= 0 {
+		pdpTimeout = pip.DefaultPDPTimeout
+	}
+	client := pip.NewHTTPPDPClient(cfg.PdpEndpoint, pdpTimeout, pip.WithPEPID(cfg.PepId))
+
+	if ctx.Err() != nil {
+		return nil, 0, ctx.Err()
+	}
+
+	start := time.Now()
+	resp, err := client.Evaluate(ctx, pipReq)
+	latencyMs := time.Since(start).Milliseconds()
+
+	if err != nil {
+		return nil, latencyMs, err
+	}
+	if !pip.ValidDecision(resp.Decision) || resp.DecisionID == "" {
+		return nil, latencyMs, &invalidPDPResponseError{decision: resp.Decision, decisionID: resp.DecisionID}
+	}
+	return resp, latencyMs, nil
+}
+
 // handleBreakGlass validates a break-glass token and returns a response if valid.
 // Returns nil if validation fails (caller should proceed with normal PDP path).
 func (s *MCPService) handleBreakGlass(
 	token string,
 	cfg *pb.PolicyConfig,
 	operation string,
-	pipReq *pip.DecisionRequest,
 	txnID string,
 	em pip.EnforcementMode,
 ) *pb.PolicyDecisionResponse {
@@ -359,7 +378,7 @@ func (e *invalidPDPResponseError) Error() string {
 
 // classifyPDPError maps a PDP error to a specific error_code string.
 func classifyPDPError(err error) string {
-	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+	if errors.Is(err, context.DeadlineExceeded) {
 		return "pdp_timeout"
 	}
 	// net/http timeout errors (Client.Timeout) expose a Timeout() method
@@ -402,9 +421,11 @@ func generateTxnID() string {
 }
 
 // badgeExpTTL computes a cache TTL bounded by the badge expiration.
+// Returns 0 when badge_exp is missing/invalid — caller should skip caching
+// because RFC-005 requires cache lifetime to be bounded by badge expiry.
 func badgeExpTTL(badgeExp int64) time.Duration {
 	if badgeExp <= 0 {
-		return 5 * time.Minute // reasonable default if no badge exp provided
+		return 0
 	}
 	remaining := time.Until(time.Unix(badgeExp, 0))
 	if remaining <= 0 {
