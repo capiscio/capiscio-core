@@ -129,7 +129,7 @@ func (v *BreakGlassValidator) PublicKey() crypto.PublicKey {
 // ParseBreakGlassJWS verifies a compact JWS break-glass token and extracts claims.
 // The publicKey MUST be the dedicated break-glass key, not the CA badge-signing key.
 func ParseBreakGlassJWS(compact string, publicKey crypto.PublicKey) (*BreakGlassToken, error) {
-	jws, err := jose.ParseSigned(compact, []jose.SignatureAlgorithm{jose.EdDSA, jose.ES256})
+	jws, err := jose.ParseSigned(compact, []jose.SignatureAlgorithm{jose.EdDSA})
 	if err != nil {
 		return nil, fmt.Errorf("breakglass: parse JWS: %w", err)
 	}

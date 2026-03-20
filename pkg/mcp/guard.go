@@ -44,8 +44,15 @@ func WithObligationRegistry(reg *pip.ObligationRegistry) GuardOption {
 }
 
 // WithGuardLogger sets the logger for the guard.
+// A nil logger is treated as slog.Default().
 func WithGuardLogger(logger *slog.Logger) GuardOption {
-	return func(g *Guard) { g.logger = logger }
+	return func(g *Guard) {
+		if logger == nil {
+			g.logger = slog.Default()
+			return
+		}
+		g.logger = logger
+	}
 }
 
 // EvidenceStore is the interface for storing evidence records
@@ -175,7 +182,13 @@ func (g *Guard) evaluateWithPDP(
 ) {
 	now := time.Now().UTC()
 	nowStr := now.Format(time.RFC3339)
-	txnID := uuid.Must(uuid.NewV7()).String()
+	var txnID string
+	if u, err := uuid.NewV7(); err != nil {
+		g.logger.ErrorContext(ctx, "failed to generate UUID v7 for txn_id", slog.String("error", err.Error()))
+		txnID = uuid.New().String()
+	} else {
+		txnID = u.String()
+	}
 
 	pipReq := &pip.DecisionRequest{
 		PIPVersion: pip.PIPVersion,
@@ -220,6 +233,25 @@ func (g *Guard) evaluateWithPDP(
 		result.DenyDetail = "policy service unavailable"
 		result.PolicyDecision = pip.DecisionDeny
 		result.PolicyDecisionID = "pdp-unavailable"
+		return
+	}
+
+	// Validate PDP response: Decision must be ALLOW or DENY, DecisionID must be non-empty.
+	if !pip.ValidDecision(resp.Decision) || resp.DecisionID == "" {
+		g.logger.ErrorContext(ctx, "PDP returned non-compliant response",
+			slog.String("decision", resp.Decision),
+			slog.String("decision_id", resp.DecisionID))
+
+		if g.emMode == pip.EMObserve {
+			result.PolicyDecision = pip.DecisionObserve
+			result.PolicyDecisionID = "pdp-invalid-response"
+			return
+		}
+		result.Decision = DecisionDeny
+		result.DenyReason = DenyReasonPolicyDenied
+		result.DenyDetail = "policy service returned non-compliant response"
+		result.PolicyDecision = pip.DecisionDeny
+		result.PolicyDecisionID = "pdp-invalid-response"
 		return
 	}
 

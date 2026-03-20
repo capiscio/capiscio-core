@@ -141,7 +141,12 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 func (p *pep) buildPIPRequest(r *http.Request, claims *badge.Claims) *pip.DecisionRequest {
 	txnID := r.Header.Get(pip.TxnIDHeader)
 	if txnID == "" {
-		txnID = uuid.Must(uuid.NewV7()).String()
+		if u, err := uuid.NewV7(); err != nil {
+			p.logger.ErrorContext(r.Context(), "failed to generate UUID v7 for txn_id", slog.String("error", err.Error()))
+			txnID = uuid.New().String()
+		} else {
+			txnID = u.String()
+		}
 	}
 	r.Header.Set(pip.TxnIDHeader, txnID)
 
@@ -220,6 +225,16 @@ func (p *pep) evaluatePolicy(w http.ResponseWriter, r *http.Request, claims *bad
 			slog.String(pip.TelemetryErrorCode, pip.ErrorCodePDPUnavailable),
 			slog.String("error", pdpErr.Error()),
 			slog.String("enforcement_mode", p.config.EnforcementMode.String()))
+		p.handlePDPUnavailable(w, r, &event, pipReq)
+		return
+	}
+
+	// Validate PDP response: Decision must be ALLOW or DENY, DecisionID must be non-empty.
+	// A non-compliant response is treated as PDP unavailability (fail-closed except EM-OBSERVE).
+	if !pip.ValidDecision(resp.Decision) || resp.DecisionID == "" {
+		p.logger.ErrorContext(r.Context(), "PDP returned non-compliant response",
+			slog.String("decision", resp.Decision),
+			slog.String("decision_id", resp.DecisionID))
 		p.handlePDPUnavailable(w, r, &event, pipReq)
 		return
 	}
@@ -405,6 +420,14 @@ func obligationTypes(obs []pip.Obligation) []string {
 
 func emitPolicyEvent(callbacks []PolicyEventCallback, event PolicyEvent, req *pip.DecisionRequest) {
 	for _, cb := range callbacks {
-		cb(event, req)
+		cb := cb
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					slog.Error("policy event callback panicked", "panic", r)
+				}
+			}()
+			cb(event, req)
+		}()
 	}
 }
