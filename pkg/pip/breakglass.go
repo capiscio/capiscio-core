@@ -2,8 +2,11 @@ package pip
 
 import (
 	"crypto"
+	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/go-jose/go-jose/v4"
 )
 
 // BreakGlassToken represents a break-glass override token (RFC-005 §9).
@@ -121,6 +124,27 @@ func (v *BreakGlassValidator) MatchesScope(token *BreakGlassToken, method, route
 // PublicKey returns the configured break-glass public key for external use.
 func (v *BreakGlassValidator) PublicKey() crypto.PublicKey {
 	return v.publicKey
+}
+
+// ParseBreakGlassJWS verifies a compact JWS break-glass token and extracts claims.
+// The publicKey MUST be the dedicated break-glass key, not the CA badge-signing key.
+func ParseBreakGlassJWS(compact string, publicKey crypto.PublicKey) (*BreakGlassToken, error) {
+	jws, err := jose.ParseSigned(compact, []jose.SignatureAlgorithm{jose.EdDSA, jose.ES256})
+	if err != nil {
+		return nil, fmt.Errorf("breakglass: parse JWS: %w", err)
+	}
+
+	payload, err := jws.Verify(publicKey)
+	if err != nil {
+		return nil, fmt.Errorf("breakglass: verify signature: %w", err)
+	}
+
+	var token BreakGlassToken
+	if err := json.Unmarshal(payload, &token); err != nil {
+		return nil, fmt.Errorf("breakglass: unmarshal claims: %w", err)
+	}
+
+	return &token, nil
 }
 
 

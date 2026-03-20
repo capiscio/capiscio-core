@@ -346,8 +346,16 @@ type EvaluateToolAccessRequest struct {
 	// Optional policy configuration
 	PolicyVersion string          `protobuf:"bytes,6,opt,name=policy_version,json=policyVersion,proto3" json:"policy_version,omitempty"`
 	Config        *EvaluateConfig `protobuf:"bytes,7,opt,name=config,proto3" json:"config,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// RFC-005: PDP integration context (badge-only mode: all empty/zero)
+	EnforcementMode string `protobuf:"bytes,8,opt,name=enforcement_mode,json=enforcementMode,proto3" json:"enforcement_mode,omitempty"` // EM-OBSERVE, EM-GUARD, EM-DELEGATE, EM-STRICT
+	// RFC-008: Authority Envelope context (future, all empty for now)
+	CapabilityClass       string `protobuf:"bytes,10,opt,name=capability_class,json=capabilityClass,proto3" json:"capability_class,omitempty"`                     // reserved for envelope
+	EnvelopeId            string `protobuf:"bytes,11,opt,name=envelope_id,json=envelopeId,proto3" json:"envelope_id,omitempty"`                                    // reserved for envelope
+	DelegationDepth       int32  `protobuf:"varint,12,opt,name=delegation_depth,json=delegationDepth,proto3" json:"delegation_depth,omitempty"`                    // reserved for envelope
+	ConstraintsJson       string `protobuf:"bytes,13,opt,name=constraints_json,json=constraintsJson,proto3" json:"constraints_json,omitempty"`                     // reserved for envelope
+	ParentConstraintsJson string `protobuf:"bytes,14,opt,name=parent_constraints_json,json=parentConstraintsJson,proto3" json:"parent_constraints_json,omitempty"` // reserved for envelope
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *EvaluateToolAccessRequest) Reset() {
@@ -438,6 +446,48 @@ func (x *EvaluateToolAccessRequest) GetConfig() *EvaluateConfig {
 		return x.Config
 	}
 	return nil
+}
+
+func (x *EvaluateToolAccessRequest) GetEnforcementMode() string {
+	if x != nil {
+		return x.EnforcementMode
+	}
+	return ""
+}
+
+func (x *EvaluateToolAccessRequest) GetCapabilityClass() string {
+	if x != nil {
+		return x.CapabilityClass
+	}
+	return ""
+}
+
+func (x *EvaluateToolAccessRequest) GetEnvelopeId() string {
+	if x != nil {
+		return x.EnvelopeId
+	}
+	return ""
+}
+
+func (x *EvaluateToolAccessRequest) GetDelegationDepth() int32 {
+	if x != nil {
+		return x.DelegationDepth
+	}
+	return 0
+}
+
+func (x *EvaluateToolAccessRequest) GetConstraintsJson() string {
+	if x != nil {
+		return x.ConstraintsJson
+	}
+	return ""
+}
+
+func (x *EvaluateToolAccessRequest) GetParentConstraintsJson() string {
+	if x != nil {
+		return x.ParentConstraintsJson
+	}
+	return ""
 }
 
 type isEvaluateToolAccessRequest_CallerCredential interface {
@@ -549,9 +599,14 @@ type EvaluateToolAccessResponse struct {
 	// Unique evidence record ID
 	EvidenceId string `protobuf:"bytes,9,opt,name=evidence_id,json=evidenceId,proto3" json:"evidence_id,omitempty"`
 	// Timestamp of evaluation
-	Timestamp     *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Timestamp *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	// RFC-005: Policy decision context
+	PolicyDecisionId string           `protobuf:"bytes,11,opt,name=policy_decision_id,json=policyDecisionId,proto3" json:"policy_decision_id,omitempty"` // from PDP response
+	PolicyDecision   string           `protobuf:"bytes,12,opt,name=policy_decision,json=policyDecision,proto3" json:"policy_decision,omitempty"`         // ALLOW, DENY, or ALLOW_OBSERVE
+	EnforcementMode  string           `protobuf:"bytes,13,opt,name=enforcement_mode,json=enforcementMode,proto3" json:"enforcement_mode,omitempty"`      // mode used for this evaluation
+	Obligations      []*MCPObligation `protobuf:"bytes,14,rep,name=obligations,proto3" json:"obligations,omitempty"`                                     // obligations from PDP
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *EvaluateToolAccessResponse) Reset() {
@@ -654,6 +709,87 @@ func (x *EvaluateToolAccessResponse) GetTimestamp() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *EvaluateToolAccessResponse) GetPolicyDecisionId() string {
+	if x != nil {
+		return x.PolicyDecisionId
+	}
+	return ""
+}
+
+func (x *EvaluateToolAccessResponse) GetPolicyDecision() string {
+	if x != nil {
+		return x.PolicyDecision
+	}
+	return ""
+}
+
+func (x *EvaluateToolAccessResponse) GetEnforcementMode() string {
+	if x != nil {
+		return x.EnforcementMode
+	}
+	return ""
+}
+
+func (x *EvaluateToolAccessResponse) GetObligations() []*MCPObligation {
+	if x != nil {
+		return x.Obligations
+	}
+	return nil
+}
+
+// Obligation returned by PDP (RFC-005 §7.1)
+type MCPObligation struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Type          string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	ParamsJson    string                 `protobuf:"bytes,2,opt,name=params_json,json=paramsJson,proto3" json:"params_json,omitempty"` // opaque JSON
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MCPObligation) Reset() {
+	*x = MCPObligation{}
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MCPObligation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MCPObligation) ProtoMessage() {}
+
+func (x *MCPObligation) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MCPObligation.ProtoReflect.Descriptor instead.
+func (*MCPObligation) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *MCPObligation) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *MCPObligation) GetParamsJson() string {
+	if x != nil {
+		return x.ParamsJson
+	}
+	return ""
+}
+
 // Request to verify server identity
 type VerifyServerIdentityRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -673,7 +809,7 @@ type VerifyServerIdentityRequest struct {
 
 func (x *VerifyServerIdentityRequest) Reset() {
 	*x = VerifyServerIdentityRequest{}
-	mi := &file_capiscio_v1_mcp_proto_msgTypes[3]
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -685,7 +821,7 @@ func (x *VerifyServerIdentityRequest) String() string {
 func (*VerifyServerIdentityRequest) ProtoMessage() {}
 
 func (x *VerifyServerIdentityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capiscio_v1_mcp_proto_msgTypes[3]
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -698,7 +834,7 @@ func (x *VerifyServerIdentityRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyServerIdentityRequest.ProtoReflect.Descriptor instead.
 func (*VerifyServerIdentityRequest) Descriptor() ([]byte, []int) {
-	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{3}
+	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *VerifyServerIdentityRequest) GetServerDid() string {
@@ -755,7 +891,7 @@ type MCPVerifyConfig struct {
 
 func (x *MCPVerifyConfig) Reset() {
 	*x = MCPVerifyConfig{}
-	mi := &file_capiscio_v1_mcp_proto_msgTypes[4]
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -767,7 +903,7 @@ func (x *MCPVerifyConfig) String() string {
 func (*MCPVerifyConfig) ProtoMessage() {}
 
 func (x *MCPVerifyConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_capiscio_v1_mcp_proto_msgTypes[4]
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -780,7 +916,7 @@ func (x *MCPVerifyConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MCPVerifyConfig.ProtoReflect.Descriptor instead.
 func (*MCPVerifyConfig) Descriptor() ([]byte, []int) {
-	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{4}
+	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *MCPVerifyConfig) GetTrustedIssuers() []string {
@@ -839,7 +975,7 @@ type VerifyServerIdentityResponse struct {
 
 func (x *VerifyServerIdentityResponse) Reset() {
 	*x = VerifyServerIdentityResponse{}
-	mi := &file_capiscio_v1_mcp_proto_msgTypes[5]
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -851,7 +987,7 @@ func (x *VerifyServerIdentityResponse) String() string {
 func (*VerifyServerIdentityResponse) ProtoMessage() {}
 
 func (x *VerifyServerIdentityResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_capiscio_v1_mcp_proto_msgTypes[5]
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -864,7 +1000,7 @@ func (x *VerifyServerIdentityResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyServerIdentityResponse.ProtoReflect.Descriptor instead.
 func (*VerifyServerIdentityResponse) Descriptor() ([]byte, []int) {
-	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{5}
+	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *VerifyServerIdentityResponse) GetState() MCPServerState {
@@ -923,7 +1059,7 @@ type ParseServerIdentityRequest struct {
 
 func (x *ParseServerIdentityRequest) Reset() {
 	*x = ParseServerIdentityRequest{}
-	mi := &file_capiscio_v1_mcp_proto_msgTypes[6]
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -935,7 +1071,7 @@ func (x *ParseServerIdentityRequest) String() string {
 func (*ParseServerIdentityRequest) ProtoMessage() {}
 
 func (x *ParseServerIdentityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capiscio_v1_mcp_proto_msgTypes[6]
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -948,7 +1084,7 @@ func (x *ParseServerIdentityRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ParseServerIdentityRequest.ProtoReflect.Descriptor instead.
 func (*ParseServerIdentityRequest) Descriptor() ([]byte, []int) {
-	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{6}
+	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ParseServerIdentityRequest) GetSource() isParseServerIdentityRequest_Source {
@@ -1003,7 +1139,7 @@ type MCPHttpHeaders struct {
 
 func (x *MCPHttpHeaders) Reset() {
 	*x = MCPHttpHeaders{}
-	mi := &file_capiscio_v1_mcp_proto_msgTypes[7]
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1015,7 +1151,7 @@ func (x *MCPHttpHeaders) String() string {
 func (*MCPHttpHeaders) ProtoMessage() {}
 
 func (x *MCPHttpHeaders) ProtoReflect() protoreflect.Message {
-	mi := &file_capiscio_v1_mcp_proto_msgTypes[7]
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1028,7 +1164,7 @@ func (x *MCPHttpHeaders) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MCPHttpHeaders.ProtoReflect.Descriptor instead.
 func (*MCPHttpHeaders) Descriptor() ([]byte, []int) {
-	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{7}
+	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *MCPHttpHeaders) GetCapiscioServerDid() string {
@@ -1056,7 +1192,7 @@ type MCPJsonRpcMeta struct {
 
 func (x *MCPJsonRpcMeta) Reset() {
 	*x = MCPJsonRpcMeta{}
-	mi := &file_capiscio_v1_mcp_proto_msgTypes[8]
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1068,7 +1204,7 @@ func (x *MCPJsonRpcMeta) String() string {
 func (*MCPJsonRpcMeta) ProtoMessage() {}
 
 func (x *MCPJsonRpcMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_capiscio_v1_mcp_proto_msgTypes[8]
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1081,7 +1217,7 @@ func (x *MCPJsonRpcMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MCPJsonRpcMeta.ProtoReflect.Descriptor instead.
 func (*MCPJsonRpcMeta) Descriptor() ([]byte, []int) {
-	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{8}
+	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *MCPJsonRpcMeta) GetMetaJson() string {
@@ -1106,7 +1242,7 @@ type ParseServerIdentityResponse struct {
 
 func (x *ParseServerIdentityResponse) Reset() {
 	*x = ParseServerIdentityResponse{}
-	mi := &file_capiscio_v1_mcp_proto_msgTypes[9]
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1118,7 +1254,7 @@ func (x *ParseServerIdentityResponse) String() string {
 func (*ParseServerIdentityResponse) ProtoMessage() {}
 
 func (x *ParseServerIdentityResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_capiscio_v1_mcp_proto_msgTypes[9]
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1131,7 +1267,7 @@ func (x *ParseServerIdentityResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ParseServerIdentityResponse.ProtoReflect.Descriptor instead.
 func (*ParseServerIdentityResponse) Descriptor() ([]byte, []int) {
-	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{9}
+	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ParseServerIdentityResponse) GetServerDid() string {
@@ -1166,7 +1302,7 @@ type MCPHealthRequest struct {
 
 func (x *MCPHealthRequest) Reset() {
 	*x = MCPHealthRequest{}
-	mi := &file_capiscio_v1_mcp_proto_msgTypes[10]
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1178,7 +1314,7 @@ func (x *MCPHealthRequest) String() string {
 func (*MCPHealthRequest) ProtoMessage() {}
 
 func (x *MCPHealthRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capiscio_v1_mcp_proto_msgTypes[10]
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1191,7 +1327,7 @@ func (x *MCPHealthRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MCPHealthRequest.ProtoReflect.Descriptor instead.
 func (*MCPHealthRequest) Descriptor() ([]byte, []int) {
-	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{10}
+	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *MCPHealthRequest) GetClientVersion() string {
@@ -1218,7 +1354,7 @@ type MCPHealthResponse struct {
 
 func (x *MCPHealthResponse) Reset() {
 	*x = MCPHealthResponse{}
-	mi := &file_capiscio_v1_mcp_proto_msgTypes[11]
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1230,7 +1366,7 @@ func (x *MCPHealthResponse) String() string {
 func (*MCPHealthResponse) ProtoMessage() {}
 
 func (x *MCPHealthResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_capiscio_v1_mcp_proto_msgTypes[11]
+	mi := &file_capiscio_v1_mcp_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1243,7 +1379,7 @@ func (x *MCPHealthResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MCPHealthResponse.ProtoReflect.Descriptor instead.
 func (*MCPHealthResponse) Descriptor() ([]byte, []int) {
-	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{11}
+	return file_capiscio_v1_mcp_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *MCPHealthResponse) GetHealthy() bool {
@@ -1278,7 +1414,7 @@ var File_capiscio_v1_mcp_proto protoreflect.FileDescriptor
 
 const file_capiscio_v1_mcp_proto_rawDesc = "" +
 	"\n" +
-	"\x15capiscio/v1/mcp.proto\x12\vcapiscio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa9\x02\n" +
+	"\x15capiscio/v1/mcp.proto\x12\vcapiscio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb4\x04\n" +
 	"\x19EvaluateToolAccessRequest\x12\x1b\n" +
 	"\ttool_name\x18\x01 \x01(\tR\btoolName\x12\x1f\n" +
 	"\vparams_hash\x18\x02 \x01(\tR\n" +
@@ -1287,13 +1423,22 @@ const file_capiscio_v1_mcp_proto_rawDesc = "" +
 	"\tbadge_jws\x18\x04 \x01(\tH\x00R\bbadgeJws\x12\x19\n" +
 	"\aapi_key\x18\x05 \x01(\tH\x00R\x06apiKey\x12%\n" +
 	"\x0epolicy_version\x18\x06 \x01(\tR\rpolicyVersion\x123\n" +
-	"\x06config\x18\a \x01(\v2\x1b.capiscio.v1.EvaluateConfigR\x06configB\x13\n" +
-	"\x11caller_credential\"\xb2\x01\n" +
+	"\x06config\x18\a \x01(\v2\x1b.capiscio.v1.EvaluateConfigR\x06config\x12)\n" +
+	"\x10enforcement_mode\x18\b \x01(\tR\x0fenforcementMode\x12)\n" +
+	"\x10capability_class\x18\n" +
+	" \x01(\tR\x0fcapabilityClass\x12\x1f\n" +
+	"\venvelope_id\x18\v \x01(\tR\n" +
+	"envelopeId\x12)\n" +
+	"\x10delegation_depth\x18\f \x01(\x05R\x0fdelegationDepth\x12)\n" +
+	"\x10constraints_json\x18\r \x01(\tR\x0fconstraintsJson\x126\n" +
+	"\x17parent_constraints_json\x18\x0e \x01(\tR\x15parentConstraintsJsonB\x13\n" +
+	"\x11caller_credentialJ\x04\b\t\x10\n" +
+	"\"\xb2\x01\n" +
 	"\x0eEvaluateConfig\x12'\n" +
 	"\x0ftrusted_issuers\x18\x01 \x03(\tR\x0etrustedIssuers\x12&\n" +
 	"\x0fmin_trust_level\x18\x02 \x01(\x05R\rminTrustLevel\x12*\n" +
 	"\x11accept_level_zero\x18\x03 \x01(\bR\x0facceptLevelZero\x12#\n" +
-	"\rallowed_tools\x18\x04 \x03(\tR\fallowedTools\"\xc5\x03\n" +
+	"\rallowed_tools\x18\x04 \x03(\tR\fallowedTools\"\x85\x05\n" +
 	"\x1aEvaluateToolAccessResponse\x124\n" +
 	"\bdecision\x18\x01 \x01(\x0e2\x18.capiscio.v1.MCPDecisionR\bdecision\x12;\n" +
 	"\vdeny_reason\x18\x02 \x01(\x0e2\x1a.capiscio.v1.MCPDenyReasonR\n" +
@@ -1310,7 +1455,15 @@ const file_capiscio_v1_mcp_proto_rawDesc = "" +
 	"\vevidence_id\x18\t \x01(\tR\n" +
 	"evidenceId\x128\n" +
 	"\ttimestamp\x18\n" +
-	" \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\"\xe5\x01\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12,\n" +
+	"\x12policy_decision_id\x18\v \x01(\tR\x10policyDecisionId\x12'\n" +
+	"\x0fpolicy_decision\x18\f \x01(\tR\x0epolicyDecision\x12)\n" +
+	"\x10enforcement_mode\x18\r \x01(\tR\x0fenforcementMode\x12<\n" +
+	"\vobligations\x18\x0e \x03(\v2\x1a.capiscio.v1.MCPObligationR\vobligations\"D\n" +
+	"\rMCPObligation\x12\x12\n" +
+	"\x04type\x18\x01 \x01(\tR\x04type\x12\x1f\n" +
+	"\vparams_json\x18\x02 \x01(\tR\n" +
+	"paramsJson\"\xe5\x01\n" +
 	"\x1bVerifyServerIdentityRequest\x12\x1d\n" +
 	"\n" +
 	"server_did\x18\x01 \x01(\tR\tserverDid\x12!\n" +
@@ -1410,7 +1563,7 @@ func file_capiscio_v1_mcp_proto_rawDescGZIP() []byte {
 }
 
 var file_capiscio_v1_mcp_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_capiscio_v1_mcp_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_capiscio_v1_mcp_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_capiscio_v1_mcp_proto_goTypes = []any{
 	(MCPDecision)(0),                     // 0: capiscio.v1.MCPDecision
 	(MCPAuthLevel)(0),                    // 1: capiscio.v1.MCPAuthLevel
@@ -1420,41 +1573,43 @@ var file_capiscio_v1_mcp_proto_goTypes = []any{
 	(*EvaluateToolAccessRequest)(nil),    // 5: capiscio.v1.EvaluateToolAccessRequest
 	(*EvaluateConfig)(nil),               // 6: capiscio.v1.EvaluateConfig
 	(*EvaluateToolAccessResponse)(nil),   // 7: capiscio.v1.EvaluateToolAccessResponse
-	(*VerifyServerIdentityRequest)(nil),  // 8: capiscio.v1.VerifyServerIdentityRequest
-	(*MCPVerifyConfig)(nil),              // 9: capiscio.v1.MCPVerifyConfig
-	(*VerifyServerIdentityResponse)(nil), // 10: capiscio.v1.VerifyServerIdentityResponse
-	(*ParseServerIdentityRequest)(nil),   // 11: capiscio.v1.ParseServerIdentityRequest
-	(*MCPHttpHeaders)(nil),               // 12: capiscio.v1.MCPHttpHeaders
-	(*MCPJsonRpcMeta)(nil),               // 13: capiscio.v1.MCPJsonRpcMeta
-	(*ParseServerIdentityResponse)(nil),  // 14: capiscio.v1.ParseServerIdentityResponse
-	(*MCPHealthRequest)(nil),             // 15: capiscio.v1.MCPHealthRequest
-	(*MCPHealthResponse)(nil),            // 16: capiscio.v1.MCPHealthResponse
-	(*timestamppb.Timestamp)(nil),        // 17: google.protobuf.Timestamp
+	(*MCPObligation)(nil),                // 8: capiscio.v1.MCPObligation
+	(*VerifyServerIdentityRequest)(nil),  // 9: capiscio.v1.VerifyServerIdentityRequest
+	(*MCPVerifyConfig)(nil),              // 10: capiscio.v1.MCPVerifyConfig
+	(*VerifyServerIdentityResponse)(nil), // 11: capiscio.v1.VerifyServerIdentityResponse
+	(*ParseServerIdentityRequest)(nil),   // 12: capiscio.v1.ParseServerIdentityRequest
+	(*MCPHttpHeaders)(nil),               // 13: capiscio.v1.MCPHttpHeaders
+	(*MCPJsonRpcMeta)(nil),               // 14: capiscio.v1.MCPJsonRpcMeta
+	(*ParseServerIdentityResponse)(nil),  // 15: capiscio.v1.ParseServerIdentityResponse
+	(*MCPHealthRequest)(nil),             // 16: capiscio.v1.MCPHealthRequest
+	(*MCPHealthResponse)(nil),            // 17: capiscio.v1.MCPHealthResponse
+	(*timestamppb.Timestamp)(nil),        // 18: google.protobuf.Timestamp
 }
 var file_capiscio_v1_mcp_proto_depIdxs = []int32{
 	6,  // 0: capiscio.v1.EvaluateToolAccessRequest.config:type_name -> capiscio.v1.EvaluateConfig
 	0,  // 1: capiscio.v1.EvaluateToolAccessResponse.decision:type_name -> capiscio.v1.MCPDecision
 	2,  // 2: capiscio.v1.EvaluateToolAccessResponse.deny_reason:type_name -> capiscio.v1.MCPDenyReason
 	1,  // 3: capiscio.v1.EvaluateToolAccessResponse.auth_level:type_name -> capiscio.v1.MCPAuthLevel
-	17, // 4: capiscio.v1.EvaluateToolAccessResponse.timestamp:type_name -> google.protobuf.Timestamp
-	9,  // 5: capiscio.v1.VerifyServerIdentityRequest.config:type_name -> capiscio.v1.MCPVerifyConfig
-	3,  // 6: capiscio.v1.VerifyServerIdentityResponse.state:type_name -> capiscio.v1.MCPServerState
-	4,  // 7: capiscio.v1.VerifyServerIdentityResponse.error_code:type_name -> capiscio.v1.MCPServerErrorCode
-	12, // 8: capiscio.v1.ParseServerIdentityRequest.http_headers:type_name -> capiscio.v1.MCPHttpHeaders
-	13, // 9: capiscio.v1.ParseServerIdentityRequest.jsonrpc_meta:type_name -> capiscio.v1.MCPJsonRpcMeta
-	5,  // 10: capiscio.v1.MCPService.EvaluateToolAccess:input_type -> capiscio.v1.EvaluateToolAccessRequest
-	8,  // 11: capiscio.v1.MCPService.VerifyServerIdentity:input_type -> capiscio.v1.VerifyServerIdentityRequest
-	11, // 12: capiscio.v1.MCPService.ParseServerIdentity:input_type -> capiscio.v1.ParseServerIdentityRequest
-	15, // 13: capiscio.v1.MCPService.Health:input_type -> capiscio.v1.MCPHealthRequest
-	7,  // 14: capiscio.v1.MCPService.EvaluateToolAccess:output_type -> capiscio.v1.EvaluateToolAccessResponse
-	10, // 15: capiscio.v1.MCPService.VerifyServerIdentity:output_type -> capiscio.v1.VerifyServerIdentityResponse
-	14, // 16: capiscio.v1.MCPService.ParseServerIdentity:output_type -> capiscio.v1.ParseServerIdentityResponse
-	16, // 17: capiscio.v1.MCPService.Health:output_type -> capiscio.v1.MCPHealthResponse
-	14, // [14:18] is the sub-list for method output_type
-	10, // [10:14] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	18, // 4: capiscio.v1.EvaluateToolAccessResponse.timestamp:type_name -> google.protobuf.Timestamp
+	8,  // 5: capiscio.v1.EvaluateToolAccessResponse.obligations:type_name -> capiscio.v1.MCPObligation
+	10, // 6: capiscio.v1.VerifyServerIdentityRequest.config:type_name -> capiscio.v1.MCPVerifyConfig
+	3,  // 7: capiscio.v1.VerifyServerIdentityResponse.state:type_name -> capiscio.v1.MCPServerState
+	4,  // 8: capiscio.v1.VerifyServerIdentityResponse.error_code:type_name -> capiscio.v1.MCPServerErrorCode
+	13, // 9: capiscio.v1.ParseServerIdentityRequest.http_headers:type_name -> capiscio.v1.MCPHttpHeaders
+	14, // 10: capiscio.v1.ParseServerIdentityRequest.jsonrpc_meta:type_name -> capiscio.v1.MCPJsonRpcMeta
+	5,  // 11: capiscio.v1.MCPService.EvaluateToolAccess:input_type -> capiscio.v1.EvaluateToolAccessRequest
+	9,  // 12: capiscio.v1.MCPService.VerifyServerIdentity:input_type -> capiscio.v1.VerifyServerIdentityRequest
+	12, // 13: capiscio.v1.MCPService.ParseServerIdentity:input_type -> capiscio.v1.ParseServerIdentityRequest
+	16, // 14: capiscio.v1.MCPService.Health:input_type -> capiscio.v1.MCPHealthRequest
+	7,  // 15: capiscio.v1.MCPService.EvaluateToolAccess:output_type -> capiscio.v1.EvaluateToolAccessResponse
+	11, // 16: capiscio.v1.MCPService.VerifyServerIdentity:output_type -> capiscio.v1.VerifyServerIdentityResponse
+	15, // 17: capiscio.v1.MCPService.ParseServerIdentity:output_type -> capiscio.v1.ParseServerIdentityResponse
+	17, // 18: capiscio.v1.MCPService.Health:output_type -> capiscio.v1.MCPHealthResponse
+	15, // [15:19] is the sub-list for method output_type
+	11, // [11:15] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_capiscio_v1_mcp_proto_init() }
@@ -1466,7 +1621,7 @@ func file_capiscio_v1_mcp_proto_init() {
 		(*EvaluateToolAccessRequest_BadgeJws)(nil),
 		(*EvaluateToolAccessRequest_ApiKey)(nil),
 	}
-	file_capiscio_v1_mcp_proto_msgTypes[6].OneofWrappers = []any{
+	file_capiscio_v1_mcp_proto_msgTypes[7].OneofWrappers = []any{
 		(*ParseServerIdentityRequest_HttpHeaders)(nil),
 		(*ParseServerIdentityRequest_JsonrpcMeta)(nil),
 	}
@@ -1476,7 +1631,7 @@ func file_capiscio_v1_mcp_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capiscio_v1_mcp_proto_rawDesc), len(file_capiscio_v1_mcp_proto_rawDesc)),
 			NumEnums:      5,
-			NumMessages:   12,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

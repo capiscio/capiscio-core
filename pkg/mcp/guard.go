@@ -4,18 +4,48 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"path"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/capiscio/capiscio-core/v2/pkg/badge"
+	"github.com/capiscio/capiscio-core/v2/pkg/pip"
 )
 
 // Guard implements RFC-006 tool access evaluation with atomic evidence emission.
 type Guard struct {
 	badgeVerifier *badge.Verifier
 	evidenceStore EvidenceStore
+	pdpClient     pip.PDPClient
+	emMode        pip.EnforcementMode
+	obligationReg *pip.ObligationRegistry
+	logger        *slog.Logger
+}
+
+// GuardOption configures optional Guard behavior.
+type GuardOption func(*Guard)
+
+// WithPDPClient enables PDP-based policy evaluation (RFC-005).
+// When set, the PDP replaces inline policy evaluation (trust level + allowed tools).
+func WithPDPClient(client pip.PDPClient) GuardOption {
+	return func(g *Guard) { g.pdpClient = client }
+}
+
+// WithEnforcementMode sets the enforcement mode.
+func WithEnforcementMode(mode pip.EnforcementMode) GuardOption {
+	return func(g *Guard) { g.emMode = mode }
+}
+
+// WithObligationRegistry sets the obligation registry for PDP obligations.
+func WithObligationRegistry(reg *pip.ObligationRegistry) GuardOption {
+	return func(g *Guard) { g.obligationReg = reg }
+}
+
+// WithGuardLogger sets the logger for the guard.
+func WithGuardLogger(logger *slog.Logger) GuardOption {
+	return func(g *Guard) { g.logger = logger }
 }
 
 // EvidenceStore is the interface for storing evidence records
@@ -31,19 +61,30 @@ func (n *NoOpEvidenceStore) Store(ctx context.Context, record EvidenceRecord) er
 	return nil
 }
 
-// NewGuard creates a new Guard instance
-func NewGuard(badgeVerifier *badge.Verifier, evidenceStore EvidenceStore) *Guard {
+// NewGuard creates a new Guard instance.
+// Use GuardOption functions to configure PDP integration (RFC-005).
+func NewGuard(badgeVerifier *badge.Verifier, evidenceStore EvidenceStore, opts ...GuardOption) *Guard {
 	if evidenceStore == nil {
 		evidenceStore = &NoOpEvidenceStore{}
 	}
-	return &Guard{
+	g := &Guard{
 		badgeVerifier: badgeVerifier,
 		evidenceStore: evidenceStore,
+		emMode:        pip.EMObserve,
+		logger:        slog.Default(),
 	}
+	for _, opt := range opts {
+		opt(g)
+	}
+	return g
 }
 
 // EvaluateToolAccess evaluates tool access and emits evidence atomically.
 // This implements RFC-006 §6.2-6.4.
+//
+// When a PDPClient is configured (via WithPDPClient), the PDP is the authoritative
+// decision source — inline policy (trust level + allowed tools) is skipped.
+// When no PDPClient is configured, the inline policy is evaluated as before.
 //
 // Key design principle: Single operation returns both decision and evidence
 // to avoid partial failures.
@@ -70,7 +111,7 @@ func (g *Guard) EvaluateToolAccess(
 		EvidenceID: evidenceID,
 	}
 
-	// 1. Derive identity from credential
+	// 1. Derive identity from credential (always — PDP doesn't replace authentication)
 	agentDID, badgeJTI, trustLevel, err := g.deriveIdentity(ctx, credential, config)
 	if err != nil {
 		result.Decision = DecisionDeny
@@ -82,23 +123,14 @@ func (g *Guard) EvaluateToolAccess(
 		result.TrustLevel = trustLevel
 	}
 
-	// 2. Check trust level against minimum
-	if result.Decision == DecisionAllow && trustLevel < config.MinTrustLevel {
-		result.Decision = DecisionDeny
-		result.DenyReason = DenyReasonTrustInsufficient
-		result.DenyDetail = fmt.Sprintf("trust level %d below minimum %d", trustLevel, config.MinTrustLevel)
+	// 2. Authorization path: PDP or inline policy
+	if result.Decision == DecisionAllow && g.pdpClient != nil {
+		g.evaluateWithPDP(ctx, result, toolName, agentDID, badgeJTI, trustLevel, config)
+	} else if result.Decision == DecisionAllow {
+		g.evaluateInlinePolicy(result, toolName, trustLevel, config)
 	}
 
-	// 3. Check tool against allowed list (if configured)
-	if result.Decision == DecisionAllow && len(config.AllowedTools) > 0 {
-		if !g.isToolAllowed(toolName, config.AllowedTools) {
-			result.Decision = DecisionDeny
-			result.DenyReason = DenyReasonToolNotAllowed
-			result.DenyDetail = fmt.Sprintf("tool %q not in allowed list", toolName)
-		}
-	}
-
-	// 4. Emit evidence (ALWAYS - both allow and deny)
+	// 3. Emit evidence (ALWAYS - both allow and deny)
 	evidenceRecord := EvidenceRecord{
 		EventName:     "capiscio.tool_invocation",
 		AgentDID:      result.AgentDID,
@@ -130,6 +162,120 @@ func (g *Guard) EvaluateToolAccess(
 	result.EvidenceJSON = string(evidenceJSON)
 
 	return result, nil
+}
+
+// evaluateWithPDP queries the external PDP for an authorization decision.
+// PDP replaces inline policy — it is the authoritative decision source.
+func (g *Guard) evaluateWithPDP(
+	ctx context.Context,
+	result *EvaluateResult,
+	toolName, agentDID, badgeJTI string,
+	trustLevel int,
+	config *EvaluateConfig,
+) {
+	now := time.Now().UTC()
+	nowStr := now.Format(time.RFC3339)
+	txnID := uuid.Must(uuid.NewV7()).String()
+
+	pipReq := &pip.DecisionRequest{
+		PIPVersion: pip.PIPVersion,
+		Subject: pip.SubjectAttributes{
+			DID:        agentDID,
+			BadgeJTI:   badgeJTI,
+			TrustLevel: fmt.Sprintf("%d", trustLevel),
+		},
+		Action: pip.ActionAttributes{
+			Operation: toolName,
+		},
+		Resource: pip.ResourceAttributes{
+			Identifier: toolName,
+		},
+		Context: pip.ContextAttributes{
+			TxnID:           txnID,
+			EnforcementMode: g.emMode.String(),
+		},
+		Environment: pip.EnvironmentAttrs{
+			Time: &nowStr,
+		},
+	}
+
+	resp, err := g.pdpClient.Evaluate(ctx, pipReq)
+
+	if err != nil {
+		// PDP unavailable — handle per enforcement mode (RFC-005 §7.4)
+		g.logger.ErrorContext(ctx, "PDP unavailable in MCP guard",
+			slog.String(pip.TelemetryErrorCode, pip.ErrorCodePDPUnavailable),
+			slog.String("error", err.Error()),
+			slog.String("enforcement_mode", g.emMode.String()))
+
+		if g.emMode == pip.EMObserve {
+			// Shadow mode: allow through, log ALLOW_OBSERVE
+			result.PolicyDecision = pip.DecisionObserve
+			result.PolicyDecisionID = "pdp-unavailable"
+			return
+		}
+		// All other modes: fail-closed
+		result.Decision = DecisionDeny
+		result.DenyReason = DenyReasonPolicyDenied
+		result.DenyDetail = "policy service unavailable"
+		result.PolicyDecision = pip.DecisionDeny
+		result.PolicyDecisionID = "pdp-unavailable"
+		return
+	}
+
+	result.PolicyDecisionID = resp.DecisionID
+	result.PolicyDecision = resp.Decision
+
+	if resp.Decision == pip.DecisionDeny {
+		switch g.emMode {
+		case pip.EMObserve:
+			// Log but allow
+			g.logger.InfoContext(ctx, "PDP DENY in EM-OBSERVE (allowing)",
+				slog.String(pip.TelemetryDecisionID, resp.DecisionID))
+			result.PolicyDecision = pip.DecisionObserve
+		default:
+			result.Decision = DecisionDeny
+			result.DenyReason = DenyReasonPolicyDenied
+			result.DenyDetail = resp.Reason
+		}
+		return
+	}
+
+	// ALLOW — handle obligations
+	if g.obligationReg != nil && len(resp.Obligations) > 0 {
+		oblResult := g.obligationReg.Enforce(ctx, g.emMode, resp.Obligations)
+		if !oblResult.Proceed {
+			result.Decision = DecisionDeny
+			result.DenyReason = DenyReasonPolicyDenied
+			result.DenyDetail = "obligation enforcement failed"
+			result.PolicyDecision = pip.DecisionDeny
+		}
+	}
+}
+
+// evaluateInlinePolicy runs the traditional trust level + tool glob checks.
+func (g *Guard) evaluateInlinePolicy(
+	result *EvaluateResult,
+	toolName string,
+	trustLevel int,
+	config *EvaluateConfig,
+) {
+	// Check trust level against minimum
+	if trustLevel < config.MinTrustLevel {
+		result.Decision = DecisionDeny
+		result.DenyReason = DenyReasonTrustInsufficient
+		result.DenyDetail = fmt.Sprintf("trust level %d below minimum %d", trustLevel, config.MinTrustLevel)
+		return
+	}
+
+	// Check tool against allowed list (if configured)
+	if len(config.AllowedTools) > 0 {
+		if !g.isToolAllowed(toolName, config.AllowedTools) {
+			result.Decision = DecisionDeny
+			result.DenyReason = DenyReasonToolNotAllowed
+			result.DenyDetail = fmt.Sprintf("tool %q not in allowed list", toolName)
+		}
+	}
 }
 
 // deriveIdentity extracts identity information from the credential

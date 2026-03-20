@@ -180,6 +180,12 @@ type EvaluateResult struct {
 
 	// Timestamp is when the evaluation occurred
 	Timestamp time.Time
+
+	// PolicyDecisionID is the PDP decision ID (RFC-005, only set when PDP is configured)
+	PolicyDecisionID string
+
+	// PolicyDecision is the PDP decision string: ALLOW, DENY, or ALLOW_OBSERVE (RFC-005)
+	PolicyDecision string
 }
 
 // VerifyConfig holds configuration for server identity verification
