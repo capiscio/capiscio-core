@@ -66,8 +66,8 @@ type PolicyEvent struct {
 	ErrorCode    string
 }
 
-// PolicyEventCallback is invoked after each policy enforcement with the event data.
-// Implementations should be non-blocking.
+// PolicyEventCallback is invoked synchronously after each policy enforcement with the event data.
+// Implementations MUST return quickly and avoid long-running or blocking operations.
 type PolicyEventCallback func(event PolicyEvent, req *pip.DecisionRequest)
 
 // pep is the internal Policy Enforcement Point handler.
@@ -284,8 +284,20 @@ func (p *pep) handleCachedDecision(w http.ResponseWriter, r *http.Request, cache
 	event.Obligations = obligationTypes(cached.Obligations)
 
 	if cached.Decision == pip.DecisionDeny {
+		if p.config.EnforcementMode == pip.EMObserve {
+			p.logger.InfoContext(r.Context(), "cached PDP DENY in EM-OBSERVE (allowing)",
+				slog.String(pip.TelemetryDecisionID, cached.DecisionID))
+			event.Decision = pip.DecisionObserve
+			emitPolicyEvent(p.callbacks, *event, pipReq)
+			p.next.ServeHTTP(w, r)
+			return true
+		}
+		reason := cached.Reason
+		if reason == "" {
+			reason = "Access denied by policy"
+		}
 		emitPolicyEvent(p.callbacks, *event, pipReq)
-		http.Error(w, "Access denied by policy", http.StatusForbidden)
+		http.Error(w, reason, http.StatusForbidden)
 		return true
 	}
 
