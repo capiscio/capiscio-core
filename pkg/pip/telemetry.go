@@ -24,6 +24,15 @@ const (
 
 	// ErrorCodePDPUnavailable indicates PDP could not be reached.
 	ErrorCodePDPUnavailable = "PDP_UNAVAILABLE"
+
+	// TelemetryBundleStale is emitted when the embedded PDP's policy bundle
+	// exceeds the staleness threshold (RFC-005 Appendix B §B.4).
+	TelemetryBundleStale = "capiscio.policy.bundle_stale"
+
+	// ErrorCodeBundleStale indicates the policy bundle is stale.
+	// Distinct from PDP_UNAVAILABLE: the PDP evaluated successfully,
+	// but the underlying data may be out of date.
+	ErrorCodeBundleStale = "BUNDLE_STALE"
 )
 
 // TxnIDHeader is the HTTP header for transaction ID propagation (RFC-004).
