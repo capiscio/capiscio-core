@@ -93,8 +93,7 @@ func runPolicyValidate(_ *cobra.Command, _ []string) error {
 
 	cfg, err := policy.Parse(data)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "❌ Validation failed for %s:\n%s\n", policyFile, err.Error())
-		os.Exit(1)
+		return fmt.Errorf("❌ Validation failed for %s:\n%s", policyFile, err.Error())
 	}
 
 	if policyValidateJSON {
@@ -106,7 +105,7 @@ func runPolicyValidate(_ *cobra.Command, _ []string) error {
 		return nil
 	}
 
-	fmt.Printf("✅ %s is valid (version %s, trust_level: %s)\n", policyFile, cfg.Version, cfg.MinTrustLevel)
+	fmt.Printf("✅ %s is valid (version %s, min_trust_level: %s)\n", policyFile, cfg.Version, cfg.MinTrustLevel)
 
 	// Print summary
 	if len(cfg.AllowedDIDs) > 0 {

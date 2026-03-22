@@ -205,3 +205,52 @@ func TestValidate_MultipleErrors(t *testing.T) {
 	assert.Contains(t, msg, `invalid DID format`)
 	assert.Contains(t, msg, `rpm must be positive`)
 }
+
+func TestValidate_NilConfig(t *testing.T) {
+	err := Validate(nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "nil")
+}
+
+func TestValidate_DuplicateRateLimitDID(t *testing.T) {
+	cfg := &Config{
+		Version: "1",
+		RateLimits: []RateLimitRule{
+			{DID: "did:web:agent.example.com", RPM: 100},
+			{DID: "did:web:agent.example.com", RPM: 50},
+		},
+	}
+	err := Validate(cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "duplicate DID")
+}
+
+func TestValidate_OperationDIDValidation(t *testing.T) {
+	cfg := &Config{
+		Version: "1",
+		Operations: []OperationRule{
+			{
+				Pattern:    "test.*",
+				AllowedDIDs: []string{"not-a-did"},
+			},
+		},
+	}
+	err := Validate(cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "operations[0].allowed_dids")
+}
+
+func TestValidate_MCPToolDIDValidation(t *testing.T) {
+	cfg := &Config{
+		Version: "1",
+		MCPTools: []MCPToolRule{
+			{
+				Tool:       "my_tool",
+				DeniedDIDs: []string{"invalid"},
+			},
+		},
+	}
+	err := Validate(cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "mcp_tools[0].denied_dids")
+}

@@ -89,6 +89,10 @@ func validateDIDList(name string, dids []string, crossCheck map[string]bool) (se
 
 // Validate checks a parsed Config for semantic correctness.
 func Validate(cfg *Config) error {
+	if cfg == nil {
+		return fmt.Errorf("policy config is nil")
+	}
+
 	var errs []string
 
 	if cfg.Version != "1" {
@@ -106,10 +110,15 @@ func Validate(cfg *Config) error {
 	errs = append(errs, didErrs...)
 
 	// Validate rate limits
+	rateSeen := make(map[string]bool)
 	for i, rl := range cfg.RateLimits {
 		if !strings.HasPrefix(rl.DID, "did:") {
 			errs = append(errs, fmt.Sprintf("rate_limits[%d]: invalid DID format %q", i, rl.DID))
 		}
+		if rateSeen[rl.DID] {
+			errs = append(errs, fmt.Sprintf("rate_limits[%d]: duplicate DID %q", i, rl.DID))
+		}
+		rateSeen[rl.DID] = true
 		if rl.RPM <= 0 {
 			errs = append(errs, fmt.Sprintf("rate_limits[%d]: rpm must be positive, got %d", i, rl.RPM))
 		}
@@ -123,6 +132,10 @@ func Validate(cfg *Config) error {
 		if !validTrustLevels[op.MinTrustLevel] {
 			errs = append(errs, fmt.Sprintf("operations[%d]: invalid min_trust_level %q", i, op.MinTrustLevel))
 		}
+		_, opDIDErrs := validateDIDList(fmt.Sprintf("operations[%d].allowed_dids", i), op.AllowedDIDs, nil)
+		errs = append(errs, opDIDErrs...)
+		_, opDeniedErrs := validateDIDList(fmt.Sprintf("operations[%d].denied_dids", i), op.DeniedDIDs, nil)
+		errs = append(errs, opDeniedErrs...)
 	}
 
 	// Validate MCP tools
@@ -133,6 +146,10 @@ func Validate(cfg *Config) error {
 		if !validTrustLevels[tool.MinTrustLevel] {
 			errs = append(errs, fmt.Sprintf("mcp_tools[%d]: invalid min_trust_level %q", i, tool.MinTrustLevel))
 		}
+		_, toolDIDErrs := validateDIDList(fmt.Sprintf("mcp_tools[%d].allowed_dids", i), tool.AllowedDIDs, nil)
+		errs = append(errs, toolDIDErrs...)
+		_, toolDeniedErrs := validateDIDList(fmt.Sprintf("mcp_tools[%d].denied_dids", i), tool.DeniedDIDs, nil)
+		errs = append(errs, toolDeniedErrs...)
 	}
 
 	if len(errs) > 0 {
