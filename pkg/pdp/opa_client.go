@@ -139,16 +139,6 @@ func (c *OPALocalClient) HasBundle() bool {
 	return c.preparedQuery != nil
 }
 
-// ClearBundle unloads the current policy bundle, causing all subsequent
-// Evaluate calls to return an error. Used by BundleManager under EM-STRICT
-// when the bundle becomes stale.
-func (c *OPALocalClient) ClearBundle() {
-	c.mu.Lock()
-	c.preparedQuery = nil
-	c.bundleLoadedAt = time.Time{}
-	c.mu.Unlock()
-}
-
 // buildOPAInput maps a PIP DecisionRequest to the OPA input document.
 // The structure matches RFC-005 Appendix B.2.
 func buildOPAInput(req *pip.DecisionRequest) map[string]interface{} {

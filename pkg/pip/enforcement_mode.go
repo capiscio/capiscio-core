@@ -3,6 +3,7 @@ package pip
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 // EnforcementMode represents the PEP enforcement strictness level.
@@ -47,9 +48,15 @@ func (em EnforcementMode) String() string {
 }
 
 // ParseEnforcementMode parses an RFC enforcement mode string.
+// Accepts both full ("EM-GUARD") and short ("guard") forms, case-insensitive.
 // Returns an error if the string is not a recognized mode.
 func ParseEnforcementMode(s string) (EnforcementMode, error) {
-	if em, ok := enforcementModeFromString[s]; ok {
+	upper := strings.ToUpper(strings.TrimSpace(s))
+	if em, ok := enforcementModeFromString[upper]; ok {
+		return em, nil
+	}
+	// Accept short forms without the "EM-" prefix.
+	if em, ok := enforcementModeFromString["EM-"+upper]; ok {
 		return em, nil
 	}
 	return EMObserve, fmt.Errorf("unknown enforcement mode: %q (valid: EM-OBSERVE, EM-GUARD, EM-DELEGATE, EM-STRICT)", s)
