@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -107,6 +108,11 @@ func (bc *BundleClient) Fetch(ctx context.Context) (*BundleContents, error) {
 
 	if len(bundle.Modules) == 0 {
 		return nil, fmt.Errorf("pdp: bundle contains no Rego modules")
+	}
+	for name, src := range bundle.Modules {
+		if strings.TrimSpace(src) == "" {
+			return nil, fmt.Errorf("pdp: bundle module %q has empty source", name)
+		}
 	}
 
 	bc.logger.Info("bundle fetched",

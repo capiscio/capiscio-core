@@ -168,3 +168,22 @@ func TestBundleClient_InvalidJSON(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "decode bundle response")
 }
+
+func TestBundleClient_Fetch_EmptyModuleSource(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(BundleContents{
+			Modules:  map[string]string{"policy.rego": "  "},
+			Revision: "rev-empty",
+		})
+	}))
+	defer srv.Close()
+
+	client, err := NewBundleClient(srv.URL+"/v1/bundles/ws1", "test-key")
+	require.NoError(t, err)
+
+	_, err = client.Fetch(context.Background())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "empty source")
+	assert.Contains(t, err.Error(), "policy.rego")
+}
