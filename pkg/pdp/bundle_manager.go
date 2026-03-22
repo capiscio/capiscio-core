@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/capiscio/capiscio-core/v2/pkg/pip"
+	"github.com/google/uuid"
 )
 
 const (
@@ -136,6 +137,51 @@ func (m *BundleManager) IsStale() bool {
 		return true // no bundle loaded
 	}
 	return age > m.maxAge
+}
+
+// Evaluate runs a policy decision through the local OPA evaluator and applies
+// bundle staleness checks per enforcement mode (RFC-005 Appendix B §B.4).
+//
+// After a successful OPA evaluation, if the bundle is stale:
+//   - EM-STRICT:   returns a synthetic DENY with error_code BUNDLE_STALE.
+//   - EM-OBSERVE/EM-GUARD: emits TelemetryBundleStale and returns the OPA result.
+//
+// This implements pip.PDPClient so it can be used directly by the PEP gateway.
+func (m *BundleManager) Evaluate(ctx context.Context, req *pip.DecisionRequest) (*pip.DecisionResponse, error) {
+	resp, err := m.evaluator.Evaluate(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	if !m.IsStale() {
+		return resp, nil
+	}
+
+	age := m.evaluator.BundleAge()
+
+	if m.mode >= pip.EMStrict {
+		m.logger.WarnContext(ctx, "denying request due to stale bundle under EM-STRICT",
+			slog.String(pip.TelemetryBundleStale, "true"),
+			slog.String(pip.TelemetryErrorCode, pip.ErrorCodeBundleStale),
+			slog.Duration("bundle_age", age),
+			slog.Duration("max_age", m.maxAge),
+		)
+		return &pip.DecisionResponse{
+			Decision:   pip.DecisionDeny,
+			DecisionID: uuid.New().String(),
+			Reason:     pip.ErrorCodeBundleStale,
+		}, nil
+	}
+
+	// EM-OBSERVE and EM-GUARD: emit telemetry but allow the OPA result through.
+	m.logger.WarnContext(ctx, "bundle stale, allowing per enforcement mode",
+		slog.String(pip.TelemetryBundleStale, "true"),
+		slog.Duration("bundle_age", age),
+		slog.Duration("max_age", m.maxAge),
+		slog.String("enforcement_mode", m.mode.String()),
+	)
+
+	return resp, nil
 }
 
 // RefreshNow triggers an immediate bundle fetch and load, outside the polling loop.
