@@ -37,7 +37,11 @@ type OPALocalOption func(*OPALocalClient)
 
 // WithOPALogger sets the logger for the OPA evaluator.
 func WithOPALogger(l *slog.Logger) OPALocalOption {
-	return func(c *OPALocalClient) { c.logger = l }
+	return func(c *OPALocalClient) {
+		if l != nil {
+			c.logger = l
+		}
+	}
 }
 
 // NewOPALocalClient creates a new local OPA evaluator.
@@ -223,6 +227,9 @@ func mapOPAResult(results rego.ResultSet) (*pip.DecisionResponse, error) {
 	var obligations []pip.Obligation
 	if oblSet, ok := policyResult["obligations"]; ok {
 		obligations = extractObligations(oblSet)
+	}
+	if obligations == nil {
+		obligations = []pip.Obligation{}
 	}
 
 	return &pip.DecisionResponse{

@@ -55,18 +55,18 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24.0'
+          go-version: '1.25.0'
 
       - name: Verify Dependencies
         run: go mod verify
 
       - name: Build
-        run: go build -v ./...
+        run: go build -tags opa_no_wasm -v ./...
 
       - name: Run Tests
         run: |
           # Run tests excluding generated protobuf code
-          go test -v -race -coverprofile=coverage.txt -covermode=atomic \
+          go test -tags opa_no_wasm -v -race -coverprofile=coverage.txt -covermode=atomic \
             $(go list ./pkg/... ./internal/... | grep -v /gen/)
 
       - name: Check Coverage Threshold
