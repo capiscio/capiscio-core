@@ -31,12 +31,20 @@ type BundleClientOption func(*BundleClient)
 
 // WithBundleHTTPClient sets a custom HTTP client for the bundle client.
 func WithBundleHTTPClient(c *http.Client) BundleClientOption {
-	return func(bc *BundleClient) { bc.client = c }
+	return func(bc *BundleClient) {
+		if c != nil {
+			bc.client = c
+		}
+	}
 }
 
 // WithBundleLogger sets the logger for the bundle client.
 func WithBundleLogger(l *slog.Logger) BundleClientOption {
-	return func(bc *BundleClient) { bc.logger = l }
+	return func(bc *BundleClient) {
+		if l != nil {
+			bc.logger = l
+		}
+	}
 }
 
 // NewBundleClient creates a new bundle pull client.
@@ -85,7 +93,7 @@ func (bc *BundleClient) Fetch(ctx context.Context) (*BundleContents, error) {
 		return nil, fmt.Errorf("pdp: bundle not yet available (503)")
 	}
 	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
-		return nil, fmt.Errorf("pdp: bundle authentication failed (%d) — check CAPISCIO_API_KEY", resp.StatusCode)
+		return nil, fmt.Errorf("pdp: bundle authentication failed (%d) — check registry API key", resp.StatusCode)
 	}
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
