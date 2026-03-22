@@ -152,12 +152,9 @@ func (m *BundleManager) pollLoop(ctx context.Context) {
 		m.mu.Unlock()
 	}()
 
-	// Only do initial fetch if no bundle is loaded yet (avoids double-fetch
-	// when caller already called RefreshNow before Start).
-	if !m.evaluator.HasBundle() {
-		if err := m.fetchAndLoad(ctx); err != nil {
-			m.logFetchFailure(err)
-		}
+	// Attempt initial fetch immediately.
+	if err := m.fetchAndLoad(ctx); err != nil {
+		m.logFetchFailure(err)
 	}
 
 	for {
