@@ -103,6 +103,9 @@ func TestGuard_WithPDP_Allow(t *testing.T) {
 	if pipReq.Action.Operation != "read_file" {
 		t.Errorf("Action.Operation = %q, want %q", pipReq.Action.Operation, "read_file")
 	}
+	if pipReq.Action.MCPTool == nil || *pipReq.Action.MCPTool != "read_file" {
+		t.Errorf("Action.MCPTool = %v, want %q", pipReq.Action.MCPTool, "read_file")
+	}
 	if pipReq.Context.EnforcementMode != pip.EMDelegate.String() {
 		t.Errorf("EM = %q, want %q", pipReq.Context.EnforcementMode, pip.EMDelegate.String())
 	}
