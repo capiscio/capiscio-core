@@ -199,6 +199,7 @@ func (g *Guard) evaluateWithPDP(
 		},
 		Action: pip.ActionAttributes{
 			Operation: toolName,
+			MCPTool:   &toolName,
 		},
 		Resource: pip.ResourceAttributes{
 			Identifier: toolName,
