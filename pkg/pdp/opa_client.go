@@ -143,6 +143,7 @@ func (c *OPALocalClient) HasBundle() bool {
 // The structure matches RFC-005 Appendix B.2.
 func buildOPAInput(req *pip.DecisionRequest) map[string]interface{} {
 	input := map[string]interface{}{
+		"pip_version": req.PIPVersion,
 		"subject": map[string]interface{}{
 			"did":         req.Subject.DID,
 			"badge_jti":   req.Subject.BadgeJTI,

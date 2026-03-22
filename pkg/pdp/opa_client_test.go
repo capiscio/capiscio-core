@@ -404,6 +404,7 @@ func TestOPALocalClient_ImplementsPDPClient(t *testing.T) {
 
 func TestBuildOPAInput_MinimalRequest(t *testing.T) {
 	req := &pip.DecisionRequest{
+		PIPVersion: pip.PIPVersion,
 		Subject: pip.SubjectAttributes{
 			DID:        "did:web:test",
 			TrustLevel: "verified",
@@ -421,6 +422,8 @@ func TestBuildOPAInput_MinimalRequest(t *testing.T) {
 	}
 
 	input := buildOPAInput(req)
+
+	assert.Equal(t, pip.PIPVersion, input["pip_version"], "pip_version must be first-class field")
 
 	subject := input["subject"].(map[string]interface{})
 	assert.Equal(t, "did:web:test", subject["did"])
@@ -444,7 +447,8 @@ func TestBuildOPAInput_AllOptionalFields(t *testing.T) {
 	now := "2026-03-28T12:00:00Z"
 
 	req := &pip.DecisionRequest{
-		Subject: pip.SubjectAttributes{DID: "did:web:x"},
+		PIPVersion: pip.PIPVersion,
+		Subject:    pip.SubjectAttributes{DID: "did:web:x"},
 		Action: pip.ActionAttributes{
 			Operation:       "exec",
 			CapabilityClass: &capClass,
@@ -466,6 +470,8 @@ func TestBuildOPAInput_AllOptionalFields(t *testing.T) {
 	}
 
 	input := buildOPAInput(req)
+
+	assert.Equal(t, pip.PIPVersion, input["pip_version"])
 
 	action := input["action"].(map[string]interface{})
 	assert.Equal(t, "compute", action["capability_class"])

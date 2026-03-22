@@ -408,3 +408,120 @@ func TestBundleManager_ZeroMaxAgeIgnored(t *testing.T) {
 	mgr := NewBundleManager(client, NewOPALocalClient(), WithMaxAge(0))
 	assert.Equal(t, DefaultMaxAge, mgr.maxAge)
 }
+
+func TestBundleManager_Evaluate_FreshBundle(t *testing.T) {
+	bundle := newTestBundle("rev-1")
+	srv := newTestBundleServer(t, &bundle)
+	defer srv.Close()
+
+	client, err := NewBundleClient(srv.URL+"/v1/bundles/ws1", "key")
+	require.NoError(t, err)
+
+	evaluator := NewOPALocalClient()
+	mgr := NewBundleManager(client, evaluator,
+		WithMaxAge(10*time.Minute),
+		WithEnforcementMode(pip.EMStrict),
+	)
+
+	err = mgr.RefreshNow(context.Background())
+	require.NoError(t, err)
+
+	resp, err := mgr.Evaluate(context.Background(), newTestRequest())
+	require.NoError(t, err)
+	assert.Equal(t, pip.DecisionAllow, resp.Decision)
+}
+
+func TestBundleManager_Evaluate_StaleBundle_Strict(t *testing.T) {
+	bundle := newTestBundle("rev-1")
+	srv := newTestBundleServer(t, &bundle)
+	defer srv.Close()
+
+	client, err := NewBundleClient(srv.URL+"/v1/bundles/ws1", "key")
+	require.NoError(t, err)
+
+	evaluator := NewOPALocalClient()
+	mgr := NewBundleManager(client, evaluator,
+		WithMaxAge(50*time.Millisecond),
+		WithEnforcementMode(pip.EMStrict),
+	)
+
+	err = mgr.RefreshNow(context.Background())
+	require.NoError(t, err)
+
+	require.Eventually(t, func() bool {
+		return mgr.IsStale()
+	}, 2*time.Second, 10*time.Millisecond, "bundle should become stale")
+
+	resp, err := mgr.Evaluate(context.Background(), newTestRequest())
+	require.NoError(t, err)
+	assert.Equal(t, pip.DecisionDeny, resp.Decision, "EM-STRICT must deny on stale bundle")
+	assert.Equal(t, "request denied: policy bundle is stale", resp.Reason)
+	assert.NotEmpty(t, resp.DecisionID)
+}
+
+func TestBundleManager_Evaluate_StaleBundle_Observe(t *testing.T) {
+	bundle := newTestBundle("rev-1")
+	srv := newTestBundleServer(t, &bundle)
+	defer srv.Close()
+
+	client, err := NewBundleClient(srv.URL+"/v1/bundles/ws1", "key")
+	require.NoError(t, err)
+
+	evaluator := NewOPALocalClient()
+	mgr := NewBundleManager(client, evaluator,
+		WithMaxAge(50*time.Millisecond),
+		WithEnforcementMode(pip.EMObserve),
+	)
+
+	err = mgr.RefreshNow(context.Background())
+	require.NoError(t, err)
+
+	require.Eventually(t, func() bool {
+		return mgr.IsStale()
+	}, 2*time.Second, 10*time.Millisecond, "bundle should become stale")
+
+	resp, err := mgr.Evaluate(context.Background(), newTestRequest())
+	require.NoError(t, err)
+	assert.Equal(t, pip.DecisionAllow, resp.Decision, "EM-OBSERVE must allow even with stale bundle")
+}
+
+func TestBundleManager_Evaluate_StaleBundle_Guard(t *testing.T) {
+	bundle := newTestBundle("rev-1")
+	srv := newTestBundleServer(t, &bundle)
+	defer srv.Close()
+
+	client, err := NewBundleClient(srv.URL+"/v1/bundles/ws1", "key")
+	require.NoError(t, err)
+
+	evaluator := NewOPALocalClient()
+	mgr := NewBundleManager(client, evaluator,
+		WithMaxAge(50*time.Millisecond),
+		WithEnforcementMode(pip.EMGuard),
+	)
+
+	err = mgr.RefreshNow(context.Background())
+	require.NoError(t, err)
+
+	require.Eventually(t, func() bool {
+		return mgr.IsStale()
+	}, 2*time.Second, 10*time.Millisecond, "bundle should become stale")
+
+	resp, err := mgr.Evaluate(context.Background(), newTestRequest())
+	require.NoError(t, err)
+	assert.Equal(t, pip.DecisionAllow, resp.Decision, "EM-GUARD must allow with stale bundle")
+}
+
+func TestBundleManager_Evaluate_NoBundleReturnsError(t *testing.T) {
+	client, err := NewBundleClient("http://unused/v1/bundles/ws1", "key")
+	require.NoError(t, err)
+
+	mgr := NewBundleManager(client, NewOPALocalClient())
+
+	_, err = mgr.Evaluate(context.Background(), newTestRequest())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "no policy bundle loaded")
+}
+
+func TestBundleManager_ImplementsPDPClient(t *testing.T) {
+	var _ pip.PDPClient = (*BundleManager)(nil)
+}
