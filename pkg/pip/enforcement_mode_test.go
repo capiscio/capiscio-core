@@ -35,8 +35,10 @@ func TestParseEnforcementMode(t *testing.T) {
 		{"EM-GUARD", EMGuard, false},
 		{"EM-DELEGATE", EMDelegate, false},
 		{"EM-STRICT", EMStrict, false},
-		{"em-observe", EMObserve, true}, // case-sensitive
-		{"OBSERVE", EMObserve, true},
+		{"em-observe", EMObserve, false}, // case-insensitive
+		{"OBSERVE", EMObserve, false},    // short form without EM- prefix
+		{"guard", EMGuard, false},        // lowercase short form
+		{"Strict", EMStrict, false},      // mixed case short form
 		{"", EMObserve, true},
 		{"EM-INVALID", EMObserve, true},
 	}
