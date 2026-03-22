@@ -103,7 +103,7 @@ denied_dids:
 `
 	_, err := Parse([]byte(yaml))
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), `appears in both allowed_dids and denied_dids`)
+	assert.Contains(t, err.Error(), "conflicts with allowed_dids")
 }
 
 func TestParse_InvalidRateLimit(t *testing.T) {
@@ -253,4 +253,38 @@ func TestValidate_MCPToolDIDValidation(t *testing.T) {
 	err := Validate(cfg)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "mcp_tools[0].denied_dids")
+}
+
+func TestValidate_OperationDIDConflict(t *testing.T) {
+	cfg := &Config{
+		Version: "1",
+		Operations: []OperationRule{
+			{
+				Pattern:    "agent.invoke",
+				AllowedDIDs: []string{"did:web:a.example.com"},
+				DeniedDIDs:  []string{"did:web:a.example.com"},
+			},
+		},
+	}
+	err := Validate(cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "operations[0].denied_dids")
+	assert.Contains(t, err.Error(), "conflicts with allowed")
+}
+
+func TestValidate_MCPToolDIDConflict(t *testing.T) {
+	cfg := &Config{
+		Version: "1",
+		MCPTools: []MCPToolRule{
+			{
+				Tool:       "my_tool",
+				AllowedDIDs: []string{"did:web:a.example.com"},
+				DeniedDIDs:  []string{"did:web:a.example.com"},
+			},
+		},
+	}
+	err := Validate(cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "mcp_tools[0].denied_dids")
+	assert.Contains(t, err.Error(), "conflicts with allowed")
 }

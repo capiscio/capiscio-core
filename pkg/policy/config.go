@@ -81,7 +81,7 @@ func validateDIDList(name string, dids []string, crossCheck map[string]bool) (se
 		}
 		seen[did] = true
 		if crossCheck != nil && crossCheck[did] {
-			errs = append(errs, fmt.Sprintf("DID %q appears in both allowed_dids and denied_dids", did))
+			errs = append(errs, fmt.Sprintf("%s: DID %q conflicts with allowed_dids", name, did))
 		}
 	}
 	return
@@ -132,9 +132,9 @@ func Validate(cfg *Config) error {
 		if !validTrustLevels[op.MinTrustLevel] {
 			errs = append(errs, fmt.Sprintf("operations[%d]: invalid min_trust_level %q", i, op.MinTrustLevel))
 		}
-		_, opDIDErrs := validateDIDList(fmt.Sprintf("operations[%d].allowed_dids", i), op.AllowedDIDs, nil)
+		opAllowedSeen, opDIDErrs := validateDIDList(fmt.Sprintf("operations[%d].allowed_dids", i), op.AllowedDIDs, nil)
 		errs = append(errs, opDIDErrs...)
-		_, opDeniedErrs := validateDIDList(fmt.Sprintf("operations[%d].denied_dids", i), op.DeniedDIDs, nil)
+		_, opDeniedErrs := validateDIDList(fmt.Sprintf("operations[%d].denied_dids", i), op.DeniedDIDs, opAllowedSeen)
 		errs = append(errs, opDeniedErrs...)
 	}
 
@@ -146,9 +146,9 @@ func Validate(cfg *Config) error {
 		if !validTrustLevels[tool.MinTrustLevel] {
 			errs = append(errs, fmt.Sprintf("mcp_tools[%d]: invalid min_trust_level %q", i, tool.MinTrustLevel))
 		}
-		_, toolDIDErrs := validateDIDList(fmt.Sprintf("mcp_tools[%d].allowed_dids", i), tool.AllowedDIDs, nil)
+		toolAllowedSeen, toolDIDErrs := validateDIDList(fmt.Sprintf("mcp_tools[%d].allowed_dids", i), tool.AllowedDIDs, nil)
 		errs = append(errs, toolDIDErrs...)
-		_, toolDeniedErrs := validateDIDList(fmt.Sprintf("mcp_tools[%d].denied_dids", i), tool.DeniedDIDs, nil)
+		_, toolDeniedErrs := validateDIDList(fmt.Sprintf("mcp_tools[%d].denied_dids", i), tool.DeniedDIDs, toolAllowedSeen)
 		errs = append(errs, toolDeniedErrs...)
 	}
 
