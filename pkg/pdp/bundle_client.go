@@ -1,3 +1,5 @@
+// Package pdp implements the Policy Decision Point for local policy evaluation.
+// It provides bundle fetching, OPA-based evaluation, and background refresh management.
 package pdp
 
 import (
