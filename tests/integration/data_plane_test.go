@@ -81,10 +81,10 @@ func TestDataPlane_OPALocalClientEvaluatesBundle(t *testing.T) {
 
 	// Evaluate a basic request — the starter policy should produce a decision
 	req := &pip.DecisionRequest{
-		PIPVersion: "1.0",
+		PIPVersion: pip.PIPVersion,
 		Subject: pip.SubjectAttributes{
 			DID:        "did:web:example.agent",
-			TrustLevel: 1,
+			TrustLevel: "1",
 		},
 		Action: pip.ActionAttributes{
 			Operation: "message/send",
@@ -93,7 +93,7 @@ func TestDataPlane_OPALocalClientEvaluatesBundle(t *testing.T) {
 			Identifier: "test-resource",
 		},
 		Context: pip.ContextAttributes{
-			EnforcementMode: pip.EMObserve,
+			EnforcementMode: pip.EMObserve.String(),
 		},
 	}
 
@@ -124,10 +124,10 @@ func TestDataPlane_NewLocalPDPFullStack(t *testing.T) {
 
 	// Evaluate
 	req := &pip.DecisionRequest{
-		PIPVersion: "1.0",
+		PIPVersion: pip.PIPVersion,
 		Subject: pip.SubjectAttributes{
 			DID:        "did:web:test-agent.example.com",
-			TrustLevel: 2,
+			TrustLevel: "2",
 		},
 		Action: pip.ActionAttributes{
 			Operation: "message/send",
@@ -136,7 +136,7 @@ func TestDataPlane_NewLocalPDPFullStack(t *testing.T) {
 			Identifier: "e2e-test",
 		},
 		Context: pip.ContextAttributes{
-			EnforcementMode: pip.EMObserve,
+			EnforcementMode: pip.EMObserve.String(),
 		},
 	}
 
