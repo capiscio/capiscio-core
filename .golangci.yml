@@ -23,6 +23,10 @@ linters:
       - common-false-positives
       - legacy
       - std-error-handling
+    rules:
+      - linters:
+          - staticcheck
+        text: "QF1003"
     paths:
       - examples
       - third_party
