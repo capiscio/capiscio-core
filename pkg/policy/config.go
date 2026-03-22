@@ -68,6 +68,25 @@ func Parse(data []byte) (*Config, error) {
 	return &cfg, nil
 }
 
+// validateDIDList validates a list of DIDs for format and uniqueness.
+// If crossCheck is non-nil, it also checks for DIDs appearing in both lists.
+func validateDIDList(name string, dids []string, crossCheck map[string]bool) (seen map[string]bool, errs []string) {
+	seen = make(map[string]bool)
+	for _, did := range dids {
+		if !strings.HasPrefix(did, "did:") {
+			errs = append(errs, fmt.Sprintf("%s: invalid DID format %q", name, did))
+		}
+		if seen[did] {
+			errs = append(errs, fmt.Sprintf("%s: duplicate DID %q", name, did))
+		}
+		seen[did] = true
+		if crossCheck != nil && crossCheck[did] {
+			errs = append(errs, fmt.Sprintf("DID %q appears in both allowed_dids and denied_dids", did))
+		}
+	}
+	return
+}
+
 // Validate checks a parsed Config for semantic correctness.
 func Validate(cfg *Config) error {
 	var errs []string
@@ -80,32 +99,11 @@ func Validate(cfg *Config) error {
 		errs = append(errs, fmt.Sprintf("invalid min_trust_level %q", cfg.MinTrustLevel))
 	}
 
-	// Validate allowed DIDs
-	seen := make(map[string]bool)
-	for _, did := range cfg.AllowedDIDs {
-		if !strings.HasPrefix(did, "did:") {
-			errs = append(errs, fmt.Sprintf("allowed_dids: invalid DID format %q", did))
-		}
-		if seen[did] {
-			errs = append(errs, fmt.Sprintf("allowed_dids: duplicate DID %q", did))
-		}
-		seen[did] = true
-	}
+	allowedSeen, didErrs := validateDIDList("allowed_dids", cfg.AllowedDIDs, nil)
+	errs = append(errs, didErrs...)
 
-	// Validate denied DIDs
-	deniedSeen := make(map[string]bool)
-	for _, did := range cfg.DeniedDIDs {
-		if !strings.HasPrefix(did, "did:") {
-			errs = append(errs, fmt.Sprintf("denied_dids: invalid DID format %q", did))
-		}
-		if deniedSeen[did] {
-			errs = append(errs, fmt.Sprintf("denied_dids: duplicate DID %q", did))
-		}
-		deniedSeen[did] = true
-		if seen[did] {
-			errs = append(errs, fmt.Sprintf("DID %q appears in both allowed_dids and denied_dids", did))
-		}
-	}
+	_, didErrs = validateDIDList("denied_dids", cfg.DeniedDIDs, allowedSeen)
+	errs = append(errs, didErrs...)
 
 	// Validate rate limits
 	for i, rl := range cfg.RateLimits {
