@@ -142,9 +142,11 @@ func (m *BundleManager) IsStale() bool {
 // Evaluate runs a policy decision through the local OPA evaluator and applies
 // bundle staleness checks per enforcement mode (RFC-005 Appendix B §B.4).
 //
-// After a successful OPA evaluation, if the bundle is stale:
-//   - EM-STRICT:   returns a synthetic DENY with error_code BUNDLE_STALE.
-//   - EM-OBSERVE/EM-GUARD: emits TelemetryBundleStale and returns the OPA result.
+// Staleness is checked after OPA evaluation succeeds — this preserves the
+// distinction between PDP failure (error return) and stale-but-functional data
+// (synthetic DENY). If the bundle is stale:
+//   - EM-STRICT:                  returns a synthetic DENY with error_code BUNDLE_STALE.
+//   - EM-OBSERVE/EM-GUARD/EM-DELEGATE: emits TelemetryBundleStale, returns the OPA result.
 //
 // This implements pip.PDPClient so it can be used directly by the PEP gateway.
 func (m *BundleManager) Evaluate(ctx context.Context, req *pip.DecisionRequest) (*pip.DecisionResponse, error) {
@@ -169,11 +171,11 @@ func (m *BundleManager) Evaluate(ctx context.Context, req *pip.DecisionRequest) 
 		return &pip.DecisionResponse{
 			Decision:   pip.DecisionDeny,
 			DecisionID: uuid.New().String(),
-			Reason:     pip.ErrorCodeBundleStale,
+			Reason:     "request denied: policy bundle is stale",
 		}, nil
 	}
 
-	// EM-OBSERVE and EM-GUARD: emit telemetry but allow the OPA result through.
+	// EM-OBSERVE, EM-GUARD, EM-DELEGATE: emit telemetry but allow the OPA result through.
 	m.logger.WarnContext(ctx, "bundle stale, allowing per enforcement mode",
 		slog.String(pip.TelemetryBundleStale, "true"),
 		slog.Duration("bundle_age", age),

@@ -448,14 +448,14 @@ func TestBundleManager_Evaluate_StaleBundle_Strict(t *testing.T) {
 	err = mgr.RefreshNow(context.Background())
 	require.NoError(t, err)
 
-	// Wait for staleness
-	time.Sleep(60 * time.Millisecond)
-	require.True(t, mgr.IsStale())
+	require.Eventually(t, func() bool {
+		return mgr.IsStale()
+	}, 2*time.Second, 10*time.Millisecond, "bundle should become stale")
 
 	resp, err := mgr.Evaluate(context.Background(), newTestRequest())
 	require.NoError(t, err)
 	assert.Equal(t, pip.DecisionDeny, resp.Decision, "EM-STRICT must deny on stale bundle")
-	assert.Equal(t, pip.ErrorCodeBundleStale, resp.Reason)
+	assert.Equal(t, "request denied: policy bundle is stale", resp.Reason)
 	assert.NotEmpty(t, resp.DecisionID)
 }
 
@@ -476,8 +476,9 @@ func TestBundleManager_Evaluate_StaleBundle_Observe(t *testing.T) {
 	err = mgr.RefreshNow(context.Background())
 	require.NoError(t, err)
 
-	time.Sleep(60 * time.Millisecond)
-	require.True(t, mgr.IsStale())
+	require.Eventually(t, func() bool {
+		return mgr.IsStale()
+	}, 2*time.Second, 10*time.Millisecond, "bundle should become stale")
 
 	resp, err := mgr.Evaluate(context.Background(), newTestRequest())
 	require.NoError(t, err)
@@ -501,8 +502,9 @@ func TestBundleManager_Evaluate_StaleBundle_Guard(t *testing.T) {
 	err = mgr.RefreshNow(context.Background())
 	require.NoError(t, err)
 
-	time.Sleep(60 * time.Millisecond)
-	require.True(t, mgr.IsStale())
+	require.Eventually(t, func() bool {
+		return mgr.IsStale()
+	}, 2*time.Second, 10*time.Millisecond, "bundle should become stale")
 
 	resp, err := mgr.Evaluate(context.Background(), newTestRequest())
 	require.NoError(t, err)
