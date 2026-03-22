@@ -160,6 +160,9 @@ func Validate(cfg *Config) error {
 
 // ToMap converts a Config to the map format used in OPA data documents.
 func ToMap(cfg *Config) map[string]interface{} {
+	if cfg == nil {
+		return nil
+	}
 	result := map[string]interface{}{
 		"min_trust_level": cfg.MinTrustLevel,
 	}

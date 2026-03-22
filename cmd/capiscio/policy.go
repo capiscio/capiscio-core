@@ -40,6 +40,7 @@ DID formats, rate limits, operation patterns, and MCP tool rules.`,
 
   # Validate and print parsed config (JSON)
   capiscio policy validate -f policy.yaml --json`,
+	Args: cobra.NoArgs,
 	RunE: runPolicyValidate,
 }
 
@@ -60,6 +61,7 @@ It can be provided via CAPISCIO_API_KEY environment variable or --api-key flag.`
 
   # Custom registry
   capiscio policy context --registry https://my-registry.example.com`,
+	Args: cobra.NoArgs,
 	RunE: runPolicyContext,
 }
 
