@@ -37,11 +37,7 @@ type OPALocalOption func(*OPALocalClient)
 
 // WithOPALogger sets the logger for the OPA evaluator.
 func WithOPALogger(l *slog.Logger) OPALocalOption {
-	return func(c *OPALocalClient) {
-		if l != nil {
-			c.logger = l
-		}
-	}
+	return func(c *OPALocalClient) { c.logger = l }
 }
 
 // NewOPALocalClient creates a new local OPA evaluator.
@@ -143,6 +139,16 @@ func (c *OPALocalClient) HasBundle() bool {
 	return c.preparedQuery != nil
 }
 
+// ClearBundle unloads the current policy bundle, causing all subsequent
+// Evaluate calls to return an error. Used by BundleManager under EM-STRICT
+// when the bundle becomes stale.
+func (c *OPALocalClient) ClearBundle() {
+	c.mu.Lock()
+	c.preparedQuery = nil
+	c.bundleLoadedAt = time.Time{}
+	c.mu.Unlock()
+}
+
 // buildOPAInput maps a PIP DecisionRequest to the OPA input document.
 // The structure matches RFC-005 Appendix B.2.
 func buildOPAInput(req *pip.DecisionRequest) map[string]interface{} {
@@ -227,9 +233,6 @@ func mapOPAResult(results rego.ResultSet) (*pip.DecisionResponse, error) {
 	var obligations []pip.Obligation
 	if oblSet, ok := policyResult["obligations"]; ok {
 		obligations = extractObligations(oblSet)
-	}
-	if obligations == nil {
-		obligations = []pip.Obligation{}
 	}
 
 	return &pip.DecisionResponse{
