@@ -11,8 +11,8 @@ import (
 	"time"
 )
 
-// BundleContents holds the compiled policy bundle from the capiscio-server.
-// This mirrors the server's bundle format to allow in-process OPA evaluation.
+// BundleContents holds the policy bundle fetched from the capiscio-server.
+// This mirrors the server's bundle format (Rego modules and data) for in-process OPA evaluation.
 type BundleContents struct {
 	Modules  map[string]string      `json:"modules"`            // filename → Rego source
 	Data     map[string]interface{} `json:"data"`               // OPA data document
@@ -90,19 +90,23 @@ func (bc *BundleClient) Fetch(ctx context.Context) (*BundleContents, error) {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode == http.StatusServiceUnavailable {
-		return nil, fmt.Errorf("pdp: bundle not yet available (503)")
-	}
-	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
-		return nil, fmt.Errorf("pdp: bundle authentication failed (%d) — check registry API key", resp.StatusCode)
-	}
 	if resp.StatusCode != http.StatusOK {
+		// Drain a limited amount of the body so the connection can be reused.
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+
+		if resp.StatusCode == http.StatusServiceUnavailable {
+			return nil, fmt.Errorf("pdp: bundle not yet available (503)")
+		}
+		if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+			return nil, fmt.Errorf("pdp: bundle authentication failed (%d) — check registry API key", resp.StatusCode)
+		}
 		return nil, fmt.Errorf("pdp: bundle fetch returned %d: %s", resp.StatusCode, string(body))
 	}
 
+	// Limit response body to 10MB to prevent memory exhaustion from a misbehaving server.
+	const maxBundleSize = 10 << 20
 	var bundle BundleContents
-	if err := json.NewDecoder(resp.Body).Decode(&bundle); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxBundleSize)).Decode(&bundle); err != nil {
 		return nil, fmt.Errorf("pdp: decode bundle response: %w", err)
 	}
 
