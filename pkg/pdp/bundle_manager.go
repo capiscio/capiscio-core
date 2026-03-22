@@ -146,9 +146,12 @@ func (m *BundleManager) RefreshNow(ctx context.Context) error {
 
 // pollLoop is the background polling goroutine.
 func (m *BundleManager) pollLoop(ctx context.Context) {
-	// Attempt initial fetch immediately.
-	if err := m.fetchAndLoad(ctx); err != nil {
-		m.logFetchFailure(err)
+	// Only do initial fetch if no bundle is loaded yet (avoids double-fetch
+	// when caller already called RefreshNow before Start).
+	if !m.evaluator.HasBundle() {
+		if err := m.fetchAndLoad(ctx); err != nil {
+			m.logFetchFailure(err)
+		}
 	}
 
 	for {
