@@ -30,13 +30,23 @@ type BundleClient struct {
 type BundleClientOption func(*BundleClient)
 
 // WithBundleHTTPClient sets a custom HTTP client for the bundle client.
+// A nil value is ignored.
 func WithBundleHTTPClient(c *http.Client) BundleClientOption {
-	return func(bc *BundleClient) { bc.client = c }
+	return func(bc *BundleClient) {
+		if c != nil {
+			bc.client = c
+		}
+	}
 }
 
 // WithBundleLogger sets the logger for the bundle client.
+// A nil value is ignored.
 func WithBundleLogger(l *slog.Logger) BundleClientOption {
-	return func(bc *BundleClient) { bc.logger = l }
+	return func(bc *BundleClient) {
+		if l != nil {
+			bc.logger = l
+		}
+	}
 }
 
 // NewBundleClient creates a new bundle pull client.
