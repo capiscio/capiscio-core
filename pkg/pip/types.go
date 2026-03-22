@@ -37,6 +37,7 @@ type SubjectAttributes struct {
 type ActionAttributes struct {
 	CapabilityClass *string `json:"capability_class"` // null in badge-only mode
 	Operation       string  `json:"operation"`        // tool name, HTTP method+route, etc.
+	MCPTool         *string `json:"mcp_tool"`         // MCP tool name for tool-scoped policy rules
 }
 
 // ResourceAttributes identify the target.

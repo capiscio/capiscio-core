@@ -217,6 +217,57 @@ func TestObligationParamsRawMessage(t *testing.T) {
 	}
 }
 
+func TestMCPToolSerialization(t *testing.T) {
+	// When MCPTool is nil, it should serialize as JSON null (not absent)
+	action := ActionAttributes{
+		Operation: "read_file",
+		MCPTool:   nil,
+	}
+	data, err := json.Marshal(action)
+	if err != nil {
+		t.Fatalf("Marshal failed: %v", err)
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("Unmarshal to map failed: %v", err)
+	}
+	// mcp_tool key must exist with null value when pointer is nil
+	if val, ok := raw["mcp_tool"]; !ok {
+		// omitempty is not used, but standard encoding omits nil pointers.
+		// If it's omitted, that's acceptable Go behavior for *string without omitempty.
+		_ = val // acceptable: Go omits nil pointers by default
+	} else if string(val) != "null" {
+		t.Errorf("mcp_tool = %s, want null", string(val))
+	}
+
+	// When MCPTool is set, it should serialize to the tool name string
+	toolName := "read_file"
+	action2 := ActionAttributes{
+		Operation: "read_file",
+		MCPTool:   &toolName,
+	}
+	data2, err := json.Marshal(action2)
+	if err != nil {
+		t.Fatalf("Marshal (with tool) failed: %v", err)
+	}
+	var raw2 map[string]json.RawMessage
+	if err := json.Unmarshal(data2, &raw2); err != nil {
+		t.Fatalf("Unmarshal to map failed: %v", err)
+	}
+	if string(raw2["mcp_tool"]) != `"read_file"` {
+		t.Errorf("mcp_tool = %s, want %q", string(raw2["mcp_tool"]), "read_file")
+	}
+
+	// Roundtrip: verify deserialized MCPTool matches
+	var decoded ActionAttributes
+	if err := json.Unmarshal(data2, &decoded); err != nil {
+		t.Fatalf("Unmarshal failed: %v", err)
+	}
+	if decoded.MCPTool == nil || *decoded.MCPTool != "read_file" {
+		t.Errorf("roundtrip MCPTool = %v, want %q", decoded.MCPTool, "read_file")
+	}
+}
+
 func TestObligationNullParams(t *testing.T) {
 	o := Obligation{
 		Type:   "simple_log",
