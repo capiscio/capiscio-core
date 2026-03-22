@@ -42,6 +42,7 @@ type BundleManager struct {
 
 	mu              sync.RWMutex
 	lastRevision    string
+	lastFetchAt     time.Time // tracks last successful fetch (even if revision unchanged)
 	consecutiveFails int
 	running         bool
 
@@ -111,9 +112,9 @@ func (m *BundleManager) Start(ctx context.Context) {
 		return
 	}
 	m.running = true
+	ctx, m.cancel = context.WithCancel(ctx)
 	m.mu.Unlock()
 
-	ctx, m.cancel = context.WithCancel(ctx)
 	go m.pollLoop(ctx)
 }
 
@@ -129,13 +130,23 @@ func (m *BundleManager) Stop() {
 }
 
 // IsStale reports whether the current bundle has exceeded the max age threshold.
+// Uses the last successful fetch time (including revision-unchanged fetches)
+// rather than just the last bundle load time.
 // Returns true if no bundle is loaded.
 func (m *BundleManager) IsStale() bool {
-	age := m.evaluator.BundleAge()
-	if age == 0 {
-		return true // no bundle loaded
+	m.mu.RLock()
+	lastFetch := m.lastFetchAt
+	m.mu.RUnlock()
+
+	if lastFetch.IsZero() {
+		// No successful fetch yet; check if evaluator has a pre-loaded bundle
+		age := m.evaluator.BundleAge()
+		if age == 0 {
+			return true // no bundle loaded
+		}
+		return age > m.maxAge
 	}
-	return age > m.maxAge
+	return time.Since(lastFetch) > m.maxAge
 }
 
 // RefreshNow triggers an immediate bundle fetch and load, outside the polling loop.
@@ -173,13 +184,18 @@ func (m *BundleManager) fetchAndLoad(ctx context.Context) error {
 		fails := m.consecutiveFails
 		m.mu.Unlock()
 
-		// Under EM-STRICT with stale bundle, discard the prepared query
+		// Under EM-STRICT with stale bundle, clear the evaluator to deny all requests
 		if m.mode >= pip.EMStrict && m.IsStale() {
 			m.logger.Warn("discarding stale bundle under EM-STRICT",
 				slog.Duration("age", m.evaluator.BundleAge()),
 				slog.Duration("max_age", m.maxAge),
 				slog.Int("consecutive_failures", fails),
 			)
+			// Unload the stale bundle so evaluator returns "no bundle loaded" errors
+			m.evaluator.ClearBundle()
+			m.mu.Lock()
+			m.lastRevision = ""
+			m.mu.Unlock()
 		}
 
 		return err
@@ -192,6 +208,7 @@ func (m *BundleManager) fetchAndLoad(ctx context.Context) error {
 	if sameRevision {
 		m.mu.Lock()
 		m.consecutiveFails = 0
+		m.lastFetchAt = time.Now()
 		m.mu.Unlock()
 		return nil
 	}
@@ -206,6 +223,7 @@ func (m *BundleManager) fetchAndLoad(ctx context.Context) error {
 	m.mu.Lock()
 	m.lastRevision = bundle.Revision
 	m.consecutiveFails = 0
+	m.lastFetchAt = time.Now()
 	m.mu.Unlock()
 
 	m.logger.Info("bundle refreshed",
