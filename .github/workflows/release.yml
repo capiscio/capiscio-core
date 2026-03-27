@@ -34,6 +34,9 @@ jobs:
       - name: Build Windows
         run: GOOS=windows GOARCH=amd64 go build -o capiscio-windows-amd64.exe ./cmd/capiscio
 
+      - name: Generate checksums
+        run: sha256sum capiscio-linux-amd64 capiscio-darwin-amd64 capiscio-darwin-arm64 capiscio-windows-amd64.exe > checksums.txt
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -43,6 +46,7 @@ jobs:
             capiscio-darwin-amd64
             capiscio-darwin-arm64
             capiscio-windows-amd64.exe
+            checksums.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
