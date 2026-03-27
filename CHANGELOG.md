@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-03-27
+
+### Added
+- **Embedded PDP**: Full OPA-based Policy Decision Point with background bundle refresh (#47–#51)
+  - `BundleClient` for policy bundle fetching from registry
+  - `OPALocalClient` for embedded Rego evaluation
+  - `BundleManager` for background policy refresh with staleness detection
+  - Config surfacing and `NewLocalPDP` helpers
+  - Data plane integration tests
+- **Policy Validator**: Shared YAML policy config validator and CLI commands (#46)
+- **PIP Enhancements**: `MCPTool` field in `ActionAttributes`, bundle staleness telemetry constants (#44, #45)
+- **gRPC Policy Endpoint**: `EvaluatePolicyDecision` gRPC endpoint for RFC-005 Option B (#43)
+
+### Fixed
+- **HTTPS Issuer Support**: Verifier now handles HTTPS origin URL issuers natively per RFC-002 §4.3.1 (#53)
+- **JWKS Registry**: `CloudRegistry` supports JWKS array format and single JWK fallback with 1MB response cap (#53)
+- **EM-STRICT Mode**: PDP stale-deny enforcement with `pip_version` in OPA input (#52)
+
 ## [2.5.0] - 2026-03-16
 
 ### Added
