@@ -4,6 +4,8 @@ package rpc
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/url"
 	"os"
 	"time"
 
@@ -67,8 +69,16 @@ func NewMCPService() *MCPService {
 func NewMCPServiceWithConfig(cfg MCPServiceConfig) (*MCPService, error) {
 	deps := &mcp.Dependencies{}
 
-	// Initialize badge verifier if trust store key is provided
-	if cfg.TrustStoreKeyPath != "" {
+	// Initialize badge verifier
+	// Priority: registry endpoint (online) > local trust store key (offline)
+	if cfg.RegistryEndpoint != "" {
+		jwksURL, err := url.JoinPath(cfg.RegistryEndpoint, ".well-known/jwks.json")
+		if err != nil {
+			return nil, fmt.Errorf("invalid registry endpoint URL: %w", err)
+		}
+		reg := registry.NewCloudRegistry(jwksURL)
+		deps.BadgeVerifier = badge.NewVerifier(reg)
+	} else if cfg.TrustStoreKeyPath != "" {
 		reg := registry.NewLocalRegistry(cfg.TrustStoreKeyPath)
 		deps.BadgeVerifier = badge.NewVerifier(reg)
 	}

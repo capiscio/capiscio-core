@@ -730,3 +730,47 @@ func TestStalenessFailClosed(t *testing.T) {
 		mockReg.SetRevocationError(nil)
 	})
 }
+
+func TestBadgeVerifyHTTPSIssuer(t *testing.T) {
+	// RFC-002 §4.3.1: registry-issued badges (levels 1-4) use HTTPS origin URLs
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	issuer := "https://test-registry.capisc.io"
+	reg := &MockRegistry{
+		Keys: map[string]crypto.PublicKey{
+			issuer: pub,
+		},
+		AgentStatuses: map[string]string{},
+		RevokedBadges: map[string]bool{},
+	}
+	verifier := badge.NewVerifier(reg)
+
+	now := time.Now()
+	claims := &badge.Claims{
+		JTI:      "https-issuer-test",
+		Issuer:   issuer,
+		Subject:  "did:web:test-registry.capisc.io:agents:test",
+		IssuedAt: now.Unix(),
+		Expiry:   now.Add(1 * time.Hour).Unix(),
+		VC: badge.VerifiableCredential{
+			Type: []string{"VerifiableCredential", "AgentIdentity"},
+			CredentialSubject: badge.CredentialSubject{
+				Domain: "test.example.com",
+				Level:  "1",
+			},
+		},
+	}
+
+	token, err := badge.SignBadge(claims, priv)
+	require.NoError(t, err)
+
+	result, err := verifier.VerifyWithOptions(context.Background(), token, badge.VerifyOptions{
+		TrustedIssuers:       []string{issuer},
+		SkipRevocationCheck:  true,
+		SkipAgentStatusCheck: true,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, issuer, result.Claims.Issuer)
+	assert.Equal(t, "1", result.Claims.TrustLevel())
+}
