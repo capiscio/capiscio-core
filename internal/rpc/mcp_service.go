@@ -67,8 +67,13 @@ func NewMCPService() *MCPService {
 func NewMCPServiceWithConfig(cfg MCPServiceConfig) (*MCPService, error) {
 	deps := &mcp.Dependencies{}
 
-	// Initialize badge verifier if trust store key is provided
-	if cfg.TrustStoreKeyPath != "" {
+	// Initialize badge verifier
+	// Priority: registry endpoint (online) > local trust store key (offline)
+	if cfg.RegistryEndpoint != "" {
+		jwksURL := cfg.RegistryEndpoint + "/.well-known/jwks.json"
+		reg := registry.NewCloudRegistry(jwksURL)
+		deps.BadgeVerifier = badge.NewVerifier(reg)
+	} else if cfg.TrustStoreKeyPath != "" {
 		reg := registry.NewLocalRegistry(cfg.TrustStoreKeyPath)
 		deps.BadgeVerifier = badge.NewVerifier(reg)
 	}

@@ -6,6 +6,7 @@ import (
 	"crypto"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"sync"
@@ -34,8 +35,8 @@ func NewCloudRegistry(url string) *CloudRegistry {
 	}
 }
 
-// GetPublicKey fetches the key from the Registry URL.
-// It assumes the URL returns a single JWK for now (MVP).
+// GetPublicKey fetches the CA public key from the registry's JWKS endpoint.
+// It resolves the JWKS URL from the issuer or falls back to RegistryURL.
 func (r *CloudRegistry) GetPublicKey(ctx context.Context, issuer string) (crypto.PublicKey, error) {
 	// Check cache
 	r.mu.RLock()
@@ -47,8 +48,17 @@ func (r *CloudRegistry) GetPublicKey(ctx context.Context, issuer string) (crypto
 		return key, nil
 	}
 
+	// Determine JWKS URL: try issuer's .well-known endpoint, fall back to RegistryURL
+	jwksURL := r.RegistryURL
+	if issuer != "" {
+		parsed, err := url.Parse(issuer)
+		if err == nil && parsed.Host != "" {
+			jwksURL = fmt.Sprintf("%s://%s/.well-known/jwks.json", parsed.Scheme, parsed.Host)
+		}
+	}
+
 	// Fetch
-	req, err := http.NewRequestWithContext(ctx, "GET", r.RegistryURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", jwksURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -63,10 +73,23 @@ func (r *CloudRegistry) GetPublicKey(ctx context.Context, issuer string) (crypto
 		return nil, fmt.Errorf("registry returned status %d", resp.StatusCode)
 	}
 
-	// Parse JWK
+	// Try parsing as JWKS first, then fall back to single JWK
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
 	var jwk jose.JSONWebKey
-	if err := json.NewDecoder(resp.Body).Decode(&jwk); err != nil {
-		return nil, fmt.Errorf("failed to decode JWK: %w", err)
+
+	// Try JWKS format: {"keys":[...]}
+	var jwks jose.JSONWebKeySet
+	if err := json.Unmarshal(body, &jwks); err == nil && len(jwks.Keys) > 0 {
+		jwk = jwks.Keys[0]
+	} else {
+		// Fall back to single JWK format
+		if err := json.Unmarshal(body, &jwk); err != nil {
+			return nil, fmt.Errorf("failed to decode JWK(S) response: %w", err)
+		}
 	}
 
 	r.mu.Lock()

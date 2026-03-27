@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/capiscio/capiscio-core/v2/pkg/did"
@@ -49,10 +50,11 @@ type VerifyOptions struct {
 	// Mode determines online/offline verification behavior.
 	Mode VerifyMode
 
-	// TrustedIssuers is a list of allowed issuer DIDs (did:web or did:key).
+	// TrustedIssuers is a list of allowed badge issuers.
+	// For registry-issued badges (levels 1-4): HTTPS origin URLs per RFC-002 §4.3.1
+	// (e.g., "https://registry.capisc.io"). Also accepts did:web for future use.
+	// For Level 0 self-signed badges: did:key identifiers.
 	// If empty, all issuers are accepted (not recommended for production).
-	// For Level 0 self-signed badges, the did:key issuer must be in this list
-	// or AcceptSelfSigned must be true.
 	TrustedIssuers []string
 
 	// AcceptSelfSigned allows Level 0 self-signed badges (did:key issuer).
@@ -200,6 +202,12 @@ func (v *Verifier) handlePostVerificationChecks(ctx context.Context, claims *Cla
 	return nil
 }
 
+// isHTTPSOrigin returns true if s is an HTTPS origin URL.
+// RFC-002 §4.3.1: registry-issued badges (levels 1-4) use HTTPS origin URLs as issuer.
+func isHTTPSOrigin(s string) bool {
+	return strings.HasPrefix(s, "https://")
+}
+
 // VerifyWithOptions performs badge verification with the specified options.
 // Implements RFC-002 §8.1 verification flow.
 //
@@ -227,12 +235,22 @@ func (v *Verifier) VerifyWithOptions(ctx context.Context, token string, opts Ver
 		return nil, err
 	}
 
-	// Step 4: Determine if self-signed (did:key issuer)
-	issuerDID, err := did.Parse(claims.Issuer)
-	if err != nil {
-		return nil, WrapError(ErrCodeClaimsInvalid, "invalid issuer DID", err)
+	// Step 4: Determine issuer type.
+	// RFC-002 §4.3.1: iss is did:key (self-signed level 0), HTTPS origin URL
+	// (registry-issued levels 1-4), or did:web (reserved for future).
+	var issuerDID *did.DID
+	var isSelfSigned bool
+
+	parsedDID, didErr := did.Parse(claims.Issuer)
+	if didErr == nil {
+		issuerDID = parsedDID
+		isSelfSigned = issuerDID.IsKeyDID()
+	} else if isHTTPSOrigin(claims.Issuer) {
+		// Registry-issued badge with HTTPS origin URL issuer
+		isSelfSigned = false
+	} else {
+		return nil, WrapError(ErrCodeClaimsInvalid, "invalid issuer: must be a DID or HTTPS origin URL", didErr)
 	}
-	isSelfSigned := issuerDID.IsKeyDID()
 
 	// Step 4a: For self-signed badges, validate Level 0 constraints
 	if isSelfSigned {
