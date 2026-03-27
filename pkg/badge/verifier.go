@@ -5,6 +5,7 @@ import (
 	"crypto"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -202,10 +203,20 @@ func (v *Verifier) handlePostVerificationChecks(ctx context.Context, claims *Cla
 	return nil
 }
 
-// isHTTPSOrigin returns true if s is an HTTPS origin URL.
+// isHTTPSOrigin returns true if s is a valid HTTPS origin URL.
 // RFC-002 §4.3.1: registry-issued badges (levels 1-4) use HTTPS origin URLs as issuer.
+// Validates: scheme is https, host is non-empty, no path/query/fragment.
 func isHTTPSOrigin(s string) bool {
-	return strings.HasPrefix(s, "https://")
+	if !strings.HasPrefix(s, "https://") {
+		return false
+	}
+	u, err := url.Parse(s)
+	if err != nil {
+		return false
+	}
+	return u.Scheme == "https" && u.Host != "" &&
+		(u.Path == "" || u.Path == "/") &&
+		u.RawQuery == "" && u.Fragment == "" && u.User == nil
 }
 
 // VerifyWithOptions performs badge verification with the specified options.

@@ -74,7 +74,7 @@ func (r *CloudRegistry) GetPublicKey(ctx context.Context, issuer string) (crypto
 	}
 
 	// Try parsing as JWKS first, then fall back to single JWK
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20)) // 1 MB limit
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
@@ -90,6 +90,10 @@ func (r *CloudRegistry) GetPublicKey(ctx context.Context, issuer string) (crypto
 		if err := json.Unmarshal(body, &jwk); err != nil {
 			return nil, fmt.Errorf("failed to decode JWK(S) response: %w", err)
 		}
+	}
+
+	if jwk.Key == nil {
+		return nil, fmt.Errorf("JWKS response from %s contained no usable keys", jwksURL)
 	}
 
 	r.mu.Lock()
