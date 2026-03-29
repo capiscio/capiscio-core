@@ -88,14 +88,16 @@ self-signed Trust Badges.`,
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(keyOutPublic, pubBytes, 0644); err != nil { // #nosec G306 -- public key material
+		// #nosec G306 -- public key material
+		if err := os.WriteFile(keyOutPublic, pubBytes, 0644); err != nil {
 			return fmt.Errorf("failed to write public key: %w", err)
 		}
 		fmt.Printf("✅ Public Key saved to %s\n", keyOutPublic)
 
 		// 6. Output did:key identifier
 		if keyOutDID != "" {
-			if err := os.WriteFile(keyOutDID, []byte(didKey+"\n"), 0644); err != nil { // #nosec G306 -- DID is public identifier
+			// #nosec G306 -- DID is public identifier
+			if err := os.WriteFile(keyOutDID, []byte(didKey+"\n"), 0644); err != nil {
 				return fmt.Errorf("failed to write did:key: %w", err)
 			}
 			fmt.Printf("✅ did:key saved to %s\n", keyOutDID)
