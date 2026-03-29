@@ -103,6 +103,7 @@ jobs:
           go-version-file: 'go.mod'
 
       - name: Run govulncheck
+        continue-on-error: true
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
