@@ -88,6 +88,7 @@ self-signed Trust Badges.`,
 		if err != nil {
 			return err
 		}
+		// #nosec G306 -- public key material
 		if err := os.WriteFile(keyOutPublic, pubBytes, 0644); err != nil {
 			return fmt.Errorf("failed to write public key: %w", err)
 		}
@@ -95,6 +96,7 @@ self-signed Trust Badges.`,
 
 		// 6. Output did:key identifier
 		if keyOutDID != "" {
+			// #nosec G306 -- DID is public identifier
 			if err := os.WriteFile(keyOutDID, []byte(didKey+"\n"), 0644); err != nil {
 				return fmt.Errorf("failed to write did:key: %w", err)
 			}

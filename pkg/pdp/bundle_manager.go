@@ -289,7 +289,8 @@ func (m *BundleManager) nextDelay() time.Duration {
 	}
 
 	// Add jitter: ±25% to prevent thundering herd
-	jitter := delay * 0.25 * (rand.Float64()*2 - 1) //nolint:gosec // jitter doesn't need crypto rand
+	// #nosec G404 -- jitter doesn't need crypto rand
+	jitter := delay * 0.25 * (rand.Float64()*2 - 1) //nolint:gosec
 	delay += jitter
 
 	return time.Duration(delay)

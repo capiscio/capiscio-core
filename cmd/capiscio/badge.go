@@ -909,7 +909,7 @@ Example:
 
 		// Write to file if requested
 		if requestOutFile != "" {
-			if err := os.WriteFile(requestOutFile, []byte(result.Token), 0644); err != nil {
+			if err := os.WriteFile(requestOutFile, []byte(result.Token), 0600); err != nil {
 				return fmt.Errorf("failed to write badge to file: %w", err)
 			}
 			fmt.Printf("\n📝 Badge saved to: %s\n", requestOutFile)

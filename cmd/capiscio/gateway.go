@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"time"
 
 	"github.com/capiscio/capiscio-core/v2/pkg/badge"
 	"github.com/capiscio/capiscio-core/v2/pkg/gateway"
@@ -56,8 +57,14 @@ var gatewayStartCmd = &cobra.Command{
 
 		// 5. Start Server
 		addr := fmt.Sprintf(":%d", gatewayPort)
+		srv := &http.Server{
+			Addr:              addr,
+			Handler:           handler,
+			ReadHeaderTimeout: 10 * time.Second,
+			IdleTimeout:       120 * time.Second,
+		}
 		log.Printf("Gateway listening on %s -> %s", addr, gatewayTarget)
-		return http.ListenAndServe(addr, handler)
+		return srv.ListenAndServe()
 	},
 }
 

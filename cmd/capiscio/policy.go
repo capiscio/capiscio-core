@@ -176,7 +176,7 @@ func runPolicyContext(_ *cobra.Command, _ []string) error {
 	}
 
 	if policyOutput != "" {
-		if err := os.WriteFile(policyOutput, append(output, '\n'), 0644); err != nil {
+		if err := os.WriteFile(policyOutput, append(output, '\n'), 0600); err != nil {
 			return fmt.Errorf("write output file: %w", err)
 		}
 		fmt.Printf("✅ Policy context written to %s\n", policyOutput)
