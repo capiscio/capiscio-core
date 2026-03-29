@@ -291,7 +291,7 @@ func (k *Keeper) renewSelfSign() (*RenewalResult, error) {
 
 	// Write to file
 	if k.config.OutputFile != "" {
-		if err := os.WriteFile(k.config.OutputFile, []byte(token), 0644); err != nil {
+		if err := os.WriteFile(k.config.OutputFile, []byte(token), 0600); err != nil {
 			return nil, fmt.Errorf("failed to write badge file: %w", err)
 		}
 	}

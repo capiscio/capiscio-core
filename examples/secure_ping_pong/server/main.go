@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/capiscio/capiscio-core/v2/pkg/simpleguard"
 )
@@ -73,7 +74,12 @@ func main() {
 
 	log.Println("🛡️  Secure Ping Pong Server running on :8080")
 	log.Println("   Waiting for signed requests...")
-	if err := http.ListenAndServe(":8080", mux); err != nil {
+	srv := &http.Server{
+		Addr:              ":8080",
+		Handler:           mux,
+		ReadHeaderTimeout: 10 * time.Second,
+	}
+	if err := srv.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
 }

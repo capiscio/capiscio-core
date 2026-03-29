@@ -549,7 +549,7 @@ func initGenerateAndSaveKeys(outputDir string) (*initKeyResult, error) {
 	}
 
 	pubKeyPath := filepath.Join(outputDir, "public.jwk")
-	if err := os.WriteFile(pubKeyPath, pubJWKBytes, 0644); err != nil {
+	if err := os.WriteFile(pubKeyPath, pubJWKBytes, 0644); err != nil { // #nosec G306 -- public key material is intended to be readable
 		return nil, fmt.Errorf("failed to write public key: %v", err)
 	}
 
@@ -616,7 +616,7 @@ func (s *SimpleGuardService) Init(_ context.Context, req *pb.InitRequest) (*pb.I
 	}
 
 	agentCardPath := filepath.Join(outputDir, "agent-card.json")
-	if err := os.WriteFile(agentCardPath, agentCardBytes, 0644); err != nil {
+	if err := os.WriteFile(agentCardPath, agentCardBytes, 0644); err != nil { // #nosec G306 -- agent cards are public-facing metadata
 		return &pb.InitResponse{ErrorMessage: fmt.Sprintf("failed to write agent card: %v", err)}, nil
 	}
 

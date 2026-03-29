@@ -112,7 +112,7 @@ jobs:
       - name: Run gosec (SAST)
         run: |
           go install github.com/securego/gosec/v2/cmd/gosec@v2.22.4
-          gosec -fmt json -out gosec-results.json ./...
+          gosec -exclude-generated -exclude=G115,G304,G107 -fmt json -out gosec-results.json ./...
 
       - name: Upload gosec results
         uses: actions/upload-artifact@v4

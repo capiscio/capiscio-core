@@ -245,14 +245,14 @@ func generateAndSaveKeys(outputDir string) (ed25519.PublicKey, ed25519.PrivateKe
 		return nil, nil, "", jose.JSONWebKey{}, fmt.Errorf("failed to marshal public key: %w", err)
 	}
 	publicKeyPath := filepath.Join(outputDir, "public.jwk")
-	if err := os.WriteFile(publicKeyPath, pubBytes, 0644); err != nil {
+	if err := os.WriteFile(publicKeyPath, pubBytes, 0644); err != nil { // #nosec G306 -- public key material
 		return nil, nil, "", jose.JSONWebKey{}, fmt.Errorf("failed to write public key: %w", err)
 	}
 	fmt.Printf("✅ Public key saved: %s\n", publicKeyPath)
 
 	// Save DID
 	didPath := filepath.Join(outputDir, "did.txt")
-	if err := os.WriteFile(didPath, []byte(didKey+"\n"), 0644); err != nil {
+	if err := os.WriteFile(didPath, []byte(didKey+"\n"), 0644); err != nil { // #nosec G306 -- DID is public identifier
 		return nil, nil, "", jose.JSONWebKey{}, fmt.Errorf("failed to write DID: %w", err)
 	}
 	fmt.Printf("✅ DID saved: %s\n", didPath)
@@ -279,7 +279,7 @@ func saveAgentCard(outputDir, agentID, agentName, didKey, serverURL string, pubJ
 	if err != nil {
 		return fmt.Errorf("failed to marshal agent card: %w", err)
 	}
-	if err := os.WriteFile(agentCardPath, cardBytes, 0644); err != nil {
+	if err := os.WriteFile(agentCardPath, cardBytes, 0644); err != nil { // #nosec G306 -- agent cards are public-facing metadata
 		return fmt.Errorf("failed to write agent card: %w", err)
 	}
 	fmt.Printf("✅ Agent card saved: %s\n", agentCardPath)
