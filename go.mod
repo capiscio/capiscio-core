@@ -1,6 +1,6 @@
 module github.com/capiscio/capiscio-core/v2
 
-go 1.25.0
+go 1.25.8
 
 require (
 	github.com/go-jose/go-jose/v4 v4.1.3
@@ -8,7 +8,7 @@ require (
 	github.com/open-policy-agent/opa v1.14.1
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
-	google.golang.org/grpc v1.79.1
+	google.golang.org/grpc v1.79.3
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1
 )
