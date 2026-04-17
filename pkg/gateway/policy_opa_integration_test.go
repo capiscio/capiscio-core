@@ -176,7 +176,7 @@ func (s *opaIntegrationSetup) signBadge(t *testing.T, subject string, trustLevel
 		Subject:  subject,
 		IssuedAt: time.Now().Unix(),
 		Expiry:   time.Now().Add(1 * time.Hour).Unix(),
-		IAL:      "IAL-1",
+		IAL:      "1",
 		VC: badge.VerifiableCredential{
 			Type: []string{"VerifiableCredential", "AgentIdentity"},
 			CredentialSubject: badge.CredentialSubject{
@@ -201,7 +201,7 @@ func makeOKHandler() http.Handler {
 
 func bundleWithPolicy(policy map[string]interface{}) map[string]interface{} {
 	return map[string]interface{}{
-		"config":            map[string]interface{}{},
+		"config":            policy,
 		"resolved_policies": map[string]interface{}{"by_agent_did": map[string]interface{}{}},
 		"policy_lineage":    map[string]interface{}{"by_agent_did": map[string]interface{}{}},
 		"agents":            []interface{}{},
@@ -839,9 +839,9 @@ func TestGatewayOPA_SubMillisecondLatency(t *testing.T) {
 		mw2.ServeHTTP(rr, req)
 	}
 	elapsed := time.Since(start)
-	avgMs := float64(elapsed.Milliseconds()) / float64(iterations)
+	avgMs := float64(elapsed.Microseconds()) / float64(iterations) / 1000.0
 
-	t.Logf("Average gateway+OPA latency: %.2fms over %d iterations", avgMs, iterations)
+	t.Logf("Average gateway+OPA latency: %.3fms over %d iterations", avgMs, iterations)
 	// OPA in-process evaluation should be well under 10ms per request
 	assert.Less(t, avgMs, 10.0, "average gateway+OPA enforcement should be under 10ms")
 	assert.Equal(t, pip.DecisionAllow, latencyEvent.Decision)

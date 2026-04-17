@@ -4,6 +4,7 @@ package mcp
 
 import (
 	"context"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -14,9 +15,9 @@ import (
 )
 
 // --- Production Rego policy (mirrors capiscio-server/internal/pdp/policies/default.rego) ---
-// This is the REAL Rego policy used in production bundles. Tests prove that
-// every MCP tool-scoped policy rule is enforceable end-to-end through the
-// MCP guard → real OPA evaluator path, with no server round-trip.
+// This is the REAL Rego policy used in production bundles. Tests validate
+// production policy behavior using the real OPA evaluator, and include MCP
+// guard-path coverage for tool-access decisions without a server round-trip.
 
 const mcpProductionRego = `package capiscio.policy
 
@@ -661,7 +662,7 @@ func TestGuardOPA_SubMillisecondLatency(t *testing.T) {
 	const iterations = 100
 	start := time.Now()
 	for i := 0; i < iterations; i++ {
-		req.Context.TxnID = "perf-" + string(rune(i))
+		req.Context.TxnID = "perf-" + strconv.Itoa(i)
 		_, _ = evaluator.Evaluate(context.Background(), req)
 	}
 	elapsed := time.Since(start)
