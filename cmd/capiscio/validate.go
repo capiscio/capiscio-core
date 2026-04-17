@@ -48,7 +48,7 @@ var validateCmd = &cobra.Command{
 	Short: "Validate an Agent Card",
 	Long:  `Validate an Agent Card from a local file or URL. Checks compliance, verifies signatures, and optionally tests availability.`,
 	Args:  cobra.ExactArgs(1),
-	RunE: func(_ *cobra.Command, args []string) error {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		if flagLive {
 			fmt.Fprintln(os.Stderr, "Warning: --live is deprecated and will be removed in v1.1.0. Please use --test-live instead.")
 		}
@@ -59,7 +59,7 @@ var validateCmd = &cobra.Command{
 
 		// 1. Load Data
 		if strings.HasPrefix(input, "http://") || strings.HasPrefix(input, "https://") {
-			ctx, cancel := context.WithTimeout(context.Background(), flagTimeout)
+			ctx, cancel := context.WithTimeout(cmd.Context(), flagTimeout)
 			defer cancel()
 
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, input, nil)
@@ -78,7 +78,9 @@ var validateCmd = &cobra.Command{
 				return fmt.Errorf("URL returned HTTP %d (%s)", resp.StatusCode, resp.Status)
 			}
 
-			cardData, err = io.ReadAll(resp.Body)
+			// Limit response body to 10MB to prevent memory exhaustion
+			const maxBodySize = 10 << 20
+			cardData, err = io.ReadAll(io.LimitReader(resp.Body, maxBodySize))
 			if err != nil {
 				return fmt.Errorf("failed to read response body: %w", err)
 			}
