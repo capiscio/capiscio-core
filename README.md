@@ -10,7 +10,7 @@
 
 While it serves as the reference implementation for the **Agent-to-Agent (A2A) Protocol**, its primary mission is to secure the broader agent ecosystem.
 
-> **v2.2.0 Release**: Full implementation of **RFC-002 Trust Badge Specification** and **RFC-003 Key Ownership Proof (PoP)** with did:web/did:key DIDs, Trust Levels, gRPC SDK integration, and enhanced verification.
+> **v2.6.0 Release**: Full implementation of **RFC-002 Trust Badge Specification** and **RFC-003 Key Ownership Proof (PoP)** with did:web/did:key DIDs, Trust Levels, gRPC SDK integration, and enhanced verification.
 
 ## Why CapiscIO?
 
@@ -40,7 +40,7 @@ Building authentication for AI Agents is hard. OAuth is complex, API keys are in
 ### 1. Installation
 
 ```bash
-go install github.com/capiscio/capiscio-core/cmd/capiscio@latest
+go install github.com/capiscio/capiscio-core/v2/cmd/capiscio@latest
 ```
 
 ### 2. Issue a Trust Badge (Identity)
