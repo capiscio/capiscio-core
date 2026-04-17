@@ -59,11 +59,25 @@ var validateCmd = &cobra.Command{
 
 		// 1. Load Data
 		if strings.HasPrefix(input, "http://") || strings.HasPrefix(input, "https://") {
-			resp, err := http.Get(input)
+			ctx, cancel := context.WithTimeout(context.Background(), flagTimeout)
+			defer cancel()
+
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, input, nil)
+			if err != nil {
+				return fmt.Errorf("failed to create request: %w", err)
+			}
+
+			client := &http.Client{Timeout: flagTimeout}
+			resp, err := client.Do(req)
 			if err != nil {
 				return fmt.Errorf("failed to fetch URL: %w", err)
 			}
 			defer func() { _ = resp.Body.Close() }()
+
+			if resp.StatusCode != http.StatusOK {
+				return fmt.Errorf("URL returned HTTP %d (%s)", resp.StatusCode, resp.Status)
+			}
+
 			cardData, err = io.ReadAll(resp.Body)
 			if err != nil {
 				return fmt.Errorf("failed to read response body: %w", err)

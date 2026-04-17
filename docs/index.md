@@ -4,7 +4,7 @@
 
 While it serves as the reference implementation for the **Agent-to-Agent (A2A) Protocol**, its primary mission is to secure the broader agent ecosystem.
 
-> **v1.0.2 Release**: This release combines the **Validation Engine** (for A2A compliance) with the new **Authority Layer** (for runtime security).
+> **v2.6.0 Release**: Full implementation of **RFC-002 Trust Badge Specification** and **RFC-003 Key Ownership Proof (PoP)** with did:web/did:key DIDs, Trust Levels, gRPC SDK integration, and enhanced verification.
 
 ## Why CapiscIO?
 
@@ -32,7 +32,7 @@ Building authentication for AI Agents is hard. OAuth is complex, API keys are in
 ### 1. Installation
 
 ```bash
-go install github.com/capiscio/capiscio-core/cmd/capiscio@v1.0.2
+go install github.com/capiscio/capiscio-core/v2/cmd/capiscio@latest
 ```
 
 ### 2. Initialize Your Agent (One Command)
@@ -141,8 +141,8 @@ CapiscIO Core retains its original capabilities as a robust validator for the A2
 
 ```go
 import (
-    "github.com/capiscio/capiscio-core/pkg/badge"
-    "github.com/capiscio/capiscio-core/pkg/registry"
+    "github.com/capiscio/capiscio-core/v2/pkg/badge"
+    "github.com/capiscio/capiscio-core/v2/pkg/registry"
 )
 
 func main() {
@@ -166,8 +166,8 @@ func main() {
 
 ```go
 import (
-    "github.com/capiscio/capiscio-core/pkg/agentcard"
-    "github.com/capiscio/capiscio-core/pkg/scoring"
+    "github.com/capiscio/capiscio-core/v2/pkg/agentcard"
+    "github.com/capiscio/capiscio-core/v2/pkg/scoring"
 )
 
 func main() {
@@ -195,7 +195,7 @@ For complete command usage and flags, see the [CLI Reference](./reference/cli.md
 ## Development
 
 ### Prerequisites
-- Go 1.21+
+- Go 1.25+
 
 ### Testing
 ```bash

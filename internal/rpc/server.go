@@ -34,10 +34,13 @@ func RegisterServices(server *grpc.Server) {
 		pb.RegisterTrustStoreServiceServer(server, trustService)
 	}
 
-	pb.RegisterRevocationServiceServer(server, NewRevocationService())
 	pb.RegisterScoringServiceServer(server, NewScoringService())
 	pb.RegisterSimpleGuardServiceServer(server, NewSimpleGuardService())
-	pb.RegisterRegistryServiceServer(server, NewRegistryService())
+
+	// TODO(GA+1): Implement and register RegistryService and RevocationService.
+	// Currently stub-only — registering unimplemented services is misleading.
+	// pb.RegisterRevocationServiceServer(server, NewRevocationService())
+	// pb.RegisterRegistryServiceServer(server, NewRegistryService())
 
 	// Register MCPService for RFC-006/007 MCP integration
 	pb.RegisterMCPServiceServer(server, NewMCPService())
