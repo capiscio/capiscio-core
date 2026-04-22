@@ -402,6 +402,11 @@ func (v *Verifier) validateClaims(claims *Claims, opts VerifyOptions, now time.T
 		return NewError(ErrCodeNotYetValid, fmt.Sprintf("badge not valid until %s", time.Unix(claims.IssuedAt, 0).Format(time.RFC3339)))
 	}
 
+	// Step 6b2: nbf <= current_time (not before validity window)
+	if claims.NotBefore > 0 && claims.NotBefore > nowUnix {
+		return NewError(ErrCodeNotYetValid, fmt.Sprintf("badge not valid before %s", time.Unix(claims.NotBefore, 0).Format(time.RFC3339)))
+	}
+
 	// Step 6c: Issuer in trusted issuer list (unless self-signed with AcceptSelfSigned)
 	if len(opts.TrustedIssuers) > 0 && !isSelfSigned {
 		trusted := false

@@ -142,12 +142,13 @@ func (s *BadgeService) parseJWSToken(token string) (*jose.JSONWebSignature, *bad
 
 // buildVerifyOptions constructs verification options from the request.
 func (s *BadgeService) buildVerifyOptions(req *pb.VerifyBadgeWithOptionsRequest) badge.VerifyOptions {
-	// Return defaults when no options provided
+	// Return secure defaults when no options provided.
+	// Revocation and agent status checks are enabled by default.
 	if req.Options == nil {
 		return badge.VerifyOptions{
 			Mode:                 badge.VerifyModeOnline,
-			SkipRevocationCheck:  true,
-			SkipAgentStatusCheck: true,
+			SkipRevocationCheck:  false,
+			SkipAgentStatusCheck: false,
 		}
 	}
 
