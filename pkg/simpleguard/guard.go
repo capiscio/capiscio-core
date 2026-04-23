@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -157,7 +158,7 @@ func (g *SimpleGuard) VerifyInbound(token string, body []byte) (*Claims, error) 
 		hash := sha256.Sum256(body)
 		expectedHash := base64.RawURLEncoding.EncodeToString(hash[:])
 
-		if claims.BodyHash != expectedHash {
+		if subtle.ConstantTimeCompare([]byte(claims.BodyHash), []byte(expectedHash)) != 1 {
 			return nil, fmt.Errorf("%w: expected %s, got %s", ErrIntegrityFailed, expectedHash, claims.BodyHash)
 		}
 	} else if claims.BodyHash != "" {

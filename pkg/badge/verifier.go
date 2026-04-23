@@ -389,9 +389,7 @@ func (v *Verifier) validateStructure(jwsObj *jose.JSONWebSignature, claims *Clai
 }
 
 // validateClaims performs claim validation per RFC-002 §8.1 step 6.
-func (v *Verifier) validateClaims(claims *Claims, opts VerifyOptions, now time.Time, isSelfSigned bool) error {
-	nowUnix := now.Unix()
-
+func (v *Verifier) validateTimeClaims(claims *Claims, nowUnix int64) error {
 	// Step 6a: exp > current_time (not expired)
 	if claims.Expiry <= nowUnix {
 		return NewError(ErrCodeExpired, fmt.Sprintf("badge expired at %s", time.Unix(claims.Expiry, 0).Format(time.RFC3339)))
@@ -400,6 +398,21 @@ func (v *Verifier) validateClaims(claims *Claims, opts VerifyOptions, now time.T
 	// Step 6b: iat <= current_time (not issued in future)
 	if claims.IssuedAt > nowUnix {
 		return NewError(ErrCodeNotYetValid, fmt.Sprintf("badge not valid until %s", time.Unix(claims.IssuedAt, 0).Format(time.RFC3339)))
+	}
+
+	// Step 6b2: nbf <= current_time (not before validity window)
+	if claims.NotBefore > 0 && claims.NotBefore > nowUnix {
+		return NewError(ErrCodeNotYetValid, fmt.Sprintf("badge not valid before %s", time.Unix(claims.NotBefore, 0).Format(time.RFC3339)))
+	}
+
+	return nil
+}
+
+func (v *Verifier) validateClaims(claims *Claims, opts VerifyOptions, now time.Time, isSelfSigned bool) error {
+	nowUnix := now.Unix()
+
+	if err := v.validateTimeClaims(claims, nowUnix); err != nil {
+		return err
 	}
 
 	// Step 6c: Issuer in trusted issuer list (unless self-signed with AcceptSelfSigned)

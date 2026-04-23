@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -82,7 +83,7 @@ func (f *DefaultJWKSFetcher) Fetch(ctx context.Context, url string) (*jose.JSONW
 	}
 
 	var jwks jose.JSONWebKeySet
-	if err := json.NewDecoder(resp.Body).Decode(&jwks); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&jwks); err != nil {
 		return nil, fmt.Errorf("failed to decode JWKS: %w", err)
 	}
 

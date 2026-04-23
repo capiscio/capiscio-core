@@ -19,9 +19,11 @@ import (
 
 // SessionCache provides thread-safe caching of PoP verification results
 type SessionCache struct {
-	mu      sync.RWMutex
-	entries map[string]*CacheEntry
-	config  *CacheConfig
+	mu       sync.RWMutex
+	entries  map[string]*CacheEntry
+	config   *CacheConfig
+	done     chan struct{}
+	closeOnce sync.Once
 }
 
 // CacheConfig configures session cache behavior
@@ -79,6 +81,7 @@ func NewSessionCache(config *CacheConfig) *SessionCache {
 	cache := &SessionCache{
 		entries: make(map[string]*CacheEntry),
 		config:  config,
+		done:    make(chan struct{}),
 	}
 
 	// Start background cleanup if configured
@@ -197,13 +200,26 @@ func (c *SessionCache) Size() int {
 	return len(c.entries)
 }
 
+// Close stops the background cleanup goroutine. Safe to call multiple times.
+func (c *SessionCache) Close() error {
+	c.closeOnce.Do(func() {
+		close(c.done)
+	})
+	return nil
+}
+
 // cleanupLoop periodically removes expired entries
 func (c *SessionCache) cleanupLoop() {
 	ticker := time.NewTicker(c.config.CleanupInterval)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		c.cleanup()
+	for {
+		select {
+		case <-ticker.C:
+			c.cleanup()
+		case <-c.done:
+			return
+		}
 	}
 }
 
