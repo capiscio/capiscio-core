@@ -19,10 +19,11 @@ import (
 
 // SessionCache provides thread-safe caching of PoP verification results
 type SessionCache struct {
-	mu      sync.RWMutex
-	entries map[string]*CacheEntry
-	config  *CacheConfig
-	done    chan struct{}
+	mu       sync.RWMutex
+	entries  map[string]*CacheEntry
+	config   *CacheConfig
+	done     chan struct{}
+	closeOnce sync.Once
 }
 
 // CacheConfig configures session cache behavior
@@ -199,9 +200,11 @@ func (c *SessionCache) Size() int {
 	return len(c.entries)
 }
 
-// Close stops the background cleanup goroutine.
+// Close stops the background cleanup goroutine. Safe to call multiple times.
 func (c *SessionCache) Close() error {
-	close(c.done)
+	c.closeOnce.Do(func() {
+		close(c.done)
+	})
 	return nil
 }
 
