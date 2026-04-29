@@ -193,6 +193,11 @@ func buildOPAInput(req *pip.DecisionRequest) map[string]interface{} {
 		env["time"] = *req.Environment.Time
 	}
 
+	// RFC-008: PEP-level flag for unknown capability class behavior
+	if req.DenyOnUnknownClass != nil {
+		input["deny_on_unknown_class"] = *req.DenyOnUnknownClass
+	}
+
 	return input
 }
 

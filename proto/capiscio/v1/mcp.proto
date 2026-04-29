@@ -80,6 +80,12 @@ message EvaluateToolAccessRequest {
   int32 delegation_depth = 12;          // reserved for envelope
   string constraints_json = 13;         // reserved for envelope
   string parent_constraints_json = 14;  // reserved for envelope
+
+  // RFC-008: PEP-level unknown capability class behavior.
+  // Proto3 default for bool is false, but the server treats an unset field
+  // as "deny" (fail-closed). Set explicitly to false to allow unknown classes
+  // (e.g. in development/staging environments).
+  optional bool deny_on_unknown_class = 15;
 }
 
 // Configuration for tool access evaluation

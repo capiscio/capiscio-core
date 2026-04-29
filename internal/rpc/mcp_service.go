@@ -159,13 +159,17 @@ func (s *MCPService) EvaluateToolAccess(
 	}
 
 	// Evaluate tool access
-	result, err := s.service.EvaluateToolAccess(ctx, &mcp.EvaluateToolAccessInput{
-		ToolName:   req.ToolName,
-		ParamsHash: req.ParamsHash,
-		Origin:     req.ServerOrigin,
-		Credential: cred,
-		Config:     config,
-	})
+	evalInput := &mcp.EvaluateToolAccessInput{
+		ToolName:           req.ToolName,
+		ParamsHash:         req.ParamsHash,
+		Origin:             req.ServerOrigin,
+		Credential:         cred,
+		Config:             config,
+		CapabilityClass:    req.CapabilityClass,
+		DenyOnUnknownClass: req.DenyOnUnknownClass,
+	}
+
+	result, err := s.service.EvaluateToolAccess(ctx, evalInput)
 	if err != nil {
 		return nil, err
 	}
