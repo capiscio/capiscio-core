@@ -42,6 +42,10 @@ const (
 
 	// ErrCodePayloadTooLarge indicates the envelope payload exceeds the maximum size.
 	ErrCodePayloadTooLarge = "ENVELOPE_PAYLOAD_TOO_LARGE"
+
+	// ErrCodeScopeInsufficient indicates the PDP determined the envelope's
+	// capability_class does not cover the requested operation (RFC-008 §9.3).
+	ErrCodeScopeInsufficient = "ENVELOPE_SCOPE_INSUFFICIENT"
 )
 
 // Error represents an envelope operation error with an RFC-008 error code.
@@ -92,5 +96,38 @@ func WrapError(code, message string, cause error) *Error {
 		Code:    code,
 		Message: message,
 		Cause:   cause,
+	}
+}
+
+// ScopeInsufficientRejection is the structured rejection payload returned when
+// a PEP denies a request due to ENVELOPE_SCOPE_INSUFFICIENT (RFC-008 §9.3.1).
+//
+// The payload intentionally omits any hint about what capability_class would
+// have been sufficient — policy information MUST NOT leak through the error surface.
+type ScopeInsufficientRejection struct {
+	// Error is always ErrCodeScopeInsufficient.
+	Error string `json:"error"`
+
+	// RequestedCapability is the capability class the agent attempted to invoke.
+	RequestedCapability string `json:"requested_capability"`
+
+	// PresentedCapability is the capability_class from the envelope that was evaluated.
+	PresentedCapability string `json:"presented_capability"`
+
+	// EnvelopeID is the envelope_id of the insufficient envelope.
+	EnvelopeID string `json:"envelope_id"`
+
+	// TxnID is the transaction correlation ID.
+	TxnID string `json:"txn_id"`
+}
+
+// NewScopeInsufficientRejection creates a structured rejection payload per RFC-008 §9.3.1.
+func NewScopeInsufficientRejection(requestedCap, presentedCap, envelopeID, txnID string) *ScopeInsufficientRejection {
+	return &ScopeInsufficientRejection{
+		Error:               ErrCodeScopeInsufficient,
+		RequestedCapability: requestedCap,
+		PresentedCapability: presentedCap,
+		EnvelopeID:          envelopeID,
+		TxnID:               txnID,
 	}
 }
