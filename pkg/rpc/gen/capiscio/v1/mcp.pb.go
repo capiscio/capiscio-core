@@ -354,7 +354,10 @@ type EvaluateToolAccessRequest struct {
 	DelegationDepth       int32  `protobuf:"varint,12,opt,name=delegation_depth,json=delegationDepth,proto3" json:"delegation_depth,omitempty"`                    // reserved for envelope
 	ConstraintsJson       string `protobuf:"bytes,13,opt,name=constraints_json,json=constraintsJson,proto3" json:"constraints_json,omitempty"`                     // reserved for envelope
 	ParentConstraintsJson string `protobuf:"bytes,14,opt,name=parent_constraints_json,json=parentConstraintsJson,proto3" json:"parent_constraints_json,omitempty"` // reserved for envelope
-	// RFC-008: PEP-level unknown capability class behavior (default: deny)
+	// RFC-008: PEP-level unknown capability class behavior.
+	// Proto3 default for bool is false, but the server treats an unset field
+	// as "deny" (fail-closed). Set explicitly to false to allow unknown classes
+	// (e.g. in development/staging environments).
 	DenyOnUnknownClass *bool `protobuf:"varint,15,opt,name=deny_on_unknown_class,json=denyOnUnknownClass,proto3,oneof" json:"deny_on_unknown_class,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
