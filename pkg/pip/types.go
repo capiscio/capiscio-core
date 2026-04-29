@@ -66,11 +66,13 @@ type EnvironmentAttrs struct {
 
 // DecisionResponse is the canonical PDP response (RFC-005 §6.1).
 type DecisionResponse struct {
-	Decision    string       `json:"decision"`              // "ALLOW" or "DENY"
-	DecisionID  string       `json:"decision_id"`           // globally unique
-	Obligations []Obligation `json:"obligations"`           // may be empty
-	Reason      string       `json:"reason,omitempty"`      // human-readable
-	TTL         *int         `json:"ttl,omitempty"`          // cache lifetime seconds
+	Decision            string       `json:"decision"`                        // "ALLOW" or "DENY"
+	DecisionID          string       `json:"decision_id"`                     // globally unique
+	Obligations         []Obligation `json:"obligations"`                     // may be empty
+	Reason              string       `json:"reason,omitempty"`                // human-readable
+	TTL                 *int         `json:"ttl,omitempty"`                   // cache lifetime seconds
+	ErrorCode           string       `json:"error_code,omitempty"`            // RFC-008: e.g. "SCOPE_INSUFFICIENT"
+	RequestedCapability string       `json:"requested_capability,omitempty"`  // RFC-008: the capability class that was denied
 }
 
 // Obligation is a conditional contract per RFC-005 §7.1.

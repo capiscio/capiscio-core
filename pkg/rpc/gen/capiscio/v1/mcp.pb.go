@@ -150,6 +150,7 @@ const (
 	MCPDenyReason_MCP_DENY_REASON_TOOL_NOT_ALLOWED   MCPDenyReason = 6 // Tool not in allowed list
 	MCPDenyReason_MCP_DENY_REASON_ISSUER_UNTRUSTED   MCPDenyReason = 7
 	MCPDenyReason_MCP_DENY_REASON_POLICY_DENIED      MCPDenyReason = 8 // Policy evaluation failed
+	MCPDenyReason_MCP_DENY_REASON_SCOPE_INSUFFICIENT MCPDenyReason = 9 // RFC-008: Capability class scope insufficient
 )
 
 // Enum value maps for MCPDenyReason.
@@ -164,6 +165,7 @@ var (
 		6: "MCP_DENY_REASON_TOOL_NOT_ALLOWED",
 		7: "MCP_DENY_REASON_ISSUER_UNTRUSTED",
 		8: "MCP_DENY_REASON_POLICY_DENIED",
+		9: "MCP_DENY_REASON_SCOPE_INSUFFICIENT",
 	}
 	MCPDenyReason_value = map[string]int32{
 		"MCP_DENY_REASON_UNSPECIFIED":        0,
@@ -175,6 +177,7 @@ var (
 		"MCP_DENY_REASON_TOOL_NOT_ALLOWED":   6,
 		"MCP_DENY_REASON_ISSUER_UNTRUSTED":   7,
 		"MCP_DENY_REASON_POLICY_DENIED":      8,
+		"MCP_DENY_REASON_SCOPE_INSUFFICIENT": 9,
 	}
 )
 
@@ -617,8 +620,13 @@ type EvaluateToolAccessResponse struct {
 	PolicyDecision   string           `protobuf:"bytes,12,opt,name=policy_decision,json=policyDecision,proto3" json:"policy_decision,omitempty"`         // ALLOW, DENY, or ALLOW_OBSERVE
 	EnforcementMode  string           `protobuf:"bytes,13,opt,name=enforcement_mode,json=enforcementMode,proto3" json:"enforcement_mode,omitempty"`      // mode used for this evaluation
 	Obligations      []*MCPObligation `protobuf:"bytes,14,rep,name=obligations,proto3" json:"obligations,omitempty"`                                     // obligations from PDP
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// RFC-008: Structured rejection metadata (populated on DENY)
+	ErrorCode           string `protobuf:"bytes,15,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`                               // e.g. "SCOPE_INSUFFICIENT"
+	RejectionDetail     string `protobuf:"bytes,16,opt,name=rejection_detail,json=rejectionDetail,proto3" json:"rejection_detail,omitempty"`             // human-readable denial detail
+	RequestedCapability string `protobuf:"bytes,17,opt,name=requested_capability,json=requestedCapability,proto3" json:"requested_capability,omitempty"` // capability class that was denied
+	PresentedCapability string `protobuf:"bytes,18,opt,name=presented_capability,json=presentedCapability,proto3" json:"presented_capability,omitempty"` // capability class the agent presented (if any)
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *EvaluateToolAccessResponse) Reset() {
@@ -747,6 +755,34 @@ func (x *EvaluateToolAccessResponse) GetObligations() []*MCPObligation {
 		return x.Obligations
 	}
 	return nil
+}
+
+func (x *EvaluateToolAccessResponse) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
+func (x *EvaluateToolAccessResponse) GetRejectionDetail() string {
+	if x != nil {
+		return x.RejectionDetail
+	}
+	return ""
+}
+
+func (x *EvaluateToolAccessResponse) GetRequestedCapability() string {
+	if x != nil {
+		return x.RequestedCapability
+	}
+	return ""
+}
+
+func (x *EvaluateToolAccessResponse) GetPresentedCapability() string {
+	if x != nil {
+		return x.PresentedCapability
+	}
+	return ""
 }
 
 // Obligation returned by PDP (RFC-005 §7.1)
@@ -1966,7 +2002,7 @@ const file_capiscio_v1_mcp_proto_rawDesc = "" +
 	"\x0ftrusted_issuers\x18\x01 \x03(\tR\x0etrustedIssuers\x12&\n" +
 	"\x0fmin_trust_level\x18\x02 \x01(\x05R\rminTrustLevel\x12*\n" +
 	"\x11accept_level_zero\x18\x03 \x01(\bR\x0facceptLevelZero\x12#\n" +
-	"\rallowed_tools\x18\x04 \x03(\tR\fallowedTools\"\x85\x05\n" +
+	"\rallowed_tools\x18\x04 \x03(\tR\fallowedTools\"\xb5\x06\n" +
 	"\x1aEvaluateToolAccessResponse\x124\n" +
 	"\bdecision\x18\x01 \x01(\x0e2\x18.capiscio.v1.MCPDecisionR\bdecision\x12;\n" +
 	"\vdeny_reason\x18\x02 \x01(\x0e2\x1a.capiscio.v1.MCPDenyReasonR\n" +
@@ -1987,7 +2023,12 @@ const file_capiscio_v1_mcp_proto_rawDesc = "" +
 	"\x12policy_decision_id\x18\v \x01(\tR\x10policyDecisionId\x12'\n" +
 	"\x0fpolicy_decision\x18\f \x01(\tR\x0epolicyDecision\x12)\n" +
 	"\x10enforcement_mode\x18\r \x01(\tR\x0fenforcementMode\x12<\n" +
-	"\vobligations\x18\x0e \x03(\v2\x1a.capiscio.v1.MCPObligationR\vobligations\"D\n" +
+	"\vobligations\x18\x0e \x03(\v2\x1a.capiscio.v1.MCPObligationR\vobligations\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\x0f \x01(\tR\terrorCode\x12)\n" +
+	"\x10rejection_detail\x18\x10 \x01(\tR\x0frejectionDetail\x121\n" +
+	"\x14requested_capability\x18\x11 \x01(\tR\x13requestedCapability\x121\n" +
+	"\x14presented_capability\x18\x12 \x01(\tR\x13presentedCapability\"D\n" +
 	"\rMCPObligation\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12\x1f\n" +
 	"\vparams_json\x18\x02 \x01(\tR\n" +
@@ -2087,7 +2128,7 @@ const file_capiscio_v1_mcp_proto_rawDesc = "" +
 	"\x1aMCP_AUTH_LEVEL_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18MCP_AUTH_LEVEL_ANONYMOUS\x10\x01\x12\x1a\n" +
 	"\x16MCP_AUTH_LEVEL_API_KEY\x10\x02\x12\x18\n" +
-	"\x14MCP_AUTH_LEVEL_BADGE\x10\x03*\xd3\x02\n" +
+	"\x14MCP_AUTH_LEVEL_BADGE\x10\x03*\xfb\x02\n" +
 	"\rMCPDenyReason\x12\x1f\n" +
 	"\x1bMCP_DENY_REASON_UNSPECIFIED\x10\x00\x12!\n" +
 	"\x1dMCP_DENY_REASON_BADGE_MISSING\x10\x01\x12!\n" +
@@ -2097,7 +2138,8 @@ const file_capiscio_v1_mcp_proto_rawDesc = "" +
 	"\"MCP_DENY_REASON_TRUST_INSUFFICIENT\x10\x05\x12$\n" +
 	" MCP_DENY_REASON_TOOL_NOT_ALLOWED\x10\x06\x12$\n" +
 	" MCP_DENY_REASON_ISSUER_UNTRUSTED\x10\a\x12!\n" +
-	"\x1dMCP_DENY_REASON_POLICY_DENIED\x10\b*\xac\x01\n" +
+	"\x1dMCP_DENY_REASON_POLICY_DENIED\x10\b\x12&\n" +
+	"\"MCP_DENY_REASON_SCOPE_INSUFFICIENT\x10\t*\xac\x01\n" +
 	"\x0eMCPServerState\x12 \n" +
 	"\x1cMCP_SERVER_STATE_UNSPECIFIED\x10\x00\x12'\n" +
 	"#MCP_SERVER_STATE_VERIFIED_PRINCIPAL\x10\x01\x12'\n" +

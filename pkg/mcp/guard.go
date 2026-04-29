@@ -260,6 +260,10 @@ func (g *Guard) evaluateWithPDP(
 	result.PolicyDecision = resp.Decision
 
 	if resp.Decision == pip.DecisionDeny {
+		// RFC-008: propagate structured denial metadata from PDP
+		result.PolicyErrorCode = resp.ErrorCode
+		result.PolicyRequestedCapability = resp.RequestedCapability
+
 		switch g.emMode {
 		case pip.EMObserve:
 			// Log but allow
@@ -268,7 +272,11 @@ func (g *Guard) evaluateWithPDP(
 			result.PolicyDecision = pip.DecisionObserve
 		default:
 			result.Decision = DecisionDeny
-			result.DenyReason = DenyReasonPolicyDenied
+			if resp.ErrorCode == "SCOPE_INSUFFICIENT" {
+				result.DenyReason = DenyReasonScopeInsufficient
+			} else {
+				result.DenyReason = DenyReasonPolicyDenied
+			}
 			result.DenyDetail = resp.Reason
 		}
 		return

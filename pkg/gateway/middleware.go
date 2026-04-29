@@ -3,6 +3,7 @@ package gateway
 
 import (
 	"crypto"
+	"encoding/json"
 	"log"
 	"log/slog"
 	"net/http"
@@ -161,7 +162,8 @@ func (p *pep) buildPIPRequest(r *http.Request, claims *badge.Claims) *pip.Decisi
 			TrustLevel: claims.TrustLevel(),
 		},
 		Action: pip.ActionAttributes{
-			Operation: r.Method + " " + r.URL.Path,
+			Operation:       r.Method + " " + r.URL.Path,
+			CapabilityClass: strPtrFromHeader(r, "X-Capiscio-Capability-Class"),
 		},
 		Resource: pip.ResourceAttributes{
 			Identifier: r.URL.Path,
@@ -169,6 +171,7 @@ func (p *pep) buildPIPRequest(r *http.Request, claims *badge.Claims) *pip.Decisi
 		Context: pip.ContextAttributes{
 			TxnID:           txnID,
 			EnforcementMode: p.config.EnforcementMode.String(),
+			EnvelopeID:      strPtrFromHeader(r, "X-Capiscio-Envelope-ID"),
 		},
 		Environment: pip.EnvironmentAttrs{
 			PEPID:     strPtr(p.config.PEPID),
@@ -345,11 +348,25 @@ func (p *pep) handlePDPDeny(w http.ResponseWriter, r *http.Request, resp *pip.De
 		emitPolicyEvent(p.callbacks, *event, pipReq)
 		p.next.ServeHTTP(w, r)
 	default:
+		emitPolicyEvent(p.callbacks, *event, pipReq)
+
+		// RFC-008: SCOPE_INSUFFICIENT returns structured JSON 403
+		if resp.ErrorCode == "SCOPE_INSUFFICIENT" {
+			body := map[string]string{
+				"error":                "SCOPE_INSUFFICIENT",
+				"requested_capability": resp.RequestedCapability,
+				"detail":               resp.Reason,
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			_ = json.NewEncoder(w).Encode(body)
+			return
+		}
+
 		reason := "Access denied by policy"
 		if resp.Reason != "" {
 			reason = resp.Reason
 		}
-		emitPolicyEvent(p.callbacks, *event, pipReq)
 		http.Error(w, reason, http.StatusForbidden)
 	}
 }
@@ -417,6 +434,14 @@ func strPtr(s string) *string {
 		return nil
 	}
 	return &s
+}
+
+func strPtrFromHeader(r *http.Request, header string) *string {
+	v := r.Header.Get(header)
+	if v == "" {
+		return nil
+	}
+	return &v
 }
 
 func obligationTypes(obs []pip.Obligation) []string {
