@@ -131,13 +131,61 @@ func (v *Verifier) VerifyEnvelope(
 	opts VerifyOptions,
 ) (*VerifyResult, error) {
 	// Step 1: Parse envelope
-	maxSize := opts.maxPayloadSize()
+	jws, err := v.parseEnvelopeJWS(envelopeJWS, opts.maxPayloadSize())
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 2: Verify issuer badge
+	issuerBadgeResult, err := v.verifyBadge(ctx, issuerBadgeJWS, opts)
+	if err != nil {
+		return nil, WrapError(ErrCodeBadgeBindingFailed, "issuer badge verification failed", err)
+	}
+
+	// Steps 3-4: Resolve key and verify signature
+	payload, err := v.resolveAndVerifySignature(ctx, jws, opts.maxPayloadSize())
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 5: Temporal validity
+	if err := v.checkTemporal(payload, opts.now()); err != nil {
+		return nil, err
+	}
+
+	// Step 6: Badge JTI binding (issuer)
+	if issuerBadgeResult != nil && payload.IssuerBadgeJTI != issuerBadgeResult.Claims.JTI {
+		return nil, NewError(ErrCodeBadgeBindingFailed,
+			fmt.Sprintf("issuer_badge_jti %q does not match presented badge jti %q",
+				payload.IssuerBadgeJTI, issuerBadgeResult.Claims.JTI))
+	}
+
+	// Step 6b: Badge JTI binding (subject)
+	subjectBadgeResult, err := v.verifySubjectBadge(ctx, payload, subjectBadgeJWS, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 7: Enforcement mode escalation
+	effectiveMode, err := v.resolveEnforcementMode(payload, opts.EnforcementMode)
+	if err != nil {
+		return nil, err
+	}
+
+	return &VerifyResult{
+		Payload:       payload,
+		IssuerBadge:   issuerBadgeResult,
+		SubjectBadge:  subjectBadgeResult,
+		EffectiveMode: effectiveMode,
+	}, nil
+}
+
+// parseEnvelopeJWS parses the JWS and validates the typ header.
+func (v *Verifier) parseEnvelopeJWS(envelopeJWS string, maxSize int) (*jose.JSONWebSignature, error) {
 	jws, err := jose.ParseSigned(envelopeJWS, []jose.SignatureAlgorithm{jose.EdDSA, jose.ES256, jose.ES384})
 	if err != nil {
 		return nil, NewError(ErrCodeMalformed, fmt.Sprintf("failed to parse JWS: %v", err))
 	}
-
-	// Check typ header
 	if len(jws.Signatures) == 0 {
 		return nil, NewError(ErrCodeMalformed, "no signatures found")
 	}
@@ -151,26 +199,33 @@ func (v *Verifier) VerifyEnvelope(
 		return nil, NewError(ErrCodeMalformed,
 			fmt.Sprintf("invalid typ header: expected %q, got %q", HeaderType, typ))
 	}
-
-	// Step 2: Verify issuer badge
-	var issuerBadgeResult *badge.VerifyResult
-	if !opts.SkipBadgeVerification && issuerBadgeJWS != "" {
-		if v.BadgeVerifier == nil {
-			return nil, fmt.Errorf("badge verifier is required for badge verification")
-		}
-		badgeOpts := badge.VerifyOptions{
-			TrustedIssuers:       opts.TrustedIssuers,
-			AcceptSelfSigned:     true, // self-signed badges can issue envelopes
-			SkipRevocationCheck:  false,
-			SkipAgentStatusCheck: false,
-		}
-		issuerBadgeResult, err = v.BadgeVerifier.VerifyWithOptions(ctx, issuerBadgeJWS, badgeOpts)
-		if err != nil {
-			return nil, WrapError(ErrCodeBadgeBindingFailed, "issuer badge verification failed", err)
-		}
+	unverifiedPayload := jws.UnsafePayloadWithoutVerification()
+	if len(unverifiedPayload) > maxSize {
+		return nil, NewError(ErrCodePayloadTooLarge,
+			fmt.Sprintf("payload size %d exceeds maximum %d", len(unverifiedPayload), maxSize))
 	}
+	return jws, nil
+}
 
-	// Step 3: Resolve signing key from issuer DID
+// verifyBadge verifies a badge JWS if badge verification is enabled.
+func (v *Verifier) verifyBadge(ctx context.Context, badgeJWS string, opts VerifyOptions) (*badge.VerifyResult, error) {
+	if opts.SkipBadgeVerification || badgeJWS == "" {
+		return nil, nil
+	}
+	if v.BadgeVerifier == nil {
+		return nil, fmt.Errorf("badge verifier is required for badge verification")
+	}
+	badgeOpts := badge.VerifyOptions{
+		TrustedIssuers:       opts.TrustedIssuers,
+		AcceptSelfSigned:     true,
+		SkipRevocationCheck:  false,
+		SkipAgentStatusCheck: false,
+	}
+	return v.BadgeVerifier.VerifyWithOptions(ctx, badgeJWS, badgeOpts)
+}
+
+// resolveAndVerifySignature resolves the signing key and verifies the JWS signature.
+func (v *Verifier) resolveAndVerifySignature(ctx context.Context, jws *jose.JSONWebSignature, maxSize int) (*Payload, error) {
 	kid := ""
 	if k, ok := jws.Signatures[0].Protected.ExtraHeaders["kid"].(string); ok {
 		kid = k
@@ -178,13 +233,7 @@ func (v *Verifier) VerifyEnvelope(
 		kid = k
 	}
 
-	// Extract unverified payload to get issuer_did for key resolution
 	unverifiedPayload := jws.UnsafePayloadWithoutVerification()
-	if len(unverifiedPayload) > maxSize {
-		return nil, NewError(ErrCodePayloadTooLarge,
-			fmt.Sprintf("payload size %d exceeds maximum %d", len(unverifiedPayload), maxSize))
-	}
-
 	var unverifiedClaims Payload
 	if err := json.Unmarshal(unverifiedPayload, &unverifiedClaims); err != nil {
 		return nil, NewError(ErrCodeMalformed, fmt.Sprintf("failed to unmarshal payload: %v", err))
@@ -201,7 +250,6 @@ func (v *Verifier) VerifyEnvelope(
 			fmt.Sprintf("failed to resolve key for DID %q", unverifiedClaims.IssuerDID), err)
 	}
 
-	// Step 4: Verify JWS signature
 	verifiedPayload, err := jws.Verify(pubKey)
 	if err != nil {
 		return nil, NewError(ErrCodeSignatureInvalid, fmt.Sprintf("signature verification failed: %v", err))
@@ -211,70 +259,58 @@ func (v *Verifier) VerifyEnvelope(
 	if err := json.Unmarshal(verifiedPayload, &payload); err != nil {
 		return nil, NewError(ErrCodeMalformed, fmt.Sprintf("failed to unmarshal verified payload: %v", err))
 	}
-
 	if err := payload.Validate(); err != nil {
 		return nil, err
 	}
+	return &payload, nil
+}
 
-	// Step 5: Temporal validity
-	now := opts.now()
+// checkTemporal validates the envelope's temporal claims.
+func (v *Verifier) checkTemporal(payload *Payload, now time.Time) error {
 	nowUnix := now.Unix()
 	if nowUnix >= payload.ExpiresAt {
-		return nil, NewError(ErrCodeExpired,
+		return NewError(ErrCodeExpired,
 			fmt.Sprintf("envelope expired at %d, current time is %d", payload.ExpiresAt, nowUnix))
 	}
 	if payload.IssuedAt > nowUnix {
-		return nil, NewError(ErrCodeNotYetValid,
+		return NewError(ErrCodeNotYetValid,
 			fmt.Sprintf("envelope issued_at %d is in the future (current time %d)", payload.IssuedAt, nowUnix))
 	}
+	return nil
+}
 
-	// Step 6: Badge JTI binding
-	if issuerBadgeResult != nil {
-		if payload.IssuerBadgeJTI != issuerBadgeResult.Claims.JTI {
-			return nil, NewError(ErrCodeBadgeBindingFailed,
-				fmt.Sprintf("issuer_badge_jti %q does not match presented badge jti %q",
-					payload.IssuerBadgeJTI, issuerBadgeResult.Claims.JTI))
-		}
+// verifySubjectBadge handles subject badge verification and JTI binding.
+func (v *Verifier) verifySubjectBadge(
+	ctx context.Context,
+	payload *Payload,
+	subjectBadgeJWS string,
+	opts VerifyOptions,
+) (*badge.VerifyResult, error) {
+	if opts.SkipBadgeVerification || payload.SubjectBadgeJTI == nil || subjectBadgeJWS == "" {
+		return nil, nil
 	}
-
-	var subjectBadgeResult *badge.VerifyResult
-	if !opts.SkipBadgeVerification && payload.SubjectBadgeJTI != nil && subjectBadgeJWS != "" {
-		if v.BadgeVerifier == nil {
-			return nil, fmt.Errorf("badge verifier is required for subject badge verification")
-		}
-		badgeOpts := badge.VerifyOptions{
-			TrustedIssuers:       opts.TrustedIssuers,
-			AcceptSelfSigned:     true,
-			SkipRevocationCheck:  false,
-			SkipAgentStatusCheck: false,
-		}
-		subjectBadgeResult, err = v.BadgeVerifier.VerifyWithOptions(ctx, subjectBadgeJWS, badgeOpts)
-		if err != nil {
-			return nil, WrapError(ErrCodeBadgeBindingFailed, "subject badge verification failed", err)
-		}
-		if *payload.SubjectBadgeJTI != subjectBadgeResult.Claims.JTI {
-			return nil, NewError(ErrCodeBadgeBindingFailed,
-				fmt.Sprintf("subject_badge_jti %q does not match presented badge jti %q",
-					*payload.SubjectBadgeJTI, subjectBadgeResult.Claims.JTI))
-		}
+	result, err := v.verifyBadge(ctx, subjectBadgeJWS, opts)
+	if err != nil {
+		return nil, WrapError(ErrCodeBadgeBindingFailed, "subject badge verification failed", err)
 	}
-
-	// Step 7: Enforcement mode escalation
-	effectiveMode := opts.EnforcementMode
-	if payload.EnforcementModeMin != nil {
-		minMode, err := ParseEnforcementMode(*payload.EnforcementModeMin)
-		if err != nil {
-			return nil, err
-		}
-		effectiveMode = Escalate(effectiveMode, minMode)
+	if result != nil && *payload.SubjectBadgeJTI != result.Claims.JTI {
+		return nil, NewError(ErrCodeBadgeBindingFailed,
+			fmt.Sprintf("subject_badge_jti %q does not match presented badge jti %q",
+				*payload.SubjectBadgeJTI, result.Claims.JTI))
 	}
+	return result, nil
+}
 
-	return &VerifyResult{
-		Payload:       &payload,
-		IssuerBadge:   issuerBadgeResult,
-		SubjectBadge:  subjectBadgeResult,
-		EffectiveMode: effectiveMode,
-	}, nil
+// resolveEnforcementMode computes the effective enforcement mode.
+func (v *Verifier) resolveEnforcementMode(payload *Payload, configured EnforcementMode) (EnforcementMode, error) {
+	if payload.EnforcementModeMin == nil {
+		return configured, nil
+	}
+	minMode, err := ParseEnforcementMode(*payload.EnforcementModeMin)
+	if err != nil {
+		return 0, err
+	}
+	return Escalate(configured, minMode), nil
 }
 
 // VerifyChain verifies a full delegation chain of Authority Envelopes.

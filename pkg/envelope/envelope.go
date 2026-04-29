@@ -175,11 +175,6 @@ func ParseToken(jwsCompact string) (*Token, error) {
 	}, nil
 }
 
-// ptr returns a pointer to a string value.
-func ptr(s string) *string {
-	return &s
-}
-
 // String returns a human-readable summary of the envelope payload.
 func (p *Payload) String() string {
 	var b strings.Builder

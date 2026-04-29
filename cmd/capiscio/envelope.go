@@ -33,12 +33,8 @@ var (
 	envDeriveKeyFile  string
 
 	// Envelope verify flags
-	envVerifyKeyFile        string
 	envSkipBadge            bool
 	envVerifyMinMode        string
-
-	// Envelope chain flags
-	envChainFiles []string
 )
 
 var envelopeCmd = &cobra.Command{
