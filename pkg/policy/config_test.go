@@ -295,11 +295,11 @@ func TestParse_CapabilityClasses(t *testing.T) {
 	yaml := `version: "1"
 min_trust_level: DV
 capability_classes:
-  - class: invoice-management
+  - class: invoice_management
     min_trust_level: OV
     allowed_dids:
       - did:web:agent1.example.com
-  - class: finance.invoice-management
+  - class: finance.invoice_management
     min_trust_level: EV
     denied_dids:
       - did:web:evil.example.com
@@ -307,10 +307,10 @@ capability_classes:
 	cfg, err := Parse([]byte(yaml))
 	require.NoError(t, err)
 	assert.Len(t, cfg.CapabilityClasses, 2)
-	assert.Equal(t, "invoice-management", cfg.CapabilityClasses[0].Class)
+	assert.Equal(t, "invoice_management", cfg.CapabilityClasses[0].Class)
 	assert.Equal(t, "OV", cfg.CapabilityClasses[0].MinTrustLevel)
 	assert.Equal(t, []string{"did:web:agent1.example.com"}, cfg.CapabilityClasses[0].AllowedDIDs)
-	assert.Equal(t, "finance.invoice-management", cfg.CapabilityClasses[1].Class)
+	assert.Equal(t, "finance.invoice_management", cfg.CapabilityClasses[1].Class)
 	assert.Equal(t, "EV", cfg.CapabilityClasses[1].MinTrustLevel)
 }
 
@@ -329,20 +329,20 @@ func TestValidate_CapabilityClassDotNotation(t *testing.T) {
 		class   string
 		wantErr bool
 	}{
-		{"simple", "invoice-management", false},
-		{"dotted", "finance.invoice-management", false},
-		{"deep-dotted", "finance.accounts.invoice-management", false},
+		{"simple", "invoice_management", false},
+		{"dotted", "finance.invoice_management", false},
+		{"deep-dotted", "finance.accounts.invoice_management", false},
 		{"single-char", "a", false},
-		{"numeric", "rfc008", false},
+		{"with-digits", "rfc008", false},
+		{"underscore", "has_underscore", false},
 		{"empty", "", true},
-		{"leading-dot", ".leading-dot", true},
-		{"trailing-dot", "trailing-dot.", true},
+		{"leading-dot", ".leading", true},
+		{"trailing-dot", "trailing.", true},
 		{"double-dot", "finance..invoice", true},
 		{"uppercase", "UPPERCASE", true},
 		{"spaces", "has space", true},
-		{"underscore", "has_underscore", true},
-		{"leading-hyphen", "-leading", true},
-		{"trailing-hyphen", "trailing-", true},
+		{"hyphen", "invoice-management", true},
+		{"leading-digit", "0abc", true},
 	}
 
 	for _, tt := range tests {
@@ -367,20 +367,20 @@ func TestValidate_CapabilityClassDuplicate(t *testing.T) {
 	cfg := &Config{
 		Version: "1",
 		CapabilityClasses: []CapabilityClassRule{
-			{Class: "invoice-management", MinTrustLevel: "DV"},
-			{Class: "invoice-management", MinTrustLevel: "OV"},
+			{Class: "invoice_management", MinTrustLevel: "DV"},
+			{Class: "invoice_management", MinTrustLevel: "OV"},
 		},
 	}
 	err := Validate(cfg)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), `duplicate class "invoice-management"`)
+	assert.Contains(t, err.Error(), `duplicate class "invoice_management"`)
 }
 
 func TestValidate_CapabilityClassInvalidTrustLevel(t *testing.T) {
 	cfg := &Config{
 		Version: "1",
 		CapabilityClasses: []CapabilityClassRule{
-			{Class: "invoice-management", MinTrustLevel: "GOLD"},
+			{Class: "invoice_management", MinTrustLevel: "GOLD"},
 		},
 	}
 	err := Validate(cfg)
@@ -393,7 +393,7 @@ func TestValidate_CapabilityClassDIDConflict(t *testing.T) {
 		Version: "1",
 		CapabilityClasses: []CapabilityClassRule{
 			{
-				Class:       "invoice-management",
+				Class:       "invoice_management",
 				AllowedDIDs: []string{"did:web:a.example.com"},
 				DeniedDIDs:  []string{"did:web:a.example.com"},
 			},
@@ -415,7 +415,7 @@ func TestToMap_WithCapabilityClasses(t *testing.T) {
 		MCPTools:      []MCPToolRule{},
 		CapabilityClasses: []CapabilityClassRule{
 			{
-				Class:         "invoice-management",
+				Class:         "invoice_management",
 				MinTrustLevel: "OV",
 				AllowedDIDs:   []string{"did:web:a.example.com"},
 				DeniedDIDs:    []string{},
@@ -428,6 +428,6 @@ func TestToMap_WithCapabilityClasses(t *testing.T) {
 	require.True(t, ok)
 	require.Len(t, ccRules, 1)
 	cc := ccRules[0].(map[string]interface{})
-	assert.Equal(t, "invoice-management", cc["class"])
+	assert.Equal(t, "invoice_management", cc["class"])
 	assert.Equal(t, "OV", cc["min_trust_level"])
 }

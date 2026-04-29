@@ -5,9 +5,9 @@ package policy
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
+	"github.com/capiscio/capiscio-core/v2/pkg/envelope"
 	"gopkg.in/yaml.v3"
 )
 
@@ -48,7 +48,7 @@ type MCPToolRule struct {
 }
 
 // CapabilityClassRule scopes policy to a specific RFC-008 capability class.
-// The Class field uses dot-notation per RFC-008 §7.1 (e.g. "invoice-management").
+// The Class field uses dot-notation per RFC-008 §7.1 (e.g. "invoice_management").
 type CapabilityClassRule struct {
 	Class         string   `yaml:"class" json:"class"`
 	MinTrustLevel string   `yaml:"min_trust_level" json:"min_trust_level"`
@@ -65,10 +65,6 @@ var validTrustLevels = map[string]bool{
 	"OV":  true,
 	"EV":  true,
 }
-
-// capabilityClassPattern validates RFC-008 §7.1 dot-notation class names.
-// Allowed characters: lowercase letters, digits, hyphens, and dots as separators.
-var capabilityClassPattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$`)
 
 // Parse parses and validates YAML policy config bytes.
 // Returns an error if the YAML is malformed or fails validation.
@@ -168,17 +164,29 @@ func Validate(cfg *Config) error {
 	}
 
 	// Validate capability classes (RFC-008 §7.1)
+	errs = append(errs, validateCapabilityClasses(cfg.CapabilityClasses)...)
+
+	if len(errs) > 0 {
+		return fmt.Errorf("policy config validation failed:\n  - %s", strings.Join(errs, "\n  - "))
+	}
+	return nil
+}
+
+// validateCapabilityClasses validates the capability_classes section of a policy.
+func validateCapabilityClasses(classes []CapabilityClassRule) []string {
+	var errs []string
 	ccSeen := make(map[string]bool)
-	for i, cc := range cfg.CapabilityClasses {
+	for i, cc := range classes {
 		if cc.Class == "" {
 			errs = append(errs, fmt.Sprintf("capability_classes[%d]: class must not be empty", i))
-		} else if !capabilityClassPattern.MatchString(cc.Class) {
-			errs = append(errs, fmt.Sprintf("capability_classes[%d]: invalid class name %q (must match [a-z0-9-] with optional dot separators)", i, cc.Class))
+		} else if err := envelope.ValidateCapabilityClass(cc.Class); err != nil {
+			errs = append(errs, fmt.Sprintf("capability_classes[%d]: invalid class name %q: %v", i, cc.Class, err))
+		} else {
+			if ccSeen[cc.Class] {
+				errs = append(errs, fmt.Sprintf("capability_classes[%d]: duplicate class %q", i, cc.Class))
+			}
+			ccSeen[cc.Class] = true
 		}
-		if ccSeen[cc.Class] {
-			errs = append(errs, fmt.Sprintf("capability_classes[%d]: duplicate class %q", i, cc.Class))
-		}
-		ccSeen[cc.Class] = true
 		if !validTrustLevels[cc.MinTrustLevel] {
 			errs = append(errs, fmt.Sprintf("capability_classes[%d]: invalid min_trust_level %q", i, cc.MinTrustLevel))
 		}
@@ -187,11 +195,7 @@ func Validate(cfg *Config) error {
 		_, ccDeniedErrs := validateDIDList(fmt.Sprintf("capability_classes[%d].denied_dids", i), cc.DeniedDIDs, ccAllowedSeen)
 		errs = append(errs, ccDeniedErrs...)
 	}
-
-	if len(errs) > 0 {
-		return fmt.Errorf("policy config validation failed:\n  - %s", strings.Join(errs, "\n  - "))
-	}
-	return nil
+	return errs
 }
 
 // ToMap converts a Config to the map format used in OPA data documents.
