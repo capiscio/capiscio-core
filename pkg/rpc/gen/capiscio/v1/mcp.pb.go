@@ -354,8 +354,10 @@ type EvaluateToolAccessRequest struct {
 	DelegationDepth       int32  `protobuf:"varint,12,opt,name=delegation_depth,json=delegationDepth,proto3" json:"delegation_depth,omitempty"`                    // reserved for envelope
 	ConstraintsJson       string `protobuf:"bytes,13,opt,name=constraints_json,json=constraintsJson,proto3" json:"constraints_json,omitempty"`                     // reserved for envelope
 	ParentConstraintsJson string `protobuf:"bytes,14,opt,name=parent_constraints_json,json=parentConstraintsJson,proto3" json:"parent_constraints_json,omitempty"` // reserved for envelope
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// RFC-008: PEP-level unknown capability class behavior (default: deny)
+	DenyOnUnknownClass *bool `protobuf:"varint,15,opt,name=deny_on_unknown_class,json=denyOnUnknownClass,proto3,oneof" json:"deny_on_unknown_class,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *EvaluateToolAccessRequest) Reset() {
@@ -488,6 +490,13 @@ func (x *EvaluateToolAccessRequest) GetParentConstraintsJson() string {
 		return x.ParentConstraintsJson
 	}
 	return ""
+}
+
+func (x *EvaluateToolAccessRequest) GetDenyOnUnknownClass() bool {
+	if x != nil && x.DenyOnUnknownClass != nil {
+		return *x.DenyOnUnknownClass
+	}
+	return false
 }
 
 type isEvaluateToolAccessRequest_CallerCredential interface {
@@ -1928,7 +1937,7 @@ var File_capiscio_v1_mcp_proto protoreflect.FileDescriptor
 
 const file_capiscio_v1_mcp_proto_rawDesc = "" +
 	"\n" +
-	"\x15capiscio/v1/mcp.proto\x12\vcapiscio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb4\x04\n" +
+	"\x15capiscio/v1/mcp.proto\x12\vcapiscio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x86\x05\n" +
 	"\x19EvaluateToolAccessRequest\x12\x1b\n" +
 	"\ttool_name\x18\x01 \x01(\tR\btoolName\x12\x1f\n" +
 	"\vparams_hash\x18\x02 \x01(\tR\n" +
@@ -1945,8 +1954,10 @@ const file_capiscio_v1_mcp_proto_rawDesc = "" +
 	"envelopeId\x12)\n" +
 	"\x10delegation_depth\x18\f \x01(\x05R\x0fdelegationDepth\x12)\n" +
 	"\x10constraints_json\x18\r \x01(\tR\x0fconstraintsJson\x126\n" +
-	"\x17parent_constraints_json\x18\x0e \x01(\tR\x15parentConstraintsJsonB\x13\n" +
-	"\x11caller_credentialJ\x04\b\t\x10\n" +
+	"\x17parent_constraints_json\x18\x0e \x01(\tR\x15parentConstraintsJson\x126\n" +
+	"\x15deny_on_unknown_class\x18\x0f \x01(\bH\x01R\x12denyOnUnknownClass\x88\x01\x01B\x13\n" +
+	"\x11caller_credentialB\x18\n" +
+	"\x16_deny_on_unknown_classJ\x04\b\t\x10\n" +
 	"\"\xb2\x01\n" +
 	"\x0eEvaluateConfig\x12'\n" +
 	"\x0ftrusted_issuers\x18\x01 \x03(\tR\x0etrustedIssuers\x12&\n" +

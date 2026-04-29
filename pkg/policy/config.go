@@ -5,6 +5,7 @@ package policy
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -14,13 +15,14 @@ import (
 // This defines the content of a policy document at any scope level
 // (org, group, or agent).
 type Config struct {
-	Version       string          `yaml:"version" json:"version"`
-	MinTrustLevel string          `yaml:"min_trust_level" json:"min_trust_level"`
-	AllowedDIDs   []string        `yaml:"allowed_dids" json:"allowed_dids"`
-	DeniedDIDs    []string        `yaml:"denied_dids" json:"denied_dids"`
-	RateLimits    []RateLimitRule `yaml:"rate_limits" json:"rate_limits"`
-	Operations    []OperationRule `yaml:"operations" json:"operations"`
-	MCPTools      []MCPToolRule   `yaml:"mcp_tools" json:"mcp_tools"`
+	Version           string                `yaml:"version" json:"version"`
+	MinTrustLevel     string                `yaml:"min_trust_level" json:"min_trust_level"`
+	AllowedDIDs       []string              `yaml:"allowed_dids" json:"allowed_dids"`
+	DeniedDIDs        []string              `yaml:"denied_dids" json:"denied_dids"`
+	RateLimits        []RateLimitRule        `yaml:"rate_limits" json:"rate_limits"`
+	Operations        []OperationRule        `yaml:"operations" json:"operations"`
+	MCPTools          []MCPToolRule          `yaml:"mcp_tools" json:"mcp_tools"`
+	CapabilityClasses []CapabilityClassRule  `yaml:"capability_classes" json:"capability_classes"`
 }
 
 // RateLimitRule defines per-DID rate limiting.
@@ -45,6 +47,15 @@ type MCPToolRule struct {
 	DeniedDIDs    []string `yaml:"denied_dids" json:"denied_dids"`
 }
 
+// CapabilityClassRule scopes policy to a specific RFC-008 capability class.
+// The Class field uses dot-notation per RFC-008 §7.1 (e.g. "invoice-management").
+type CapabilityClassRule struct {
+	Class         string   `yaml:"class" json:"class"`
+	MinTrustLevel string   `yaml:"min_trust_level" json:"min_trust_level"`
+	AllowedDIDs   []string `yaml:"allowed_dids" json:"allowed_dids"`
+	DeniedDIDs    []string `yaml:"denied_dids" json:"denied_dids"`
+}
+
 // validTrustLevels defines the allowed trust level values.
 var validTrustLevels = map[string]bool{
 	"":    true, // empty means no trust requirement
@@ -54,6 +65,10 @@ var validTrustLevels = map[string]bool{
 	"OV":  true,
 	"EV":  true,
 }
+
+// capabilityClassPattern validates RFC-008 §7.1 dot-notation class names.
+// Allowed characters: lowercase letters, digits, hyphens, and dots as separators.
+var capabilityClassPattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$`)
 
 // Parse parses and validates YAML policy config bytes.
 // Returns an error if the YAML is malformed or fails validation.
@@ -152,6 +167,27 @@ func Validate(cfg *Config) error {
 		errs = append(errs, toolDeniedErrs...)
 	}
 
+	// Validate capability classes (RFC-008 §7.1)
+	ccSeen := make(map[string]bool)
+	for i, cc := range cfg.CapabilityClasses {
+		if cc.Class == "" {
+			errs = append(errs, fmt.Sprintf("capability_classes[%d]: class must not be empty", i))
+		} else if !capabilityClassPattern.MatchString(cc.Class) {
+			errs = append(errs, fmt.Sprintf("capability_classes[%d]: invalid class name %q (must match [a-z0-9-] with optional dot separators)", i, cc.Class))
+		}
+		if ccSeen[cc.Class] {
+			errs = append(errs, fmt.Sprintf("capability_classes[%d]: duplicate class %q", i, cc.Class))
+		}
+		ccSeen[cc.Class] = true
+		if !validTrustLevels[cc.MinTrustLevel] {
+			errs = append(errs, fmt.Sprintf("capability_classes[%d]: invalid min_trust_level %q", i, cc.MinTrustLevel))
+		}
+		ccAllowedSeen, ccDIDErrs := validateDIDList(fmt.Sprintf("capability_classes[%d].allowed_dids", i), cc.AllowedDIDs, nil)
+		errs = append(errs, ccDIDErrs...)
+		_, ccDeniedErrs := validateDIDList(fmt.Sprintf("capability_classes[%d].denied_dids", i), cc.DeniedDIDs, ccAllowedSeen)
+		errs = append(errs, ccDeniedErrs...)
+	}
+
 	if len(errs) > 0 {
 		return fmt.Errorf("policy config validation failed:\n  - %s", strings.Join(errs, "\n  - "))
 	}
@@ -227,6 +263,26 @@ func ToMap(cfg *Config) map[string]interface{} {
 		tools[i] = entry
 	}
 	result["mcp_tools"] = tools
+
+	ccRules := make([]interface{}, len(cfg.CapabilityClasses))
+	for i, cc := range cfg.CapabilityClasses {
+		entry := map[string]interface{}{
+			"class":           cc.Class,
+			"min_trust_level": cc.MinTrustLevel,
+		}
+		ccAllowed := make([]interface{}, len(cc.AllowedDIDs))
+		for j, d := range cc.AllowedDIDs {
+			ccAllowed[j] = d
+		}
+		entry["allowed_dids"] = ccAllowed
+		ccDenied := make([]interface{}, len(cc.DeniedDIDs))
+		for j, d := range cc.DeniedDIDs {
+			ccDenied[j] = d
+		}
+		entry["denied_dids"] = ccDenied
+		ccRules[i] = entry
+	}
+	result["capability_classes"] = ccRules
 
 	return result
 }

@@ -33,11 +33,13 @@ func NewService(deps *Dependencies) *Service {
 
 // EvaluateToolAccessInput represents the input for tool access evaluation
 type EvaluateToolAccessInput struct {
-	ToolName   string
-	ParamsHash string
-	Origin     string
-	Credential CallerCredential
-	Config     *EvaluateConfig
+	ToolName           string
+	ParamsHash         string
+	Origin             string
+	Credential         CallerCredential
+	Config             *EvaluateConfig
+	CapabilityClass    string // RFC-008: capability class for policy evaluation
+	DenyOnUnknownClass *bool  // RFC-008: PEP-level unknown class behavior (nil = deny)
 }
 
 // EvaluateToolAccess evaluates tool access using RFC-006 §6.2-6.4

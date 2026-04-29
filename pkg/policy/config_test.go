@@ -288,3 +288,146 @@ func TestValidate_MCPToolDIDConflict(t *testing.T) {
 	assert.Contains(t, err.Error(), "mcp_tools[0].denied_dids")
 	assert.Contains(t, err.Error(), "conflicts with allowed")
 }
+
+// --- Capability Class Tests (RFC-008 §7.1) ---
+
+func TestParse_CapabilityClasses(t *testing.T) {
+	yaml := `version: "1"
+min_trust_level: DV
+capability_classes:
+  - class: invoice-management
+    min_trust_level: OV
+    allowed_dids:
+      - did:web:agent1.example.com
+  - class: finance.invoice-management
+    min_trust_level: EV
+    denied_dids:
+      - did:web:evil.example.com
+`
+	cfg, err := Parse([]byte(yaml))
+	require.NoError(t, err)
+	assert.Len(t, cfg.CapabilityClasses, 2)
+	assert.Equal(t, "invoice-management", cfg.CapabilityClasses[0].Class)
+	assert.Equal(t, "OV", cfg.CapabilityClasses[0].MinTrustLevel)
+	assert.Equal(t, []string{"did:web:agent1.example.com"}, cfg.CapabilityClasses[0].AllowedDIDs)
+	assert.Equal(t, "finance.invoice-management", cfg.CapabilityClasses[1].Class)
+	assert.Equal(t, "EV", cfg.CapabilityClasses[1].MinTrustLevel)
+}
+
+func TestParse_EmptyCapabilityClasses(t *testing.T) {
+	yaml := `version: "1"
+min_trust_level: REG
+`
+	cfg, err := Parse([]byte(yaml))
+	require.NoError(t, err)
+	assert.Empty(t, cfg.CapabilityClasses)
+}
+
+func TestValidate_CapabilityClassDotNotation(t *testing.T) {
+	tests := []struct {
+		name    string
+		class   string
+		wantErr bool
+	}{
+		{"simple", "invoice-management", false},
+		{"dotted", "finance.invoice-management", false},
+		{"deep-dotted", "finance.accounts.invoice-management", false},
+		{"single-char", "a", false},
+		{"numeric", "rfc008", false},
+		{"empty", "", true},
+		{"leading-dot", ".leading-dot", true},
+		{"trailing-dot", "trailing-dot.", true},
+		{"double-dot", "finance..invoice", true},
+		{"uppercase", "UPPERCASE", true},
+		{"spaces", "has space", true},
+		{"underscore", "has_underscore", true},
+		{"leading-hyphen", "-leading", true},
+		{"trailing-hyphen", "trailing-", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &Config{
+				Version: "1",
+				CapabilityClasses: []CapabilityClassRule{
+					{Class: tt.class, MinTrustLevel: "DV"},
+				},
+			}
+			err := Validate(cfg)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestValidate_CapabilityClassDuplicate(t *testing.T) {
+	cfg := &Config{
+		Version: "1",
+		CapabilityClasses: []CapabilityClassRule{
+			{Class: "invoice-management", MinTrustLevel: "DV"},
+			{Class: "invoice-management", MinTrustLevel: "OV"},
+		},
+	}
+	err := Validate(cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `duplicate class "invoice-management"`)
+}
+
+func TestValidate_CapabilityClassInvalidTrustLevel(t *testing.T) {
+	cfg := &Config{
+		Version: "1",
+		CapabilityClasses: []CapabilityClassRule{
+			{Class: "invoice-management", MinTrustLevel: "GOLD"},
+		},
+	}
+	err := Validate(cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `invalid min_trust_level "GOLD"`)
+}
+
+func TestValidate_CapabilityClassDIDConflict(t *testing.T) {
+	cfg := &Config{
+		Version: "1",
+		CapabilityClasses: []CapabilityClassRule{
+			{
+				Class:       "invoice-management",
+				AllowedDIDs: []string{"did:web:a.example.com"},
+				DeniedDIDs:  []string{"did:web:a.example.com"},
+			},
+		},
+	}
+	err := Validate(cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "capability_classes[0].denied_dids")
+	assert.Contains(t, err.Error(), "conflicts with allowed")
+}
+
+func TestToMap_WithCapabilityClasses(t *testing.T) {
+	cfg := &Config{
+		MinTrustLevel: "DV",
+		AllowedDIDs:   []string{},
+		DeniedDIDs:    []string{},
+		RateLimits:    []RateLimitRule{},
+		Operations:    []OperationRule{},
+		MCPTools:      []MCPToolRule{},
+		CapabilityClasses: []CapabilityClassRule{
+			{
+				Class:         "invoice-management",
+				MinTrustLevel: "OV",
+				AllowedDIDs:   []string{"did:web:a.example.com"},
+				DeniedDIDs:    []string{},
+			},
+		},
+	}
+
+	m := ToMap(cfg)
+	ccRules, ok := m["capability_classes"].([]interface{})
+	require.True(t, ok)
+	require.Len(t, ccRules, 1)
+	cc := ccRules[0].(map[string]interface{})
+	assert.Equal(t, "invoice-management", cc["class"])
+	assert.Equal(t, "OV", cc["min_trust_level"])
+}

@@ -17,12 +17,13 @@ const (
 
 // DecisionRequest is the canonical PDP query (RFC-005 §5.1).
 type DecisionRequest struct {
-	PIPVersion  string             `json:"pip_version"`
-	Subject     SubjectAttributes  `json:"subject"`
-	Action      ActionAttributes   `json:"action"`
-	Resource    ResourceAttributes `json:"resource"`
-	Context     ContextAttributes  `json:"context"`
-	Environment EnvironmentAttrs   `json:"environment"`
+	PIPVersion         string             `json:"pip_version"`
+	Subject            SubjectAttributes  `json:"subject"`
+	Action             ActionAttributes   `json:"action"`
+	Resource           ResourceAttributes `json:"resource"`
+	Context            ContextAttributes  `json:"context"`
+	Environment        EnvironmentAttrs   `json:"environment"`
+	DenyOnUnknownClass *bool              `json:"deny_on_unknown_class,omitempty"` // RFC-008: PEP-level flag for unknown capability class behavior
 }
 
 // SubjectAttributes identifies the acting agent.
