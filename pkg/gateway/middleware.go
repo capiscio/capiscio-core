@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/capiscio/capiscio-core/v2/pkg/badge"
+	"github.com/capiscio/capiscio-core/v2/pkg/envelope"
 	"github.com/capiscio/capiscio-core/v2/pkg/pip"
 )
 
@@ -351,12 +352,20 @@ func (p *pep) handlePDPDeny(w http.ResponseWriter, r *http.Request, resp *pip.De
 		emitPolicyEvent(p.callbacks, *event, pipReq)
 
 		// RFC-008: SCOPE_INSUFFICIENT returns structured JSON 403
-		if resp.ErrorCode == "SCOPE_INSUFFICIENT" {
-			body := map[string]string{
-				"error":                "SCOPE_INSUFFICIENT",
-				"requested_capability": resp.RequestedCapability,
-				"detail":               resp.Reason,
+		if resp.ErrorCode == pip.ErrorCodeScopeInsufficient {
+			var presentedCap, envelopeID string
+			if pipReq.Action.CapabilityClass != nil {
+				presentedCap = *pipReq.Action.CapabilityClass
 			}
+			if pipReq.Context.EnvelopeID != nil {
+				envelopeID = *pipReq.Context.EnvelopeID
+			}
+			body := envelope.NewScopeInsufficientRejection(
+				resp.RequestedCapability,
+				presentedCap,
+				envelopeID,
+				pipReq.Context.TxnID,
+			)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusForbidden)
 			_ = json.NewEncoder(w).Encode(body)

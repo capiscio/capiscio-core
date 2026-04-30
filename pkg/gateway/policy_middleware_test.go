@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/capiscio/capiscio-core/v2/pkg/badge"
+	"github.com/capiscio/capiscio-core/v2/pkg/envelope"
 	"github.com/capiscio/capiscio-core/v2/pkg/gateway"
 	"github.com/capiscio/capiscio-core/v2/pkg/pip"
 	"github.com/capiscio/capiscio-core/v2/pkg/registry"
@@ -1018,4 +1019,39 @@ func TestParseBreakGlassJWS(t *testing.T) {
 		_, err := pip.ParseBreakGlassJWS("not-a-jws", pub)
 		assert.Error(t, err)
 	})
+}
+
+func TestPolicyMiddleware_ScopeInsufficientJSON(t *testing.T) {
+	ts := newTestSetup(t)
+
+	pdp := &mockPDP{
+		resp: &pip.DecisionResponse{
+			Decision:            pip.DecisionDeny,
+			DecisionID:          "deny-scope-1",
+			Reason:              "capability class mismatch",
+			ErrorCode:           "SCOPE_INSUFFICIENT",
+			RequestedCapability: "storage",
+		},
+	}
+
+	config := gateway.PEPConfig{
+		PDPClient:       pdp,
+		EnforcementMode: pip.EMStrict,
+	}
+	mw := gateway.NewPolicyMiddleware(ts.verifier, config, okHandler())
+
+	req := httptest.NewRequest("GET", "/v1/data", nil)
+	req.Header.Set("X-Capiscio-Badge", ts.token)
+	rr := httptest.NewRecorder()
+
+	mw.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusForbidden, rr.Code)
+	assert.Equal(t, "application/json", rr.Header().Get("Content-Type"))
+
+	var body envelope.ScopeInsufficientRejection
+	err := json.NewDecoder(rr.Body).Decode(&body)
+	require.NoError(t, err)
+	assert.Equal(t, envelope.ErrCodeScopeInsufficient, body.Error)
+	assert.Equal(t, "storage", body.RequestedCapability)
 }

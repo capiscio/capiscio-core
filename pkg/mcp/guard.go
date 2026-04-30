@@ -213,6 +213,16 @@ func (g *Guard) evaluateWithPDP(
 		},
 	}
 
+	// RFC-008: propagate capability class and envelope context into PDP request
+	if config.CapabilityClass != "" {
+		cc := config.CapabilityClass
+		pipReq.Action.CapabilityClass = &cc
+	}
+	if config.EnvelopeID != "" {
+		eid := config.EnvelopeID
+		pipReq.Context.EnvelopeID = &eid
+	}
+
 	resp, err := g.pdpClient.Evaluate(ctx, pipReq)
 
 	if err != nil {
@@ -272,7 +282,7 @@ func (g *Guard) evaluateWithPDP(
 			result.PolicyDecision = pip.DecisionObserve
 		default:
 			result.Decision = DecisionDeny
-			if resp.ErrorCode == "SCOPE_INSUFFICIENT" {
+			if resp.ErrorCode == pip.ErrorCodeScopeInsufficient {
 				result.DenyReason = DenyReasonScopeInsufficient
 			} else {
 				result.DenyReason = DenyReasonPolicyDenied

@@ -147,6 +147,14 @@ type EvaluateConfig struct {
 
 	// PolicyVersion is the version of the policy being applied (RFC-006 §7.2)
 	PolicyVersion string
+
+	// CapabilityClass is the capability class from the authority envelope (RFC-008).
+	// When set, it is forwarded to the PDP as Action.CapabilityClass.
+	CapabilityClass string
+
+	// EnvelopeID is the envelope_id from the authority envelope (RFC-008).
+	// When set, it is forwarded to the PDP as Context.EnvelopeID.
+	EnvelopeID string
 }
 
 // EvaluateResult holds the result of tool access evaluation
