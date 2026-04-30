@@ -205,6 +205,12 @@ func (s *MCPService) EvaluateToolAccess(
 	if result.Decision == mcp.DecisionDeny {
 		resp.DenyReason = convertDenyReason(result.DenyReason)
 		resp.DenyDetail = result.DenyDetail
+
+		// RFC-008: populate structured rejection fields from PDP response
+		resp.ErrorCode = result.PolicyErrorCode
+		resp.RejectionDetail = result.DenyDetail
+		resp.RequestedCapability = result.PolicyRequestedCapability
+		resp.PresentedCapability = req.CapabilityClass
 	}
 
 	// Use pre-serialized evidence JSON
@@ -331,6 +337,8 @@ func convertDenyReason(reason mcp.DenyReason) pb.MCPDenyReason {
 		return pb.MCPDenyReason_MCP_DENY_REASON_ISSUER_UNTRUSTED
 	case mcp.DenyReasonPolicyDenied:
 		return pb.MCPDenyReason_MCP_DENY_REASON_POLICY_DENIED
+	case mcp.DenyReasonScopeInsufficient:
+		return pb.MCPDenyReason_MCP_DENY_REASON_SCOPE_INSUFFICIENT
 	default:
 		return pb.MCPDenyReason_MCP_DENY_REASON_UNSPECIFIED
 	}

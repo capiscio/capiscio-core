@@ -231,11 +231,17 @@ func mapOPAResult(results rego.ResultSet) (*pip.DecisionResponse, error) {
 		obligations = extractObligations(oblSet)
 	}
 
+	// RFC-008: structured denial metadata
+	errorCode, _ := policyResult["error_code"].(string)
+	requestedCapability, _ := policyResult["requested_capability"].(string)
+
 	return &pip.DecisionResponse{
-		Decision:    decision,
-		DecisionID:  decisionID,
-		Obligations: obligations,
-		Reason:      reason,
+		Decision:            decision,
+		DecisionID:          decisionID,
+		Obligations:         obligations,
+		Reason:              reason,
+		ErrorCode:           errorCode,
+		RequestedCapability: requestedCapability,
 	}, nil
 }
 

@@ -28,6 +28,9 @@ var (
 	// ErrPolicyDenied indicates policy evaluation failed
 	ErrPolicyDenied = errors.New("policy denied access")
 
+	// ErrScopeInsufficient indicates the capability class scope is insufficient
+	ErrScopeInsufficient = errors.New("capability class scope insufficient")
+
 	// ErrDIDInvalid indicates the DID is malformed
 	ErrDIDInvalid = errors.New("DID is invalid")
 
@@ -57,6 +60,7 @@ const (
 	DenyReasonToolNotAllowed
 	DenyReasonIssuerUntrusted
 	DenyReasonPolicyDenied
+	DenyReasonScopeInsufficient
 )
 
 // String returns the RFC-006 §10 compliant error code string
@@ -78,6 +82,8 @@ func (r DenyReason) String() string {
 		return "TOOL_ISSUER_UNTRUSTED"
 	case DenyReasonPolicyDenied:
 		return "TOOL_POLICY_DENIED"
+	case DenyReasonScopeInsufficient:
+		return "TOOL_SCOPE_INSUFFICIENT"
 	default:
 		return "UNSPECIFIED"
 	}
@@ -102,6 +108,8 @@ func ErrorToDenyReason(err error) DenyReason {
 		return DenyReasonIssuerUntrusted
 	case errors.Is(err, ErrPolicyDenied):
 		return DenyReasonPolicyDenied
+	case errors.Is(err, ErrScopeInsufficient):
+		return DenyReasonScopeInsufficient
 	default:
 		return DenyReasonUnspecified
 	}

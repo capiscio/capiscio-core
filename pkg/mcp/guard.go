@@ -213,6 +213,16 @@ func (g *Guard) evaluateWithPDP(
 		},
 	}
 
+	// RFC-008: propagate capability class and envelope context into PDP request
+	if config.CapabilityClass != "" {
+		cc := config.CapabilityClass
+		pipReq.Action.CapabilityClass = &cc
+	}
+	if config.EnvelopeID != "" {
+		eid := config.EnvelopeID
+		pipReq.Context.EnvelopeID = &eid
+	}
+
 	resp, err := g.pdpClient.Evaluate(ctx, pipReq)
 
 	if err != nil {
@@ -260,6 +270,10 @@ func (g *Guard) evaluateWithPDP(
 	result.PolicyDecision = resp.Decision
 
 	if resp.Decision == pip.DecisionDeny {
+		// RFC-008: propagate structured denial metadata from PDP
+		result.PolicyErrorCode = resp.ErrorCode
+		result.PolicyRequestedCapability = resp.RequestedCapability
+
 		switch g.emMode {
 		case pip.EMObserve:
 			// Log but allow
@@ -268,7 +282,11 @@ func (g *Guard) evaluateWithPDP(
 			result.PolicyDecision = pip.DecisionObserve
 		default:
 			result.Decision = DecisionDeny
-			result.DenyReason = DenyReasonPolicyDenied
+			if resp.ErrorCode == pip.ErrorCodeScopeInsufficient {
+				result.DenyReason = DenyReasonScopeInsufficient
+			} else {
+				result.DenyReason = DenyReasonPolicyDenied
+			}
 			result.DenyDetail = resp.Reason
 		}
 		return

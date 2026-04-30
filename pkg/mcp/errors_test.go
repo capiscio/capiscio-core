@@ -19,6 +19,7 @@ func TestDenyReasonString(t *testing.T) {
 		{DenyReasonToolNotAllowed, "TOOL_NOT_FOUND"},
 		{DenyReasonIssuerUntrusted, "TOOL_ISSUER_UNTRUSTED"},
 		{DenyReasonPolicyDenied, "TOOL_POLICY_DENIED"},
+		{DenyReasonScopeInsufficient, "TOOL_SCOPE_INSUFFICIENT"},
 	}
 
 	for _, tt := range tests {
@@ -43,6 +44,7 @@ func TestErrorToDenyReason(t *testing.T) {
 		{ErrToolNotAllowed, DenyReasonToolNotAllowed},
 		{ErrIssuerUntrusted, DenyReasonIssuerUntrusted},
 		{ErrPolicyDenied, DenyReasonPolicyDenied},
+		{ErrScopeInsufficient, DenyReasonScopeInsufficient},
 		{nil, DenyReasonUnspecified},
 	}
 

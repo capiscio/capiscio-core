@@ -135,6 +135,12 @@ message EvaluateToolAccessResponse {
   string policy_decision = 12;          // ALLOW, DENY, or ALLOW_OBSERVE
   string enforcement_mode = 13;         // mode used for this evaluation
   repeated MCPObligation obligations = 14; // obligations from PDP
+
+  // RFC-008: Structured rejection metadata (populated on DENY)
+  string error_code = 15;               // e.g. "SCOPE_INSUFFICIENT"
+  string rejection_detail = 16;         // human-readable denial detail
+  string requested_capability = 17;     // capability class that was denied
+  string presented_capability = 18;     // capability class the agent presented (if any)
 }
 
 // Obligation returned by PDP (RFC-005 §7.1)
@@ -292,6 +298,7 @@ enum MCPDenyReason {
   MCP_DENY_REASON_TOOL_NOT_ALLOWED = 6;    // Tool not in allowed list
   MCP_DENY_REASON_ISSUER_UNTRUSTED = 7;
   MCP_DENY_REASON_POLICY_DENIED = 8;       // Policy evaluation failed
+  MCP_DENY_REASON_SCOPE_INSUFFICIENT = 9;  // RFC-008: Capability class scope insufficient
 }
 
 // ============================================================================

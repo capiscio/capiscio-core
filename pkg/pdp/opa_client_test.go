@@ -123,6 +123,47 @@ tool_blocked if {
 obligations = []
 `
 
+// Rego policy that denies with error_code and requested_capability (RFC-008).
+const regoScopeInsufficient = `package capiscio.policy
+
+import rego.v1
+
+default decision = "ALLOW"
+
+decision = "DENY" if {
+	input.action.capability_class != ""
+	input.action.capability_class != "compute"
+}
+
+reason = "capability class mismatch" if {
+	input.action.capability_class != ""
+	input.action.capability_class != "compute"
+}
+
+reason = "allowed" if {
+	not scope_denied
+}
+
+scope_denied if {
+	input.action.capability_class != ""
+	input.action.capability_class != "compute"
+}
+
+error_code = "SCOPE_INSUFFICIENT" if {
+	scope_denied
+}
+
+default error_code = ""
+
+requested_capability = input.action.capability_class if {
+	scope_denied
+}
+
+default requested_capability = ""
+
+obligations = []
+`
+
 func newTestRequest() *pip.DecisionRequest {
 	return &pip.DecisionRequest{
 		PIPVersion: pip.PIPVersion,
@@ -486,4 +527,22 @@ func TestBuildOPAInput_AllOptionalFields(t *testing.T) {
 	assert.Equal(t, "workspace-1", env["workspace"])
 	assert.Equal(t, "pep-1", env["pep_id"])
 	assert.Equal(t, "2026-03-28T12:00:00Z", env["time"])
+}
+
+func TestOPALocalClient_ErrorCodeAndRequestedCapability(t *testing.T) {
+	client := NewOPALocalClient()
+
+	modules := map[string]string{"policy.rego": regoScopeInsufficient}
+	err := client.LoadBundle(context.Background(), modules, nil)
+	require.NoError(t, err)
+
+	req := newTestRequest()
+	capClass := "storage"
+	req.Action.CapabilityClass = &capClass
+
+	resp, err := client.Evaluate(context.Background(), req)
+	require.NoError(t, err)
+	assert.Equal(t, "DENY", resp.Decision)
+	assert.Equal(t, "SCOPE_INSUFFICIENT", resp.ErrorCode)
+	assert.Equal(t, "storage", resp.RequestedCapability)
 }

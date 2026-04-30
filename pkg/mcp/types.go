@@ -147,6 +147,14 @@ type EvaluateConfig struct {
 
 	// PolicyVersion is the version of the policy being applied (RFC-006 §7.2)
 	PolicyVersion string
+
+	// CapabilityClass is the capability class from the authority envelope (RFC-008).
+	// When set, it is forwarded to the PDP as Action.CapabilityClass.
+	CapabilityClass string
+
+	// EnvelopeID is the envelope_id from the authority envelope (RFC-008).
+	// When set, it is forwarded to the PDP as Context.EnvelopeID.
+	EnvelopeID string
 }
 
 // EvaluateResult holds the result of tool access evaluation
@@ -186,6 +194,15 @@ type EvaluateResult struct {
 
 	// PolicyDecision is the PDP decision string: ALLOW, DENY, or ALLOW_OBSERVE (RFC-005)
 	PolicyDecision string
+
+	// PolicyErrorCode is the structured error code from PDP (RFC-008, e.g. "SCOPE_INSUFFICIENT")
+	PolicyErrorCode string
+
+	// PolicyRequestedCapability is the capability class that triggered DENY (RFC-008)
+	PolicyRequestedCapability string
+
+	// PresentedCapability is the capability class the agent presented in the request (RFC-008)
+	PresentedCapability string
 }
 
 // VerifyConfig holds configuration for server identity verification

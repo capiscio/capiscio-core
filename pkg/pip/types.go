@@ -15,6 +15,10 @@ const (
 	DecisionObserve = "ALLOW_OBSERVE" // PEP-only: emitted when EM-OBSERVE falls back on PDP unavailability
 )
 
+// ErrorCodeScopeInsufficient is the PDP error code emitted by Rego when the
+// badge's capability class does not cover the requested operation (RFC-008 §9.3).
+const ErrorCodeScopeInsufficient = "SCOPE_INSUFFICIENT"
+
 // DecisionRequest is the canonical PDP query (RFC-005 §5.1).
 type DecisionRequest struct {
 	PIPVersion         string             `json:"pip_version"`
@@ -66,11 +70,13 @@ type EnvironmentAttrs struct {
 
 // DecisionResponse is the canonical PDP response (RFC-005 §6.1).
 type DecisionResponse struct {
-	Decision    string       `json:"decision"`              // "ALLOW" or "DENY"
-	DecisionID  string       `json:"decision_id"`           // globally unique
-	Obligations []Obligation `json:"obligations"`           // may be empty
-	Reason      string       `json:"reason,omitempty"`      // human-readable
-	TTL         *int         `json:"ttl,omitempty"`          // cache lifetime seconds
+	Decision            string       `json:"decision"`                        // "ALLOW" or "DENY"
+	DecisionID          string       `json:"decision_id"`                     // globally unique
+	Obligations         []Obligation `json:"obligations"`                     // may be empty
+	Reason              string       `json:"reason,omitempty"`                // human-readable
+	TTL                 *int         `json:"ttl,omitempty"`                   // cache lifetime seconds
+	ErrorCode           string       `json:"error_code,omitempty"`            // RFC-008: e.g. "SCOPE_INSUFFICIENT"
+	RequestedCapability string       `json:"requested_capability,omitempty"`  // RFC-008: the capability class that was denied
 }
 
 // Obligation is a conditional contract per RFC-005 §7.1.
