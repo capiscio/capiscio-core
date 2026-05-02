@@ -56,7 +56,7 @@ capiscio badge issue [flags]
 **Options:**
 - `--self-sign`: Self-sign for development (explicit, implies level 0).
 - `--sub <did>`: Subject DID (did:web format).
-- `--level <0-4>`: Trust level: 0 (self-signed), 1 (DV), 2 (OV), 3 (EV), 4 (CV) (default "1").
+- `--level <0-4>`: Trust level: 0 (SS), 1 (REG), 2 (DV), 3 (OV), 4 (EV) per RFC-002 (default "1").
 - `--exp <duration>`: Expiration duration (default 5m per RFC-002).
 - `--key <path>`: Path to private key file (optional).
 - `--domain <string>`: Agent domain.
@@ -116,26 +116,76 @@ capiscio badge keep [flags]
 ```
 
 **Options:**
-- `--self-sign`: Self-sign instead of requesting from CA.
-- `--key <path>`: Path to private key file (required for self-sign).
-- `--sub <did>`: Subject DID.
-- `--out <path>`: Output file path (default "badge.jwt").
-- `--exp <duration>`: Expiration duration (default 5m).
-- `--renew-before <duration>`: Time before expiry to renew (default 1m).
+- `--agent-id <uuid>`: Agent ID (UUID) to request badges for (CA mode).
+- `--api-key <string>`: API key for CA authentication (or use `CAPISCIO_API_KEY` env).
+- `--ca <url>`: CA URL for badge requests (default "https://registry.capisc.io").
 - `--check-interval <duration>`: Interval to check for renewal (default 30s).
-- `--ca <url>`: CA URL for badge requests (future).
-- `--api-key <string>`: API key for CA authentication (future).
-- `--domain <string>`: Agent domain.
-- `--iss <did>`: Issuer DID (e.g. `did:web:registry.capisc.io`).
-- `--level <0-4>`: Trust level (0=self-signed, 1=DV, 2=OV, 3=EV, 4=CV; default "1").
+- `--domain <string>`: Agent domain (optional).
+- `--exp <duration>`: Expiration duration (default 5m).
+- `--key <path>`: Path to private key file (required for `--self-sign`).
+- `--level <0-4>`: Trust level: 0 (SS), 1 (REG), 2 (DV), 3 (OV), 4 (EV) per RFC-002 (default "1").
+- `--out <path>`: Output file path (default "badge.jwt").
+- `--renew-before <duration>`: Time before expiry to renew (default 1m).
+- `--self-sign`: Self-sign badges locally (development only).
 
 **Examples:**
 ```bash
+# CA mode - production use
+capiscio badge keep --agent-id <uuid> --api-key $CAPISCIO_API_KEY --out badge.jwt
+
 # Self-signed mode for development
 capiscio badge keep --self-sign --key private.jwk --out badge.jwt
+```
 
-# With CA (future)
-capiscio badge keep --ca https://registry.capisc.io --api-key $API_KEY
+#### `badge request`
+
+Request a Trust Badge from a CA using the Proof of Possession (PoP) protocol (RFC-003). Performs a 2-phase challenge-response flow.
+
+```bash
+capiscio badge request [flags]
+```
+
+**Options:**
+- `--did <did>`: Agent DID (did:web or did:key).
+- `--key <path>`: Path to private key file (JWK format).
+- `--ca <url>`: CA URL for PoP flow (default "https://registry.capisc.io").
+- `--api-key <string>`: API key for CA authentication (or use `CAPISCIO_API_KEY` env).
+- `--audience <urls>`: Comma-separated list of audiences.
+- `--out <path>`: Output file path for badge (optional).
+- `--ttl <seconds>`: Badge TTL in seconds (default 300).
+
+**Examples:**
+```bash
+capiscio badge request \
+  --did did:web:example.com:agents:my-agent \
+  --key ./agent-key.jwk \
+  --api-key $CAPISCIO_API_KEY \
+  --out badge.jwt
+```
+
+#### `badge dv`
+
+Manage Domain Validated (DV) badge orders using the ACME-Lite protocol. DV badges provide cryptographic proof of domain ownership (Trust Level 2).
+
+```bash
+capiscio badge dv [command]
+```
+
+**Subcommands:**
+- `create`: Create a DV badge order.
+- `status`: Check DV order status.
+- `finalize`: Finalize DV order and receive grant.
+
+**Examples:**
+```bash
+# Create HTTP-01 challenge order
+capiscio badge dv create --domain example.com --challenge-type http-01 --key agent.jwk
+
+# Check order status
+capiscio badge dv status --order-id <uuid>
+
+# Finalize order after provisioning challenge
+capiscio badge dv finalize --order-id <uuid> --out grant.jwt
 ```
 
 ---
@@ -282,4 +332,141 @@ capiscio gateway start --port 8080 --target http://localhost:3000 --local-key pu
 
 # Start gateway with registry
 capiscio gateway start --port 8080 --target http://localhost:3000 --registry-url https://registry.capisc.io
+```
+
+---
+
+### `envelope`
+
+Manage Authority Envelopes for delegated capability authorization (RFC-008). Authority Envelopes are signed JWS tokens that grant capabilities to agents and can be delegated through chains with monotonically narrowing permissions.
+
+#### `envelope issue`
+
+Issue a root Authority Envelope.
+
+```bash
+capiscio envelope issue [flags]
+```
+
+**Options:**
+- `--subject <did>`: Subject DID (required).
+- `--capability <string>`: Capability class (e.g. `tools.database.read`).
+- `--depth <int>`: Maximum delegation depth remaining.
+- `--key <path>`: Path to issuer private key file (JWK).
+- `--issuer <did>`: Issuer DID (auto-derived from key if not set).
+- `--expiry <duration>`: Envelope expiry duration (default 1h).
+- `--min-mode <string>`: Minimum enforcement mode (`EM-OBSERVE`|`EM-GUARD`|`EM-DELEGATE`|`EM-STRICT`).
+- `--constraints <json>`: Constraints as JSON object.
+- `--badge-jti <string>`: Issuer badge JTI.
+- `--txn-id <string>`: Transaction ID (auto-generated if not set).
+
+**Examples:**
+```bash
+capiscio envelope issue --subject did:key:z6Mk... --capability tools.database --depth 5
+capiscio envelope issue --key issuer.jwk --subject did:key:z6Mk... --capability tools.database.read --depth 3
+```
+
+#### `envelope derive`
+
+Derive a child envelope from a parent. The child must have narrower or equal permissions across all dimensions.
+
+```bash
+capiscio envelope derive [flags]
+```
+
+**Options:**
+- `--parent <path>`: Path to parent envelope file (required).
+- `--subject <did>`: Subject DID (required).
+- `--capability <string>`: Capability class (must be within parent scope).
+- `--depth <int>`: Delegation depth remaining (must be less than parent).
+- `--key <path>`: Path to issuer private key file (JWK).
+- `--issuer <did>`: Issuer DID (auto-derived from key if not set).
+- `--badge-jti <string>`: Issuer badge JTI.
+- `--expiry <duration>`: Envelope expiry duration (default 30m).
+- `--min-mode <string>`: Minimum enforcement mode.
+- `--constraints <json>`: Constraints as JSON object.
+
+**Examples:**
+```bash
+capiscio envelope derive --parent root.env --key child.jwk --subject did:key:z6Mk... --capability tools.database.read --depth 2
+```
+
+#### `envelope verify`
+
+Verify an Authority Envelope's signature, temporal validity, and structure.
+
+```bash
+capiscio envelope verify [envelope-file] [flags]
+```
+
+**Options:**
+- `--min-mode <string>`: Required minimum enforcement mode.
+- `--skip-badge`: Skip badge verification (testing only).
+
+#### `envelope inspect`
+
+Parse and display the contents of an Authority Envelope without signature verification.
+
+```bash
+capiscio envelope inspect [envelope-file]
+```
+
+#### `envelope chain`
+
+Verify a delegation chain of Authority Envelopes (root-to-leaf order). Validates hash links, DID continuity, narrowing rules, and signatures.
+
+```bash
+capiscio envelope chain [envelope-files...] [flags]
+```
+
+**Options:**
+- `--skip-badge`: Skip badge verification (testing only).
+
+**Examples:**
+```bash
+capiscio envelope chain root.env child1.env child2.env
+```
+
+---
+
+### `policy`
+
+Manage CapiscIO YAML policy configuration files.
+
+#### `policy validate`
+
+Validate a YAML policy config file locally. Checks schema version, trust levels, DID formats, rate limits, operation patterns, and MCP tool rules.
+
+```bash
+capiscio policy validate [flags]
+```
+
+**Options:**
+- `-f, --file <path>`: Path to YAML policy config file (default "capiscio-policy.yaml").
+- `--json`: Output parsed config as JSON on success.
+
+**Examples:**
+```bash
+capiscio policy validate
+capiscio policy validate -f my-policy.yaml --json
+```
+
+#### `policy context`
+
+Fetch the aggregate policy context from the CapiscIO registry.
+
+```bash
+capiscio policy context [flags]
+```
+
+**Options:**
+- `--api-key <string>`: CapiscIO API key (prefer `CAPISCIO_API_KEY` env var).
+- `-o, --output <path>`: Output file path (default: stdout).
+- `--registry <url>`: CapiscIO registry server URL (default "https://registry.capisc.io").
+
+**Examples:**
+```bash
+export CAPISCIO_API_KEY=sk_live_...
+capiscio policy context
+capiscio policy context -o policy-context.json
 ```
