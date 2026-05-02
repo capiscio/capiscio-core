@@ -28,7 +28,7 @@ Building authentication for AI Agents is hard. OAuth is complex, API keys are in
 
 ## Key Features
 
-*   **Trust Badges (RFC-002)**: Issue and Verify VC-aligned JWS tokens with did:web/did:key DIDs and Trust Levels (0-4: SS/DV/OV/EV/CV).
+*   **Trust Badges (RFC-002)**: Issue and Verify VC-aligned JWS tokens with did:web/did:key DIDs and Trust Levels (0-4: SS/REG/DV/OV/EV).
 *   **Proof of Possession (RFC-003)**: Challenge-response protocol for cryptographic key ownership proof with IAL-1 assurance.
 *   **gRPC SDK Integration**: Native gRPC server for Python, Node.js, and other language SDKs with 7 specialized services (auto-started by SDKs via process manager).
 *   **Gateway Sidecar**: A high-performance Reverse Proxy that enforces identity before traffic reaches your Agent.
@@ -216,10 +216,10 @@ Trust Badges include a **Trust Level** claim that indicates the verification dep
 | Level | Name | Verification | DID Method |
 |-------|------|--------------|------------|
 | 0 | SS (Self-Signed) | No external validation | `did:key` |
-| 1 | DV (Domain Validated) | Domain ownership verified | `did:web` |
-| 2 | OV (Organization Validated) | Organization identity verified | `did:web` |
-| 3 | EV (Extended Validation) | Extended identity verification | `did:web` |
-| 4 | CV (Community Vouched) | Peer attestations verified | `did:web` |
+| 1 | REG (Registered) | DID verified by registry | `did:web` |
+| 2 | DV (Domain Validated) | Domain ownership proven | `did:web` |
+| 3 | OV (Organization Validated) | Organization identity verified | `did:web` |
+| 4 | EV (Extended Validation) | Extended identity verification | `did:web` |
 
 ```bash
 # Issue Level 0 (Self-Signed) - for development only
@@ -509,7 +509,7 @@ If you're developing `capiscio-core` alongside `capiscio-server`, use Go workspa
 # In capiscio-server directory, create go.work (gitignored)
 cd ../capiscio-server
 cat > go.work << 'EOF'
-go 1.24.0
+go 1.25.9
 
 use .
 use ../capiscio-core
