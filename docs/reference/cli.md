@@ -380,6 +380,8 @@ capiscio envelope derive [flags]
 - `--capability <string>`: Capability class (must be within parent scope).
 - `--depth <int>`: Delegation depth remaining (must be less than parent).
 - `--key <path>`: Path to issuer private key file (JWK).
+- `--issuer <did>`: Issuer DID (auto-derived from key if not set).
+- `--badge-jti <string>`: Issuer badge JTI.
 - `--expiry <duration>`: Envelope expiry duration (default 30m).
 - `--min-mode <string>`: Minimum enforcement mode.
 - `--constraints <json>`: Constraints as JSON object.
