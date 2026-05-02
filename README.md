@@ -249,7 +249,7 @@ did:web:registry.capisc.io:agents:my-agent-123
 The `pkg/did` package provides utilities for parsing and constructing DIDs:
 
 ```go
-import "github.com/capiscio/capiscio-core/pkg/did"
+import "github.com/capiscio/capiscio-core/v2/pkg/did"
 
 // Parse a DID
 d, err := did.Parse("did:web:registry.capisc.io:agents:my-agent")
@@ -292,8 +292,8 @@ CapiscIO Core retains its original capabilities as a robust validator for the A2
 
 ```go
 import (
-    "github.com/capiscio/capiscio-core/pkg/badge"
-    "github.com/capiscio/capiscio-core/pkg/registry"
+    "github.com/capiscio/capiscio-core/v2/pkg/badge"
+    "github.com/capiscio/capiscio-core/v2/pkg/registry"
 )
 
 func main() {
@@ -317,7 +317,7 @@ func main() {
 
 ```go
 import (
-    "github.com/capiscio/capiscio-core/pkg/badge"
+    "github.com/capiscio/capiscio-core/v2/pkg/badge"
 )
 
 func main() {
@@ -344,8 +344,8 @@ func main() {
 
 ```go
 import (
-    "github.com/capiscio/capiscio-core/pkg/agentcard"
-    "github.com/capiscio/capiscio-core/pkg/scoring"
+    "github.com/capiscio/capiscio-core/v2/pkg/agentcard"
+    "github.com/capiscio/capiscio-core/v2/pkg/scoring"
 )
 
 func main() {
@@ -489,7 +489,7 @@ capiscio validate ./agent-card.json
 ## Development
 
 ### Prerequisites
-- Go 1.21+
+- Go 1.25+
 
 ### Testing
 ```bash
