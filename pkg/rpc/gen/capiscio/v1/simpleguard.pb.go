@@ -1390,6 +1390,670 @@ func (x *InitResponse) GetErrorMessage() string {
 	return ""
 }
 
+// Request to create a root Authority Envelope
+type CreateEnvelopeRequest struct {
+	state                    protoimpl.MessageState `protogen:"open.v1"`
+	KeyId                    string                 `protobuf:"bytes,1,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`                                                             // Key to sign with (from key store)
+	SubjectDid               string                 `protobuf:"bytes,2,opt,name=subject_did,json=subjectDid,proto3" json:"subject_did,omitempty"`                                              // DID of the agent receiving authority
+	CapabilityClass          string                 `protobuf:"bytes,3,opt,name=capability_class,json=capabilityClass,proto3" json:"capability_class,omitempty"`                               // e.g., "tools.database.read"
+	DelegationDepthRemaining int32                  `protobuf:"varint,4,opt,name=delegation_depth_remaining,json=delegationDepthRemaining,proto3" json:"delegation_depth_remaining,omitempty"` // How many further delegations allowed
+	TxnId                    string                 `protobuf:"bytes,5,opt,name=txn_id,json=txnId,proto3" json:"txn_id,omitempty"`                                                             // Transaction ID (RFC-004); auto-generated if empty
+	ExpiresInSeconds         int64                  `protobuf:"varint,6,opt,name=expires_in_seconds,json=expiresInSeconds,proto3" json:"expires_in_seconds,omitempty"`                         // TTL from now (default: 3600)
+	ConstraintsJson          string                 `protobuf:"bytes,7,opt,name=constraints_json,json=constraintsJson,proto3" json:"constraints_json,omitempty"`                               // Optional JSON constraints object
+	IssuerBadgeJti           string                 `protobuf:"bytes,8,opt,name=issuer_badge_jti,json=issuerBadgeJti,proto3" json:"issuer_badge_jti,omitempty"`                                // JTI of the issuer's badge
+	SubjectBadgeJti          string                 `protobuf:"bytes,9,opt,name=subject_badge_jti,json=subjectBadgeJti,proto3" json:"subject_badge_jti,omitempty"`                             // JTI of the subject's badge (optional)
+	EnforcementModeMin       string                 `protobuf:"bytes,10,opt,name=enforcement_mode_min,json=enforcementModeMin,proto3" json:"enforcement_mode_min,omitempty"`                   // Optional minimum enforcement mode
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
+}
+
+func (x *CreateEnvelopeRequest) Reset() {
+	*x = CreateEnvelopeRequest{}
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateEnvelopeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateEnvelopeRequest) ProtoMessage() {}
+
+func (x *CreateEnvelopeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateEnvelopeRequest.ProtoReflect.Descriptor instead.
+func (*CreateEnvelopeRequest) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_simpleguard_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *CreateEnvelopeRequest) GetKeyId() string {
+	if x != nil {
+		return x.KeyId
+	}
+	return ""
+}
+
+func (x *CreateEnvelopeRequest) GetSubjectDid() string {
+	if x != nil {
+		return x.SubjectDid
+	}
+	return ""
+}
+
+func (x *CreateEnvelopeRequest) GetCapabilityClass() string {
+	if x != nil {
+		return x.CapabilityClass
+	}
+	return ""
+}
+
+func (x *CreateEnvelopeRequest) GetDelegationDepthRemaining() int32 {
+	if x != nil {
+		return x.DelegationDepthRemaining
+	}
+	return 0
+}
+
+func (x *CreateEnvelopeRequest) GetTxnId() string {
+	if x != nil {
+		return x.TxnId
+	}
+	return ""
+}
+
+func (x *CreateEnvelopeRequest) GetExpiresInSeconds() int64 {
+	if x != nil {
+		return x.ExpiresInSeconds
+	}
+	return 0
+}
+
+func (x *CreateEnvelopeRequest) GetConstraintsJson() string {
+	if x != nil {
+		return x.ConstraintsJson
+	}
+	return ""
+}
+
+func (x *CreateEnvelopeRequest) GetIssuerBadgeJti() string {
+	if x != nil {
+		return x.IssuerBadgeJti
+	}
+	return ""
+}
+
+func (x *CreateEnvelopeRequest) GetSubjectBadgeJti() string {
+	if x != nil {
+		return x.SubjectBadgeJti
+	}
+	return ""
+}
+
+func (x *CreateEnvelopeRequest) GetEnforcementModeMin() string {
+	if x != nil {
+		return x.EnforcementModeMin
+	}
+	return ""
+}
+
+// Response with signed root envelope
+type CreateEnvelopeResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EnvelopeJws   string                 `protobuf:"bytes,1,opt,name=envelope_jws,json=envelopeJws,proto3" json:"envelope_jws,omitempty"` // JWS Compact Serialization
+	EnvelopeId    string                 `protobuf:"bytes,2,opt,name=envelope_id,json=envelopeId,proto3" json:"envelope_id,omitempty"`    // Generated envelope UUID
+	IssuerDid     string                 `protobuf:"bytes,3,opt,name=issuer_did,json=issuerDid,proto3" json:"issuer_did,omitempty"`       // DID derived from signing key
+	ErrorMessage  string                 `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateEnvelopeResponse) Reset() {
+	*x = CreateEnvelopeResponse{}
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateEnvelopeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateEnvelopeResponse) ProtoMessage() {}
+
+func (x *CreateEnvelopeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateEnvelopeResponse.ProtoReflect.Descriptor instead.
+func (*CreateEnvelopeResponse) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_simpleguard_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *CreateEnvelopeResponse) GetEnvelopeJws() string {
+	if x != nil {
+		return x.EnvelopeJws
+	}
+	return ""
+}
+
+func (x *CreateEnvelopeResponse) GetEnvelopeId() string {
+	if x != nil {
+		return x.EnvelopeId
+	}
+	return ""
+}
+
+func (x *CreateEnvelopeResponse) GetIssuerDid() string {
+	if x != nil {
+		return x.IssuerDid
+	}
+	return ""
+}
+
+func (x *CreateEnvelopeResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+// Request to derive a child envelope from a parent
+type DeriveEnvelopeRequest struct {
+	state                    protoimpl.MessageState `protogen:"open.v1"`
+	ParentEnvelopeJws        string                 `protobuf:"bytes,1,opt,name=parent_envelope_jws,json=parentEnvelopeJws,proto3" json:"parent_envelope_jws,omitempty"`                       // Parent envelope JWS (will be parsed + hash-linked)
+	KeyId                    string                 `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`                                                             // Key to sign child with
+	SubjectDid               string                 `protobuf:"bytes,3,opt,name=subject_did,json=subjectDid,proto3" json:"subject_did,omitempty"`                                              // DID of the next delegate
+	CapabilityClass          string                 `protobuf:"bytes,4,opt,name=capability_class,json=capabilityClass,proto3" json:"capability_class,omitempty"`                               // Must be equal or narrower than parent
+	DelegationDepthRemaining int32                  `protobuf:"varint,5,opt,name=delegation_depth_remaining,json=delegationDepthRemaining,proto3" json:"delegation_depth_remaining,omitempty"` // Must be < parent's depth
+	ExpiresInSeconds         int64                  `protobuf:"varint,6,opt,name=expires_in_seconds,json=expiresInSeconds,proto3" json:"expires_in_seconds,omitempty"`                         // TTL from now (must be <= parent expiry)
+	ConstraintsJson          string                 `protobuf:"bytes,7,opt,name=constraints_json,json=constraintsJson,proto3" json:"constraints_json,omitempty"`                               // Must be equal or more restrictive
+	SubjectBadgeJti          string                 `protobuf:"bytes,8,opt,name=subject_badge_jti,json=subjectBadgeJti,proto3" json:"subject_badge_jti,omitempty"`                             // JTI of the subject's badge
+	EnforcementModeMin       string                 `protobuf:"bytes,9,opt,name=enforcement_mode_min,json=enforcementModeMin,proto3" json:"enforcement_mode_min,omitempty"`                    // Optional minimum enforcement mode
+	IssuerBadgeJti           string                 `protobuf:"bytes,10,opt,name=issuer_badge_jti,json=issuerBadgeJti,proto3" json:"issuer_badge_jti,omitempty"`                               // JTI of the child issuer's own badge (NOT inherited from parent)
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
+}
+
+func (x *DeriveEnvelopeRequest) Reset() {
+	*x = DeriveEnvelopeRequest{}
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeriveEnvelopeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeriveEnvelopeRequest) ProtoMessage() {}
+
+func (x *DeriveEnvelopeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeriveEnvelopeRequest.ProtoReflect.Descriptor instead.
+func (*DeriveEnvelopeRequest) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_simpleguard_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *DeriveEnvelopeRequest) GetParentEnvelopeJws() string {
+	if x != nil {
+		return x.ParentEnvelopeJws
+	}
+	return ""
+}
+
+func (x *DeriveEnvelopeRequest) GetKeyId() string {
+	if x != nil {
+		return x.KeyId
+	}
+	return ""
+}
+
+func (x *DeriveEnvelopeRequest) GetSubjectDid() string {
+	if x != nil {
+		return x.SubjectDid
+	}
+	return ""
+}
+
+func (x *DeriveEnvelopeRequest) GetCapabilityClass() string {
+	if x != nil {
+		return x.CapabilityClass
+	}
+	return ""
+}
+
+func (x *DeriveEnvelopeRequest) GetDelegationDepthRemaining() int32 {
+	if x != nil {
+		return x.DelegationDepthRemaining
+	}
+	return 0
+}
+
+func (x *DeriveEnvelopeRequest) GetExpiresInSeconds() int64 {
+	if x != nil {
+		return x.ExpiresInSeconds
+	}
+	return 0
+}
+
+func (x *DeriveEnvelopeRequest) GetConstraintsJson() string {
+	if x != nil {
+		return x.ConstraintsJson
+	}
+	return ""
+}
+
+func (x *DeriveEnvelopeRequest) GetSubjectBadgeJti() string {
+	if x != nil {
+		return x.SubjectBadgeJti
+	}
+	return ""
+}
+
+func (x *DeriveEnvelopeRequest) GetEnforcementModeMin() string {
+	if x != nil {
+		return x.EnforcementModeMin
+	}
+	return ""
+}
+
+func (x *DeriveEnvelopeRequest) GetIssuerBadgeJti() string {
+	if x != nil {
+		return x.IssuerBadgeJti
+	}
+	return ""
+}
+
+// Response with signed derived envelope
+type DeriveEnvelopeResponse struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	EnvelopeJws         string                 `protobuf:"bytes,1,opt,name=envelope_jws,json=envelopeJws,proto3" json:"envelope_jws,omitempty"`                           // JWS Compact Serialization of child
+	EnvelopeId          string                 `protobuf:"bytes,2,opt,name=envelope_id,json=envelopeId,proto3" json:"envelope_id,omitempty"`                              // Generated envelope UUID
+	ParentAuthorityHash string                 `protobuf:"bytes,3,opt,name=parent_authority_hash,json=parentAuthorityHash,proto3" json:"parent_authority_hash,omitempty"` // SHA-256 hash linking to parent
+	ErrorMessage        string                 `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *DeriveEnvelopeResponse) Reset() {
+	*x = DeriveEnvelopeResponse{}
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeriveEnvelopeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeriveEnvelopeResponse) ProtoMessage() {}
+
+func (x *DeriveEnvelopeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeriveEnvelopeResponse.ProtoReflect.Descriptor instead.
+func (*DeriveEnvelopeResponse) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_simpleguard_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *DeriveEnvelopeResponse) GetEnvelopeJws() string {
+	if x != nil {
+		return x.EnvelopeJws
+	}
+	return ""
+}
+
+func (x *DeriveEnvelopeResponse) GetEnvelopeId() string {
+	if x != nil {
+		return x.EnvelopeId
+	}
+	return ""
+}
+
+func (x *DeriveEnvelopeResponse) GetParentAuthorityHash() string {
+	if x != nil {
+		return x.ParentAuthorityHash
+	}
+	return ""
+}
+
+func (x *DeriveEnvelopeResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+// Request to build transport headers for a delegation chain
+type BuildTransportHeadersRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Chain         []string               `protobuf:"bytes,1,rep,name=chain,proto3" json:"chain,omitempty"`                                                                                                 // Ordered JWS array [root, ..., leaf]
+	BadgeMap      map[string]string      `protobuf:"bytes,2,rep,name=badge_map,json=badgeMap,proto3" json:"badge_map,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // DID -> badge JWS for intermediate agents
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BuildTransportHeadersRequest) Reset() {
+	*x = BuildTransportHeadersRequest{}
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BuildTransportHeadersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuildTransportHeadersRequest) ProtoMessage() {}
+
+func (x *BuildTransportHeadersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BuildTransportHeadersRequest.ProtoReflect.Descriptor instead.
+func (*BuildTransportHeadersRequest) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_simpleguard_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *BuildTransportHeadersRequest) GetChain() []string {
+	if x != nil {
+		return x.Chain
+	}
+	return nil
+}
+
+func (x *BuildTransportHeadersRequest) GetBadgeMap() map[string]string {
+	if x != nil {
+		return x.BadgeMap
+	}
+	return nil
+}
+
+// Response with encoded transport headers
+type BuildTransportHeadersResponse struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	AuthorityHeader      string                 `protobuf:"bytes,1,opt,name=authority_header,json=authorityHeader,proto3" json:"authority_header,omitempty"`                  // X-Capiscio-Authority value (leaf JWS)
+	AuthorityChainHeader string                 `protobuf:"bytes,2,opt,name=authority_chain_header,json=authorityChainHeader,proto3" json:"authority_chain_header,omitempty"` // X-Capiscio-Authority-Chain value (base64url JSON array)
+	BadgeMapHeader       string                 `protobuf:"bytes,3,opt,name=badge_map_header,json=badgeMapHeader,proto3" json:"badge_map_header,omitempty"`                   // X-Capiscio-Badge-Map value (base64url JSON object)
+	ErrorMessage         string                 `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *BuildTransportHeadersResponse) Reset() {
+	*x = BuildTransportHeadersResponse{}
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BuildTransportHeadersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuildTransportHeadersResponse) ProtoMessage() {}
+
+func (x *BuildTransportHeadersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BuildTransportHeadersResponse.ProtoReflect.Descriptor instead.
+func (*BuildTransportHeadersResponse) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_simpleguard_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *BuildTransportHeadersResponse) GetAuthorityHeader() string {
+	if x != nil {
+		return x.AuthorityHeader
+	}
+	return ""
+}
+
+func (x *BuildTransportHeadersResponse) GetAuthorityChainHeader() string {
+	if x != nil {
+		return x.AuthorityChainHeader
+	}
+	return ""
+}
+
+func (x *BuildTransportHeadersResponse) GetBadgeMapHeader() string {
+	if x != nil {
+		return x.BadgeMapHeader
+	}
+	return ""
+}
+
+func (x *BuildTransportHeadersResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+// Request to verify an envelope chain
+type VerifyEnvelopeChainRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Chain           []string               `protobuf:"bytes,1,rep,name=chain,proto3" json:"chain,omitempty"`                                                                                                 // Ordered JWS array [root, ..., leaf]
+	BadgeMap        map[string]string      `protobuf:"bytes,2,rep,name=badge_map,json=badgeMap,proto3" json:"badge_map,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // DID -> badge JWS
+	TrustedIssuers  []string               `protobuf:"bytes,3,rep,name=trusted_issuers,json=trustedIssuers,proto3" json:"trusted_issuers,omitempty"`                                                         // Trusted issuer DIDs (optional)
+	EnforcementMode string                 `protobuf:"bytes,4,opt,name=enforcement_mode,json=enforcementMode,proto3" json:"enforcement_mode,omitempty"`                                                      // Enforcement mode for verification
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *VerifyEnvelopeChainRequest) Reset() {
+	*x = VerifyEnvelopeChainRequest{}
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifyEnvelopeChainRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyEnvelopeChainRequest) ProtoMessage() {}
+
+func (x *VerifyEnvelopeChainRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyEnvelopeChainRequest.ProtoReflect.Descriptor instead.
+func (*VerifyEnvelopeChainRequest) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_simpleguard_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *VerifyEnvelopeChainRequest) GetChain() []string {
+	if x != nil {
+		return x.Chain
+	}
+	return nil
+}
+
+func (x *VerifyEnvelopeChainRequest) GetBadgeMap() map[string]string {
+	if x != nil {
+		return x.BadgeMap
+	}
+	return nil
+}
+
+func (x *VerifyEnvelopeChainRequest) GetTrustedIssuers() []string {
+	if x != nil {
+		return x.TrustedIssuers
+	}
+	return nil
+}
+
+func (x *VerifyEnvelopeChainRequest) GetEnforcementMode() string {
+	if x != nil {
+		return x.EnforcementMode
+	}
+	return ""
+}
+
+// Response from chain verification
+type VerifyEnvelopeChainResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Valid          bool                   `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`
+	RootCapability string                 `protobuf:"bytes,2,opt,name=root_capability,json=rootCapability,proto3" json:"root_capability,omitempty"`
+	LeafCapability string                 `protobuf:"bytes,3,opt,name=leaf_capability,json=leafCapability,proto3" json:"leaf_capability,omitempty"`
+	TotalDepth     int32                  `protobuf:"varint,4,opt,name=total_depth,json=totalDepth,proto3" json:"total_depth,omitempty"`
+	LeafIssuerDid  string                 `protobuf:"bytes,5,opt,name=leaf_issuer_did,json=leafIssuerDid,proto3" json:"leaf_issuer_did,omitempty"`
+	LeafSubjectDid string                 `protobuf:"bytes,6,opt,name=leaf_subject_did,json=leafSubjectDid,proto3" json:"leaf_subject_did,omitempty"`
+	ErrorCode      string                 `protobuf:"bytes,7,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"` // RFC-008 section 9.3 error code (on failure)
+	ErrorMessage   string                 `protobuf:"bytes,8,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *VerifyEnvelopeChainResponse) Reset() {
+	*x = VerifyEnvelopeChainResponse{}
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifyEnvelopeChainResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyEnvelopeChainResponse) ProtoMessage() {}
+
+func (x *VerifyEnvelopeChainResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_capiscio_v1_simpleguard_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyEnvelopeChainResponse.ProtoReflect.Descriptor instead.
+func (*VerifyEnvelopeChainResponse) Descriptor() ([]byte, []int) {
+	return file_capiscio_v1_simpleguard_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *VerifyEnvelopeChainResponse) GetValid() bool {
+	if x != nil {
+		return x.Valid
+	}
+	return false
+}
+
+func (x *VerifyEnvelopeChainResponse) GetRootCapability() string {
+	if x != nil {
+		return x.RootCapability
+	}
+	return ""
+}
+
+func (x *VerifyEnvelopeChainResponse) GetLeafCapability() string {
+	if x != nil {
+		return x.LeafCapability
+	}
+	return ""
+}
+
+func (x *VerifyEnvelopeChainResponse) GetTotalDepth() int32 {
+	if x != nil {
+		return x.TotalDepth
+	}
+	return 0
+}
+
+func (x *VerifyEnvelopeChainResponse) GetLeafIssuerDid() string {
+	if x != nil {
+		return x.LeafIssuerDid
+	}
+	return ""
+}
+
+func (x *VerifyEnvelopeChainResponse) GetLeafSubjectDid() string {
+	if x != nil {
+		return x.LeafSubjectDid
+	}
+	return ""
+}
+
+func (x *VerifyEnvelopeChainResponse) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
+func (x *VerifyEnvelopeChainResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
 var File_capiscio_v1_simpleguard_proto protoreflect.FileDescriptor
 
 const file_capiscio_v1_simpleguard_proto_rawDesc = "" +
@@ -1526,12 +2190,81 @@ const file_capiscio_v1_simpleguard_proto_rawDesc = "" +
 	"\n" +
 	"registered\x18\a \x01(\bR\n" +
 	"registered\x12#\n" +
+	"\rerror_message\x18\b \x01(\tR\ferrorMessage\"\xb0\x03\n" +
+	"\x15CreateEnvelopeRequest\x12\x15\n" +
+	"\x06key_id\x18\x01 \x01(\tR\x05keyId\x12\x1f\n" +
+	"\vsubject_did\x18\x02 \x01(\tR\n" +
+	"subjectDid\x12)\n" +
+	"\x10capability_class\x18\x03 \x01(\tR\x0fcapabilityClass\x12<\n" +
+	"\x1adelegation_depth_remaining\x18\x04 \x01(\x05R\x18delegationDepthRemaining\x12\x15\n" +
+	"\x06txn_id\x18\x05 \x01(\tR\x05txnId\x12,\n" +
+	"\x12expires_in_seconds\x18\x06 \x01(\x03R\x10expiresInSeconds\x12)\n" +
+	"\x10constraints_json\x18\a \x01(\tR\x0fconstraintsJson\x12(\n" +
+	"\x10issuer_badge_jti\x18\b \x01(\tR\x0eissuerBadgeJti\x12*\n" +
+	"\x11subject_badge_jti\x18\t \x01(\tR\x0fsubjectBadgeJti\x120\n" +
+	"\x14enforcement_mode_min\x18\n" +
+	" \x01(\tR\x12enforcementModeMin\"\xa0\x01\n" +
+	"\x16CreateEnvelopeResponse\x12!\n" +
+	"\fenvelope_jws\x18\x01 \x01(\tR\venvelopeJws\x12\x1f\n" +
+	"\venvelope_id\x18\x02 \x01(\tR\n" +
+	"envelopeId\x12\x1d\n" +
+	"\n" +
+	"issuer_did\x18\x03 \x01(\tR\tissuerDid\x12#\n" +
+	"\rerror_message\x18\x04 \x01(\tR\ferrorMessage\"\xc9\x03\n" +
+	"\x15DeriveEnvelopeRequest\x12.\n" +
+	"\x13parent_envelope_jws\x18\x01 \x01(\tR\x11parentEnvelopeJws\x12\x15\n" +
+	"\x06key_id\x18\x02 \x01(\tR\x05keyId\x12\x1f\n" +
+	"\vsubject_did\x18\x03 \x01(\tR\n" +
+	"subjectDid\x12)\n" +
+	"\x10capability_class\x18\x04 \x01(\tR\x0fcapabilityClass\x12<\n" +
+	"\x1adelegation_depth_remaining\x18\x05 \x01(\x05R\x18delegationDepthRemaining\x12,\n" +
+	"\x12expires_in_seconds\x18\x06 \x01(\x03R\x10expiresInSeconds\x12)\n" +
+	"\x10constraints_json\x18\a \x01(\tR\x0fconstraintsJson\x12*\n" +
+	"\x11subject_badge_jti\x18\b \x01(\tR\x0fsubjectBadgeJti\x120\n" +
+	"\x14enforcement_mode_min\x18\t \x01(\tR\x12enforcementModeMin\x12(\n" +
+	"\x10issuer_badge_jti\x18\n" +
+	" \x01(\tR\x0eissuerBadgeJti\"\xb5\x01\n" +
+	"\x16DeriveEnvelopeResponse\x12!\n" +
+	"\fenvelope_jws\x18\x01 \x01(\tR\venvelopeJws\x12\x1f\n" +
+	"\venvelope_id\x18\x02 \x01(\tR\n" +
+	"envelopeId\x122\n" +
+	"\x15parent_authority_hash\x18\x03 \x01(\tR\x13parentAuthorityHash\x12#\n" +
+	"\rerror_message\x18\x04 \x01(\tR\ferrorMessage\"\xc7\x01\n" +
+	"\x1cBuildTransportHeadersRequest\x12\x14\n" +
+	"\x05chain\x18\x01 \x03(\tR\x05chain\x12T\n" +
+	"\tbadge_map\x18\x02 \x03(\v27.capiscio.v1.BuildTransportHeadersRequest.BadgeMapEntryR\bbadgeMap\x1a;\n" +
+	"\rBadgeMapEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xcf\x01\n" +
+	"\x1dBuildTransportHeadersResponse\x12)\n" +
+	"\x10authority_header\x18\x01 \x01(\tR\x0fauthorityHeader\x124\n" +
+	"\x16authority_chain_header\x18\x02 \x01(\tR\x14authorityChainHeader\x12(\n" +
+	"\x10badge_map_header\x18\x03 \x01(\tR\x0ebadgeMapHeader\x12#\n" +
+	"\rerror_message\x18\x04 \x01(\tR\ferrorMessage\"\x97\x02\n" +
+	"\x1aVerifyEnvelopeChainRequest\x12\x14\n" +
+	"\x05chain\x18\x01 \x03(\tR\x05chain\x12R\n" +
+	"\tbadge_map\x18\x02 \x03(\v25.capiscio.v1.VerifyEnvelopeChainRequest.BadgeMapEntryR\bbadgeMap\x12'\n" +
+	"\x0ftrusted_issuers\x18\x03 \x03(\tR\x0etrustedIssuers\x12)\n" +
+	"\x10enforcement_mode\x18\x04 \x01(\tR\x0fenforcementMode\x1a;\n" +
+	"\rBadgeMapEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xbc\x02\n" +
+	"\x1bVerifyEnvelopeChainResponse\x12\x14\n" +
+	"\x05valid\x18\x01 \x01(\bR\x05valid\x12'\n" +
+	"\x0froot_capability\x18\x02 \x01(\tR\x0erootCapability\x12'\n" +
+	"\x0fleaf_capability\x18\x03 \x01(\tR\x0eleafCapability\x12\x1f\n" +
+	"\vtotal_depth\x18\x04 \x01(\x05R\n" +
+	"totalDepth\x12&\n" +
+	"\x0fleaf_issuer_did\x18\x05 \x01(\tR\rleafIssuerDid\x12(\n" +
+	"\x10leaf_subject_did\x18\x06 \x01(\tR\x0eleafSubjectDid\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\a \x01(\tR\terrorCode\x12#\n" +
 	"\rerror_message\x18\b \x01(\tR\ferrorMessage*\x8e\x01\n" +
 	"\x0fSignatureFormat\x12 \n" +
 	"\x1cSIGNATURE_FORMAT_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cSIGNATURE_FORMAT_JWS_COMPACT\x10\x01\x12\x1d\n" +
 	"\x19SIGNATURE_FORMAT_JWS_JSON\x10\x02\x12\x18\n" +
-	"\x14SIGNATURE_FORMAT_RAW\x10\x032\xc0\x05\n" +
+	"\x14SIGNATURE_FORMAT_RAW\x10\x032\xd0\b\n" +
 	"\x12SimpleGuardService\x12;\n" +
 	"\x04Sign\x12\x18.capiscio.v1.SignRequest\x1a\x19.capiscio.v1.SignResponse\x12A\n" +
 	"\x06Verify\x12\x1a.capiscio.v1.VerifyRequest\x1a\x1b.capiscio.v1.VerifyResponse\x12S\n" +
@@ -1542,7 +2275,11 @@ const file_capiscio_v1_simpleguard_proto_rawDesc = "" +
 	"\tExportKey\x12\x1d.capiscio.v1.ExportKeyRequest\x1a\x1e.capiscio.v1.ExportKeyResponse\x12M\n" +
 	"\n" +
 	"GetKeyInfo\x12\x1e.capiscio.v1.GetKeyInfoRequest\x1a\x1f.capiscio.v1.GetKeyInfoResponse\x12;\n" +
-	"\x04Init\x12\x18.capiscio.v1.InitRequest\x1a\x19.capiscio.v1.InitResponseB\xb6\x01\n" +
+	"\x04Init\x12\x18.capiscio.v1.InitRequest\x1a\x19.capiscio.v1.InitResponse\x12Y\n" +
+	"\x0eCreateEnvelope\x12\".capiscio.v1.CreateEnvelopeRequest\x1a#.capiscio.v1.CreateEnvelopeResponse\x12Y\n" +
+	"\x0eDeriveEnvelope\x12\".capiscio.v1.DeriveEnvelopeRequest\x1a#.capiscio.v1.DeriveEnvelopeResponse\x12n\n" +
+	"\x15BuildTransportHeaders\x12).capiscio.v1.BuildTransportHeadersRequest\x1a*.capiscio.v1.BuildTransportHeadersResponse\x12h\n" +
+	"\x13VerifyEnvelopeChain\x12'.capiscio.v1.VerifyEnvelopeChainRequest\x1a(.capiscio.v1.VerifyEnvelopeChainResponseB\xb6\x01\n" +
 	"\x0fcom.capiscio.v1B\x10SimpleguardProtoP\x01ZDgithub.com/capiscio/capiscio-core/pkg/rpc/gen/capiscio/v1;capisciov1\xa2\x02\x03CXX\xaa\x02\vCapiscio.V1\xca\x02\vCapiscio\\V1\xe2\x02\x17Capiscio\\V1\\GPBMetadata\xea\x02\fCapiscio::V1b\x06proto3"
 
 var (
@@ -1558,78 +2295,98 @@ func file_capiscio_v1_simpleguard_proto_rawDescGZIP() []byte {
 }
 
 var file_capiscio_v1_simpleguard_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_capiscio_v1_simpleguard_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_capiscio_v1_simpleguard_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
 var file_capiscio_v1_simpleguard_proto_goTypes = []any{
-	(SignatureFormat)(0),            // 0: capiscio.v1.SignatureFormat
-	(*SignRequest)(nil),             // 1: capiscio.v1.SignRequest
-	(*SignResponse)(nil),            // 2: capiscio.v1.SignResponse
-	(*VerifyRequest)(nil),           // 3: capiscio.v1.VerifyRequest
-	(*VerifyResponse)(nil),          // 4: capiscio.v1.VerifyResponse
-	(*SignAttachedRequest)(nil),     // 5: capiscio.v1.SignAttachedRequest
-	(*SignAttachedResponse)(nil),    // 6: capiscio.v1.SignAttachedResponse
-	(*VerifyAttachedRequest)(nil),   // 7: capiscio.v1.VerifyAttachedRequest
-	(*VerifyAttachedResponse)(nil),  // 8: capiscio.v1.VerifyAttachedResponse
-	(*GenerateKeyPairRequest)(nil),  // 9: capiscio.v1.GenerateKeyPairRequest
-	(*GenerateKeyPairResponse)(nil), // 10: capiscio.v1.GenerateKeyPairResponse
-	(*LoadKeyRequest)(nil),          // 11: capiscio.v1.LoadKeyRequest
-	(*LoadKeyResponse)(nil),         // 12: capiscio.v1.LoadKeyResponse
-	(*ExportKeyRequest)(nil),        // 13: capiscio.v1.ExportKeyRequest
-	(*ExportKeyResponse)(nil),       // 14: capiscio.v1.ExportKeyResponse
-	(*GetKeyInfoRequest)(nil),       // 15: capiscio.v1.GetKeyInfoRequest
-	(*GetKeyInfoResponse)(nil),      // 16: capiscio.v1.GetKeyInfoResponse
-	(*InitRequest)(nil),             // 17: capiscio.v1.InitRequest
-	(*InitResponse)(nil),            // 18: capiscio.v1.InitResponse
-	nil,                             // 19: capiscio.v1.SignRequest.HeadersEntry
-	nil,                             // 20: capiscio.v1.SignAttachedRequest.HeadersEntry
-	nil,                             // 21: capiscio.v1.GenerateKeyPairRequest.MetadataEntry
-	nil,                             // 22: capiscio.v1.GetKeyInfoResponse.MetadataEntry
-	nil,                             // 23: capiscio.v1.InitRequest.MetadataEntry
-	(*ValidationResult)(nil),        // 24: capiscio.v1.ValidationResult
-	(KeyAlgorithm)(0),               // 25: capiscio.v1.KeyAlgorithm
-	(KeyFormat)(0),                  // 26: capiscio.v1.KeyFormat
-	(*Timestamp)(nil),               // 27: capiscio.v1.Timestamp
+	(SignatureFormat)(0),                  // 0: capiscio.v1.SignatureFormat
+	(*SignRequest)(nil),                   // 1: capiscio.v1.SignRequest
+	(*SignResponse)(nil),                  // 2: capiscio.v1.SignResponse
+	(*VerifyRequest)(nil),                 // 3: capiscio.v1.VerifyRequest
+	(*VerifyResponse)(nil),                // 4: capiscio.v1.VerifyResponse
+	(*SignAttachedRequest)(nil),           // 5: capiscio.v1.SignAttachedRequest
+	(*SignAttachedResponse)(nil),          // 6: capiscio.v1.SignAttachedResponse
+	(*VerifyAttachedRequest)(nil),         // 7: capiscio.v1.VerifyAttachedRequest
+	(*VerifyAttachedResponse)(nil),        // 8: capiscio.v1.VerifyAttachedResponse
+	(*GenerateKeyPairRequest)(nil),        // 9: capiscio.v1.GenerateKeyPairRequest
+	(*GenerateKeyPairResponse)(nil),       // 10: capiscio.v1.GenerateKeyPairResponse
+	(*LoadKeyRequest)(nil),                // 11: capiscio.v1.LoadKeyRequest
+	(*LoadKeyResponse)(nil),               // 12: capiscio.v1.LoadKeyResponse
+	(*ExportKeyRequest)(nil),              // 13: capiscio.v1.ExportKeyRequest
+	(*ExportKeyResponse)(nil),             // 14: capiscio.v1.ExportKeyResponse
+	(*GetKeyInfoRequest)(nil),             // 15: capiscio.v1.GetKeyInfoRequest
+	(*GetKeyInfoResponse)(nil),            // 16: capiscio.v1.GetKeyInfoResponse
+	(*InitRequest)(nil),                   // 17: capiscio.v1.InitRequest
+	(*InitResponse)(nil),                  // 18: capiscio.v1.InitResponse
+	(*CreateEnvelopeRequest)(nil),         // 19: capiscio.v1.CreateEnvelopeRequest
+	(*CreateEnvelopeResponse)(nil),        // 20: capiscio.v1.CreateEnvelopeResponse
+	(*DeriveEnvelopeRequest)(nil),         // 21: capiscio.v1.DeriveEnvelopeRequest
+	(*DeriveEnvelopeResponse)(nil),        // 22: capiscio.v1.DeriveEnvelopeResponse
+	(*BuildTransportHeadersRequest)(nil),  // 23: capiscio.v1.BuildTransportHeadersRequest
+	(*BuildTransportHeadersResponse)(nil), // 24: capiscio.v1.BuildTransportHeadersResponse
+	(*VerifyEnvelopeChainRequest)(nil),    // 25: capiscio.v1.VerifyEnvelopeChainRequest
+	(*VerifyEnvelopeChainResponse)(nil),   // 26: capiscio.v1.VerifyEnvelopeChainResponse
+	nil,                                   // 27: capiscio.v1.SignRequest.HeadersEntry
+	nil,                                   // 28: capiscio.v1.SignAttachedRequest.HeadersEntry
+	nil,                                   // 29: capiscio.v1.GenerateKeyPairRequest.MetadataEntry
+	nil,                                   // 30: capiscio.v1.GetKeyInfoResponse.MetadataEntry
+	nil,                                   // 31: capiscio.v1.InitRequest.MetadataEntry
+	nil,                                   // 32: capiscio.v1.BuildTransportHeadersRequest.BadgeMapEntry
+	nil,                                   // 33: capiscio.v1.VerifyEnvelopeChainRequest.BadgeMapEntry
+	(*ValidationResult)(nil),              // 34: capiscio.v1.ValidationResult
+	(KeyAlgorithm)(0),                     // 35: capiscio.v1.KeyAlgorithm
+	(KeyFormat)(0),                        // 36: capiscio.v1.KeyFormat
+	(*Timestamp)(nil),                     // 37: capiscio.v1.Timestamp
 }
 var file_capiscio_v1_simpleguard_proto_depIdxs = []int32{
 	0,  // 0: capiscio.v1.SignRequest.format:type_name -> capiscio.v1.SignatureFormat
-	19, // 1: capiscio.v1.SignRequest.headers:type_name -> capiscio.v1.SignRequest.HeadersEntry
-	24, // 2: capiscio.v1.VerifyResponse.validation:type_name -> capiscio.v1.ValidationResult
+	27, // 1: capiscio.v1.SignRequest.headers:type_name -> capiscio.v1.SignRequest.HeadersEntry
+	34, // 2: capiscio.v1.VerifyResponse.validation:type_name -> capiscio.v1.ValidationResult
 	0,  // 3: capiscio.v1.SignAttachedRequest.format:type_name -> capiscio.v1.SignatureFormat
-	20, // 4: capiscio.v1.SignAttachedRequest.headers:type_name -> capiscio.v1.SignAttachedRequest.HeadersEntry
-	24, // 5: capiscio.v1.VerifyAttachedResponse.validation:type_name -> capiscio.v1.ValidationResult
-	25, // 6: capiscio.v1.GenerateKeyPairRequest.algorithm:type_name -> capiscio.v1.KeyAlgorithm
-	21, // 7: capiscio.v1.GenerateKeyPairRequest.metadata:type_name -> capiscio.v1.GenerateKeyPairRequest.MetadataEntry
-	25, // 8: capiscio.v1.GenerateKeyPairResponse.algorithm:type_name -> capiscio.v1.KeyAlgorithm
-	26, // 9: capiscio.v1.LoadKeyRequest.format:type_name -> capiscio.v1.KeyFormat
-	25, // 10: capiscio.v1.LoadKeyResponse.algorithm:type_name -> capiscio.v1.KeyAlgorithm
-	26, // 11: capiscio.v1.ExportKeyRequest.format:type_name -> capiscio.v1.KeyFormat
-	25, // 12: capiscio.v1.GetKeyInfoResponse.algorithm:type_name -> capiscio.v1.KeyAlgorithm
-	27, // 13: capiscio.v1.GetKeyInfoResponse.created_at:type_name -> capiscio.v1.Timestamp
-	22, // 14: capiscio.v1.GetKeyInfoResponse.metadata:type_name -> capiscio.v1.GetKeyInfoResponse.MetadataEntry
-	25, // 15: capiscio.v1.InitRequest.algorithm:type_name -> capiscio.v1.KeyAlgorithm
-	23, // 16: capiscio.v1.InitRequest.metadata:type_name -> capiscio.v1.InitRequest.MetadataEntry
-	1,  // 17: capiscio.v1.SimpleGuardService.Sign:input_type -> capiscio.v1.SignRequest
-	3,  // 18: capiscio.v1.SimpleGuardService.Verify:input_type -> capiscio.v1.VerifyRequest
-	5,  // 19: capiscio.v1.SimpleGuardService.SignAttached:input_type -> capiscio.v1.SignAttachedRequest
-	7,  // 20: capiscio.v1.SimpleGuardService.VerifyAttached:input_type -> capiscio.v1.VerifyAttachedRequest
-	9,  // 21: capiscio.v1.SimpleGuardService.GenerateKeyPair:input_type -> capiscio.v1.GenerateKeyPairRequest
-	11, // 22: capiscio.v1.SimpleGuardService.LoadKey:input_type -> capiscio.v1.LoadKeyRequest
-	13, // 23: capiscio.v1.SimpleGuardService.ExportKey:input_type -> capiscio.v1.ExportKeyRequest
-	15, // 24: capiscio.v1.SimpleGuardService.GetKeyInfo:input_type -> capiscio.v1.GetKeyInfoRequest
-	17, // 25: capiscio.v1.SimpleGuardService.Init:input_type -> capiscio.v1.InitRequest
-	2,  // 26: capiscio.v1.SimpleGuardService.Sign:output_type -> capiscio.v1.SignResponse
-	4,  // 27: capiscio.v1.SimpleGuardService.Verify:output_type -> capiscio.v1.VerifyResponse
-	6,  // 28: capiscio.v1.SimpleGuardService.SignAttached:output_type -> capiscio.v1.SignAttachedResponse
-	8,  // 29: capiscio.v1.SimpleGuardService.VerifyAttached:output_type -> capiscio.v1.VerifyAttachedResponse
-	10, // 30: capiscio.v1.SimpleGuardService.GenerateKeyPair:output_type -> capiscio.v1.GenerateKeyPairResponse
-	12, // 31: capiscio.v1.SimpleGuardService.LoadKey:output_type -> capiscio.v1.LoadKeyResponse
-	14, // 32: capiscio.v1.SimpleGuardService.ExportKey:output_type -> capiscio.v1.ExportKeyResponse
-	16, // 33: capiscio.v1.SimpleGuardService.GetKeyInfo:output_type -> capiscio.v1.GetKeyInfoResponse
-	18, // 34: capiscio.v1.SimpleGuardService.Init:output_type -> capiscio.v1.InitResponse
-	26, // [26:35] is the sub-list for method output_type
-	17, // [17:26] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	28, // 4: capiscio.v1.SignAttachedRequest.headers:type_name -> capiscio.v1.SignAttachedRequest.HeadersEntry
+	34, // 5: capiscio.v1.VerifyAttachedResponse.validation:type_name -> capiscio.v1.ValidationResult
+	35, // 6: capiscio.v1.GenerateKeyPairRequest.algorithm:type_name -> capiscio.v1.KeyAlgorithm
+	29, // 7: capiscio.v1.GenerateKeyPairRequest.metadata:type_name -> capiscio.v1.GenerateKeyPairRequest.MetadataEntry
+	35, // 8: capiscio.v1.GenerateKeyPairResponse.algorithm:type_name -> capiscio.v1.KeyAlgorithm
+	36, // 9: capiscio.v1.LoadKeyRequest.format:type_name -> capiscio.v1.KeyFormat
+	35, // 10: capiscio.v1.LoadKeyResponse.algorithm:type_name -> capiscio.v1.KeyAlgorithm
+	36, // 11: capiscio.v1.ExportKeyRequest.format:type_name -> capiscio.v1.KeyFormat
+	35, // 12: capiscio.v1.GetKeyInfoResponse.algorithm:type_name -> capiscio.v1.KeyAlgorithm
+	37, // 13: capiscio.v1.GetKeyInfoResponse.created_at:type_name -> capiscio.v1.Timestamp
+	30, // 14: capiscio.v1.GetKeyInfoResponse.metadata:type_name -> capiscio.v1.GetKeyInfoResponse.MetadataEntry
+	35, // 15: capiscio.v1.InitRequest.algorithm:type_name -> capiscio.v1.KeyAlgorithm
+	31, // 16: capiscio.v1.InitRequest.metadata:type_name -> capiscio.v1.InitRequest.MetadataEntry
+	32, // 17: capiscio.v1.BuildTransportHeadersRequest.badge_map:type_name -> capiscio.v1.BuildTransportHeadersRequest.BadgeMapEntry
+	33, // 18: capiscio.v1.VerifyEnvelopeChainRequest.badge_map:type_name -> capiscio.v1.VerifyEnvelopeChainRequest.BadgeMapEntry
+	1,  // 19: capiscio.v1.SimpleGuardService.Sign:input_type -> capiscio.v1.SignRequest
+	3,  // 20: capiscio.v1.SimpleGuardService.Verify:input_type -> capiscio.v1.VerifyRequest
+	5,  // 21: capiscio.v1.SimpleGuardService.SignAttached:input_type -> capiscio.v1.SignAttachedRequest
+	7,  // 22: capiscio.v1.SimpleGuardService.VerifyAttached:input_type -> capiscio.v1.VerifyAttachedRequest
+	9,  // 23: capiscio.v1.SimpleGuardService.GenerateKeyPair:input_type -> capiscio.v1.GenerateKeyPairRequest
+	11, // 24: capiscio.v1.SimpleGuardService.LoadKey:input_type -> capiscio.v1.LoadKeyRequest
+	13, // 25: capiscio.v1.SimpleGuardService.ExportKey:input_type -> capiscio.v1.ExportKeyRequest
+	15, // 26: capiscio.v1.SimpleGuardService.GetKeyInfo:input_type -> capiscio.v1.GetKeyInfoRequest
+	17, // 27: capiscio.v1.SimpleGuardService.Init:input_type -> capiscio.v1.InitRequest
+	19, // 28: capiscio.v1.SimpleGuardService.CreateEnvelope:input_type -> capiscio.v1.CreateEnvelopeRequest
+	21, // 29: capiscio.v1.SimpleGuardService.DeriveEnvelope:input_type -> capiscio.v1.DeriveEnvelopeRequest
+	23, // 30: capiscio.v1.SimpleGuardService.BuildTransportHeaders:input_type -> capiscio.v1.BuildTransportHeadersRequest
+	25, // 31: capiscio.v1.SimpleGuardService.VerifyEnvelopeChain:input_type -> capiscio.v1.VerifyEnvelopeChainRequest
+	2,  // 32: capiscio.v1.SimpleGuardService.Sign:output_type -> capiscio.v1.SignResponse
+	4,  // 33: capiscio.v1.SimpleGuardService.Verify:output_type -> capiscio.v1.VerifyResponse
+	6,  // 34: capiscio.v1.SimpleGuardService.SignAttached:output_type -> capiscio.v1.SignAttachedResponse
+	8,  // 35: capiscio.v1.SimpleGuardService.VerifyAttached:output_type -> capiscio.v1.VerifyAttachedResponse
+	10, // 36: capiscio.v1.SimpleGuardService.GenerateKeyPair:output_type -> capiscio.v1.GenerateKeyPairResponse
+	12, // 37: capiscio.v1.SimpleGuardService.LoadKey:output_type -> capiscio.v1.LoadKeyResponse
+	14, // 38: capiscio.v1.SimpleGuardService.ExportKey:output_type -> capiscio.v1.ExportKeyResponse
+	16, // 39: capiscio.v1.SimpleGuardService.GetKeyInfo:output_type -> capiscio.v1.GetKeyInfoResponse
+	18, // 40: capiscio.v1.SimpleGuardService.Init:output_type -> capiscio.v1.InitResponse
+	20, // 41: capiscio.v1.SimpleGuardService.CreateEnvelope:output_type -> capiscio.v1.CreateEnvelopeResponse
+	22, // 42: capiscio.v1.SimpleGuardService.DeriveEnvelope:output_type -> capiscio.v1.DeriveEnvelopeResponse
+	24, // 43: capiscio.v1.SimpleGuardService.BuildTransportHeaders:output_type -> capiscio.v1.BuildTransportHeadersResponse
+	26, // 44: capiscio.v1.SimpleGuardService.VerifyEnvelopeChain:output_type -> capiscio.v1.VerifyEnvelopeChainResponse
+	32, // [32:45] is the sub-list for method output_type
+	19, // [19:32] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_capiscio_v1_simpleguard_proto_init() }
@@ -1645,7 +2402,7 @@ func file_capiscio_v1_simpleguard_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capiscio_v1_simpleguard_proto_rawDesc), len(file_capiscio_v1_simpleguard_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   23,
+			NumMessages:   33,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
