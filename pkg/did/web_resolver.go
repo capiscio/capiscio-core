@@ -205,7 +205,7 @@ func (r *WebResolver) extractKey(doc *Document, didStr string, kid string) (cryp
 	}
 
 	if kid != "" {
-		return nil, fmt.Errorf("%w: %s#%s", ErrKeyNotFound, didStr, kid)
+		return nil, fmt.Errorf("%w: %s", ErrKeyNotFound, buildKeyID(didStr, kid))
 	}
 	return nil, fmt.Errorf("%w: no verification methods in document for %s", ErrKeyNotFound, didStr)
 }
@@ -215,8 +215,12 @@ func buildKeyID(didStr, kid string) string {
 	if kid == "" {
 		return ""
 	}
-	if strings.HasPrefix(kid, didStr+"#") || strings.HasPrefix(kid, "#") {
+	if strings.HasPrefix(kid, didStr+"#") {
 		return kid
+	}
+	// Treat leading "#" as a fragment relative to the DID
+	if strings.HasPrefix(kid, "#") {
+		return didStr + kid
 	}
 	return didStr + "#" + kid
 }
