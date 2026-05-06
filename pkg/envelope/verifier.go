@@ -34,6 +34,24 @@ func DefaultKeyResolver(_ context.Context, didStr string, _ string) (crypto.Publ
 	return pubKey, nil
 }
 
+// NewCompositeKeyResolver creates a KeyResolver that handles both did:key (local)
+// and did:web (HTTP-based) identifiers.
+func NewCompositeKeyResolver(webResolver *did.WebResolver) KeyResolver {
+	return func(ctx context.Context, didStr string, kid string) (crypto.PublicKey, error) {
+		parsed, err := did.Parse(didStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse DID %q: %w", didStr, err)
+		}
+		if parsed.IsKeyDID() {
+			return DefaultKeyResolver(ctx, didStr, kid)
+		}
+		if webResolver == nil {
+			return nil, fmt.Errorf("did:web resolution requires a WebResolver but none was configured")
+		}
+		return webResolver.Resolve(ctx, didStr, kid)
+	}
+}
+
 // VerifyOptions configures envelope verification.
 type VerifyOptions struct {
 	// TrustedIssuers restricts which badge issuers are accepted.
