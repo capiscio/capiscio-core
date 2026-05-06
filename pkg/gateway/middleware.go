@@ -339,7 +339,7 @@ func (p *pep) handleChainError(w http.ResponseWriter, r *http.Request, err error
 			"error":      envErr.Code,
 			"error_desc": envErr.Message,
 		}
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 		return
 	}
 
