@@ -16,9 +16,6 @@ import (
 	pb "github.com/capiscio/capiscio-core/v2/pkg/rpc/gen/capiscio/v1"
 )
 
-// ptrStr returns a pointer to s.
-func ptrStr(s string) *string { return &s }
-
 // ptrIfNotEmpty returns nil if s is empty, otherwise &s.
 func ptrIfNotEmpty(s string) *string {
 	if s == "" {
