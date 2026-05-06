@@ -4,6 +4,8 @@ package gateway
 import (
 	"crypto"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
@@ -54,7 +56,23 @@ type PEPConfig struct {
 	PEPID           string                   // PEP instance identifier
 	Workspace       string                   // workspace/tenant identifier
 	Logger          *slog.Logger             // nil = slog.Default()
+
+	// EnvelopeVerifier verifies Authority Envelopes and chains (RFC-008).
+	// nil = envelope verification disabled (badge-only mode).
+	EnvelopeVerifier *envelope.Verifier
+
+	// MaxChainDepth is the maximum delegation chain length accepted by this PEP.
+	// 0 = use default (10, per RFC-008 §9.5 RECOMMENDED).
+	MaxChainDepth int
+
+	// OrgTrustBoundary is the DID prefix that identifies this PEP's organization.
+	// DIDs outside this prefix are considered foreign-org for cache purposes (§15.4).
+	// Example: "did:web:acme.example"
+	OrgTrustBoundary string
 }
+
+// defaultMaxChainDepth is the maximum chain depth per RFC-008 §9.5 RECOMMENDED.
+const defaultMaxChainDepth = 10
 
 // PolicyEvent captures telemetry for a policy enforcement decision.
 type PolicyEvent struct {
@@ -121,14 +139,25 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	r.Header.Set("X-Capiscio-Subject", claims.Subject)
 	r.Header.Set("X-Capiscio-Issuer", claims.Issuer)
 
+	// --- 2-8. Verify authority chain (RFC-008 §9.2 steps 2–8) ---
+	var chainResult *envelope.ChainVerifyResult
+	if p.config.EnvelopeVerifier != nil {
+		var err error
+		chainResult, err = p.verifyAuthorityChain(r, token)
+		if err != nil {
+			p.handleChainError(w, r, err)
+			return
+		}
+	}
+
 	// If no PDP configured, operate in badge-only mode
 	if p.config.PDPClient == nil {
 		p.next.ServeHTTP(w, r)
 		return
 	}
 
-	// --- 2-3. Build PIP request ---
-	pipReq := p.buildPIPRequest(r, claims)
+	// --- 9. Build PIP request with verified chain data ---
+	pipReq := p.buildPIPRequest(r, claims, chainResult)
 
 	// --- 4. Check break-glass override ---
 	if p.handleBreakGlass(w, r, pipReq) {
@@ -139,8 +168,9 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	p.evaluatePolicy(w, r, claims, pipReq)
 }
 
-// buildPIPRequest constructs the PIP decision request from the HTTP request and badge claims.
-func (p *pep) buildPIPRequest(r *http.Request, claims *badge.Claims) *pip.DecisionRequest {
+// buildPIPRequest constructs the PIP decision request from the HTTP request, badge claims,
+// and optional verified chain result (nil for badge-only requests).
+func (p *pep) buildPIPRequest(r *http.Request, claims *badge.Claims, chain *envelope.ChainVerifyResult) *pip.DecisionRequest {
 	txnID := r.Header.Get(pip.TxnIDHeader)
 	if txnID == "" {
 		if u, err := uuid.NewV7(); err != nil {
@@ -154,7 +184,7 @@ func (p *pep) buildPIPRequest(r *http.Request, claims *badge.Claims) *pip.Decisi
 
 	now := time.Now().UTC()
 	nowStr := now.Format(time.RFC3339)
-	return &pip.DecisionRequest{
+	req := &pip.DecisionRequest{
 		PIPVersion: pip.PIPVersion,
 		Subject: pip.SubjectAttributes{
 			DID:        claims.Subject,
@@ -179,6 +209,169 @@ func (p *pep) buildPIPRequest(r *http.Request, claims *badge.Claims) *pip.Decisi
 			Workspace: strPtr(p.config.Workspace),
 			Time:      &nowStr,
 		},
+	}
+
+	// When a verified chain is present, override raw header values with
+	// cryptographically verified data from VerifyChain() output.
+	// This prevents capability class spoofing via header injection.
+	if chain != nil {
+		req.Action.CapabilityClass = strPtr(chain.LeafCapability)
+
+		leaf := chain.Links[len(chain.Links)-1]
+		req.Context.EnvelopeID = strPtr(leaf.Payload.EnvelopeID)
+		depth := chain.TotalDepth
+		req.Context.DelegationDepth = &depth
+		if leaf.Payload.Constraints != nil {
+			constraintsJSON, _ := json.Marshal(leaf.Payload.Constraints)
+			req.Context.Constraints = constraintsJSON
+		}
+		if len(chain.Links) > 1 {
+			parent := chain.Links[len(chain.Links)-2]
+			if parent.Payload.Constraints != nil {
+				parentJSON, _ := json.Marshal(parent.Payload.Constraints)
+				req.Context.ParentConstraints = parentJSON
+			}
+		}
+
+		// Use the most restrictive enforcement mode from the chain (D7).
+		// envelope.EnforcementMode and pip.EnforcementMode share iota order
+		// and string representations; convert via the string form.
+		for _, link := range chain.Links {
+			linkMode, _ := pip.ParseEnforcementMode(link.EffectiveMode.String())
+			if linkMode > p.config.EnforcementMode {
+				req.Context.EnforcementMode = linkMode.String()
+			}
+		}
+	}
+
+	return req
+}
+
+// maxChainDepth returns the configured maximum chain depth, defaulting to 10.
+func (p *pep) maxChainDepth() int {
+	if p.config.MaxChainDepth > 0 {
+		return p.config.MaxChainDepth
+	}
+	return defaultMaxChainDepth
+}
+
+// verifyAuthorityChain extracts and verifies RFC-008 §15 chain transport headers.
+// Returns nil, nil if no chain headers are present (badge-only request).
+// The callerBadgeJWS is the already-verified badge from the X-Capiscio-Badge header.
+func (p *pep) verifyAuthorityChain(r *http.Request, callerBadgeJWS string) (*envelope.ChainVerifyResult, error) {
+	leafJWS := ExtractLeafAuthority(r)
+	if leafJWS == "" {
+		return nil, nil // No envelope — badge-only mode
+	}
+
+	chain, err := ExtractAuthorityChain(r)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate leaf consistency (Appendix A): chain[-1] must match leaf header.
+	if chain != nil {
+		if err := ValidateChainLeafConsistency(leafJWS, chain); err != nil {
+			return nil, err
+		}
+	}
+
+	// If no chain, verify the single leaf envelope.
+	if chain == nil {
+		chain = []string{leafJWS}
+	}
+
+	// Check max chain depth before expensive verification.
+	if len(chain) > p.maxChainDepth() {
+		return nil, envelope.NewError(envelope.ErrCodeChainTooDeep,
+			fmt.Sprintf("chain length %d exceeds maximum %d", len(chain), p.maxChainDepth()))
+	}
+
+	// Extract the badge map for cross-org chains.
+	badgeMap, err := ExtractBadgeMap(r)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build verify options.
+	opts := envelope.VerifyOptions{
+		Now: func() time.Time { return time.Now() },
+	}
+
+	result, err := p.config.EnvelopeVerifier.VerifyChain(r.Context(), chain, badgeMap, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	p.logger.InfoContext(r.Context(), "authority chain verified",
+		slog.Int("chain_depth", result.TotalDepth),
+		slog.String("root_capability", result.RootCapability),
+		slog.String("leaf_capability", result.LeafCapability),
+	)
+
+	return result, nil
+}
+
+// handleChainError maps envelope verification errors to HTTP responses.
+// Errors from chain verification are pre-PDP (RFC-008 §9.2 steps 2–8).
+func (p *pep) handleChainError(w http.ResponseWriter, r *http.Request, err error) {
+	var envErr *envelope.Error
+	if errors.As(err, &envErr) {
+		status := ChainErrorHTTPStatus(envErr.Code)
+		p.logger.WarnContext(r.Context(), "authority chain verification failed",
+			slog.String("error_code", envErr.Code),
+			slog.String("error", envErr.Message),
+			slog.Int("status", status),
+			slog.String("enforcement_mode", p.config.EnforcementMode.String()),
+		)
+
+		// In EM-OBSERVE, log but allow the request through (RFC-005 §6.3)
+		if p.config.EnforcementMode == pip.EMObserve {
+			p.logger.InfoContext(r.Context(), "chain error in EM-OBSERVE (allowing)",
+				slog.String("error_code", envErr.Code))
+			p.next.ServeHTTP(w, r)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(status)
+		resp := map[string]string{
+			"error":      envErr.Code,
+			"error_desc": envErr.Message,
+		}
+		json.NewEncoder(w).Encode(resp)
+		return
+	}
+
+	// Non-envelope error (e.g., network failure in key resolution)
+	if p.config.EnforcementMode == pip.EMObserve {
+		p.logger.WarnContext(r.Context(), "chain verification error in EM-OBSERVE (allowing)",
+			slog.String("error", err.Error()))
+		p.next.ServeHTTP(w, r)
+		return
+	}
+	p.logger.ErrorContext(r.Context(), "authority chain verification error",
+		slog.String("error", err.Error()),
+	)
+	http.Error(w, "internal chain verification error", http.StatusInternalServerError)
+}
+
+// ChainErrorHTTPStatus maps RFC-008 error codes to HTTP status codes.
+func ChainErrorHTTPStatus(code string) int {
+	switch code {
+	case envelope.ErrCodeMalformed, envelope.ErrCodeCapabilityInvalid, envelope.ErrCodePayloadTooLarge:
+		return http.StatusBadRequest // 400
+	case envelope.ErrCodeExpired, envelope.ErrCodeNotYetValid:
+		return http.StatusUnauthorized // 401
+	case envelope.ErrCodeSignatureInvalid, envelope.ErrCodeBadgeBindingFailed,
+		envelope.ErrCodeChainBroken, envelope.ErrCodeNarrowingViolation,
+		envelope.ErrCodeDepthExceeded, envelope.ErrCodeChainTooDeep,
+		envelope.ErrCodeKeyNotBound, envelope.ErrCodeScopeInsufficient:
+		return http.StatusForbidden // 403
+	case envelope.ErrCodeAlgorithmForbidden:
+		return http.StatusForbidden // 403
+	default:
+		return http.StatusForbidden // 403
 	}
 }
 
