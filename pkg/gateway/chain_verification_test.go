@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/capiscio/capiscio-core/v2/pkg/badge"
 	"github.com/capiscio/capiscio-core/v2/pkg/did"
 	"github.com/capiscio/capiscio-core/v2/pkg/envelope"
 	"github.com/capiscio/capiscio-core/v2/pkg/gateway"
@@ -52,7 +53,7 @@ func newChainTestSetup(t *testing.T) *chainTestSetup {
 	leafPub, _, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
-	return &chainTestSetup{
+	cts := &chainTestSetup{
 		testSetup:    ts,
 		issuerPub:    issuerPub,
 		issuerPriv:   issuerPriv,
@@ -66,6 +67,22 @@ func newChainTestSetup(t *testing.T) *chainTestSetup {
 			KeyResolver: envelope.DefaultKeyResolver,
 		},
 	}
+
+	// Override badge subject to match the delegate DID (single-hop leaf).
+	// Tests with multi-hop chains should call setBadgeSubject(leafDID).
+	cts.setBadgeSubject(t, cts.delegateDID)
+
+	return cts
+}
+
+// setBadgeSubject re-issues the test badge with the given subject DID,
+// so that subject-DID validation passes in the gateway middleware.
+func (s *chainTestSetup) setBadgeSubject(t *testing.T, subjectDID string) {
+	t.Helper()
+	s.claims.Subject = subjectDID
+	token, err := badge.SignBadge(s.claims, s.priv)
+	require.NoError(t, err)
+	s.token = token
 }
 
 // issueRootEnvelope creates a root envelope signed by the issuer.
@@ -211,6 +228,8 @@ func TestChainVerification_SingleEnvelope(t *testing.T) {
 
 func TestChainVerification_TwoHopChain(t *testing.T) {
 	ts := newChainTestSetup(t)
+	// Two-hop: leaf subject is leafDID, not delegateDID
+	ts.setBadgeSubject(t, ts.leafDID)
 
 	rootJWS := ts.issueRootEnvelope(t, "tools.database", 3)
 	childJWS := ts.deriveChildEnvelope(t, rootJWS, "tools.database.read", 2,

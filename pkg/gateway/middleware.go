@@ -143,10 +143,27 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	var chainResult *envelope.ChainVerifyResult
 	if p.config.EnvelopeVerifier != nil {
 		var err error
-		chainResult, err = p.verifyAuthorityChain(r, token)
+		chainResult, err = p.verifyAuthorityChain(r, token, claims.Subject)
 		if err != nil {
 			p.handleChainError(w, r, err)
 			return
+		}
+
+		// RFC-008 §9.2 Step 6: Validate the chain's leaf subject matches the
+		// authenticated caller. Without this check, an agent could present a valid
+		// badge for DID A with a chain delegating to DID B, gaining B's capabilities.
+		if chainResult != nil {
+			leafSubject := chainResult.Links[len(chainResult.Links)-1].Payload.SubjectDID
+			if leafSubject != claims.Subject {
+				p.logger.WarnContext(r.Context(), "chain leaf subject does not match caller badge",
+					slog.String("leaf_subject", leafSubject),
+					slog.String("badge_subject", claims.Subject),
+				)
+				chainErr := envelope.NewError(envelope.ErrCodeBadgeBindingFailed,
+					fmt.Sprintf("leaf envelope subject_did %q does not match authenticated caller %q", leafSubject, claims.Subject))
+				p.handleChainError(w, r, chainErr)
+				return
+			}
 		}
 	}
 
@@ -265,7 +282,8 @@ func (p *pep) maxChainDepth() int {
 // verifyAuthorityChain extracts and verifies RFC-008 §15 chain transport headers.
 // Returns nil, nil if no chain headers are present (badge-only request).
 // The callerBadgeJWS is the already-verified badge from the X-Capiscio-Badge header.
-func (p *pep) verifyAuthorityChain(r *http.Request, callerBadgeJWS string) (*envelope.ChainVerifyResult, error) {
+// callerDID is the authenticated caller's DID (from badge claims.Subject).
+func (p *pep) verifyAuthorityChain(r *http.Request, callerBadgeJWS string, callerDID string) (*envelope.ChainVerifyResult, error) {
 	leafJWS := ExtractLeafAuthority(r)
 	if leafJWS == "" {
 		return nil, nil // No envelope — badge-only mode
@@ -298,6 +316,19 @@ func (p *pep) verifyAuthorityChain(r *http.Request, callerBadgeJWS string) (*env
 	badgeMap, err := ExtractBadgeMap(r)
 	if err != nil {
 		return nil, err
+	}
+
+	// RFC-008 §15.2: The leaf agent's badge is transmitted via the standard
+	// badge transport (Authorization header), not duplicated in the badge map.
+	// Inject the caller's badge under their DID so VerifyChain can perform
+	// badge binding checks without requiring the leaf to duplicate it.
+	if badgeMap == nil {
+		badgeMap = make(map[string]string)
+	}
+	if callerDID != "" && callerBadgeJWS != "" {
+		if _, exists := badgeMap[callerDID]; !exists {
+			badgeMap[callerDID] = callerBadgeJWS
+		}
 	}
 
 	// Build verify options.
