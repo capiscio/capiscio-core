@@ -34,6 +34,10 @@ const (
 	// ErrCodeDepthExceeded indicates an attempt to delegate at depth 0.
 	ErrCodeDepthExceeded = "ENVELOPE_DEPTH_EXCEEDED"
 
+	// ErrCodeChainTooDeep indicates the chain exceeds the PEP's configured
+	// maximum chain length (RFC-008 §15.1.1).
+	ErrCodeChainTooDeep = "ENVELOPE_CHAIN_TOO_DEEP"
+
 	// ErrCodeKeyNotBound indicates the signing key is not bound to the issuer DID.
 	ErrCodeKeyNotBound = "ENVELOPE_KEY_NOT_BOUND"
 
