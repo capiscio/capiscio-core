@@ -45,6 +45,9 @@ func NewCompositeKeyResolver(webResolver *did.WebResolver) KeyResolver {
 		if parsed.IsKeyDID() {
 			return DefaultKeyResolver(ctx, didStr, kid)
 		}
+		if webResolver == nil {
+			return nil, fmt.Errorf("did:web resolution requires a WebResolver but none was configured")
+		}
 		return webResolver.Resolve(ctx, didStr, kid)
 	}
 }

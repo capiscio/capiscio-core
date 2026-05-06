@@ -58,9 +58,10 @@ func TestWebResolver_BasicResolve(t *testing.T) {
 	defer server.Close()
 
 	resolver := &WebResolver{
-		Client:    server.Client(),
-		AllowHTTP: true, // test server uses HTTP
-		CacheTTL:  time.Minute,
+		Client:                  server.Client(),
+		UnsafeAllowCustomClient: true,
+		AllowHTTP:               true, // test server uses HTTP
+		CacheTTL:                time.Minute,
 	}
 	resolver.initOnce.Do(resolver.init)
 
@@ -198,10 +199,11 @@ func TestWebResolver_OversizedDocument(t *testing.T) {
 	defer server.Close()
 
 	resolver := &WebResolver{
-		Client:     server.Client(),
-		AllowHTTP:  true,
-		MaxDocSize: 50, // Very small limit for testing
-		CacheTTL:   time.Minute,
+		Client:                  server.Client(),
+		UnsafeAllowCustomClient: true,
+		AllowHTTP:               true,
+		MaxDocSize:              50, // Very small limit for testing
+		CacheTTL:                time.Minute,
 	}
 	resolver.initOnce.Do(resolver.init)
 
@@ -221,8 +223,9 @@ func TestWebResolver_TimeoutEnforcement(t *testing.T) {
 		Client: &http.Client{
 			Timeout: 50 * time.Millisecond,
 		},
-		AllowHTTP: true,
-		CacheTTL:  time.Minute,
+		UnsafeAllowCustomClient: true,
+		AllowHTTP:               true,
+		CacheTTL:                time.Minute,
 	}
 	resolver.initOnce.Do(resolver.init)
 
@@ -245,9 +248,10 @@ func TestWebResolver_CacheHit(t *testing.T) {
 	defer server.Close()
 
 	resolver := &WebResolver{
-		Client:    server.Client(),
-		AllowHTTP: true,
-		CacheTTL:  time.Minute,
+		Client:                  server.Client(),
+		UnsafeAllowCustomClient: true,
+		AllowHTTP:               true,
+		CacheTTL:                time.Minute,
 	}
 	resolver.initOnce.Do(resolver.init)
 

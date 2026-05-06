@@ -39,14 +39,20 @@ const DefaultCacheTTL = 5 * time.Minute
 type WebResolver struct {
 	// Client is the HTTP client to use. If nil, a default client with
 	// SSRF-safe dialer and timeout is created.
+	// WARNING: Setting a custom Client bypasses SSRF protections.
+	// UnsafeAllowCustomClient must be true to use a custom Client.
 	Client *http.Client
+
+	// UnsafeAllowCustomClient must be set to true when providing a custom Client.
+	// This is a safety gate to prevent accidental SSRF bypass.
+	UnsafeAllowCustomClient bool
 
 	// MaxDocSize is the maximum response body size in bytes.
 	// Default: 64KB.
 	MaxDocSize int
 
 	// CacheTTL is the duration to cache resolved documents.
-	// Default: 5 minutes. Set to 0 to disable caching.
+	// Default: 5 minutes. Set to negative value to disable caching.
 	CacheTTL time.Duration
 
 	// AllowHTTP allows HTTP (non-TLS) for testing. MUST be false in production.
@@ -102,11 +108,12 @@ func (r *WebResolver) init() {
 	}
 	r.MaxDocSize = maxDoc
 
+	// CacheTTL: 0 means use default, negative means disabled
 	if r.CacheTTL == 0 {
 		r.CacheTTL = DefaultCacheTTL
 	}
 
-	if r.Client != nil {
+	if r.Client != nil && r.UnsafeAllowCustomClient {
 		r.client = r.Client
 	} else {
 		r.client = &http.Client{
@@ -124,7 +131,7 @@ func (r *WebResolver) init() {
 }
 
 func (r *WebResolver) resolveDocument(ctx context.Context, docURL string) (*Document, error) {
-	// Check cache
+	// Check cache (CacheTTL > 0 means caching is enabled)
 	if r.CacheTTL > 0 {
 		if entry, ok := r.cache.Load(docURL); ok {
 			ce := entry.(*cacheEntry)
@@ -299,7 +306,7 @@ func ssrfSafeDialer() func(ctx context.Context, network, addr string) (net.Conn,
 		Timeout: 5 * time.Second,
 	}
 	return func(ctx context.Context, network, addr string) (net.Conn, error) {
-		host, _, err := net.SplitHostPort(addr)
+		host, port, err := net.SplitHostPort(addr)
 		if err != nil {
 			return nil, fmt.Errorf("%w: invalid address %q", ErrSSRFBlocked, addr)
 		}
@@ -323,7 +330,10 @@ func ssrfSafeDialer() func(ctx context.Context, network, addr string) (net.Conn,
 			}
 		}
 
-		return dialer.DialContext(ctx, network, addr)
+		// Dial the resolved IP directly to prevent DNS rebinding TOCTOU.
+		// Use the first validated IP with the original port.
+		resolvedAddr := net.JoinHostPort(ips[0].IP.String(), port)
+		return dialer.DialContext(ctx, network, resolvedAddr)
 	}
 }
 
