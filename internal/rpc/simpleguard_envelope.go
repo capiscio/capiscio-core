@@ -82,7 +82,7 @@ func (s *SimpleGuardService) CreateEnvelope(_ context.Context, req *pb.CreateEnv
 		payload.EnforcementModeMin = &req.EnforcementModeMin
 	}
 
-	jws, err := envelope.SignEnvelope(payload, entry.PrivateKey, req.KeyId)
+	jws, err := envelope.SignEnvelope(payload, entry.PrivateKey, issuerDID+"#"+req.KeyId)
 	if err != nil {
 		return &pb.CreateEnvelopeResponse{ErrorMessage: fmt.Sprintf("sign failed: %v", err)}, nil
 	}
@@ -143,10 +143,20 @@ func (s *SimpleGuardService) DeriveEnvelope(_ context.Context, req *pb.DeriveEnv
 		childPayload.Constraints = map[string]any{}
 	}
 
-	// Enforcement mode: inherit parent's minimum, allow escalation but not relaxation
+	// Enforcement mode: inherit parent's minimum, allow escalation but not relaxation (RFC-008 §10.5)
 	if req.EnforcementModeMin != "" {
-		if _, err := envelope.ParseEnforcementMode(req.EnforcementModeMin); err != nil {
+		childMode, err := envelope.ParseEnforcementMode(req.EnforcementModeMin)
+		if err != nil {
 			return &pb.DeriveEnvelopeResponse{ErrorMessage: fmt.Sprintf("invalid enforcement mode: %v", err)}, nil
+		}
+		// Reject if child mode is less strict than parent's minimum
+		if parent.Payload.EnforcementModeMin != nil {
+			parentMode, _ := envelope.ParseEnforcementMode(*parent.Payload.EnforcementModeMin)
+			if childMode < parentMode {
+				return &pb.DeriveEnvelopeResponse{
+					ErrorMessage: fmt.Sprintf("enforcement_mode_min %q is less strict than parent's %q; relaxation is not permitted", req.EnforcementModeMin, *parent.Payload.EnforcementModeMin),
+				}, nil
+			}
 		}
 		childPayload.EnforcementModeMin = &req.EnforcementModeMin
 	} else if parent.Payload.EnforcementModeMin != nil {
@@ -154,7 +164,7 @@ func (s *SimpleGuardService) DeriveEnvelope(_ context.Context, req *pb.DeriveEnv
 	}
 
 	// DeriveEnvelope handles: hash linking, narrowing validation, depth check
-	jws, err := envelope.DeriveEnvelope(parent, childPayload, entry.PrivateKey, req.KeyId)
+	jws, err := envelope.DeriveEnvelope(parent, childPayload, entry.PrivateKey, issuerDID+"#"+req.KeyId)
 	if err != nil {
 		return &pb.DeriveEnvelopeResponse{ErrorMessage: fmt.Sprintf("derive failed: %v", err)}, nil
 	}
@@ -218,15 +228,23 @@ func (s *SimpleGuardService) VerifyEnvelopeChain(ctx context.Context, req *pb.Ve
 	}
 
 	opts := envelope.VerifyOptions{
-		TrustedIssuers:        req.TrustedIssuers,
-		SkipBadgeVerification: true, // badge verification is separate (PEP handles it)
+		TrustedIssuers: req.TrustedIssuers,
+		// SkipBadgeVerification is true because badge verification is the
+		// PEP's responsibility (it validates the caller's badge separately).
+		// Chain verification only validates envelope signatures and structure.
+		SkipBadgeVerification: true,
 	}
 
 	if req.EnforcementMode != "" {
 		em, err := envelope.ParseEnforcementMode(req.EnforcementMode)
-		if err == nil {
-			opts.EnforcementMode = em
+		if err != nil {
+			return &pb.VerifyEnvelopeChainResponse{
+				Valid:        false,
+				ErrorCode:    envelope.ErrCodeMalformed,
+				ErrorMessage: fmt.Sprintf("invalid enforcement_mode: %v", err),
+			}, nil
 		}
+		opts.EnforcementMode = em
 	}
 
 	result, err := verifier.VerifyChain(ctx, req.Chain, req.BadgeMap, opts)
