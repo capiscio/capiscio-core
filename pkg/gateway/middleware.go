@@ -236,11 +236,18 @@ func (p *pep) buildPIPRequest(r *http.Request, claims *badge.Claims, chain *enve
 		// Use the most restrictive enforcement mode from the chain (D7).
 		// envelope.EnforcementMode and pip.EnforcementMode share iota order
 		// and string representations; convert via the string form.
+		strictest := p.config.EnforcementMode
 		for _, link := range chain.Links {
-			linkMode, _ := pip.ParseEnforcementMode(link.EffectiveMode.String())
-			if linkMode > p.config.EnforcementMode {
-				req.Context.EnforcementMode = linkMode.String()
+			linkMode, err := pip.ParseEnforcementMode(link.EffectiveMode.String())
+			if err != nil {
+				continue // skip unparseable modes
 			}
+			if linkMode > strictest {
+				strictest = linkMode
+			}
+		}
+		if strictest > p.config.EnforcementMode {
+			req.Context.EnforcementMode = strictest.String()
 		}
 	}
 
