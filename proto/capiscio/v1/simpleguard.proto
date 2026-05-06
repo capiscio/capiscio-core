@@ -37,6 +37,18 @@ service SimpleGuardService {
   // Initialize agent identity (Let's Encrypt style one-call setup)
   // Generates key pair, derives DID, registers with server, creates agent card
   rpc Init(InitRequest) returns (InitResponse);
+
+  // RFC-008: Create a root Authority Envelope (§6.1)
+  rpc CreateEnvelope(CreateEnvelopeRequest) returns (CreateEnvelopeResponse);
+
+  // RFC-008: Derive a child Authority Envelope from a parent (§6.3)
+  rpc DeriveEnvelope(DeriveEnvelopeRequest) returns (DeriveEnvelopeResponse);
+
+  // RFC-008: Build transport headers for a delegation chain (§15.1–§15.3)
+  rpc BuildTransportHeaders(BuildTransportHeadersRequest) returns (BuildTransportHeadersResponse);
+
+  // RFC-008: Verify an Authority Envelope chain (§9.2)
+  rpc VerifyEnvelopeChain(VerifyEnvelopeChainRequest) returns (VerifyEnvelopeChainResponse);
 }
 
 // Signature format
@@ -198,4 +210,86 @@ message InitResponse {
   string agent_card_json = 6;     // Agent card contents as JSON string
   bool registered = 7;            // Whether DID was registered with server
   string error_message = 8;       // Error if any
+}
+
+// ============================================================================
+// RFC-008: Authority Envelope Operations
+// ============================================================================
+
+// Request to create a root Authority Envelope
+message CreateEnvelopeRequest {
+  string key_id = 1;                    // Key to sign with (from key store)
+  string subject_did = 2;               // DID of the agent receiving authority
+  string capability_class = 3;          // e.g., "tools.database.read"
+  int32 delegation_depth_remaining = 4; // How many further delegations allowed
+  string txn_id = 5;                    // Transaction ID (RFC-004); auto-generated if empty
+  int64 expires_in_seconds = 6;         // TTL from now (default: 3600)
+  string constraints_json = 7;          // Optional JSON constraints object
+  string issuer_badge_jti = 8;          // JTI of the issuer's badge
+  string subject_badge_jti = 9;         // JTI of the subject's badge (optional)
+  string enforcement_mode_min = 10;     // Optional minimum enforcement mode
+}
+
+// Response with signed root envelope
+message CreateEnvelopeResponse {
+  string envelope_jws = 1;              // JWS Compact Serialization
+  string envelope_id = 2;               // Generated envelope UUID
+  string issuer_did = 3;                // DID derived from signing key
+  string error_message = 4;
+}
+
+// Request to derive a child envelope from a parent
+message DeriveEnvelopeRequest {
+  string parent_envelope_jws = 1;       // Parent envelope JWS (will be parsed + hash-linked)
+  string key_id = 2;                    // Key to sign child with
+  string subject_did = 3;               // DID of the next delegate
+  string capability_class = 4;          // Must be equal or narrower than parent
+  int32 delegation_depth_remaining = 5; // Must be < parent's depth
+  int64 expires_in_seconds = 6;         // TTL from now (must be <= parent expiry)
+  string constraints_json = 7;          // Must be equal or more restrictive
+  string subject_badge_jti = 8;         // JTI of the subject's badge
+  string enforcement_mode_min = 9;      // Optional minimum enforcement mode
+  string issuer_badge_jti = 10;         // JTI of the child issuer's own badge (NOT inherited from parent)
+}
+
+// Response with signed derived envelope
+message DeriveEnvelopeResponse {
+  string envelope_jws = 1;              // JWS Compact Serialization of child
+  string envelope_id = 2;               // Generated envelope UUID
+  string parent_authority_hash = 3;     // SHA-256 hash linking to parent
+  string error_message = 4;
+}
+
+// Request to build transport headers for a delegation chain
+message BuildTransportHeadersRequest {
+  repeated string chain = 1;            // Ordered JWS array [root, ..., leaf]
+  map<string, string> badge_map = 2;    // DID -> badge JWS for intermediate agents
+}
+
+// Response with encoded transport headers
+message BuildTransportHeadersResponse {
+  string authority_header = 1;          // X-Capiscio-Authority value (leaf JWS)
+  string authority_chain_header = 2;    // X-Capiscio-Authority-Chain value (base64url JSON array)
+  string badge_map_header = 3;          // X-Capiscio-Badge-Map value (base64url JSON object)
+  string error_message = 4;
+}
+
+// Request to verify an envelope chain
+message VerifyEnvelopeChainRequest {
+  repeated string chain = 1;            // Ordered JWS array [root, ..., leaf]
+  map<string, string> badge_map = 2;    // DID -> badge JWS
+  repeated string trusted_issuers = 3;  // Trusted issuer DIDs (optional)
+  string enforcement_mode = 4;          // Enforcement mode for verification
+}
+
+// Response from chain verification
+message VerifyEnvelopeChainResponse {
+  bool valid = 1;
+  string root_capability = 2;
+  string leaf_capability = 3;
+  int32 total_depth = 4;
+  string leaf_issuer_did = 5;
+  string leaf_subject_did = 6;
+  string error_code = 7;                // RFC-008 section 9.3 error code (on failure)
+  string error_message = 8;
 }

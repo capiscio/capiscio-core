@@ -21,15 +21,19 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SimpleGuardService_Sign_FullMethodName            = "/capiscio.v1.SimpleGuardService/Sign"
-	SimpleGuardService_Verify_FullMethodName          = "/capiscio.v1.SimpleGuardService/Verify"
-	SimpleGuardService_SignAttached_FullMethodName    = "/capiscio.v1.SimpleGuardService/SignAttached"
-	SimpleGuardService_VerifyAttached_FullMethodName  = "/capiscio.v1.SimpleGuardService/VerifyAttached"
-	SimpleGuardService_GenerateKeyPair_FullMethodName = "/capiscio.v1.SimpleGuardService/GenerateKeyPair"
-	SimpleGuardService_LoadKey_FullMethodName         = "/capiscio.v1.SimpleGuardService/LoadKey"
-	SimpleGuardService_ExportKey_FullMethodName       = "/capiscio.v1.SimpleGuardService/ExportKey"
-	SimpleGuardService_GetKeyInfo_FullMethodName      = "/capiscio.v1.SimpleGuardService/GetKeyInfo"
-	SimpleGuardService_Init_FullMethodName            = "/capiscio.v1.SimpleGuardService/Init"
+	SimpleGuardService_Sign_FullMethodName                  = "/capiscio.v1.SimpleGuardService/Sign"
+	SimpleGuardService_Verify_FullMethodName                = "/capiscio.v1.SimpleGuardService/Verify"
+	SimpleGuardService_SignAttached_FullMethodName          = "/capiscio.v1.SimpleGuardService/SignAttached"
+	SimpleGuardService_VerifyAttached_FullMethodName        = "/capiscio.v1.SimpleGuardService/VerifyAttached"
+	SimpleGuardService_GenerateKeyPair_FullMethodName       = "/capiscio.v1.SimpleGuardService/GenerateKeyPair"
+	SimpleGuardService_LoadKey_FullMethodName               = "/capiscio.v1.SimpleGuardService/LoadKey"
+	SimpleGuardService_ExportKey_FullMethodName             = "/capiscio.v1.SimpleGuardService/ExportKey"
+	SimpleGuardService_GetKeyInfo_FullMethodName            = "/capiscio.v1.SimpleGuardService/GetKeyInfo"
+	SimpleGuardService_Init_FullMethodName                  = "/capiscio.v1.SimpleGuardService/Init"
+	SimpleGuardService_CreateEnvelope_FullMethodName        = "/capiscio.v1.SimpleGuardService/CreateEnvelope"
+	SimpleGuardService_DeriveEnvelope_FullMethodName        = "/capiscio.v1.SimpleGuardService/DeriveEnvelope"
+	SimpleGuardService_BuildTransportHeaders_FullMethodName = "/capiscio.v1.SimpleGuardService/BuildTransportHeaders"
+	SimpleGuardService_VerifyEnvelopeChain_FullMethodName   = "/capiscio.v1.SimpleGuardService/VerifyEnvelopeChain"
 )
 
 // SimpleGuardServiceClient is the client API for SimpleGuardService service.
@@ -57,6 +61,14 @@ type SimpleGuardServiceClient interface {
 	// Initialize agent identity (Let's Encrypt style one-call setup)
 	// Generates key pair, derives DID, registers with server, creates agent card
 	Init(ctx context.Context, in *InitRequest, opts ...grpc.CallOption) (*InitResponse, error)
+	// RFC-008: Create a root Authority Envelope (§6.1)
+	CreateEnvelope(ctx context.Context, in *CreateEnvelopeRequest, opts ...grpc.CallOption) (*CreateEnvelopeResponse, error)
+	// RFC-008: Derive a child Authority Envelope from a parent (§6.3)
+	DeriveEnvelope(ctx context.Context, in *DeriveEnvelopeRequest, opts ...grpc.CallOption) (*DeriveEnvelopeResponse, error)
+	// RFC-008: Build transport headers for a delegation chain (§15.1–§15.3)
+	BuildTransportHeaders(ctx context.Context, in *BuildTransportHeadersRequest, opts ...grpc.CallOption) (*BuildTransportHeadersResponse, error)
+	// RFC-008: Verify an Authority Envelope chain (§9.2)
+	VerifyEnvelopeChain(ctx context.Context, in *VerifyEnvelopeChainRequest, opts ...grpc.CallOption) (*VerifyEnvelopeChainResponse, error)
 }
 
 type simpleGuardServiceClient struct {
@@ -157,6 +169,46 @@ func (c *simpleGuardServiceClient) Init(ctx context.Context, in *InitRequest, op
 	return out, nil
 }
 
+func (c *simpleGuardServiceClient) CreateEnvelope(ctx context.Context, in *CreateEnvelopeRequest, opts ...grpc.CallOption) (*CreateEnvelopeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateEnvelopeResponse)
+	err := c.cc.Invoke(ctx, SimpleGuardService_CreateEnvelope_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *simpleGuardServiceClient) DeriveEnvelope(ctx context.Context, in *DeriveEnvelopeRequest, opts ...grpc.CallOption) (*DeriveEnvelopeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeriveEnvelopeResponse)
+	err := c.cc.Invoke(ctx, SimpleGuardService_DeriveEnvelope_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *simpleGuardServiceClient) BuildTransportHeaders(ctx context.Context, in *BuildTransportHeadersRequest, opts ...grpc.CallOption) (*BuildTransportHeadersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BuildTransportHeadersResponse)
+	err := c.cc.Invoke(ctx, SimpleGuardService_BuildTransportHeaders_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *simpleGuardServiceClient) VerifyEnvelopeChain(ctx context.Context, in *VerifyEnvelopeChainRequest, opts ...grpc.CallOption) (*VerifyEnvelopeChainResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VerifyEnvelopeChainResponse)
+	err := c.cc.Invoke(ctx, SimpleGuardService_VerifyEnvelopeChain_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SimpleGuardServiceServer is the server API for SimpleGuardService service.
 // All implementations must embed UnimplementedSimpleGuardServiceServer
 // for forward compatibility.
@@ -182,6 +234,14 @@ type SimpleGuardServiceServer interface {
 	// Initialize agent identity (Let's Encrypt style one-call setup)
 	// Generates key pair, derives DID, registers with server, creates agent card
 	Init(context.Context, *InitRequest) (*InitResponse, error)
+	// RFC-008: Create a root Authority Envelope (§6.1)
+	CreateEnvelope(context.Context, *CreateEnvelopeRequest) (*CreateEnvelopeResponse, error)
+	// RFC-008: Derive a child Authority Envelope from a parent (§6.3)
+	DeriveEnvelope(context.Context, *DeriveEnvelopeRequest) (*DeriveEnvelopeResponse, error)
+	// RFC-008: Build transport headers for a delegation chain (§15.1–§15.3)
+	BuildTransportHeaders(context.Context, *BuildTransportHeadersRequest) (*BuildTransportHeadersResponse, error)
+	// RFC-008: Verify an Authority Envelope chain (§9.2)
+	VerifyEnvelopeChain(context.Context, *VerifyEnvelopeChainRequest) (*VerifyEnvelopeChainResponse, error)
 	mustEmbedUnimplementedSimpleGuardServiceServer()
 }
 
@@ -218,6 +278,18 @@ func (UnimplementedSimpleGuardServiceServer) GetKeyInfo(context.Context, *GetKey
 }
 func (UnimplementedSimpleGuardServiceServer) Init(context.Context, *InitRequest) (*InitResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Init not implemented")
+}
+func (UnimplementedSimpleGuardServiceServer) CreateEnvelope(context.Context, *CreateEnvelopeRequest) (*CreateEnvelopeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateEnvelope not implemented")
+}
+func (UnimplementedSimpleGuardServiceServer) DeriveEnvelope(context.Context, *DeriveEnvelopeRequest) (*DeriveEnvelopeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeriveEnvelope not implemented")
+}
+func (UnimplementedSimpleGuardServiceServer) BuildTransportHeaders(context.Context, *BuildTransportHeadersRequest) (*BuildTransportHeadersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BuildTransportHeaders not implemented")
+}
+func (UnimplementedSimpleGuardServiceServer) VerifyEnvelopeChain(context.Context, *VerifyEnvelopeChainRequest) (*VerifyEnvelopeChainResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VerifyEnvelopeChain not implemented")
 }
 func (UnimplementedSimpleGuardServiceServer) mustEmbedUnimplementedSimpleGuardServiceServer() {}
 func (UnimplementedSimpleGuardServiceServer) testEmbeddedByValue()                            {}
@@ -402,6 +474,78 @@ func _SimpleGuardService_Init_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SimpleGuardService_CreateEnvelope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateEnvelopeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SimpleGuardServiceServer).CreateEnvelope(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SimpleGuardService_CreateEnvelope_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SimpleGuardServiceServer).CreateEnvelope(ctx, req.(*CreateEnvelopeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SimpleGuardService_DeriveEnvelope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeriveEnvelopeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SimpleGuardServiceServer).DeriveEnvelope(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SimpleGuardService_DeriveEnvelope_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SimpleGuardServiceServer).DeriveEnvelope(ctx, req.(*DeriveEnvelopeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SimpleGuardService_BuildTransportHeaders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BuildTransportHeadersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SimpleGuardServiceServer).BuildTransportHeaders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SimpleGuardService_BuildTransportHeaders_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SimpleGuardServiceServer).BuildTransportHeaders(ctx, req.(*BuildTransportHeadersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SimpleGuardService_VerifyEnvelopeChain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyEnvelopeChainRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SimpleGuardServiceServer).VerifyEnvelopeChain(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SimpleGuardService_VerifyEnvelopeChain_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SimpleGuardServiceServer).VerifyEnvelopeChain(ctx, req.(*VerifyEnvelopeChainRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SimpleGuardService_ServiceDesc is the grpc.ServiceDesc for SimpleGuardService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -444,6 +588,22 @@ var SimpleGuardService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Init",
 			Handler:    _SimpleGuardService_Init_Handler,
+		},
+		{
+			MethodName: "CreateEnvelope",
+			Handler:    _SimpleGuardService_CreateEnvelope_Handler,
+		},
+		{
+			MethodName: "DeriveEnvelope",
+			Handler:    _SimpleGuardService_DeriveEnvelope_Handler,
+		},
+		{
+			MethodName: "BuildTransportHeaders",
+			Handler:    _SimpleGuardService_BuildTransportHeaders_Handler,
+		},
+		{
+			MethodName: "VerifyEnvelopeChain",
+			Handler:    _SimpleGuardService_VerifyEnvelopeChain_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
