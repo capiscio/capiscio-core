@@ -179,44 +179,21 @@ func (r *WebResolver) resolveDocument(ctx context.Context, docURL string) (*Docu
 }
 
 func (r *WebResolver) extractKey(doc *Document, didStr string, kid string) (crypto.PublicKey, error) {
-	// Build the expected key ID: did#kid or just kid
-	var targetID string
-	if kid != "" {
-		if strings.HasPrefix(kid, didStr+"#") || strings.HasPrefix(kid, "#") {
-			targetID = kid
-		} else {
-			targetID = didStr + "#" + kid
-		}
-	}
+	targetID := buildKeyID(didStr, kid)
 
 	for _, vm := range doc.VerificationMethod {
 		// Match by key ID or take the first Ed25519 key if no kid specified
-		if kid != "" {
-			// Check various ID formats
-			if vm.ID != targetID && vm.ID != "#"+kid && vm.ID != kid {
-				continue
-			}
+		if kid != "" && !matchesKeyID(vm.ID, kid, targetID) {
+			continue
 		}
 
 		// Extract key based on verification method type
-		switch vm.Type {
-		case "Ed25519VerificationKey2020", "Ed25519VerificationKey2018":
-			if vm.PublicKeyMultibase != "" {
-				return decodeMultibaseKey(vm.PublicKeyMultibase)
-			}
-		case "JsonWebKey2020":
-			if vm.PublicKeyJwk != nil {
-				return decodeJWK(vm.PublicKeyJwk)
-			}
-		default:
-			// Try both formats for unknown types
-			if vm.PublicKeyMultibase != "" {
-				return decodeMultibaseKey(vm.PublicKeyMultibase)
-			}
-			if vm.PublicKeyJwk != nil {
-				return decodeJWK(vm.PublicKeyJwk)
-			}
-			continue
+		key, err := extractPublicKey(vm)
+		if err != nil {
+			return nil, err
+		}
+		if key != nil {
+			return key, nil
 		}
 	}
 
@@ -224,6 +201,46 @@ func (r *WebResolver) extractKey(doc *Document, didStr string, kid string) (cryp
 		return nil, fmt.Errorf("%w: %s#%s", ErrKeyNotFound, didStr, kid)
 	}
 	return nil, fmt.Errorf("%w: no verification methods in document for %s", ErrKeyNotFound, didStr)
+}
+
+// buildKeyID constructs the expected key ID from a DID and kid fragment.
+func buildKeyID(didStr, kid string) string {
+	if kid == "" {
+		return ""
+	}
+	if strings.HasPrefix(kid, didStr+"#") || strings.HasPrefix(kid, "#") {
+		return kid
+	}
+	return didStr + "#" + kid
+}
+
+// matchesKeyID checks whether a verification method ID matches the target key ID.
+func matchesKeyID(vmID, kid, targetID string) bool {
+	return vmID == targetID || vmID == "#"+kid || vmID == kid
+}
+
+// extractPublicKey attempts to extract a public key from a verification method.
+// Returns (nil, nil) if the method type is unsupported and has no decodable key material.
+func extractPublicKey(vm VerificationMethod) (crypto.PublicKey, error) {
+	switch vm.Type {
+	case "Ed25519VerificationKey2020", "Ed25519VerificationKey2018":
+		if vm.PublicKeyMultibase != "" {
+			return decodeMultibaseKey(vm.PublicKeyMultibase)
+		}
+	case "JsonWebKey2020":
+		if vm.PublicKeyJwk != nil {
+			return decodeJWK(vm.PublicKeyJwk)
+		}
+	default:
+		// Try both formats for unknown types
+		if vm.PublicKeyMultibase != "" {
+			return decodeMultibaseKey(vm.PublicKeyMultibase)
+		}
+		if vm.PublicKeyJwk != nil {
+			return decodeJWK(vm.PublicKeyJwk)
+		}
+	}
+	return nil, nil
 }
 
 // decodeMultibaseKey decodes a multibase-encoded Ed25519 public key.
