@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -647,15 +648,51 @@ func (s *BadgeService) buildKeeperConfig(req *pb.StartKeeperRequest) badge.Keepe
 	return config
 }
 
-// configureCAMode configures the keeper for CA mode.
-func (s *BadgeService) configureCAMode(config *badge.KeeperConfig, req *pb.StartKeeperRequest) {
-	config.Mode = badge.KeeperModeCA
-	config.CAURL = req.CaUrl
-	if config.CAURL == "" {
-		config.CAURL = badge.DefaultCAURL
+// configureCAMode configures the keeper for PoP mode (upgraded from deprecated CA mode).
+// When the SDK requests CA mode, we transparently upgrade to PoP (RFC-003 IAL-1)
+// by loading the agent's private key and deriving the DID. This avoids the deprecated
+// IAL-0 endpoint which requires Clerk session auth that SDK clients don't have.
+func (s *BadgeService) configureCAMode(config *badge.KeeperConfig, req *pb.StartKeeperRequest) error {
+	caURL := req.CaUrl
+	if caURL == "" {
+		caURL = badge.DefaultCAURL
 	}
+
+	// Try to load the agent's private key from the standard keys directory.
+	// The SDK's Init RPC stores keys at ~/.capiscio/keys/{agent_id}/private.jwk.
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("cannot determine home directory: %w", err)
+	}
+
+	privKeyPath := filepath.Join(homeDir, ".capiscio", "keys", req.AgentId, "private.jwk")
+	keyData, err := os.ReadFile(privKeyPath)
+	if err != nil {
+		return fmt.Errorf("failed to read agent private key at %s: %w", privKeyPath, err)
+	}
+
+	var jwk jose.JSONWebKey
+	if err := json.Unmarshal(keyData, &jwk); err != nil {
+		return fmt.Errorf("failed to parse agent private key JWK: %w", err)
+	}
+
+	priv, ok := jwk.Key.(ed25519.PrivateKey)
+	if !ok {
+		return fmt.Errorf("expected Ed25519 private key, got %T", jwk.Key)
+	}
+
+	// Derive the DID from the public key
+	pub := priv.Public().(ed25519.PublicKey)
+	agentDID := did.NewKeyDID(pub)
+
+	// Configure PoP mode instead of the deprecated CA mode
+	config.Mode = badge.KeeperModePoP
+	config.CAURL = caURL
 	config.APIKey = req.ApiKey
 	config.AgentID = req.AgentId
+	config.AgentDID = agentDID
+	config.PrivateKey = priv
+	return nil
 }
 
 // configureSelfSignMode configures the keeper for self-sign mode.
@@ -719,7 +756,9 @@ func (s *BadgeService) StartKeeper(req *pb.StartKeeperRequest, stream pb.BadgeSe
 
 	// Configure mode-specific settings
 	if req.Mode == pb.KeeperMode_KEEPER_MODE_CA {
-		s.configureCAMode(&config, req)
+		if err := s.configureCAMode(&config, req); err != nil {
+			return err
+		}
 	} else {
 		if err := s.configureSelfSignMode(&config, req); err != nil {
 			return err
