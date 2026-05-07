@@ -5,6 +5,8 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -459,17 +461,47 @@ func TestBadgeService_BuildKeeperConfig(t *testing.T) {
 func TestBadgeService_ConfigureCAMode(t *testing.T) {
 	svc := NewBadgeService()
 
+	// Create a temporary key directory to simulate ~/.capiscio/keys/{agent_id}/
+	tmpDir := t.TempDir()
+	agentID := "test-agent-id"
+	keysDir := filepath.Join(tmpDir, ".capiscio", "keys", agentID)
+	if err := os.MkdirAll(keysDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+
+	// Generate an Ed25519 key and write it as JWK
+	pub, priv, err := ed25519.GenerateKey(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = pub
+
+	jwk := jose.JSONWebKey{Key: priv, Algorithm: string(jose.EdDSA)}
+	jwkBytes, err := json.Marshal(jwk)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(keysDir, "private.jwk"), jwkBytes, 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	// Override HOME so configureCAMode finds our temp keys
+	t.Setenv("HOME", tmpDir)
+
 	req := &pb.StartKeeperRequest{
 		CaUrl:   "https://ca.example.com",
 		ApiKey:  "test-key",
-		AgentId: "agent-1",
+		AgentId: agentID,
 	}
 
 	config := badge.KeeperConfig{}
-	svc.configureCAMode(&config, req)
+	if err := svc.configureCAMode(&config, req); err != nil {
+		t.Fatalf("configureCAMode failed: %v", err)
+	}
 
-	if config.Mode != badge.KeeperModeCA {
-		t.Errorf("Mode = %v, want CA", config.Mode)
+	// Should be upgraded to PoP mode
+	if config.Mode != badge.KeeperModePoP {
+		t.Errorf("Mode = %v, want PoP", config.Mode)
 	}
 	if config.CAURL != "https://ca.example.com" {
 		t.Errorf("CAURL = %v, want https://ca.example.com", config.CAURL)
@@ -477,8 +509,11 @@ func TestBadgeService_ConfigureCAMode(t *testing.T) {
 	if config.APIKey != "test-key" {
 		t.Errorf("APIKey = %v, want test-key", config.APIKey)
 	}
-	if config.AgentID != "agent-1" {
-		t.Errorf("AgentID = %v, want agent-1", config.AgentID)
+	if config.AgentDID == "" {
+		t.Error("AgentDID should be derived from the private key")
+	}
+	if config.PrivateKey == nil {
+		t.Error("PrivateKey should be loaded from disk")
 	}
 }
 

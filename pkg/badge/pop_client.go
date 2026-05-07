@@ -125,7 +125,7 @@ func (c *PoPClient) RequestPoPBadge(ctx context.Context, opts RequestPoPBadgeOpt
 func (c *PoPClient) requestChallenge(ctx context.Context, opts RequestPoPBadgeOptions) (*ChallengeResponse, error) {
 	// URL-encode the DID for the path
 	encodedDID := url.PathEscape(opts.AgentDID)
-	challengeURL := fmt.Sprintf("%s/v1/agents/%s/badge/challenge", c.CAURL, encodedDID)
+	challengeURL := fmt.Sprintf("%s/v1/sdk/agents/%s/badge/challenge", c.CAURL, encodedDID)
 
 	// Build request body
 	reqBody := map[string]interface{}{}
@@ -209,7 +209,7 @@ func (c *PoPClient) submitProof(ctx context.Context, opts RequestPoPBadgeOptions
 	// Submit to badge/pop endpoint
 	// URL-encode the DID for the path
 	encodedDID := url.PathEscape(opts.AgentDID)
-	popURL := fmt.Sprintf("%s/v1/agents/%s/badge/pop", c.CAURL, encodedDID)
+	popURL := fmt.Sprintf("%s/v1/sdk/agents/%s/badge/pop", c.CAURL, encodedDID)
 
 	reqBody := map[string]string{
 		"challenge_id": challenge.ChallengeID,
