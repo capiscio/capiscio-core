@@ -116,7 +116,7 @@ func TestRequestPoPBadge_ChallengePhase(t *testing.T) {
 		// Note: Go's http.Request.URL.Path is automatically decoded by httptest.
 		// The client does use url.PathEscape to encode the DID, but we can only
 		// verify correct routing here (which proves the encoding is working).
-		if r.URL.Path == "/v1/agents/did:key:z6MkTest/badge/challenge" {
+		if r.URL.Path == "/v1/sdk/agents/did:key:z6MkTest/badge/challenge" {
 			assert.Equal(t, "POST", r.Method)
 			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 			assert.Equal(t, "test-api-key", r.Header.Get("X-Capiscio-Registry-Key"))
@@ -127,7 +127,7 @@ func TestRequestPoPBadge_ChallengePhase(t *testing.T) {
 				Nonce:       "test-nonce-12345",
 				ExpiresAt:   time.Now().Add(60 * time.Second),
 				Aud:         "https://registry.capisc.io",
-				HTU:         "https://registry.capisc.io/v1/agents/did%3Akey%3Az6MkTest/badge/pop",
+				HTU:         "https://registry.capisc.io/v1/sdk/agents/did%3Akey%3Az6MkTest/badge/pop",
 				HTM:         "POST",
 			}
 			w.Header().Set("Content-Type", "application/json")
@@ -136,7 +136,7 @@ func TestRequestPoPBadge_ChallengePhase(t *testing.T) {
 		}
 
 		// Handle PoP submission
-		if r.URL.Path == "/v1/agents/did:key:z6MkTest/badge/pop" {
+		if r.URL.Path == "/v1/sdk/agents/did:key:z6MkTest/badge/pop" {
 			assert.Equal(t, "POST", r.Method)
 			
 			// Return successful badge response
@@ -216,7 +216,7 @@ func TestRequestPoPBadge_ChallengeExpired(t *testing.T) {
 			Nonce:       "test-nonce",
 			ExpiresAt:   time.Now().Add(2 * time.Second), // Expires too soon (< 5s buffer)
 			Aud:         "https://registry.capisc.io",
-			HTU:         "https://registry.capisc.io/v1/agents/did:key:z6MkTest/badge/pop",
+			HTU:         "https://registry.capisc.io/v1/sdk/agents/did:key:z6MkTest/badge/pop",
 			HTM:         "POST",
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -253,7 +253,7 @@ func TestRequestPoPBadge_PoPError(t *testing.T) {
 				Nonce:       "test-nonce",
 				ExpiresAt:   time.Now().Add(60 * time.Second),
 				Aud:         "https://registry.capisc.io",
-				HTU:         serverURL + "/v1/agents/did:key:z6MkTest/badge/pop",
+				HTU:         serverURL + "/v1/sdk/agents/did:key:z6MkTest/badge/pop",
 				HTM:         "POST",
 			}
 			w.Header().Set("Content-Type", "application/json")
@@ -294,7 +294,7 @@ func TestSignProof(t *testing.T) {
 		Nonce: "nonce-456",
 		Sub:   "did:key:z6MkTest",
 		Aud:   "https://registry.capisc.io",
-		HTU:   "https://registry.capisc.io/v1/agents/did%3Akey%3Az6MkTest/badge/pop",
+		HTU:   "https://registry.capisc.io/v1/sdk/agents/did%3Akey%3Az6MkTest/badge/pop",
 		HTM:   "POST",
 		IAT:   time.Now().Unix(),
 		Exp:   time.Now().Add(60 * time.Second).Unix(),
@@ -326,7 +326,7 @@ func TestSignProof_DidWebKeyID(t *testing.T) {
 		Nonce: "nonce-456",
 		Sub:   "did:web:example.com:agents:my-agent",
 		Aud:   "https://registry.capisc.io",
-		HTU:   "https://registry.capisc.io/v1/agents/did%3Aweb%3Aexample.com%3Aagents%3Amy-agent/badge/pop",
+		HTU:   "https://registry.capisc.io/v1/sdk/agents/did%3Aweb%3Aexample.com%3Aagents%3Amy-agent/badge/pop",
 		HTM:   "POST",
 		IAT:   time.Now().Unix(),
 		Exp:   time.Now().Add(60 * time.Second).Unix(),
