@@ -665,7 +665,13 @@ func (s *BadgeService) configureCAMode(config *badge.KeeperConfig, req *pb.Start
 		return fmt.Errorf("cannot determine home directory: %w", err)
 	}
 
-	privKeyPath := filepath.Join(homeDir, ".capiscio", "keys", req.AgentId, "private.jwk")
+	// Sanitize agent_id to prevent path traversal
+	cleanID := filepath.Base(req.AgentId)
+	if cleanID == "." || cleanID == ".." || cleanID == "/" || cleanID != req.AgentId {
+		return fmt.Errorf("invalid agent_id: contains path separators or traversal sequences")
+	}
+
+	privKeyPath := filepath.Join(homeDir, ".capiscio", "keys", cleanID, "private.jwk")
 	keyData, err := os.ReadFile(privKeyPath)
 	if err != nil {
 		return fmt.Errorf("failed to read agent private key at %s: %w", privKeyPath, err)

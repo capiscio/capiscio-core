@@ -486,9 +486,7 @@ func TestBadgeService_ConfigureCAMode(t *testing.T) {
 	}
 
 	// Override HOME so configureCAMode finds our temp keys
-	origHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", origHome)
+	t.Setenv("HOME", tmpDir)
 
 	req := &pb.StartKeeperRequest{
 		CaUrl:   "https://ca.example.com",
