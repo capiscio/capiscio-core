@@ -3,6 +3,8 @@ package mcp
 import (
 	"context"
 	"testing"
+
+	"github.com/capiscio/capiscio-core/v2/pkg/pip"
 )
 
 func TestNewService(t *testing.T) {
@@ -20,6 +22,30 @@ func TestNewService(t *testing.T) {
 	}
 	if svc.serverVerifier == nil {
 		t.Error("serverVerifier should not be nil")
+	}
+}
+
+func TestNewService_WithPDPAndEnforcementMode(t *testing.T) {
+	mockPDP := &guardMockPDP{
+		resp: &pip.DecisionResponse{Decision: pip.DecisionAllow},
+	}
+	deps := &Dependencies{
+		PDPClient:       mockPDP,
+		EnforcementMode: pip.EMGuard,
+	}
+
+	svc := NewService(deps)
+	if svc == nil {
+		t.Fatal("NewService returned nil")
+	}
+	if svc.guard == nil {
+		t.Fatal("guard should not be nil")
+	}
+	if svc.guard.pdpClient == nil {
+		t.Error("guard.pdpClient should be set when Dependencies.PDPClient is provided")
+	}
+	if svc.guard.emMode != pip.EMGuard {
+		t.Errorf("guard.emMode = %v, want EMGuard", svc.guard.emMode)
 	}
 }
 

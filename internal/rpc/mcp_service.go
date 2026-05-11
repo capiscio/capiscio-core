@@ -18,6 +18,10 @@ import (
 	pb "github.com/capiscio/capiscio-core/v2/pkg/rpc/gen/capiscio/v1"
 )
 
+// initPDPFunc is the PDP initializer used by NewMCPServiceWithConfig.
+// Defaults to the build-tag-selected initLocalPDP; overridable in tests.
+var initPDPFunc = initLocalPDP
+
 // MCPService implements the MCPServiceServer interface for RFC-005, RFC-006, and RFC-007.
 type MCPService struct {
 	pb.UnimplementedMCPServiceServer
@@ -135,7 +139,7 @@ func NewMCPServiceWithConfig(cfg MCPServiceConfig) (*MCPService, error) {
 
 	// Initialize local PDP (policy enforcement) from environment.
 	// If CAPISCIO_BUNDLE_URL is unset, returns nil — badge-only mode.
-	pdpClient, err := initLocalPDP(context.Background())
+	pdpClient, err := initPDPFunc(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("mcp service: %w", err)
 	}
