@@ -125,6 +125,16 @@ func NewMCPServiceWithConfig(cfg MCPServiceConfig) (*MCPService, error) {
 		deps.EvidenceStore = &mcp.NoOpEvidenceStore{}
 	}
 
+	// Initialize local PDP (policy enforcement) from environment.
+	// If CAPISCIO_BUNDLE_URL is unset, returns nil — badge-only mode.
+	pdpClient, err := initLocalPDP(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("mcp service: %w", err)
+	}
+	if pdpClient != nil {
+		deps.PDPClient = pdpClient
+	}
+
 	return &MCPService{
 		service:       mcp.NewService(deps),
 		decisionCache: pip.NewInMemoryCache(),
