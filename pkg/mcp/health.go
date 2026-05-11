@@ -8,7 +8,7 @@ import (
 
 const (
 	// CoreVersion is the capiscio-core version
-	CoreVersion = "2.5.0"
+	CoreVersion = "2.7.0"
 
 	// ProtoVersion is the MCP proto schema version
 	ProtoVersion = "1.0"

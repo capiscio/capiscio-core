@@ -18,6 +18,10 @@ import (
 	pb "github.com/capiscio/capiscio-core/v2/pkg/rpc/gen/capiscio/v1"
 )
 
+// initPDPFunc is the PDP initializer used by NewMCPServiceWithConfig.
+// Defaults to the build-tag-selected initLocalPDP; overridable in tests.
+var initPDPFunc = initLocalPDP
+
 // MCPService implements the MCPServiceServer interface for RFC-005, RFC-006, and RFC-007.
 type MCPService struct {
 	pb.UnimplementedMCPServiceServer
@@ -46,6 +50,8 @@ type MCPServiceConfig struct {
 
 // NewMCPService creates a new MCPService instance with default configuration.
 // For production use, prefer NewMCPServiceWithConfig.
+// If PDP initialization fails (e.g., misconfigured env vars), falls back to
+// badge-only mode and logs the error rather than panicking.
 func NewMCPService() *MCPService {
 	// Try to load config from environment
 	cfg := MCPServiceConfig{
@@ -61,7 +67,13 @@ func NewMCPService() *MCPService {
 		cfg.EvidenceMode = mcp.EvidenceStoreModeLocal
 	}
 
-	svc, _ := NewMCPServiceWithConfig(cfg)
+	svc, err := NewMCPServiceWithConfig(cfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "capiscio: PDP init failed, falling back to badge-only mode: %v\n", err)
+		// Retry without PDP — clear bundle URL to force badge-only path
+		os.Unsetenv("CAPISCIO_BUNDLE_URL")
+		svc, _ = NewMCPServiceWithConfig(cfg)
+	}
 	return svc
 }
 
@@ -124,6 +136,20 @@ func NewMCPServiceWithConfig(cfg MCPServiceConfig) (*MCPService, error) {
 	default:
 		deps.EvidenceStore = &mcp.NoOpEvidenceStore{}
 	}
+
+	// Initialize local PDP (policy enforcement) from environment.
+	// If CAPISCIO_BUNDLE_URL is unset, returns nil — badge-only mode.
+	pdpClient, err := initPDPFunc(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("mcp service: %w", err)
+	}
+	if pdpClient != nil {
+		deps.PDPClient = pdpClient
+	}
+
+	// Propagate enforcement mode from environment to guard.
+	enfMode, _ := pip.EnforcementModeFromEnv()
+	deps.EnforcementMode = enfMode
 
 	return &MCPService{
 		service:       mcp.NewService(deps),
