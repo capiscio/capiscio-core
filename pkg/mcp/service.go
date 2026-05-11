@@ -17,9 +17,10 @@ type Service struct {
 
 // Dependencies holds the dependencies for the MCP service
 type Dependencies struct {
-	BadgeVerifier *badge.Verifier
-	EvidenceStore EvidenceStore
-	PDPClient     pip.PDPClient // nil = badge-only mode (no org policy)
+	BadgeVerifier   *badge.Verifier
+	EvidenceStore   EvidenceStore
+	PDPClient       pip.PDPClient       // nil = badge-only mode (no org policy)
+	EnforcementMode pip.EnforcementMode // default EMObserve
 }
 
 // NewService creates a new MCP service instance
@@ -31,6 +32,9 @@ func NewService(deps *Dependencies) *Service {
 	var guardOpts []GuardOption
 	if deps.PDPClient != nil {
 		guardOpts = append(guardOpts, WithPDPClient(deps.PDPClient))
+	}
+	if deps.EnforcementMode != 0 {
+		guardOpts = append(guardOpts, WithEnforcementMode(deps.EnforcementMode))
 	}
 
 	return &Service{
