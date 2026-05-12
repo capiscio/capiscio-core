@@ -367,8 +367,10 @@ func (g *Guard) verifyBadgeCredential(
 	}
 
 	// Build verification options.
-	// Badge verification is LOCAL-ONLY: parse JWS, verify Ed25519 signature
-	// against cached CA public key, check exp. No network calls.
+	// Badge verification: parse JWS, verify Ed25519 signature against the
+	// Verifier's registry (typically a cached CA public key), check exp.
+	// Self-signed badges resolve keys locally; registry-issued badges
+	// resolve via the Verifier's registry implementation.
 	//
 	// Revocation and agent status checks are skipped because badges are
 	// short-lived (5-min TTL) and BadgeKeeper manages freshness. This is
@@ -382,7 +384,7 @@ func (g *Guard) verifyBadgeCredential(
 		SkipAgentStatusCheck: true,
 	}
 
-	// Verify badge (local crypto only — no network calls)
+	// Verify badge
 	result, err := g.badgeVerifier.VerifyWithOptions(ctx, badgeJWS, opts)
 	if err != nil {
 		// Map verification errors to deny reasons

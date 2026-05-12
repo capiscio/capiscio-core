@@ -645,7 +645,7 @@ func (s *SimpleGuardService) Init(_ context.Context, req *pb.InitRequest) (*pb.I
 func (s *SimpleGuardService) registerDIDWithServer(serverURL, apiKey, agentID, agentDID string, pubJWK jose.JSONWebKey) error {
 	// Normalize URL to prevent double-slash issues
 	normalizedURL := strings.TrimRight(serverURL, "/")
-	url := fmt.Sprintf("%s/v1/sdk/agents/%s/identity", normalizedURL, agentID)
+	endpoint := fmt.Sprintf("%s/v1/sdk/agents/%s/identity", normalizedURL, url.PathEscape(agentID))
 
 	// Serialize public JWK to string (server expects JSON string, not object)
 	pubJWKBytes, err := json.Marshal(pubJWK)
@@ -663,7 +663,7 @@ func (s *SimpleGuardService) registerDIDWithServer(serverURL, apiKey, agentID, a
 		return fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPatch, url, bytes.NewReader(body))
+	req, err := http.NewRequest(http.MethodPatch, endpoint, bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
