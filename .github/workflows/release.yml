@@ -23,16 +23,16 @@ jobs:
           go-version: '1.24.0'
 
       - name: Build Linux
-        run: GOOS=linux GOARCH=amd64 go build -o capiscio-linux-amd64 ./cmd/capiscio
+        run: GOOS=linux GOARCH=amd64 go build -tags opa_no_wasm -ldflags="-w -s" -o capiscio-linux-amd64 ./cmd/capiscio
 
       - name: Build macOS
-        run: GOOS=darwin GOARCH=amd64 go build -o capiscio-darwin-amd64 ./cmd/capiscio
+        run: GOOS=darwin GOARCH=amd64 go build -tags opa_no_wasm -ldflags="-w -s" -o capiscio-darwin-amd64 ./cmd/capiscio
 
       - name: Build macOS (ARM64)
-        run: GOOS=darwin GOARCH=arm64 go build -o capiscio-darwin-arm64 ./cmd/capiscio
+        run: GOOS=darwin GOARCH=arm64 go build -tags opa_no_wasm -ldflags="-w -s" -o capiscio-darwin-arm64 ./cmd/capiscio
 
       - name: Build Windows
-        run: GOOS=windows GOARCH=amd64 go build -o capiscio-windows-amd64.exe ./cmd/capiscio
+        run: GOOS=windows GOARCH=amd64 go build -tags opa_no_wasm -ldflags="-w -s" -o capiscio-windows-amd64.exe ./cmd/capiscio
 
       - name: Generate checksums
         run: sha256sum capiscio-linux-amd64 capiscio-darwin-amd64 capiscio-darwin-arm64 capiscio-windows-amd64.exe > checksums.txt
