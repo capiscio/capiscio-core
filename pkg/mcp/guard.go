@@ -366,13 +366,23 @@ func (g *Guard) verifyBadgeCredential(
 		return "", "", 0, fmt.Errorf("%w: badge verification not available", ErrBadgeInvalid)
 	}
 
-	// Build verification options
+	// Build verification options.
+	// Badge verification is LOCAL-ONLY: parse JWS, verify Ed25519 signature
+	// against cached CA public key, check exp. No network calls.
+	//
+	// Revocation and agent status checks are skipped because badges are
+	// short-lived (5-min TTL) and BadgeKeeper manages freshness. This is
+	// the designed revocation model — a revoked badge expires within its
+	// TTL window. Online checks would add ~60-90ms of network latency
+	// per tool call, defeating the sub-millisecond design goal.
 	opts := badge.VerifyOptions{
-		TrustedIssuers:   config.TrustedIssuers,
-		AcceptSelfSigned: config.AcceptLevelZero,
+		TrustedIssuers:       config.TrustedIssuers,
+		AcceptSelfSigned:     config.AcceptLevelZero,
+		SkipRevocationCheck:  true,
+		SkipAgentStatusCheck: true,
 	}
 
-	// Verify badge
+	// Verify badge (local crypto only — no network calls)
 	result, err := g.badgeVerifier.VerifyWithOptions(ctx, badgeJWS, opts)
 	if err != nil {
 		// Map verification errors to deny reasons

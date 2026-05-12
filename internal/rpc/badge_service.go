@@ -5,6 +5,7 @@ import (
 	"crypto/ed25519"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -687,9 +688,14 @@ func (s *BadgeService) configureCAMode(config *badge.KeeperConfig, req *pb.Start
 		return fmt.Errorf("expected Ed25519 private key, got %T", jwk.Key)
 	}
 
-	// Derive the DID from the public key
+	// Derive the agent DID: prefer did:web when server URL and agent ID are available
 	pub := priv.Public().(ed25519.PublicKey)
-	agentDID := did.NewKeyDID(pub)
+	agentDID := did.NewKeyDID(pub) // fallback
+	if caURL != "" && req.AgentId != "" {
+		if parsed, parseErr := url.Parse(caURL); parseErr == nil && parsed.Host != "" {
+			agentDID = did.NewAgentDID(parsed.Host, req.AgentId)
+		}
+	}
 
 	// Configure PoP mode instead of the deprecated CA mode
 	config.Mode = badge.KeeperModePoP

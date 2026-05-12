@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -599,18 +600,27 @@ func (s *SimpleGuardService) Init(_ context.Context, req *pb.InitRequest) (*pb.I
 		return &pb.InitResponse{ErrorMessage: err.Error()}, nil
 	}
 
+	// Derive agent DID: did:web when server URL and agent ID are available,
+	// otherwise fall back to did:key (offline / dev mode).
+	agentDID := keys.didKey // default: did:key
+	if req.AgentId != "" && serverURL != "" {
+		if parsed, err := url.Parse(serverURL); err == nil && parsed.Host != "" {
+			agentDID = did.NewAgentDID(parsed.Host, req.AgentId)
+		}
+	}
+
 	registered := false
 	if req.ApiKey != "" && req.AgentId != "" {
-		if err := s.registerDIDWithServer(serverURL, req.ApiKey, req.AgentId, keys.didKey); err != nil {
+		if err := s.registerDIDWithServer(serverURL, req.ApiKey, req.AgentId, agentDID, keys.pubJWK); err != nil {
 			return &pb.InitResponse{
-				Did: keys.didKey, PrivateKeyPath: keys.privKeyPath, PublicKeyPath: keys.pubKeyPath,
+				Did: agentDID, PrivateKeyPath: keys.privKeyPath, PublicKeyPath: keys.pubKeyPath,
 				ErrorMessage: fmt.Sprintf("key generated but registration failed: %v", err),
 			}, nil
 		}
 		registered = true
 	}
 
-	agentCard := initBuildAgentCard(keys.didKey, req.AgentId, keys.pubJWK, req.Metadata)
+	agentCard := initBuildAgentCard(agentDID, req.AgentId, keys.pubJWK, req.Metadata)
 	agentCardBytes, err := json.MarshalIndent(agentCard, "", "  ")
 	if err != nil {
 		return &pb.InitResponse{ErrorMessage: fmt.Sprintf("failed to marshal agent card: %v", err)}, nil
@@ -623,22 +633,29 @@ func (s *SimpleGuardService) Init(_ context.Context, req *pb.InitRequest) (*pb.I
 	}
 
 	return &pb.InitResponse{
-		Did: keys.didKey, AgentId: req.AgentId,
+		Did: agentDID, AgentId: req.AgentId,
 		PrivateKeyPath: keys.privKeyPath, PublicKeyPath: keys.pubKeyPath,
 		AgentCardPath: agentCardPath, AgentCardJson: string(agentCardBytes),
 		Registered: registered,
 	}, nil
 }
 
-// registerDIDWithServer registers DID with the CapiscIO server.
-// Uses PATCH /v1/sdk/agents/{id}/identity to update only the agent's DID (RFC-003).
-func (s *SimpleGuardService) registerDIDWithServer(serverURL, apiKey, agentID, didKey string) error {
+// registerDIDWithServer registers DID and public key with the CapiscIO server.
+// Uses PATCH /v1/sdk/agents/{id}/identity to update the agent's DID and public key (RFC-003).
+func (s *SimpleGuardService) registerDIDWithServer(serverURL, apiKey, agentID, agentDID string, pubJWK jose.JSONWebKey) error {
 	// Normalize URL to prevent double-slash issues
 	normalizedURL := strings.TrimRight(serverURL, "/")
 	url := fmt.Sprintf("%s/v1/sdk/agents/%s/identity", normalizedURL, agentID)
 
+	// Serialize public JWK to string (server expects JSON string, not object)
+	pubJWKBytes, err := json.Marshal(pubJWK)
+	if err != nil {
+		return fmt.Errorf("failed to marshal public JWK: %w", err)
+	}
+
 	payload := map[string]interface{}{
-		"did": didKey,
+		"did":       agentDID,
+		"publicKey": string(pubJWKBytes),
 	}
 
 	body, err := json.Marshal(payload)
