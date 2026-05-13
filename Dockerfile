@@ -38,6 +38,7 @@ COPY . .
 
 # Build static binary with version info
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -tags opa_no_wasm \
     -ldflags="-w -s -X main.version=${VERSION} -X main.commit=${COMMIT}" \
     -o /capiscio \
     ./cmd/capiscio

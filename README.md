@@ -143,7 +143,6 @@ docker run -p 8080:8080 capiscio/guard \
 ### Docker Compose
 
 ```yaml
-version: '3.8'
 services:
   guard:
     image: capiscio/guard:latest
@@ -541,6 +540,16 @@ go get github.com/capiscio/capiscio-core/v2@v2.2.4
 - Patch (`v2.2.x`): Bug fixes, internal refactors
 - Minor (`v2.x.0`): New features, backward-compatible API additions
 - Major (`vX.0.0`): Breaking API changes (requires updating import path)
+
+## Related Packages
+
+| Package | What it does | Install |
+|---------|-------------|---------|
+| [Agent Guard](https://github.com/capiscio/capiscio-sdk-python) | Runtime trust verification for A2A agents (Python) | `pip install capiscio-sdk` |
+| [MCP Guard](https://github.com/capiscio/capiscio-mcp-python) | Trust enforcement for MCP tool servers (Python) | `pip install capiscio-mcp` |
+| [CapiscIO CLI](https://github.com/capiscio/capiscio-python) | Python wrapper for this binary | `pip install capiscio` |
+
+[Documentation](https://docs.capisc.io) · [Website](https://capisc.io) · [Platform](https://app.capisc.io)
 
 ## License
 
