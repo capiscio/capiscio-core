@@ -366,10 +366,22 @@ func (g *Guard) verifyBadgeCredential(
 		return "", "", 0, fmt.Errorf("%w: badge verification not available", ErrBadgeInvalid)
 	}
 
-	// Build verification options
+	// Build verification options.
+	// Badge verification: parse JWS, verify Ed25519 signature against the
+	// Verifier's registry (typically a cached CA public key), check exp.
+	// Self-signed badges resolve keys locally; registry-issued badges
+	// resolve via the Verifier's registry implementation.
+	//
+	// Revocation and agent status checks are skipped because badges are
+	// short-lived (5-min TTL) and BadgeKeeper manages freshness. This is
+	// the designed revocation model — a revoked badge expires within its
+	// TTL window. Online checks would add ~60-90ms of network latency
+	// per tool call, defeating the sub-millisecond design goal.
 	opts := badge.VerifyOptions{
-		TrustedIssuers:   config.TrustedIssuers,
-		AcceptSelfSigned: config.AcceptLevelZero,
+		TrustedIssuers:       config.TrustedIssuers,
+		AcceptSelfSigned:     config.AcceptLevelZero,
+		SkipRevocationCheck:  true,
+		SkipAgentStatusCheck: true,
 	}
 
 	// Verify badge

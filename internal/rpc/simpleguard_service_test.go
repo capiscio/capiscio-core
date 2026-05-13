@@ -2,12 +2,16 @@ package rpc
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/go-jose/go-jose/v4"
 
 	pb "github.com/capiscio/capiscio-core/v2/pkg/rpc/gen/capiscio/v1"
 )
@@ -736,6 +740,13 @@ func TestInitBuildAgentCard(t *testing.T) {
 func TestRegisterDIDWithServer(t *testing.T) {
 	svc := NewSimpleGuardService()
 
+	// Create a valid test Ed25519 JWK for all subtests
+	pub, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("failed to generate test key: %v", err)
+	}
+	testJWK := jose.JSONWebKey{Key: pub, KeyID: "did:key:z6MkTest", Algorithm: string(jose.EdDSA)}
+
 	t.Run("successful registration", func(t *testing.T) {
 		type capturedRequest struct {
 			Method string
@@ -760,7 +771,7 @@ func TestRegisterDIDWithServer(t *testing.T) {
 		}))
 		defer server.Close()
 
-		err := svc.registerDIDWithServer(server.URL, "test-api-key", "agent-123", "did:key:z6MkTest")
+		err := svc.registerDIDWithServer(server.URL, "test-api-key", "agent-123", "did:key:z6MkTest", testJWK)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -790,7 +801,7 @@ func TestRegisterDIDWithServer(t *testing.T) {
 		defer server.Close()
 
 		// Add trailing slash to server URL
-		err := svc.registerDIDWithServer(server.URL+"/", "key", "agent-id", "did:key:test")
+		err := svc.registerDIDWithServer(server.URL+"/", "key", "agent-id", "did:key:test", testJWK)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -809,7 +820,7 @@ func TestRegisterDIDWithServer(t *testing.T) {
 		}))
 		defer server.Close()
 
-		err := svc.registerDIDWithServer(server.URL, "key", "agent-id", "did:key:test")
+		err := svc.registerDIDWithServer(server.URL, "key", "agent-id", "did:key:test", testJWK)
 		if err == nil {
 			t.Error("expected error for server error response")
 		}
@@ -821,7 +832,7 @@ func TestRegisterDIDWithServer(t *testing.T) {
 		}))
 		defer server.Close()
 
-		err := svc.registerDIDWithServer(server.URL, "bad-key", "agent-id", "did:key:test")
+		err := svc.registerDIDWithServer(server.URL, "bad-key", "agent-id", "did:key:test", testJWK)
 		if err == nil {
 			t.Error("expected error for unauthorized response")
 		}
