@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-05-13
+
+### Added
+- **RFC-008 Authority Envelopes**: Full implementation including capability classes (ALLOW/DENY paths), structured rejection metadata, and scope-insufficient error codes (#63–#66)
+- **Authority Chain Verification**: PEP middleware wires authority chain verification into the gateway (#69)
+- **Authority Envelope gRPC Surface**: New gRPC endpoints for authority envelope operations (#70)
+- **DID:web Resolver**: Resolver with SSRF protections per RFC-008 (#71)
+- **DID:web Derivation**: JWK registration and did:key → did:web DID transitions (#79)
+- **Local PDP in Guard**: OPA Policy Decision Point wired into Guard startup (#73)
+- **Release Checksums**: SHA-256 checksums published with release binaries (#58)
+
+### Fixed
+- Upgrade badge keeper from CA mode to PoP mode transparently (#72)
+- Add `-tags opa_no_wasm` to all build paths for consistent OPA support (#75)
+- Bump Go to 1.25.10 to fix stdlib vulnerabilities (#76)
+- Core hardening: JWKS limits, badge time validation, cache safety (#62)
+- GA remediation: govulncheck fixes, OPA integration test fixes (#60, #61)
+- CI security scanning enforcement (#58, #59)
+
 ## [2.6.0] - 2026-03-27
 
 ### Added
