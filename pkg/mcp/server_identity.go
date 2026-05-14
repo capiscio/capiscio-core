@@ -126,6 +126,12 @@ func (v *ServerIdentityVerifier) VerifyServerIdentity(
 
 	// Step 6: Verify server badge using badge.Verifier (RFC-007 §7.2.3)
 	// This is the SAME verification path as agent badges - unified identity infrastructure
+	if v.badgeVerifier == nil {
+		result.State = ServerStateUnverifiedOrigin
+		result.ErrorCode = ServerErrorCodeBadgeInvalid
+		result.ErrorDetail = "badge verifier not configured — set CAPISCIO_REGISTRY_ENDPOINT or CAPISCIO_TRUST_STORE_KEY"
+		return result, nil
+	}
 	badgeResult, err := v.badgeVerifier.VerifyWithOptions(ctx, serverBadgeJWS, badge.VerifyOptions{
 		// Server badges use the same verification as agent badges
 	})
