@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.1] - 2026-05-14
+
+### Fixed
+- Respect `private_key_path` in badge keeper RPC — use client-provided path instead of hardcoded default (#81)
+- Nil-check badge verifier in MCP server identity to prevent panic when verifier is not configured (#81)
+- Improve error message clarity when badge verifier is missing (mentions both config options) (#81)
+
 ## [2.7.0] - 2026-05-13
 
 ### Added
