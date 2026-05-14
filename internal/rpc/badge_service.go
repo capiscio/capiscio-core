@@ -659,20 +659,26 @@ func (s *BadgeService) configureCAMode(config *badge.KeeperConfig, req *pb.Start
 		caURL = badge.DefaultCAURL
 	}
 
-	// Try to load the agent's private key from the standard keys directory.
-	// The SDK's Init RPC stores keys at ~/.capiscio/keys/{agent_id}/private.jwk.
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("cannot determine home directory: %w", err)
-	}
+	// Load the agent's private key.
+	// Prefer the explicit path from the SDK (private_key_path), fall back to
+	// the standard keys directory (~/.capiscio/keys/{agent_id}/private.jwk).
+	var privKeyPath string
+	if req.PrivateKeyPath != "" {
+		privKeyPath = req.PrivateKeyPath
+	} else {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return fmt.Errorf("cannot determine home directory: %w", err)
+		}
 
-	// Sanitize agent_id to prevent path traversal
-	cleanID := filepath.Base(req.AgentId)
-	if cleanID == "." || cleanID == ".." || cleanID == "/" || cleanID != req.AgentId {
-		return fmt.Errorf("invalid agent_id: contains path separators or traversal sequences")
-	}
+		// Sanitize agent_id to prevent path traversal
+		cleanID := filepath.Base(req.AgentId)
+		if cleanID == "." || cleanID == ".." || cleanID == "/" || cleanID != req.AgentId {
+			return fmt.Errorf("invalid agent_id: contains path separators or traversal sequences")
+		}
 
-	privKeyPath := filepath.Join(homeDir, ".capiscio", "keys", cleanID, "private.jwk")
+		privKeyPath = filepath.Join(homeDir, ".capiscio", "keys", cleanID, "private.jwk")
+	}
 	keyData, err := os.ReadFile(privKeyPath)
 	if err != nil {
 		return fmt.Errorf("failed to read agent private key at %s: %w", privKeyPath, err)
