@@ -129,7 +129,7 @@ func (v *ServerIdentityVerifier) VerifyServerIdentity(
 	if v.badgeVerifier == nil {
 		result.State = ServerStateUnverifiedOrigin
 		result.ErrorCode = ServerErrorCodeBadgeInvalid
-		result.ErrorDetail = "badge verifier not initialized (CAPISCIO_REGISTRY_ENDPOINT not set)"
+		result.ErrorDetail = "badge verifier not configured — set CAPISCIO_REGISTRY_ENDPOINT or CAPISCIO_TRUST_STORE_KEY"
 		return result, nil
 	}
 	badgeResult, err := v.badgeVerifier.VerifyWithOptions(ctx, serverBadgeJWS, badge.VerifyOptions{
