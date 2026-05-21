@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/go-jose/go-jose/v4"
+	"github.com/google/uuid"
 )
 
 // KeeperMode defines the mode of operation for the keeper.
@@ -281,6 +282,7 @@ func (k *Keeper) renewFromCA() (*RenewalResult, error) {
 func (k *Keeper) renewSelfSign() (*RenewalResult, error) {
 	now := time.Now()
 	newClaims := k.config.Claims
+	newClaims.JTI = uuid.New().String()
 	newClaims.IssuedAt = now.Unix()
 	newClaims.Expiry = now.Add(k.config.Expiry).Unix()
 

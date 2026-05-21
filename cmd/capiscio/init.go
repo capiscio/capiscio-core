@@ -321,11 +321,11 @@ func printInitSummary(agentID, didKey, outputDir string) {
 
 // fetchFirstAgent fetches the first agent from the registry
 func fetchFirstAgent(serverURL, apiKey string) (id string, name string, err error) {
-	req, err := http.NewRequest("GET", serverURL+"/v1/agents", nil)
+	req, err := http.NewRequest("GET", serverURL+"/v1/sdk/agents", nil)
 	if err != nil {
 		return "", "", err
 	}
-	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("X-Capiscio-Registry-Key", apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 30 * time.Second}

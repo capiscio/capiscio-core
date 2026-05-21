@@ -471,13 +471,18 @@ func requestBadgeFromCA() error {
 		return &AuthRequiredError{
 			Command: "badge keep",
 			Message: "Invalid or expired API key",
-			Help: `Your API key was rejected. Please check:
+			Help: `Your API key was rejected. CA mode requires a dashboard session token,
+not an SDK registry key (sk_live_/sk_test_).
 
-  1. The API key is correct (starts with sk_live_ or sk_test_)
-  2. The API key has not been revoked
-  3. You have permission to manage this agent
+For SDK key authentication, use one of these alternatives:
 
-Get a new API key at https://app.capisc.io/api-keys`,
+  # Self-signed badges (development/testing)
+  capiscio badge keep --self-sign --key private.jwk
+
+  # PoP badges (production, requires registered agent with DID)
+  capiscio badge keep --pop --agent-did did:key:... --key private.jwk
+
+Get a dashboard token at https://app.capisc.io`,
 		}
 	}
 	
@@ -592,6 +597,15 @@ Examples:
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		token := args[0]
+
+		// If the argument looks like a file path, read the token from the file
+		if _, err := os.Stat(token); err == nil {
+			data, err := os.ReadFile(token)
+			if err != nil {
+				return fmt.Errorf("failed to read badge file %s: %w", token, err)
+			}
+			token = strings.TrimSpace(string(data))
+		}
 
 		// Build verification options
 		opts := badge.VerifyOptions{
