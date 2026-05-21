@@ -470,9 +470,9 @@ func requestBadgeFromCA() error {
 	if resp.StatusCode == http.StatusUnauthorized {
 		return &AuthRequiredError{
 			Command: "badge keep",
-			Message: "Invalid or expired API key",
-			Help: `Your API key was rejected. CA mode requires a dashboard session token,
-not an SDK registry key (sk_live_/sk_test_).
+			Message: "Authentication rejected — CA mode requires a dashboard session token",
+			Help: `CA mode requires a dashboard session token, not an SDK registry key
+(sk_live_/sk_test_).
 
 For SDK key authentication, use one of these alternatives:
 
@@ -599,7 +599,7 @@ Examples:
 		token := args[0]
 
 		// If the argument looks like a file path, read the token from the file
-		if _, err := os.Stat(token); err == nil {
+		if fi, err := os.Stat(token); err == nil && fi.Mode().IsRegular() {
 			data, err := os.ReadFile(token)
 			if err != nil {
 				return fmt.Errorf("failed to read badge file %s: %w", token, err)
