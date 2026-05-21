@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/capiscio/capiscio-core/v2/pkg/did"
@@ -113,10 +112,10 @@ func TestCreateAgentCardShortID(t *testing.T) {
 func TestFetchFirstAgent(t *testing.T) {
 	// Mock server that returns an agent list
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/v1/agents" {
-			// Check auth header (Bearer token)
-			authHeader := r.Header.Get("Authorization")
-			if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		if r.URL.Path == "/v1/sdk/agents" {
+			// Check auth header (SDK registry key)
+			authHeader := r.Header.Get("X-Capiscio-Registry-Key")
+			if authHeader == "" {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
