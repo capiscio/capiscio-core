@@ -5,6 +5,7 @@ import (
 	"crypto"
 	"crypto/ed25519"
 	"crypto/rand"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -26,7 +27,7 @@ func (m *mockRegistry) GetPublicKey(ctx context.Context, issuer string) (crypto.
 	if key, ok := m.keys[issuer]; ok {
 		return key, nil
 	}
-	return nil, assert.AnError
+	return nil, fmt.Errorf("public key not found for issuer %q", issuer)
 }
 
 func (m *mockRegistry) IsRevoked(ctx context.Context, id string) (bool, error) {

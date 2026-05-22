@@ -123,8 +123,8 @@ jobs:
 
   trigger-e2e:
     name: Trigger E2E Tests
-    needs: [test]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [test, lint, protobuf, security]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.repository == 'capiscio/capiscio-core'
     runs-on: ubuntu-latest
     steps:
       - name: Dispatch E2E workflow
