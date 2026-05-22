@@ -12,7 +12,19 @@ import (
 var (
 	// apiBaseURL is the base URL for the capiscio-server
 	apiBaseURL string
+
+	// serverAvailable is true when the live server is reachable.
+	// Tests that require it should call requireServer(t).
+	serverAvailable bool
 )
+
+// requireServer skips a test if the live capiscio-server is not running.
+func requireServer(t *testing.T) {
+	t.Helper()
+	if !serverAvailable {
+		t.Skip("Skipping: live capiscio-server not available at " + apiBaseURL)
+	}
+}
 
 // TestMain sets up the test environment
 func TestMain(m *testing.M) {
@@ -22,18 +34,15 @@ func TestMain(m *testing.M) {
 		apiBaseURL = "http://localhost:8080"
 	}
 
-	exitCode := 0
-
-	// Wait for server to be ready
+	// Check if server is available (don't block on it)
 	if err := waitForServer(apiBaseURL, 30*time.Second); err != nil {
-		fmt.Fprintf(os.Stderr, "Server not ready: %v\n", err)
-		exitCode = 1
+		fmt.Fprintf(os.Stderr, "Server not ready: %v (server-dependent tests will be skipped)\n", err)
+		serverAvailable = false
 	} else {
-		// Run tests
-		exitCode = m.Run()
+		serverAvailable = true
 	}
 
-	os.Exit(exitCode)
+	os.Exit(m.Run())
 }
 
 // waitForServer waits for the server to be healthy

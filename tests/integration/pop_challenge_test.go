@@ -16,6 +16,7 @@ import (
 
 // TestPoPChallengeFlow tests RFC-003 PoP challenge-response flow (Task 4)
 func TestPoPChallengeFlow(t *testing.T) {
+	requireServer(t)
 	ctx := context.Background()
 
 	// Step 1: Generate key pair for test agent
@@ -81,6 +82,7 @@ func TestPoPChallengeReplay(t *testing.T) {
 
 // TestPoPWithInvalidSignature tests invalid signature rejection (Task 4)
 func TestPoPWithInvalidSignature(t *testing.T) {
+	requireServer(t)
 	ctx := context.Background()
 
 	// Generate two different key pairs
@@ -107,6 +109,7 @@ func TestPoPWithInvalidSignature(t *testing.T) {
 
 // TestPoPWithMalformedDID tests malformed DID rejection (Task 4)
 func TestPoPWithMalformedDID(t *testing.T) {
+	requireServer(t)
 	ctx := context.Background()
 
 	_, privKey, err := ed25519.GenerateKey(rand.Reader)
@@ -166,6 +169,7 @@ func TestPoPBadgeVerification(t *testing.T) {
 
 // TestPoPWithCustomAudience tests PoP badge with audience restrictions (Task 4)
 func TestPoPWithCustomAudience(t *testing.T) {
+	requireServer(t)
 	ctx := context.Background()
 
 	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)

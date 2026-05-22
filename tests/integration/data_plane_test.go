@@ -48,6 +48,7 @@ func bundleURL() string {
 // TestDataPlane_BundleClientFetch verifies the BundleClient can pull a real
 // bundle from the server and the response contains valid Rego modules.
 func TestDataPlane_BundleClientFetch(t *testing.T) {
+	requireServer(t)
 	client, err := pdp.NewBundleClient(bundleURL(), testAPIKey())
 	require.NoError(t, err)
 
@@ -66,6 +67,7 @@ func TestDataPlane_BundleClientFetch(t *testing.T) {
 // TestDataPlane_OPALocalClientEvaluatesBundle verifies that a bundle fetched
 // from the live server can be loaded and evaluated by OPALocalClient.
 func TestDataPlane_OPALocalClientEvaluatesBundle(t *testing.T) {
+	requireServer(t)
 	client, err := pdp.NewBundleClient(bundleURL(), testAPIKey())
 	require.NoError(t, err)
 
@@ -106,6 +108,7 @@ func TestDataPlane_OPALocalClientEvaluatesBundle(t *testing.T) {
 // TestDataPlane_NewLocalPDPFullStack verifies the one-call NewLocalPDP
 // initialization against a live server.
 func TestDataPlane_NewLocalPDPFullStack(t *testing.T) {
+	requireServer(t)
 	cfg := pdp.PolicyEnforcementConfig{
 		BundleURL:       bundleURL(),
 		APIKey:          testAPIKey(),
@@ -148,6 +151,7 @@ func TestDataPlane_NewLocalPDPFullStack(t *testing.T) {
 // TestDataPlane_BundleRevisionConsistency verifies that consecutive fetches
 // return the same revision when no config has changed.
 func TestDataPlane_BundleRevisionConsistency(t *testing.T) {
+	requireServer(t)
 	client, err := pdp.NewBundleClient(bundleURL(), testAPIKey())
 	require.NoError(t, err)
 
@@ -164,6 +168,7 @@ func TestDataPlane_BundleRevisionConsistency(t *testing.T) {
 // TestDataPlane_BundleAuthRejection verifies that an invalid API key
 // is properly rejected by the server.
 func TestDataPlane_BundleAuthRejection(t *testing.T) {
+	requireServer(t)
 	client, err := pdp.NewBundleClient(bundleURL(), "invalid-key-that-should-fail")
 	require.NoError(t, err)
 
@@ -175,6 +180,7 @@ func TestDataPlane_BundleAuthRejection(t *testing.T) {
 // TestDataPlane_BundleContainsData verifies that the bundle data section
 // contains expected agent/registry data from the server.
 func TestDataPlane_BundleContainsData(t *testing.T) {
+	requireServer(t)
 	client, err := pdp.NewBundleClient(bundleURL(), testAPIKey())
 	require.NoError(t, err)
 
@@ -193,6 +199,7 @@ func TestDataPlane_BundleContainsData(t *testing.T) {
 // TestDataPlane_BundleFetchHTTPHeaders verifies that the server respects
 // standard HTTP semantics for the bundle endpoint.
 func TestDataPlane_BundleFetchHTTPHeaders(t *testing.T) {
+	requireServer(t)
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, bundleURL(), nil)
 	require.NoError(t, err)
 	req.Header.Set("X-Capiscio-Registry-Key", testAPIKey())

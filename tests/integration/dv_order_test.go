@@ -20,6 +20,7 @@ import (
 
 // TestDVOrderCreation tests DV order creation (Task 5 - RFC-002 v1.2)
 func TestDVOrderCreation(t *testing.T) {
+	requireServer(t)
 	ctx := context.Background()
 
 	// Generate test key pair
@@ -85,6 +86,7 @@ func TestDVOrderCreation(t *testing.T) {
 
 // TestDVOrderStatus tests retrieving order status (Task 5)
 func TestDVOrderStatus(t *testing.T) {
+	requireServer(t)
 	ctx := context.Background()
 
 	// Create order first
