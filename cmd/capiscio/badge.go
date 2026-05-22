@@ -480,7 +480,7 @@ For SDK key authentication, use one of these alternatives:
   capiscio badge keep --self-sign --key private.jwk
 
   # PoP badges (production, requires registered agent with DID)
-  capiscio badge keep --pop --agent-did did:key:... --key private.jwk
+  capiscio badge request --did did:key:... --key private.jwk --api-key sk_live_...
 
 Get a dashboard token at https://app.capisc.io`,
 		}
@@ -599,7 +599,10 @@ Examples:
 		token := args[0]
 
 		// If the argument looks like a file path, read the token from the file
-		if fi, err := os.Stat(token); err == nil && fi.Mode().IsRegular() {
+		if fi, err := os.Stat(token); err == nil {
+			if !fi.Mode().IsRegular() {
+				return fmt.Errorf("%s exists but is not a regular file (mode: %s)", token, fi.Mode())
+			}
 			data, err := os.ReadFile(token)
 			if err != nil {
 				return fmt.Errorf("failed to read badge file %s: %w", token, err)
