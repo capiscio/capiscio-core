@@ -154,10 +154,11 @@ func (c *Context) EffectiveCaps() []string {
 }
 
 // CapabilitySatisfied checks if a requested capability is granted.
-// Uses exact string matching — wildcard expansion is caller's responsibility.
+// Uses RFC-008 §7.2 scoping rules: child is satisfied if it equals parent
+// or is within parent's scope (e.g., "file.read" is within "file").
 func (c *Context) CapabilitySatisfied(requested string) bool {
 	for _, cap := range c.EffectiveCaps() {
-		if cap == requested || cap == "*" {
+		if envelope.IsWithinScope(requested, cap) {
 			return true
 		}
 	}

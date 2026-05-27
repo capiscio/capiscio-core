@@ -5,11 +5,13 @@ package trust
 
 import (
 	"context"
+	"crypto"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/go-jose/go-jose/v4"
@@ -183,7 +185,7 @@ func (m *MaterialManager) IsBootstrapped() bool {
 
 // GetPublicKey retrieves a public key for verification.
 // Returns ErrNoTrustMaterial if not bootstrapped.
-func (m *MaterialManager) GetPublicKey(issuerDID, kid string) (any, FreshnessState, error) {
+func (m *MaterialManager) GetPublicKey(issuerDID, kid string) (crypto.PublicKey, FreshnessState, error) {
 	if !m.bootstrapped {
 		return nil, FreshnessStateExpired, ErrNoTrustMaterial
 	}
@@ -283,16 +285,22 @@ func (m *MaterialManager) loadRevocationsFromFile(path string) error {
 }
 
 // filenameToIssuer extracts an issuer DID from a filename.
-// e.g., "did_web_example.com.jwks.json" -> "did:web:example.com"
+// Supports:
+// - DID format: "did_web_example.com.jwks.json" -> "did:web:example.com"
+// - HTTPS format: "registry.example.com.jwks.json" -> "https://registry.example.com"
 func filenameToIssuer(path string) string {
 	base := filepath.Base(path)
-	// Strip extension
+	// Strip extensions (e.g., .jwks.json)
 	for ext := filepath.Ext(base); ext != ""; ext = filepath.Ext(base) {
 		base = base[:len(base)-len(ext)]
 	}
-	// Convert did_web_example.com to did:web:example.com
-	// This is a simple heuristic; real implementation may use metadata
-	return base
+	// Check if it's a DID format (starts with did_)
+	if strings.HasPrefix(base, "did_") {
+		// Convert did_web_example.com to did:web:example.com
+		return strings.Replace(strings.Replace(base, "_", ":", 1), "_", ":", 1)
+	}
+	// Otherwise assume it's a hostname for HTTPS issuer
+	return "https://" + base
 }
 
 // =============================================================================
