@@ -31,6 +31,24 @@
 // decisions. Events are evidence of what happened — they do not drive decisions.
 // Event emission is asynchronous and MUST NOT block the mediation path.
 //
+// Event types follow the RFC-011 taxonomy:
+//
+//   - Identity events: identity.verified, identity.invalid, identity.expired
+//   - Authority events: authority.granted, authority.denied, authority.delegated
+//   - Tool events: tool.requested, tool.permitted, tool.denied, tool.executed
+//   - Resource events: resource.filesystem.*, resource.network.*, resource.shell.*
+//   - Trust events: trust.signature.*, trust.revocation.checked
+//
+// Events are delivered to EventSink implementations which handle buffering,
+// batching, and forwarding to aggregators. The package provides:
+//
+//   - AsyncEmitter — non-blocking emitter with channel-based buffering
+//   - ChannelSink — delivers events to a Go channel
+//   - JSONSink — writes events as newline-delimited JSON
+//   - BatchSink — batches events before forwarding
+//   - HTTPSink — forwards events to a remote aggregator via HTTP
+//   - MemoryAggregator — in-memory aggregator for testing
+//
 // # Usage
 //
 // Gateway middleware injects trust material during bootstrap:
