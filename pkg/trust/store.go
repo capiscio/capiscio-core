@@ -117,7 +117,7 @@ func (s *FileStore) Get(kid string) (*jose.JSONWebKey, error) {
 	defer s.mu.RUnlock()
 
 	path := s.keyPath(kid)
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- path derived from store dir + kid hash
 	if os.IsNotExist(err) {
 		return nil, ErrKeyNotFound
 	}
@@ -152,7 +152,7 @@ func (s *FileStore) GetByIssuer(issuerURL string) ([]jose.JSONWebKey, error) {
 	var keys []jose.JSONWebKey
 	for _, kid := range kids {
 		path := s.keyPath(kid)
-		data, err := os.ReadFile(path)
+		data, err := os.ReadFile(path) // #nosec G304 -- path from store dir + kid hash
 		if err != nil {
 			continue // Skip missing keys
 		}
@@ -188,7 +188,7 @@ func (s *FileStore) List() ([]jose.JSONWebKey, error) {
 		}
 
 		path := filepath.Join(s.dir, entry.Name())
-		data, err := os.ReadFile(path)
+		data, err := os.ReadFile(path) // #nosec G304 -- iterating store's own directory
 		if err != nil {
 			continue
 		}

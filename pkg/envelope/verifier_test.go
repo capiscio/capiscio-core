@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/capiscio/capiscio-core/v2/pkg/envelope"
+	"github.com/capiscio/capiscio-core/v2/pkg/trust"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -305,4 +306,31 @@ func TestVerifyEnvelope_DefaultKeyResolver_DidKey(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Equal(t, payload.EnvelopeID, result.Payload.EnvelopeID)
+}
+
+// TestVerifyEnvelope_WithTrustMaterial verifies that the TrustMaterial option
+// enables RFC-001 §2.3 local verification path.
+func TestVerifyEnvelope_WithTrustMaterial(t *testing.T) {
+	pub, priv := generateTestKey(t)
+	issuerDID := testDID(t, pub)
+	subPub, _, _ := ed25519.GenerateKey(rand.Reader)
+	subjectDID := testDID(t, subPub)
+
+	payload := testPayload(t, issuerDID, subjectDID)
+	token := signTestEnvelope(t, payload, priv, issuerDID+"#key-1")
+
+	// Create MaterialManager
+	mgr, err := trust.NewMaterialManager(trust.BootstrapConfig{}, nil)
+	require.NoError(t, err)
+	require.NoError(t, mgr.Bootstrap(context.Background()))
+
+	// Verify envelope with TrustMaterial (skipping badge verification for now)
+	v := &envelope.Verifier{}
+	result, err := v.VerifyEnvelope(context.Background(), token, "", "", envelope.VerifyOptions{
+		SkipBadgeVerification: true,
+		TrustMaterial:         mgr,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, payload.EnvelopeID, result.Payload.EnvelopeID)
+	assert.Equal(t, payload.IssuerDID, result.Payload.IssuerDID)
 }
