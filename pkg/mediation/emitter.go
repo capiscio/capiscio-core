@@ -374,6 +374,20 @@ func (e *AsyncEmitter) EmitExecutionCompleted(mctx *Context, outcome string, dur
 	e.emit(event)
 }
 
+// EmitExecutionAborted emits an execution.aborted event for early terminations.
+func (e *AsyncEmitter) EmitExecutionAborted(mctx *Context, reason, errorCode string, durationMs int64) {
+	event := NewEvent(EventExecutionAborted, e.emitter)
+	if mctx != nil {
+		event.WithContext(mctx.TraceID, mctx.TxnID, mctx.HopID)
+	}
+
+	event.WithPayload("reason", reason)
+	event.WithPayload("error_code", errorCode)
+	event.WithPayload("duration_ms", durationMs)
+
+	e.emit(event)
+}
+
 // EmitTrustRevocationChecked emits a trust.revocation.checked event.
 func (e *AsyncEmitter) EmitTrustRevocationChecked(mctx *Context, jti string, revoked bool, cacheAgeSeconds int) {
 	event := NewEvent(EventTrustRevocationChecked, e.emitter)

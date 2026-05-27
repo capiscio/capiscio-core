@@ -346,3 +346,179 @@ func TestEventEmission_NoEmitter(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.True(t, called)
 }
+
+func TestEventEmission_ExecutionAborted_BadgeVerificationFailed(t *testing.T) {
+	// Setup keys but sign with different key to trigger verification failure
+	pub, _, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	_, wrongPriv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	reg := &MockRegistry{Key: pub}
+	verifier := badge.NewVerifier(reg)
+
+	// Create event sink and emitter
+	sink := &mockEventSink{}
+	emitter := mediation.NewAsyncEmitter(mediation.AsyncEmitterConfig{
+		ComponentID:   "test-gateway",
+		ComponentType: mediation.ComponentGateway,
+		Version:       "test",
+		BufferSize:    100,
+		Sinks:         []mediation.EventSink{sink},
+	})
+	defer emitter.Close()
+
+	// Create badge signed with WRONG key
+	claims := &badge.Claims{
+		JTI:      "test-jti-wrong-key",
+		Issuer:   "did:web:test.capisc.io",
+		Subject:  "did:web:test.capisc.io:agents:test-agent",
+		IssuedAt: time.Now().Unix(),
+		Expiry:   time.Now().Add(1 * time.Hour).Unix(),
+		VC: badge.VerifiableCredential{
+			Type: []string{"VerifiableCredential", "AgentIdentity"},
+			CredentialSubject: badge.CredentialSubject{
+				Domain: "test.example.com",
+				Level:  "2",
+			},
+		},
+	}
+
+	token, err := badge.SignBadge(claims, wrongPriv)
+	require.NoError(t, err)
+
+	// Create handler
+	called := false
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+	})
+
+	// Create middleware with emitter
+	config := gateway.PEPConfig{
+		RuntimeEmitter: emitter,
+	}
+	handler := gateway.NewPolicyMiddleware(verifier, config, next)
+
+	// Make request with invalid badge
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("X-Capiscio-Badge", token)
+	req.Header.Set("X-Trace-ID", "trace-bad-badge")
+
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	// Wait for async event processing
+	require.Eventually(t, func() bool {
+		return sink.HasEventType(mediation.EventIdentityInvalid)
+	}, 500*time.Millisecond, 10*time.Millisecond, "identity.invalid event not emitted within timeout")
+
+	// Verify response
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.False(t, called, "handler should not be called for invalid badge")
+
+	// Verify identity.invalid event emitted (no execution events since we never authenticated)
+	events := sink.Events()
+	require.GreaterOrEqual(t, len(events), 1)
+
+	hasIdentityInvalid := false
+	for _, e := range events {
+		if e.EventType == mediation.EventIdentityInvalid {
+			hasIdentityInvalid = true
+			// Verify error info in payload
+			assert.Equal(t, "VERIFICATION_FAILED", e.Payload["error_code"])
+		}
+	}
+	assert.True(t, hasIdentityInvalid, "should emit identity.invalid")
+}
+
+func TestEventEmission_OutcomeReflectsHTTPStatus(t *testing.T) {
+	// Setup keys and verifier
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	reg := &MockRegistry{Key: pub}
+	verifier := badge.NewVerifier(reg)
+
+	tests := []struct {
+		name           string
+		statusCode     int
+		expectedOutcome string
+	}{
+		{"success_200", http.StatusOK, "success"},
+		{"success_201", http.StatusCreated, "success"},
+		{"client_error_400", http.StatusBadRequest, "client_error"},
+		{"client_error_404", http.StatusNotFound, "client_error"},
+		{"server_error_500", http.StatusInternalServerError, "server_error"},
+		{"server_error_503", http.StatusServiceUnavailable, "server_error"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create event sink and emitter
+			sink := &mockEventSink{}
+			emitter := mediation.NewAsyncEmitter(mediation.AsyncEmitterConfig{
+				ComponentID:   "test-gateway",
+				ComponentType: mediation.ComponentGateway,
+				Version:       "test",
+				BufferSize:    100,
+				Sinks:         []mediation.EventSink{sink},
+			})
+			defer emitter.Close()
+
+			// Create valid badge
+			claims := &badge.Claims{
+				JTI:      "test-jti-" + tt.name,
+				Issuer:   "did:web:test.capisc.io",
+				Subject:  "did:web:test.capisc.io:agents:test-agent",
+				IssuedAt: time.Now().Unix(),
+				Expiry:   time.Now().Add(1 * time.Hour).Unix(),
+				VC: badge.VerifiableCredential{
+					Type: []string{"VerifiableCredential", "AgentIdentity"},
+					CredentialSubject: badge.CredentialSubject{
+						Domain: "test.example.com",
+						Level:  "1",
+					},
+				},
+			}
+
+			token, err := badge.SignBadge(claims, priv)
+			require.NoError(t, err)
+
+			// Create handler that returns the test status code
+			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(tt.statusCode)
+			})
+
+			// Create middleware with emitter
+			config := gateway.PEPConfig{
+				RuntimeEmitter: emitter,
+			}
+			handler := gateway.NewPolicyMiddleware(verifier, config, next)
+
+			// Make request
+			req := httptest.NewRequest("GET", "/test", nil)
+			req.Header.Set("X-Capiscio-Badge", token)
+
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, req)
+
+			// Wait for execution.completed event
+			require.Eventually(t, func() bool {
+				return sink.HasEventType(mediation.EventExecutionCompleted)
+			}, 500*time.Millisecond, 10*time.Millisecond, "execution.completed event not emitted within timeout")
+
+			// Verify outcome field matches expected
+			events := sink.Events()
+			var execCompleted *mediation.Event
+			for _, e := range events {
+				if e.EventType == mediation.EventExecutionCompleted {
+					execCompleted = e
+					break
+				}
+			}
+			require.NotNil(t, execCompleted)
+			assert.Equal(t, tt.expectedOutcome, execCompleted.Payload["outcome"],
+				"outcome should reflect HTTP status %d", tt.statusCode)
+		})
+	}
+}

@@ -21,6 +21,39 @@ import (
 	"github.com/capiscio/capiscio-core/v2/pkg/trust"
 )
 
+// statusCapturingResponseWriter wraps http.ResponseWriter to capture the status code.
+// RFC-011 §5.4: Used to derive outcome field in execution.completed events.
+type statusCapturingResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+	written    bool
+}
+
+func (w *statusCapturingResponseWriter) WriteHeader(code int) {
+	if !w.written {
+		w.statusCode = code
+		w.written = true
+	}
+	w.ResponseWriter.WriteHeader(code)
+}
+
+func (w *statusCapturingResponseWriter) Write(b []byte) (int, error) {
+	if !w.written {
+		w.statusCode = http.StatusOK
+		w.written = true
+	}
+	return w.ResponseWriter.Write(b)
+}
+
+// executionState tracks the lifecycle state for RFC-011 event emission.
+type executionState struct {
+	started    bool
+	subjectDID string
+	aborted    bool
+	abortCode  string
+	abortMsg   string
+}
+
 // NewAuthMiddleware creates a middleware that enforces Badge validity.
 // Deprecated: Use NewPolicyMiddleware for RFC-005 PDP integration.
 func NewAuthMiddleware(verifier *badge.Verifier, next http.Handler) http.Handler {
@@ -160,7 +193,10 @@ func NewPolicyMiddleware(verifier *badge.Verifier, config PEPConfig, next http.H
 }
 
 // serveHTTP implements the PEP request flow: authenticate → break-glass → cache → PDP → enforce.
+// RFC-011 §7.1: Emits execution.started at entry and execution.completed or execution.aborted at exit.
 func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
+	execStart := time.Now()
+
 	// Generate trace/txn IDs for event correlation.
 	txnID := r.Header.Get(pip.TxnIDHeader)
 	if txnID == "" {
@@ -175,11 +211,26 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	traceID := r.Header.Get("X-Trace-ID")
 
+	// Execution state for RFC-011 lifecycle events.
+	// The defer ensures we always emit completion/aborted on every exit path.
+	execState := &executionState{}
+	sw := &statusCapturingResponseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+	defer func() {
+		durationMs := time.Since(execStart).Milliseconds()
+		if execState.aborted {
+			p.emitExecutionAborted(traceID, txnID, execState.subjectDID, execState.abortCode, execState.abortMsg, durationMs)
+		} else if execState.started {
+			outcome := outcomeFromStatus(sw.statusCode)
+			p.emitExecutionCompleted(traceID, txnID, execState.subjectDID, outcome, durationMs)
+		}
+		// If !started && !aborted, no execution events emitted (pre-auth failures handled separately)
+	}()
+
 	// --- 1. Extract and verify badge (authentication) ---
 	token := ExtractBadge(r)
 	if token == "" {
 		p.emitIdentityInvalid(traceID, txnID, "", "MISSING_BADGE", "no badge in request")
-		http.Error(w, "Missing Trust Badge", http.StatusUnauthorized)
+		http.Error(sw, "Missing Trust Badge", http.StatusUnauthorized)
 		return
 	}
 
@@ -193,7 +244,7 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 			p.logger.WarnContext(r.Context(), "local badge verification failed",
 				slog.String("error", verifyErr.Error()))
 			p.emitIdentityInvalid(traceID, txnID, "", "VERIFICATION_FAILED", verifyErr.Error())
-			http.Error(w, "Invalid Trust Badge", http.StatusUnauthorized)
+			http.Error(sw, "Invalid Trust Badge", http.StatusUnauthorized)
 			return
 		}
 		claims = result.Claims
@@ -207,13 +258,19 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			p.logger.WarnContext(r.Context(), "badge verification failed", slog.String("error", err.Error()))
 			p.emitIdentityInvalid(traceID, txnID, "", "VERIFICATION_FAILED", err.Error())
-			http.Error(w, "Invalid Trust Badge", http.StatusUnauthorized)
+			http.Error(sw, "Invalid Trust Badge", http.StatusUnauthorized)
 			return
 		}
 	}
 
 	// RFC-011 §5.1: Emit identity.verified event.
 	p.emitIdentityVerified(traceID, txnID, claims)
+
+	// Now that we have a verified identity, start the execution lifecycle.
+	// RFC-011 §7.1: Emit execution.started at execution boundary enter.
+	execState.subjectDID = claims.Subject
+	execState.started = true
+	p.emitExecutionStarted(traceID, txnID, claims.Subject, nil)
 
 	// Forward verified identity to upstream
 	r.Header.Set("X-Capiscio-Subject", claims.Subject)
@@ -227,7 +284,10 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			// Get capability from request header for authority.denied event
 			capability := r.Header.Get("X-Capiscio-Capability-Class")
-			p.handleChainError(w, r, err, traceID, txnID, claims.Subject, capability)
+			execState.aborted = true
+			execState.abortCode = "CHAIN_VERIFICATION_FAILED"
+			execState.abortMsg = err.Error()
+			p.handleChainError(sw, r, err, traceID, txnID, claims.Subject, capability)
 			return
 		}
 
@@ -243,8 +303,11 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 				)
 				chainErr := envelope.NewError(envelope.ErrCodeBadgeBindingFailed,
 					fmt.Sprintf("leaf envelope subject_did %q does not match authenticated caller %q", leafSubject, claims.Subject))
+				execState.aborted = true
+				execState.abortCode = envelope.ErrCodeBadgeBindingFailed
+				execState.abortMsg = chainErr.Message
 				// handleChainError emits authority.denied, so no explicit emit here
-				p.handleChainError(w, r, chainErr, traceID, txnID, claims.Subject, chainResult.LeafCapability)
+				p.handleChainError(sw, r, chainErr, traceID, txnID, claims.Subject, chainResult.LeafCapability)
 				return
 			}
 			// RFC-011 §5.2: Emit authority.granted after successful chain verification
@@ -254,11 +317,8 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// If no PDP configured, operate in badge-only mode
 	if p.config.PDPClient == nil {
-		// RFC-011 §5.4: Emit execution lifecycle for badge-only mode
-		start := time.Now()
-		p.emitExecutionStarted(traceID, txnID, claims.Subject, nil)
-		p.next.ServeHTTP(w, r)
-		p.emitExecutionCompleted(traceID, txnID, claims.Subject, "success", time.Since(start).Milliseconds())
+		// RFC-011 §5.4: execution.started already emitted, completion via defer
+		p.next.ServeHTTP(sw, r)
 		return
 	}
 
@@ -266,12 +326,12 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	pipReq := p.buildPIPRequest(r, claims, chainResult)
 
 	// --- 4. Check break-glass override ---
-	if p.handleBreakGlass(w, r, pipReq) {
+	if p.handleBreakGlassWithState(sw, r, pipReq, execState) {
 		return
 	}
 
 	// --- 5-9. Cache → PDP → enforce → obligations ---
-	p.evaluatePolicy(w, r, claims, pipReq, traceID, txnID)
+	p.evaluatePolicyWithState(sw, r, claims, pipReq, traceID, txnID, execState)
 }
 
 // buildPIPRequest constructs the PIP decision request from the HTTP request, badge claims,
@@ -528,6 +588,34 @@ func (p *pep) handleBreakGlass(w http.ResponseWriter, r *http.Request, pipReq *p
 	return true
 }
 
+// handleBreakGlassWithState handles break-glass override with execution state tracking.
+// RFC-011: Execution events are handled by the caller's defer, not here.
+func (p *pep) handleBreakGlassWithState(w http.ResponseWriter, r *http.Request, pipReq *pip.DecisionRequest, _ *executionState) bool {
+	if p.bgValidator == nil {
+		return false
+	}
+
+	bgToken := extractBreakGlass(r, p.bgValidator)
+	if bgToken == nil {
+		return false
+	}
+
+	p.logger.WarnContext(r.Context(), "break-glass override active",
+		slog.String(pip.TelemetryOverrideJTI, bgToken.JTI),
+		slog.String("operator", bgToken.SUB),
+		slog.String("reason", bgToken.Reason))
+
+	emitPolicyEvent(p.callbacks, PolicyEvent{
+		Decision:    pip.DecisionAllow,
+		DecisionID:  "breakglass:" + bgToken.JTI,
+		Override:    true,
+		OverrideJTI: bgToken.JTI,
+	}, pipReq)
+	p.next.ServeHTTP(w, r)
+	// Break-glass is a successful path; defer will emit execution.completed
+	return true
+}
+
 // evaluatePolicy handles cache lookup, PDP query, decision enforcement, and obligations.
 func (p *pep) evaluatePolicy(w http.ResponseWriter, r *http.Request, claims *badge.Claims, pipReq *pip.DecisionRequest, traceID, txnID string) {
 	cacheKey := pip.CacheKeyComponents(claims.Subject, claims.JTI, pipReq.Action.Operation, pipReq.Resource.Identifier)
@@ -593,6 +681,77 @@ func (p *pep) evaluatePolicy(w http.ResponseWriter, r *http.Request, claims *bad
 	p.next.ServeHTTP(w, r)
 
 	p.emitExecutionCompleted(traceID, txnID, claims.Subject, "success", time.Since(execStart).Milliseconds())
+}
+
+// evaluatePolicyWithState handles policy evaluation with execution state tracking.
+// RFC-011: Execution events are handled by the caller's defer, not here.
+func (p *pep) evaluatePolicyWithState(w http.ResponseWriter, r *http.Request, claims *badge.Claims, pipReq *pip.DecisionRequest, traceID, txnID string, execState *executionState) {
+	cacheKey := pip.CacheKeyComponents(claims.Subject, claims.JTI, pipReq.Action.Operation, pipReq.Resource.Identifier)
+	event := PolicyEvent{}
+
+	// --- 5. Check cache ---
+	if p.handleCachedDecisionWithState(w, r, cacheKey, &event, pipReq, execState) {
+		return
+	}
+
+	// --- 6. Query PDP ---
+	start := time.Now()
+	resp, pdpErr := p.config.PDPClient.Evaluate(r.Context(), pipReq)
+	event.PDPLatencyMs = time.Since(start).Milliseconds()
+
+	if pdpErr != nil {
+		p.logger.ErrorContext(r.Context(), "PDP unavailable",
+			slog.String(pip.TelemetryErrorCode, pip.ErrorCodePDPUnavailable),
+			slog.String("error", pdpErr.Error()),
+			slog.String("enforcement_mode", p.config.EnforcementMode.String()))
+		execState.aborted = true
+		execState.abortCode = pip.ErrorCodePDPUnavailable
+		execState.abortMsg = pdpErr.Error()
+		p.handlePDPUnavailableWithState(w, r, &event, pipReq, execState)
+		return
+	}
+
+	// Validate PDP response
+	if !pip.ValidDecision(resp.Decision) || resp.DecisionID == "" {
+		p.logger.ErrorContext(r.Context(), "PDP returned non-compliant response",
+			slog.String("decision", resp.Decision),
+			slog.String("decision_id", resp.DecisionID))
+		execState.aborted = true
+		execState.abortCode = pip.ErrorCodePDPUnavailable
+		execState.abortMsg = "PDP returned non-compliant response"
+		p.handlePDPUnavailableWithState(w, r, &event, pipReq, execState)
+		return
+	}
+
+	event.Decision = resp.Decision
+	event.DecisionID = resp.DecisionID
+	event.Obligations = obligationTypes(resp.Obligations)
+
+	// --- 7. Cache the response ---
+	if p.config.DecisionCache != nil {
+		maxTTL := time.Until(time.Unix(claims.Expiry, 0))
+		if maxTTL > 0 {
+			p.config.DecisionCache.Put(cacheKey, resp, maxTTL)
+		}
+	}
+
+	// --- 8. Enforce decision ---
+	if resp.Decision == pip.DecisionDeny {
+		execState.aborted = true
+		execState.abortCode = "PDP_DENY"
+		execState.abortMsg = resp.Reason
+		p.handlePDPDenyWithState(w, r, resp, &event, pipReq, execState)
+		return
+	}
+
+	// --- 9. Handle obligations ---
+	if p.enforceObligationsWithState(w, r, resp.Obligations, &event, pipReq, execState) {
+		return
+	}
+
+	// RFC-011: execution.completed handled by defer with captured HTTP status
+	emitPolicyEvent(p.callbacks, event, pipReq)
+	p.next.ServeHTTP(w, r)
 }
 
 // handleCachedDecision serves a cached PDP decision if available.
@@ -724,6 +883,152 @@ func (p *pep) enforceObligations(w http.ResponseWriter, r *http.Request, obligat
 
 	oblResult := p.config.ObligationReg.Enforce(r.Context(), p.config.EnforcementMode, obligations)
 	if !oblResult.Proceed {
+		event.Decision = pip.DecisionDeny
+		emitPolicyEvent(p.callbacks, *event, pipReq)
+		http.Error(w, "Access denied: obligation enforcement failed", http.StatusForbidden)
+		return true
+	}
+
+	return false
+}
+
+// handleCachedDecisionWithState serves a cached PDP decision with execution state tracking.
+// RFC-011: Execution events are handled by the caller's defer, not here.
+func (p *pep) handleCachedDecisionWithState(w http.ResponseWriter, r *http.Request, cacheKey string, event *PolicyEvent, pipReq *pip.DecisionRequest, execState *executionState) bool {
+	if p.config.DecisionCache == nil {
+		return false
+	}
+
+	cached, ok := p.config.DecisionCache.Get(cacheKey)
+	if !ok {
+		return false
+	}
+
+	event.Decision = cached.Decision
+	event.DecisionID = cached.DecisionID
+	event.CacheHit = true
+	event.Obligations = obligationTypes(cached.Obligations)
+
+	if cached.Decision == pip.DecisionDeny {
+		if p.config.EnforcementMode == pip.EMObserve {
+			p.logger.InfoContext(r.Context(), "cached PDP DENY in EM-OBSERVE (allowing)",
+				slog.String(pip.TelemetryDecisionID, cached.DecisionID))
+			event.Decision = pip.DecisionObserve
+			emitPolicyEvent(p.callbacks, *event, pipReq)
+			// EM-OBSERVE allows the request; defer handles execution.completed
+			p.next.ServeHTTP(w, r)
+			return true
+		}
+		execState.aborted = true
+		execState.abortCode = "CACHED_DENY"
+		execState.abortMsg = cached.Reason
+		reason := cached.Reason
+		if reason == "" {
+			reason = "Access denied by policy"
+		}
+		emitPolicyEvent(p.callbacks, *event, pipReq)
+		http.Error(w, reason, http.StatusForbidden)
+		return true
+	}
+
+	if p.config.ObligationReg != nil && len(cached.Obligations) > 0 {
+		oblResult := p.config.ObligationReg.Enforce(r.Context(), p.config.EnforcementMode, cached.Obligations)
+		if !oblResult.Proceed {
+			execState.aborted = true
+			execState.abortCode = "OBLIGATION_FAILED"
+			execState.abortMsg = "cached obligation enforcement failed"
+			event.Decision = pip.DecisionDeny
+			emitPolicyEvent(p.callbacks, *event, pipReq)
+			http.Error(w, "Access denied: obligation enforcement failed", http.StatusForbidden)
+			return true
+		}
+	}
+
+	// Cached ALLOW; defer handles execution.completed
+	emitPolicyEvent(p.callbacks, *event, pipReq)
+	p.next.ServeHTTP(w, r)
+	return true
+}
+
+// handlePDPUnavailableWithState handles PDP unreachability with execution state tracking.
+// RFC-011: Execution events are handled by the caller's defer, not here.
+func (p *pep) handlePDPUnavailableWithState(w http.ResponseWriter, r *http.Request, event *PolicyEvent, pipReq *pip.DecisionRequest, execState *executionState) {
+	event.ErrorCode = pip.ErrorCodePDPUnavailable
+
+	if p.config.EnforcementMode == pip.EMObserve {
+		// EM-OBSERVE: mark as not aborted since request proceeds
+		execState.aborted = false
+		event.Decision = pip.DecisionObserve
+		event.DecisionID = "pdp-unavailable"
+		emitPolicyEvent(p.callbacks, *event, pipReq)
+		p.next.ServeHTTP(w, r)
+		return
+	}
+
+	// EM-GUARD, EM-DELEGATE, EM-STRICT: fail-closed (already marked aborted by caller)
+	event.Decision = pip.DecisionDeny
+	event.DecisionID = "pdp-unavailable"
+	emitPolicyEvent(p.callbacks, *event, pipReq)
+	http.Error(w, "Access denied: policy service unavailable", http.StatusForbidden)
+}
+
+// handlePDPDenyWithState handles a DENY decision with execution state tracking.
+// RFC-011: Execution events are handled by the caller's defer, not here.
+func (p *pep) handlePDPDenyWithState(w http.ResponseWriter, r *http.Request, resp *pip.DecisionResponse, event *PolicyEvent, pipReq *pip.DecisionRequest, execState *executionState) {
+	switch p.config.EnforcementMode {
+	case pip.EMObserve:
+		// EM-OBSERVE: mark as not aborted since request proceeds
+		execState.aborted = false
+		p.logger.InfoContext(r.Context(), "PDP DENY in EM-OBSERVE (allowing)",
+			slog.String(pip.TelemetryDecisionID, resp.DecisionID))
+		event.Decision = pip.DecisionObserve
+		emitPolicyEvent(p.callbacks, *event, pipReq)
+		p.next.ServeHTTP(w, r)
+	default:
+		// Already marked aborted by caller
+		emitPolicyEvent(p.callbacks, *event, pipReq)
+
+		// RFC-008: SCOPE_INSUFFICIENT returns structured JSON 403
+		if resp.ErrorCode == pip.ErrorCodeScopeInsufficient {
+			var presentedCap, envelopeID string
+			if pipReq.Action.CapabilityClass != nil {
+				presentedCap = *pipReq.Action.CapabilityClass
+			}
+			if pipReq.Context.EnvelopeID != nil {
+				envelopeID = *pipReq.Context.EnvelopeID
+			}
+			body := envelope.NewScopeInsufficientRejection(
+				resp.RequestedCapability,
+				presentedCap,
+				envelopeID,
+				pipReq.Context.TxnID,
+			)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			_ = json.NewEncoder(w).Encode(body)
+			return
+		}
+
+		reason := "Access denied by policy"
+		if resp.Reason != "" {
+			reason = resp.Reason
+		}
+		http.Error(w, reason, http.StatusForbidden)
+	}
+}
+
+// enforceObligationsWithState enforces obligations with execution state tracking.
+// RFC-011: Execution events are handled by the caller's defer, not here.
+func (p *pep) enforceObligationsWithState(w http.ResponseWriter, r *http.Request, obligations []pip.Obligation, event *PolicyEvent, pipReq *pip.DecisionRequest, execState *executionState) bool {
+	if p.config.ObligationReg == nil || len(obligations) == 0 {
+		return false
+	}
+
+	oblResult := p.config.ObligationReg.Enforce(r.Context(), p.config.EnforcementMode, obligations)
+	if !oblResult.Proceed {
+		execState.aborted = true
+		execState.abortCode = "OBLIGATION_FAILED"
+		execState.abortMsg = "obligation enforcement failed"
 		event.Decision = pip.DecisionDeny
 		emitPolicyEvent(p.callbacks, *event, pipReq)
 		http.Error(w, "Access denied: obligation enforcement failed", http.StatusForbidden)
@@ -931,4 +1236,31 @@ func (p *pep) emitExecutionCompleted(traceID, txnID, subjectDID string, outcome 
 		SubjectDID: subjectDID,
 	}
 	p.emitter.EmitExecutionCompleted(mctx, outcome, durationMs)
+}
+
+// emitExecutionAborted emits an execution.aborted event for early terminations (RFC-011 §7.1).
+func (p *pep) emitExecutionAborted(traceID, txnID, subjectDID, errorCode, reason string, durationMs int64) {
+	if p.emitter == nil {
+		return
+	}
+	mctx := &mediation.Context{
+		TraceID:    traceID,
+		TxnID:      txnID,
+		SubjectDID: subjectDID,
+	}
+	p.emitter.EmitExecutionAborted(mctx, reason, errorCode, durationMs)
+}
+
+// outcomeFromStatus derives the RFC-011 outcome field from an HTTP status code.
+func outcomeFromStatus(code int) string {
+	switch {
+	case code >= 200 && code < 300:
+		return "success"
+	case code >= 400 && code < 500:
+		return "client_error"
+	case code >= 500:
+		return "server_error"
+	default:
+		return "unknown"
+	}
 }
