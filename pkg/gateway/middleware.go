@@ -16,6 +16,7 @@ import (
 
 	"github.com/capiscio/capiscio-core/v2/pkg/badge"
 	"github.com/capiscio/capiscio-core/v2/pkg/envelope"
+	"github.com/capiscio/capiscio-core/v2/pkg/mediation"
 	"github.com/capiscio/capiscio-core/v2/pkg/pip"
 	"github.com/capiscio/capiscio-core/v2/pkg/trust"
 )
@@ -79,6 +80,11 @@ type PEPConfig struct {
 
 	// LocalVerifyOptions configures local verification behavior when TrustMaterial is set.
 	LocalVerifyOptions badge.LocalVerifyOptions
+
+	// RuntimeEmitter emits RFC-011 runtime events from the gateway.
+	// Per RFC-011 §4.2, event emission is non-blocking and asynchronous.
+	// nil = no event emission (silent mode).
+	RuntimeEmitter *mediation.AsyncEmitter
 }
 
 // defaultMaxChainDepth is the maximum chain depth per RFC-008 §9.5 RECOMMENDED.
@@ -108,6 +114,7 @@ type pep struct {
 	logger        *slog.Logger
 	bgValidator   *pip.BreakGlassValidator
 	callbacks     []PolicyEventCallback
+	emitter       *mediation.AsyncEmitter
 	next          http.Handler
 }
 
@@ -116,6 +123,9 @@ type pep struct {
 //
 // When PEPConfig.TrustMaterial is set and bootstrapped, uses LocalVerifier for
 // badge verification (RFC-001 §2.3 compliant — no network calls on verification path).
+//
+// When PEPConfig.RuntimeEmitter is set, emits RFC-011 runtime events for
+// identity verification, authority decisions, and request lifecycle.
 func NewPolicyMiddleware(verifier *badge.Verifier, config PEPConfig, next http.Handler, callbacks ...PolicyEventCallback) http.Handler {
 	p := &pep{
 		verifier:  verifier,
@@ -123,6 +133,7 @@ func NewPolicyMiddleware(verifier *badge.Verifier, config PEPConfig, next http.H
 		next:      next,
 		callbacks: callbacks,
 		logger:    config.Logger,
+		emitter:   config.RuntimeEmitter,
 	}
 	if p.logger == nil {
 		p.logger = slog.Default()
@@ -138,14 +149,32 @@ func NewPolicyMiddleware(verifier *badge.Verifier, config PEPConfig, next http.H
 		p.logger.Info("PEP using local-first verification (RFC-001 §2.3)")
 	}
 
+	// Log emitter status
+	if p.emitter != nil {
+		p.logger.Info("PEP emitting RFC-011 runtime events")
+	}
+
 	return http.HandlerFunc(p.serveHTTP)
 }
 
 // serveHTTP implements the PEP request flow: authenticate → break-glass → cache → PDP → enforce.
 func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
+	// Generate trace/txn IDs for event correlation.
+	txnID := r.Header.Get(pip.TxnIDHeader)
+	if txnID == "" {
+		if u, err := uuid.NewV7(); err != nil {
+			txnID = uuid.New().String()
+		} else {
+			txnID = u.String()
+		}
+		r.Header.Set(pip.TxnIDHeader, txnID)
+	}
+	traceID := r.Header.Get("X-Trace-ID")
+
 	// --- 1. Extract and verify badge (authentication) ---
 	token := ExtractBadge(r)
 	if token == "" {
+		p.emitIdentityInvalid(traceID, txnID, "", "MISSING_BADGE", "no badge in request")
 		http.Error(w, "Missing Trust Badge", http.StatusUnauthorized)
 		return
 	}
@@ -159,6 +188,7 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		if verifyErr != nil {
 			p.logger.WarnContext(r.Context(), "local badge verification failed",
 				slog.String("error", verifyErr.Error()))
+			p.emitIdentityInvalid(traceID, txnID, "", "VERIFICATION_FAILED", verifyErr.Error())
 			http.Error(w, "Invalid Trust Badge", http.StatusUnauthorized)
 			return
 		}
@@ -172,10 +202,14 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		claims, err = p.verifier.Verify(r.Context(), token)
 		if err != nil {
 			p.logger.WarnContext(r.Context(), "badge verification failed", slog.String("error", err.Error()))
+			p.emitIdentityInvalid(traceID, txnID, "", "VERIFICATION_FAILED", err.Error())
 			http.Error(w, "Invalid Trust Badge", http.StatusUnauthorized)
 			return
 		}
 	}
+
+	// RFC-011 §5.1: Emit identity.verified event.
+	p.emitIdentityVerified(traceID, txnID, claims)
 
 	// Forward verified identity to upstream
 	r.Header.Set("X-Capiscio-Subject", claims.Subject)
@@ -203,15 +237,22 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 				)
 				chainErr := envelope.NewError(envelope.ErrCodeBadgeBindingFailed,
 					fmt.Sprintf("leaf envelope subject_did %q does not match authenticated caller %q", leafSubject, claims.Subject))
+				p.emitAuthorityDenied(traceID, txnID, claims.Subject, "", envelope.ErrCodeBadgeBindingFailed, chainErr.Message)
 				p.handleChainError(w, r, chainErr)
 				return
 			}
+			// RFC-011 §5.2: Emit authority.granted after successful chain verification
+			p.emitAuthorityGranted(traceID, txnID, claims.Subject, chainResult)
 		}
 	}
 
 	// If no PDP configured, operate in badge-only mode
 	if p.config.PDPClient == nil {
+		// RFC-011 §5.4: Emit execution lifecycle for badge-only mode
+		start := time.Now()
+		p.emitExecutionStarted(traceID, txnID, claims.Subject, nil)
 		p.next.ServeHTTP(w, r)
+		p.emitExecutionCompleted(traceID, txnID, "success", time.Since(start).Milliseconds())
 		return
 	}
 
@@ -224,7 +265,7 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// --- 5-9. Cache → PDP → enforce → obligations ---
-	p.evaluatePolicy(w, r, claims, pipReq)
+	p.evaluatePolicy(w, r, claims, pipReq, traceID, txnID)
 }
 
 // buildPIPRequest constructs the PIP decision request from the HTTP request, badge claims,
@@ -483,12 +524,12 @@ func (p *pep) handleBreakGlass(w http.ResponseWriter, r *http.Request, pipReq *p
 }
 
 // evaluatePolicy handles cache lookup, PDP query, decision enforcement, and obligations.
-func (p *pep) evaluatePolicy(w http.ResponseWriter, r *http.Request, claims *badge.Claims, pipReq *pip.DecisionRequest) {
+func (p *pep) evaluatePolicy(w http.ResponseWriter, r *http.Request, claims *badge.Claims, pipReq *pip.DecisionRequest, traceID, txnID string) {
 	cacheKey := pip.CacheKeyComponents(claims.Subject, claims.JTI, pipReq.Action.Operation, pipReq.Resource.Identifier)
 	event := PolicyEvent{}
 
 	// --- 5. Check cache ---
-	if p.handleCachedDecision(w, r, cacheKey, &event, pipReq) {
+	if p.handleCachedDecision(w, r, cacheKey, &event, pipReq, traceID, txnID, claims.Subject) {
 		return
 	}
 
@@ -539,13 +580,19 @@ func (p *pep) evaluatePolicy(w http.ResponseWriter, r *http.Request, claims *bad
 		return
 	}
 
+	// RFC-011 §5.4: Emit execution lifecycle events for PDP mode
+	execStart := time.Now()
+	p.emitExecutionStarted(traceID, txnID, claims.Subject, nil)
+
 	emitPolicyEvent(p.callbacks, event, pipReq)
 	p.next.ServeHTTP(w, r)
+
+	p.emitExecutionCompleted(traceID, txnID, "success", time.Since(execStart).Milliseconds())
 }
 
 // handleCachedDecision serves a cached PDP decision if available.
 // Returns true if the request was handled from cache.
-func (p *pep) handleCachedDecision(w http.ResponseWriter, r *http.Request, cacheKey string, event *PolicyEvent, pipReq *pip.DecisionRequest) bool {
+func (p *pep) handleCachedDecision(w http.ResponseWriter, r *http.Request, cacheKey string, event *PolicyEvent, pipReq *pip.DecisionRequest, traceID, txnID, subjectDID string) bool {
 	if p.config.DecisionCache == nil {
 		return false
 	}
@@ -566,7 +613,11 @@ func (p *pep) handleCachedDecision(w http.ResponseWriter, r *http.Request, cache
 				slog.String(pip.TelemetryDecisionID, cached.DecisionID))
 			event.Decision = pip.DecisionObserve
 			emitPolicyEvent(p.callbacks, *event, pipReq)
+			// RFC-011: emit execution events for cached EM-OBSERVE
+			execStart := time.Now()
+			p.emitExecutionStarted(traceID, txnID, subjectDID, nil)
 			p.next.ServeHTTP(w, r)
+			p.emitExecutionCompleted(traceID, txnID, "success", time.Since(execStart).Milliseconds())
 			return true
 		}
 		reason := cached.Reason
@@ -588,8 +639,14 @@ func (p *pep) handleCachedDecision(w http.ResponseWriter, r *http.Request, cache
 		}
 	}
 
+	// RFC-011: emit execution events for cached ALLOW
+	execStart := time.Now()
+	p.emitExecutionStarted(traceID, txnID, subjectDID, nil)
+
 	emitPolicyEvent(p.callbacks, *event, pipReq)
 	p.next.ServeHTTP(w, r)
+
+	p.emitExecutionCompleted(traceID, txnID, "success", time.Since(execStart).Milliseconds())
 	return true
 }
 
@@ -749,4 +806,119 @@ func emitPolicyEvent(callbacks []PolicyEventCallback, event PolicyEvent, req *pi
 			cb(event, req)
 		}()
 	}
+}
+
+// --- RFC-011 Event Emission Helpers ---
+
+// parseTrustLevel converts a trust level string to int (0-3).
+func parseTrustLevel(level string) int {
+	switch level {
+	case "0":
+		return 0
+	case "1":
+		return 1
+	case "2":
+		return 2
+	case "3":
+		return 3
+	default:
+		return 0
+	}
+}
+
+// parseIAL converts an IAL string to int (0-3).
+func parseIAL(ial string) int {
+	switch ial {
+	case "0":
+		return 0
+	case "1":
+		return 1
+	case "2":
+		return 2
+	case "3":
+		return 3
+	default:
+		return 0
+	}
+}
+
+// emitIdentityVerified emits an identity.verified event when badge verification succeeds.
+func (p *pep) emitIdentityVerified(traceID, txnID string, claims *badge.Claims) {
+	if p.emitter == nil {
+		return
+	}
+	mctx := &mediation.Context{
+		TraceID:    traceID,
+		TxnID:      txnID,
+		SubjectDID: claims.Subject,
+		TrustLevel: parseTrustLevel(claims.TrustLevel()),
+	}
+	p.emitter.EmitIdentityVerified(mctx, claims.JTI, parseTrustLevel(claims.TrustLevel()), parseIAL(claims.IAL))
+}
+
+// emitIdentityInvalid emits an identity.invalid event when badge verification fails.
+func (p *pep) emitIdentityInvalid(traceID, txnID, badgeJTI, errorCode, reason string) {
+	if p.emitter == nil {
+		return
+	}
+	mctx := &mediation.Context{
+		TraceID: traceID,
+		TxnID:   txnID,
+	}
+	p.emitter.EmitIdentityInvalid(mctx, badgeJTI, errorCode, reason)
+}
+
+// emitAuthorityGranted emits an authority.granted event when chain verification succeeds.
+func (p *pep) emitAuthorityGranted(traceID, txnID, subjectDID string, chainResult *envelope.ChainVerifyResult) {
+	if p.emitter == nil || chainResult == nil {
+		return
+	}
+	mctx := &mediation.Context{
+		TraceID:    traceID,
+		TxnID:      txnID,
+		SubjectDID: subjectDID,
+	}
+	p.emitter.EmitCapabilityCheck(mctx, chainResult.LeafCapability, true)
+}
+
+// emitAuthorityDenied emits an authority.denied event when chain verification fails.
+func (p *pep) emitAuthorityDenied(traceID, txnID, subjectDID, capability, errorCode, reason string) {
+	if p.emitter == nil {
+		return
+	}
+	mctx := &mediation.Context{
+		TraceID:    traceID,
+		TxnID:      txnID,
+		SubjectDID: subjectDID,
+	}
+	// Use EmitCapabilityCheck with granted=false for denial
+	p.emitter.EmitCapabilityCheck(mctx, capability, false)
+}
+
+// emitExecutionStarted emits an execution.started event at the beginning of request handling.
+func (p *pep) emitExecutionStarted(traceID, txnID, subjectDID string, env *envelope.Token) {
+	if p.emitter == nil {
+		return
+	}
+	mctx := &mediation.Context{
+		TraceID:    traceID,
+		TxnID:      txnID,
+		SubjectDID: subjectDID,
+	}
+	if env != nil {
+		mctx.Envelope = env
+	}
+	p.emitter.EmitExecutionStarted(mctx)
+}
+
+// emitExecutionCompleted emits an execution.completed event at the end of request handling.
+func (p *pep) emitExecutionCompleted(traceID, txnID string, outcome string, durationMs int64) {
+	if p.emitter == nil {
+		return
+	}
+	mctx := &mediation.Context{
+		TraceID: traceID,
+		TxnID:   txnID,
+	}
+	p.emitter.EmitExecutionCompleted(mctx, outcome, durationMs)
 }

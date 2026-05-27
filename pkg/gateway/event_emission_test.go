@@ -1,0 +1,322 @@
+// Copyright (c) CapiscIO, Inc.
+// Licensed under the MIT License.
+
+package gateway_test
+
+import (
+	"context"
+	"crypto/ed25519"
+	"crypto/rand"
+	"net/http"
+	"net/http/httptest"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/capiscio/capiscio-core/v2/pkg/badge"
+	"github.com/capiscio/capiscio-core/v2/pkg/gateway"
+	"github.com/capiscio/capiscio-core/v2/pkg/mediation"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+// mockEventSink captures emitted events for testing.
+type mockEventSink struct {
+	mu     sync.Mutex
+	events []*mediation.Event
+}
+
+func (m *mockEventSink) Receive(event *mediation.Event) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.events = append(m.events, event)
+}
+
+func (m *mockEventSink) Flush(ctx context.Context) error {
+	return nil
+}
+
+func (m *mockEventSink) Close() error {
+	return nil
+}
+
+func (m *mockEventSink) Events() []*mediation.Event {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return append([]*mediation.Event{}, m.events...)
+}
+
+func (m *mockEventSink) EventTypes() []mediation.EventType {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	types := make([]mediation.EventType, len(m.events))
+	for i, e := range m.events {
+		types[i] = e.EventType
+	}
+	return types
+}
+
+func (m *mockEventSink) Reset() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.events = nil
+}
+
+func TestEventEmission_IdentityVerified(t *testing.T) {
+	// Setup keys and verifier
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	reg := &MockRegistry{Key: pub}
+	verifier := badge.NewVerifier(reg)
+
+	// Create event sink and emitter
+	sink := &mockEventSink{}
+	emitter := mediation.NewAsyncEmitter(mediation.AsyncEmitterConfig{
+		ComponentID:   "test-gateway",
+		ComponentType: mediation.ComponentGateway,
+		Version:       "test",
+		BufferSize:    100,
+		Sinks:         []mediation.EventSink{sink},
+	})
+	defer emitter.Close()
+
+	// Create valid badge with VC
+	claims := &badge.Claims{
+		JTI:      "test-jti-events",
+		Issuer:   "did:web:test.capisc.io",
+		Subject:  "did:web:test.capisc.io:agents:test-agent",
+		IssuedAt: time.Now().Unix(),
+		Expiry:   time.Now().Add(1 * time.Hour).Unix(),
+		VC: badge.VerifiableCredential{
+			Type: []string{"VerifiableCredential", "AgentIdentity"},
+			CredentialSubject: badge.CredentialSubject{
+				Domain: "test.example.com",
+				Level:  "2",
+			},
+		},
+	}
+
+	token, err := badge.SignBadge(claims, priv)
+	require.NoError(t, err)
+
+	// Create handler
+	called := false
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		w.WriteHeader(http.StatusOK)
+	})
+
+	// Create middleware with emitter
+	config := gateway.PEPConfig{
+		RuntimeEmitter: emitter,
+	}
+	handler := gateway.NewPolicyMiddleware(verifier, config, next)
+
+	// Make request
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("X-Capiscio-Badge", token)
+	req.Header.Set("X-Trace-ID", "trace-123")
+
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	// Wait for async event processing
+	time.Sleep(50 * time.Millisecond)
+
+	// Verify response
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.True(t, called)
+
+	// Verify events emitted
+	events := sink.Events()
+	require.GreaterOrEqual(t, len(events), 1, "should emit at least identity.verified")
+
+	// Find identity.verified event
+	var identityVerified *mediation.Event
+	for _, e := range events {
+		if e.EventType == mediation.EventIdentityVerified {
+			identityVerified = e
+			break
+		}
+	}
+	require.NotNil(t, identityVerified, "should emit identity.verified event")
+	assert.Equal(t, "trace-123", identityVerified.Context.TraceID)
+	assert.NotEmpty(t, identityVerified.Context.TxnID)
+}
+
+func TestEventEmission_IdentityInvalid_MissingBadge(t *testing.T) {
+	// Setup keys and verifier (won't be used since badge is missing)
+	pub, _, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	reg := &MockRegistry{Key: pub}
+	verifier := badge.NewVerifier(reg)
+
+	// Create event sink and emitter
+	sink := &mockEventSink{}
+	emitter := mediation.NewAsyncEmitter(mediation.AsyncEmitterConfig{
+		ComponentID:   "test-gateway",
+		ComponentType: mediation.ComponentGateway,
+		Version:       "test",
+		BufferSize:    100,
+		Sinks:         []mediation.EventSink{sink},
+	})
+	defer emitter.Close()
+
+	// Create handler
+	called := false
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+	})
+
+	// Create middleware with emitter
+	config := gateway.PEPConfig{
+		RuntimeEmitter: emitter,
+	}
+	handler := gateway.NewPolicyMiddleware(verifier, config, next)
+
+	// Make request WITHOUT badge
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("X-Trace-ID", "trace-456")
+
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	// Wait for async event processing
+	time.Sleep(50 * time.Millisecond)
+
+	// Verify response
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.False(t, called)
+
+	// Verify identity.invalid event emitted
+	events := sink.Events()
+	require.Len(t, events, 1)
+	assert.Equal(t, mediation.EventIdentityInvalid, events[0].EventType)
+	assert.Equal(t, "trace-456", events[0].Context.TraceID)
+}
+
+func TestEventEmission_ExecutionLifecycle(t *testing.T) {
+	// Setup keys and verifier
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	reg := &MockRegistry{Key: pub}
+	verifier := badge.NewVerifier(reg)
+
+	// Create event sink and emitter
+	sink := &mockEventSink{}
+	emitter := mediation.NewAsyncEmitter(mediation.AsyncEmitterConfig{
+		ComponentID:   "test-gateway",
+		ComponentType: mediation.ComponentGateway,
+		Version:       "test",
+		BufferSize:    100,
+		Sinks:         []mediation.EventSink{sink},
+	})
+	defer emitter.Close()
+
+	// Create valid badge with VC
+	claims := &badge.Claims{
+		JTI:      "test-jti-exec",
+		Issuer:   "did:web:test.capisc.io",
+		Subject:  "did:web:test.capisc.io:agents:test-agent",
+		IssuedAt: time.Now().Unix(),
+		Expiry:   time.Now().Add(1 * time.Hour).Unix(),
+		VC: badge.VerifiableCredential{
+			Type: []string{"VerifiableCredential", "AgentIdentity"},
+			CredentialSubject: badge.CredentialSubject{
+				Domain: "test.example.com",
+				Level:  "1",
+			},
+		},
+	}
+
+	token, err := badge.SignBadge(claims, priv)
+	require.NoError(t, err)
+
+	// Create handler that takes some time
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(10 * time.Millisecond)
+		w.WriteHeader(http.StatusOK)
+	})
+
+	// Create middleware with emitter (badge-only mode, no PDP)
+	config := gateway.PEPConfig{
+		RuntimeEmitter: emitter,
+	}
+	handler := gateway.NewPolicyMiddleware(verifier, config, next)
+
+	// Make request
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("X-Capiscio-Badge", token)
+
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	// Wait for async event processing
+	time.Sleep(50 * time.Millisecond)
+
+	// Verify response
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Verify event sequence: identity.verified, execution.started, execution.completed
+	eventTypes := sink.EventTypes()
+	require.GreaterOrEqual(t, len(eventTypes), 3, "should emit identity.verified, execution.started, execution.completed")
+
+	assert.Contains(t, eventTypes, mediation.EventIdentityVerified)
+	assert.Contains(t, eventTypes, mediation.EventExecutionStarted)
+	assert.Contains(t, eventTypes, mediation.EventExecutionCompleted)
+}
+
+func TestEventEmission_NoEmitter(t *testing.T) {
+	// Setup keys and verifier
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	reg := &MockRegistry{Key: pub}
+	verifier := badge.NewVerifier(reg)
+
+	// Create valid badge with VC
+	claims := &badge.Claims{
+		JTI:      "test-jti-no-emitter",
+		Issuer:   "did:web:test.capisc.io",
+		Subject:  "did:web:test.capisc.io:agents:test-agent",
+		IssuedAt: time.Now().Unix(),
+		Expiry:   time.Now().Add(1 * time.Hour).Unix(),
+		VC: badge.VerifiableCredential{
+			Type: []string{"VerifiableCredential", "AgentIdentity"},
+			CredentialSubject: badge.CredentialSubject{
+				Domain: "test.example.com",
+				Level:  "1",
+			},
+		},
+	}
+
+	token, err := badge.SignBadge(claims, priv)
+	require.NoError(t, err)
+
+	// Create handler
+	called := false
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		w.WriteHeader(http.StatusOK)
+	})
+
+	// Create middleware WITHOUT emitter (nil)
+	config := gateway.PEPConfig{
+		RuntimeEmitter: nil, // no emitter
+	}
+	handler := gateway.NewPolicyMiddleware(verifier, config, next)
+
+	// Make request
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("X-Capiscio-Badge", token)
+
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	// Should still work without emitter
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.True(t, called)
+}
