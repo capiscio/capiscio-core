@@ -120,3 +120,17 @@ jobs:
         with:
           name: gosec-results
           path: gosec-results.json
+
+  trigger-e2e:
+    name: Trigger E2E Tests
+    needs: [test, lint, protobuf, security]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.repository == 'capiscio/capiscio-core'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch E2E workflow
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: capiscio/capiscio-e2e-tests
+          event-type: upstream-merge
+          client-payload: '{"repo": "capiscio-core", "sha": "${{ github.sha }}"}'

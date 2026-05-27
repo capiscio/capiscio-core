@@ -2,15 +2,55 @@ package integration
 
 import (
 	"context"
+	"crypto"
+	"crypto/ed25519"
+	"crypto/rand"
+	"fmt"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/capiscio/capiscio-core/v2/pkg/badge"
+	"github.com/capiscio/capiscio-core/v2/pkg/did"
 	"github.com/capiscio/capiscio-core/v2/pkg/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// mockRegistry is a simple in-memory registry for security verification tests.
+type mockRegistry struct {
+	keys          map[string]crypto.PublicKey
+	revokedBadges map[string]bool
+}
+
+func (m *mockRegistry) GetPublicKey(ctx context.Context, issuer string) (crypto.PublicKey, error) {
+	if key, ok := m.keys[issuer]; ok {
+		return key, nil
+	}
+	return nil, fmt.Errorf("public key not found for issuer %q", issuer)
+}
+
+func (m *mockRegistry) IsRevoked(ctx context.Context, id string) (bool, error) {
+	if m.revokedBadges != nil {
+		return m.revokedBadges[id], nil
+	}
+	return false, nil
+}
+
+func (m *mockRegistry) GetBadgeStatus(ctx context.Context, issuerURL string, jti string) (*registry.BadgeStatus, error) {
+	if m.revokedBadges != nil && m.revokedBadges[jti] {
+		return &registry.BadgeStatus{JTI: jti, Revoked: true}, nil
+	}
+	return &registry.BadgeStatus{JTI: jti, Revoked: false}, nil
+}
+
+func (m *mockRegistry) GetAgentStatus(ctx context.Context, issuerURL string, agentID string) (*registry.AgentStatus, error) {
+	return &registry.AgentStatus{ID: agentID, Status: registry.AgentStatusActive}, nil
+}
+
+func (m *mockRegistry) SyncRevocations(ctx context.Context, issuerURL string, since time.Time) ([]registry.Revocation, error) {
+	return nil, nil
+}
 
 // TestBadgeVerification tests badge verification against live JWKS (Task 3)
 // NOTE: These tests require Clerk authentication to issue badges first.
@@ -130,33 +170,145 @@ func TestBadgeVerificationWithOptions(t *testing.T) {
 }
 
 // TestBadgeVerificationExpired tests expired badge rejection (Task 3)
+// This test does not require Clerk auth — it signs badges locally.
 func TestBadgeVerificationExpired(t *testing.T) {
-	t.Skip("Requires short TTL and waiting - implement when needed")
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
 
-	// TODO: Implement expired badge test
-	// 1. Issue badge with 1-second TTL
-	// 2. Wait 2 seconds
-	// 3. Verify - should fail with expiry error
+	issuerDID := "did:web:test-registry.capisc.io"
+	reg := &mockRegistry{
+		keys: map[string]crypto.PublicKey{issuerDID: pub},
+	}
+	verifier := badge.NewVerifier(reg)
+
+	// Create a badge that expired 10 minutes ago
+	now := time.Now()
+	claims := &badge.Claims{
+		JTI:      "expired-badge-001",
+		Issuer:   issuerDID,
+		Subject:  "did:web:test-registry.capisc.io:agents:expired-test",
+		IssuedAt: now.Add(-1 * time.Hour).Unix(),
+		Expiry:   now.Add(-10 * time.Minute).Unix(),
+		VC: badge.VerifiableCredential{
+			Type: []string{"VerifiableCredential", "AgentIdentity"},
+			CredentialSubject: badge.CredentialSubject{
+				Domain: "expired.example.com",
+				Level:  "1",
+			},
+		},
+	}
+
+	token, err := badge.SignBadge(claims, priv)
+	require.NoError(t, err, "signing expired badge should succeed")
+
+	_, err = verifier.Verify(context.Background(), token)
+	require.Error(t, err, "expired badge must be rejected")
+
+	errCode := badge.GetErrorCode(err)
+	assert.Equal(t, badge.ErrCodeExpired, errCode,
+		"error code must be BADGE_EXPIRED, got: %s (%v)", errCode, err)
 }
 
 // TestBadgeVerificationRevoked tests revoked badge rejection (Task 3)
+// This test does not require Clerk auth — it signs badges locally and
+// uses a mock registry with the badge JTI marked as revoked.
 func TestBadgeVerificationRevoked(t *testing.T) {
-	t.Skip("Requires revocation implementation - will test in Task 7")
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
 
-	// TODO: Implement revoked badge test
-	// 1. Issue badge
-	// 2. Revoke badge via API
-	// 3. Verify - should fail with revocation error
+	const revokedJTI = "revoked-badge-001"
+	issuerDID := "did:web:test-registry.capisc.io"
+	reg := &mockRegistry{
+		keys:          map[string]crypto.PublicKey{issuerDID: pub},
+		revokedBadges: map[string]bool{revokedJTI: true},
+	}
+	verifier := badge.NewVerifier(reg)
+
+	now := time.Now()
+	claims := &badge.Claims{
+		JTI:      revokedJTI,
+		Issuer:   issuerDID,
+		Subject:  "did:web:test-registry.capisc.io:agents:revoked-test",
+		IssuedAt: now.Unix(),
+		Expiry:   now.Add(1 * time.Hour).Unix(),
+		VC: badge.VerifiableCredential{
+			Type: []string{"VerifiableCredential", "AgentIdentity"},
+			CredentialSubject: badge.CredentialSubject{
+				Domain: "revoked.example.com",
+				Level:  "1",
+			},
+		},
+	}
+
+	token, err := badge.SignBadge(claims, priv)
+	require.NoError(t, err, "signing revoked badge should succeed")
+
+	_, err = verifier.Verify(context.Background(), token)
+	require.Error(t, err, "revoked badge must be rejected")
+
+	errCode := badge.GetErrorCode(err)
+	assert.Equal(t, badge.ErrCodeRevoked, errCode,
+		"error code must be BADGE_REVOKED, got: %s (%v)", errCode, err)
 }
 
 // TestBadgeVerificationSelfSigned tests self-signed badge rejection (Task 3)
+// A did:key badge with AcceptSelfSigned=false MUST be rejected.
+// With AcceptSelfSigned=true it MUST be accepted (level 0 only).
 func TestBadgeVerificationSelfSigned(t *testing.T) {
-	t.Skip("Requires self-signed badge generation - implement when needed")
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
 
-	// TODO: Implement self-signed badge test
-	// 1. Generate did:key badge locally
-	// 2. Verify without AcceptSelfSigned - should fail
-	// 3. Verify with AcceptSelfSigned=true - should succeed
+	didKey := did.NewKeyDID(pub)
+
+	reg := &mockRegistry{
+		keys: map[string]crypto.PublicKey{},
+	}
+	verifier := badge.NewVerifier(reg)
+
+	now := time.Now()
+	claims := &badge.Claims{
+		JTI:      "self-signed-badge-001",
+		Issuer:   didKey,
+		Subject:  didKey, // iss == sub for self-signed
+		IssuedAt: now.Unix(),
+		Expiry:   now.Add(1 * time.Hour).Unix(),
+		VC: badge.VerifiableCredential{
+			Type: []string{"VerifiableCredential", "AgentIdentity"},
+			CredentialSubject: badge.CredentialSubject{
+				Domain: "self-signed.example.com",
+				Level:  "0",
+			},
+		},
+	}
+
+	token, err := badge.SignBadge(claims, priv)
+	require.NoError(t, err)
+
+	t.Run("rejected_without_AcceptSelfSigned", func(t *testing.T) {
+		opts := badge.VerifyOptions{
+			Mode:                 badge.VerifyModeOffline,
+			AcceptSelfSigned:     false,
+			SkipRevocationCheck:  true,
+			SkipAgentStatusCheck: true,
+		}
+		_, err := verifier.VerifyWithOptions(context.Background(), token, opts)
+		require.Error(t, err, "self-signed badge must be rejected when AcceptSelfSigned=false")
+
+		errCode := badge.GetErrorCode(err)
+		assert.Equal(t, badge.ErrCodeIssuerUntrusted, errCode,
+			"error code must be BADGE_ISSUER_UNTRUSTED, got: %s (%v)", errCode, err)
+	})
+
+	t.Run("accepted_with_AcceptSelfSigned", func(t *testing.T) {
+		opts := badge.VerifyOptions{
+			Mode:             badge.VerifyModeOffline,
+			AcceptSelfSigned: true,
+		}
+		result, err := verifier.VerifyWithOptions(context.Background(), token, opts)
+		require.NoError(t, err, "self-signed badge must be accepted with AcceptSelfSigned=true")
+		assert.Equal(t, didKey, result.Claims.Issuer)
+		assert.Equal(t, "0", result.Claims.TrustLevel())
+	})
 }
 
 // TestBadgeVerificationOfflineMode tests offline verification (Task 3)
