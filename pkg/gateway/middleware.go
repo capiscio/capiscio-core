@@ -83,6 +83,8 @@ type PEPConfig struct {
 
 	// RuntimeEmitter emits RFC-011 runtime events from the gateway.
 	// Per RFC-011 §4.2, event emission is non-blocking and asynchronous.
+	// NOTE: Default AsyncEmitter may block when buffer is full. For strict RFC-011
+	// §4.2 compliance under load, configure the emitter with DropOnFull=true.
 	// nil = no event emission (silent mode).
 	RuntimeEmitter *mediation.AsyncEmitter
 }
@@ -221,7 +223,9 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		var err error
 		chainResult, err = p.verifyAuthorityChain(r, token, claims.Subject)
 		if err != nil {
-			p.handleChainError(w, r, err)
+			// Get capability from request header for authority.denied event
+			capability := r.Header.Get("X-Capiscio-Capability-Class")
+			p.handleChainError(w, r, err, traceID, txnID, claims.Subject, capability)
 			return
 		}
 
@@ -237,8 +241,8 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 				)
 				chainErr := envelope.NewError(envelope.ErrCodeBadgeBindingFailed,
 					fmt.Sprintf("leaf envelope subject_did %q does not match authenticated caller %q", leafSubject, claims.Subject))
-				p.emitAuthorityDenied(traceID, txnID, claims.Subject, "", envelope.ErrCodeBadgeBindingFailed, chainErr.Message)
-				p.handleChainError(w, r, chainErr)
+				p.emitAuthorityDenied(traceID, txnID, claims.Subject, chainResult.LeafCapability, envelope.ErrCodeBadgeBindingFailed, chainErr.Message)
+				p.handleChainError(w, r, chainErr, traceID, txnID, claims.Subject, "")
 				return
 			}
 			// RFC-011 §5.2: Emit authority.granted after successful chain verification
@@ -252,7 +256,7 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		p.emitExecutionStarted(traceID, txnID, claims.Subject, nil)
 		p.next.ServeHTTP(w, r)
-		p.emitExecutionCompleted(traceID, txnID, "success", time.Since(start).Milliseconds())
+		p.emitExecutionCompleted(traceID, txnID, claims.Subject, "success", time.Since(start).Milliseconds())
 		return
 	}
 
@@ -270,17 +274,9 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 
 // buildPIPRequest constructs the PIP decision request from the HTTP request, badge claims,
 // and optional verified chain result (nil for badge-only requests).
+// NOTE: serveHTTP must set X-Capiscio-Txn header before calling this function.
 func (p *pep) buildPIPRequest(r *http.Request, claims *badge.Claims, chain *envelope.ChainVerifyResult) *pip.DecisionRequest {
 	txnID := r.Header.Get(pip.TxnIDHeader)
-	if txnID == "" {
-		if u, err := uuid.NewV7(); err != nil {
-			p.logger.ErrorContext(r.Context(), "failed to generate UUID v7 for txn_id", slog.String("error", err.Error()))
-			txnID = uuid.New().String()
-		} else {
-			txnID = u.String()
-		}
-	}
-	r.Header.Set(pip.TxnIDHeader, txnID)
 
 	now := time.Now().UTC()
 	nowStr := now.Format(time.RFC3339)
@@ -435,7 +431,8 @@ func (p *pep) verifyAuthorityChain(r *http.Request, callerBadgeJWS string, calle
 
 // handleChainError maps envelope verification errors to HTTP responses.
 // Errors from chain verification are pre-PDP (RFC-008 §9.2 steps 2–8).
-func (p *pep) handleChainError(w http.ResponseWriter, r *http.Request, err error) {
+// RFC-011 §5.2: Emits authority.denied event on chain verification failure.
+func (p *pep) handleChainError(w http.ResponseWriter, r *http.Request, err error, traceID, txnID, subjectDID, capability string) {
 	var envErr *envelope.Error
 	if errors.As(err, &envErr) {
 		status := ChainErrorHTTPStatus(envErr.Code)
@@ -445,6 +442,9 @@ func (p *pep) handleChainError(w http.ResponseWriter, r *http.Request, err error
 			slog.Int("status", status),
 			slog.String("enforcement_mode", p.config.EnforcementMode.String()),
 		)
+
+		// RFC-011 §5.2: Emit authority.denied on chain verification failure
+		p.emitAuthorityDenied(traceID, txnID, subjectDID, capability, envErr.Code, envErr.Message)
 
 		// In EM-OBSERVE, log but allow the request through (RFC-005 §6.3)
 		if p.config.EnforcementMode == pip.EMObserve {
@@ -465,6 +465,9 @@ func (p *pep) handleChainError(w http.ResponseWriter, r *http.Request, err error
 	}
 
 	// Non-envelope error (e.g., network failure in key resolution)
+	// RFC-011 §5.2: Emit authority.denied for non-envelope errors too
+	p.emitAuthorityDenied(traceID, txnID, subjectDID, capability, "INTERNAL_ERROR", err.Error())
+
 	if p.config.EnforcementMode == pip.EMObserve {
 		p.logger.WarnContext(r.Context(), "chain verification error in EM-OBSERVE (allowing)",
 			slog.String("error", err.Error()))
@@ -587,7 +590,7 @@ func (p *pep) evaluatePolicy(w http.ResponseWriter, r *http.Request, claims *bad
 	emitPolicyEvent(p.callbacks, event, pipReq)
 	p.next.ServeHTTP(w, r)
 
-	p.emitExecutionCompleted(traceID, txnID, "success", time.Since(execStart).Milliseconds())
+	p.emitExecutionCompleted(traceID, txnID, claims.Subject, "success", time.Since(execStart).Milliseconds())
 }
 
 // handleCachedDecision serves a cached PDP decision if available.
@@ -617,7 +620,7 @@ func (p *pep) handleCachedDecision(w http.ResponseWriter, r *http.Request, cache
 			execStart := time.Now()
 			p.emitExecutionStarted(traceID, txnID, subjectDID, nil)
 			p.next.ServeHTTP(w, r)
-			p.emitExecutionCompleted(traceID, txnID, "success", time.Since(execStart).Milliseconds())
+			p.emitExecutionCompleted(traceID, txnID, subjectDID, "success", time.Since(execStart).Milliseconds())
 			return true
 		}
 		reason := cached.Reason
@@ -646,7 +649,7 @@ func (p *pep) handleCachedDecision(w http.ResponseWriter, r *http.Request, cache
 	emitPolicyEvent(p.callbacks, *event, pipReq)
 	p.next.ServeHTTP(w, r)
 
-	p.emitExecutionCompleted(traceID, txnID, "success", time.Since(execStart).Milliseconds())
+	p.emitExecutionCompleted(traceID, txnID, subjectDID, "success", time.Since(execStart).Milliseconds())
 	return true
 }
 
@@ -912,13 +915,14 @@ func (p *pep) emitExecutionStarted(traceID, txnID, subjectDID string, env *envel
 }
 
 // emitExecutionCompleted emits an execution.completed event at the end of request handling.
-func (p *pep) emitExecutionCompleted(traceID, txnID string, outcome string, durationMs int64) {
+func (p *pep) emitExecutionCompleted(traceID, txnID, subjectDID string, outcome string, durationMs int64) {
 	if p.emitter == nil {
 		return
 	}
 	mctx := &mediation.Context{
-		TraceID: traceID,
-		TxnID:   txnID,
+		TraceID:    traceID,
+		TxnID:      txnID,
+		SubjectDID: subjectDID,
 	}
 	p.emitter.EmitExecutionCompleted(mctx, outcome, durationMs)
 }

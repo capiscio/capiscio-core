@@ -62,6 +62,25 @@ func (m *mockEventSink) Reset() {
 	m.events = nil
 }
 
+// HasEventType returns true if an event of the given type has been received.
+func (m *mockEventSink) HasEventType(eventType mediation.EventType) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, e := range m.events {
+		if e.EventType == eventType {
+			return true
+		}
+	}
+	return false
+}
+
+// EventCount returns the number of events received.
+func (m *mockEventSink) EventCount() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return len(m.events)
+}
+
 func TestEventEmission_IdentityVerified(t *testing.T) {
 	// Setup keys and verifier
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
@@ -121,8 +140,10 @@ func TestEventEmission_IdentityVerified(t *testing.T) {
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
-	// Wait for async event processing
-	time.Sleep(50 * time.Millisecond)
+	// Wait for async event processing using deterministic polling
+	require.Eventually(t, func() bool {
+		return sink.HasEventType(mediation.EventIdentityVerified)
+	}, 500*time.Millisecond, 10*time.Millisecond, "identity.verified event not emitted within timeout")
 
 	// Verify response
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -183,8 +204,10 @@ func TestEventEmission_IdentityInvalid_MissingBadge(t *testing.T) {
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
-	// Wait for async event processing
-	time.Sleep(50 * time.Millisecond)
+	// Wait for async event processing using deterministic polling
+	require.Eventually(t, func() bool {
+		return sink.HasEventType(mediation.EventIdentityInvalid)
+	}, 500*time.Millisecond, 10*time.Millisecond, "identity.invalid event not emitted within timeout")
 
 	// Verify response
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
@@ -254,8 +277,11 @@ func TestEventEmission_ExecutionLifecycle(t *testing.T) {
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
-	// Wait for async event processing
-	time.Sleep(50 * time.Millisecond)
+	// Wait for async event processing using deterministic polling
+	// Wait for execution.completed as it's the last event in the sequence
+	require.Eventually(t, func() bool {
+		return sink.HasEventType(mediation.EventExecutionCompleted)
+	}, 500*time.Millisecond, 10*time.Millisecond, "execution.completed event not emitted within timeout")
 
 	// Verify response
 	assert.Equal(t, http.StatusOK, w.Code)
