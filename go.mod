@@ -3,7 +3,7 @@ module github.com/capiscio/capiscio-core/v2
 go 1.25.10
 
 require (
-	github.com/go-jose/go-jose/v4 v4.1.3
+	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/google/uuid v1.6.0
 	github.com/open-policy-agent/opa v1.14.1
 	github.com/spf13/cobra v1.10.2
