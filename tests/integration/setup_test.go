@@ -34,8 +34,16 @@ func TestMain(m *testing.M) {
 		apiBaseURL = "http://localhost:8080"
 	}
 
+	// Server wait timeout (configurable via env, defaults to 5s for quick skip in serverless runs)
+	waitTimeout := 5 * time.Second
+	if t := os.Getenv("SERVER_WAIT_TIMEOUT"); t != "" {
+		if d, err := time.ParseDuration(t); err == nil {
+			waitTimeout = d
+		}
+	}
+
 	// Check if server is available (don't block on it)
-	if err := waitForServer(apiBaseURL, 30*time.Second); err != nil {
+	if err := waitForServer(apiBaseURL, waitTimeout); err != nil {
 		fmt.Fprintf(os.Stderr, "Server not ready: %v (server-dependent tests will be skipped)\n", err)
 		serverAvailable = false
 	} else {
