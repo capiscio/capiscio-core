@@ -347,7 +347,7 @@ func TestEventEmission_NoEmitter(t *testing.T) {
 	assert.True(t, called)
 }
 
-func TestEventEmission_ExecutionAborted_BadgeVerificationFailed(t *testing.T) {
+func TestEventEmission_IdentityInvalid_BadgeVerificationFailed(t *testing.T) {
 	// Setup keys but sign with different key to trigger verification failure
 	pub, _, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)

@@ -287,9 +287,13 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			// Get capability from request header for authority.denied event
 			capability := r.Header.Get("X-Capiscio-Capability-Class")
-			execState.aborted = true
-			execState.abortCode = "CHAIN_VERIFICATION_FAILED"
-			execState.abortMsg = err.Error()
+			// Only mark as aborted if enforcement mode blocks (not EM-OBSERVE).
+			// EM-OBSERVE allows the request through, so it's not an abort.
+			if p.config.EnforcementMode != pip.EMObserve {
+				execState.aborted = true
+				execState.abortCode = "CHAIN_VERIFICATION_FAILED"
+				execState.abortMsg = err.Error()
+			}
 			p.handleChainError(sw, r, err, traceID, txnID, claims.Subject, capability)
 			return
 		}
@@ -306,9 +310,12 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 				)
 				chainErr := envelope.NewError(envelope.ErrCodeBadgeBindingFailed,
 					fmt.Sprintf("leaf envelope subject_did %q does not match authenticated caller %q", leafSubject, claims.Subject))
-				execState.aborted = true
-				execState.abortCode = envelope.ErrCodeBadgeBindingFailed
-				execState.abortMsg = chainErr.Message
+				// Only mark as aborted if enforcement mode blocks
+				if p.config.EnforcementMode != pip.EMObserve {
+					execState.aborted = true
+					execState.abortCode = envelope.ErrCodeBadgeBindingFailed
+					execState.abortMsg = chainErr.Message
+				}
 				// handleChainError emits authority.denied, so no explicit emit here
 				p.handleChainError(sw, r, chainErr, traceID, txnID, claims.Subject, chainResult.LeafCapability)
 				return
