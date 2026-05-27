@@ -17,6 +17,7 @@ import (
 	"github.com/capiscio/capiscio-core/v2/pkg/badge"
 	"github.com/capiscio/capiscio-core/v2/pkg/envelope"
 	"github.com/capiscio/capiscio-core/v2/pkg/pip"
+	"github.com/capiscio/capiscio-core/v2/pkg/trust"
 )
 
 // NewAuthMiddleware creates a middleware that enforces Badge validity.
@@ -69,6 +70,15 @@ type PEPConfig struct {
 	// DIDs outside this prefix are considered foreign-org for cache purposes (§15.4).
 	// Example: "did:web:acme.example"
 	OrgTrustBoundary string
+
+	// TrustMaterial provides locally cached cryptographic material for verification.
+	// When set and bootstrapped, badge verification uses LocalVerifier (RFC-001 §2.3)
+	// with no network calls on the verification critical path.
+	// nil = use network-dependent Verifier (legacy behavior).
+	TrustMaterial *trust.MaterialManager
+
+	// LocalVerifyOptions configures local verification behavior when TrustMaterial is set.
+	LocalVerifyOptions badge.LocalVerifyOptions
 }
 
 // defaultMaxChainDepth is the maximum chain depth per RFC-008 §9.5 RECOMMENDED.
@@ -92,16 +102,20 @@ type PolicyEventCallback func(event PolicyEvent, req *pip.DecisionRequest)
 
 // pep is the internal Policy Enforcement Point handler.
 type pep struct {
-	verifier    *badge.Verifier
-	config      PEPConfig
-	logger      *slog.Logger
-	bgValidator *pip.BreakGlassValidator
-	callbacks   []PolicyEventCallback
-	next        http.Handler
+	verifier      *badge.Verifier
+	localVerifier *badge.LocalVerifier
+	config        PEPConfig
+	logger        *slog.Logger
+	bgValidator   *pip.BreakGlassValidator
+	callbacks     []PolicyEventCallback
+	next          http.Handler
 }
 
 // NewPolicyMiddleware creates a full PEP middleware (RFC-005).
 // When PEPConfig.PDPClient is nil, operates in badge-only mode (identical to NewAuthMiddleware).
+//
+// When PEPConfig.TrustMaterial is set and bootstrapped, uses LocalVerifier for
+// badge verification (RFC-001 §2.3 compliant — no network calls on verification path).
 func NewPolicyMiddleware(verifier *badge.Verifier, config PEPConfig, next http.Handler, callbacks ...PolicyEventCallback) http.Handler {
 	p := &pep{
 		verifier:  verifier,
@@ -116,6 +130,14 @@ func NewPolicyMiddleware(verifier *badge.Verifier, config PEPConfig, next http.H
 	if config.BreakGlassKey != nil {
 		p.bgValidator = pip.NewBreakGlassValidator(config.BreakGlassKey)
 	}
+
+	// RFC-001 §2.3: When TrustMaterial is available, create a LocalVerifier
+	// for network-free verification on the critical path.
+	if config.TrustMaterial != nil && config.TrustMaterial.IsBootstrapped() {
+		p.localVerifier = badge.NewLocalVerifier(config.TrustMaterial, config.LocalVerifyOptions)
+		p.logger.Info("PEP using local-first verification (RFC-001 §2.3)")
+	}
+
 	return http.HandlerFunc(p.serveHTTP)
 }
 
@@ -128,11 +150,31 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims, err := p.verifier.Verify(r.Context(), token)
-	if err != nil {
-		p.logger.WarnContext(r.Context(), "badge verification failed", slog.String("error", err.Error()))
-		http.Error(w, "Invalid Trust Badge", http.StatusUnauthorized)
-		return
+	// RFC-001 §2.3: Use LocalVerifier when available (no network calls).
+	// Falls back to network-dependent Verifier when TrustMaterial not bootstrapped.
+	var claims *badge.Claims
+	var err error
+	if p.localVerifier != nil {
+		result, verifyErr := p.localVerifier.Verify(r.Context(), token)
+		if verifyErr != nil {
+			p.logger.WarnContext(r.Context(), "local badge verification failed",
+				slog.String("error", verifyErr.Error()))
+			http.Error(w, "Invalid Trust Badge", http.StatusUnauthorized)
+			return
+		}
+		claims = result.Claims
+		// Log freshness warnings for stale material
+		if result.Freshness == trust.FreshnessStateStale {
+			p.logger.WarnContext(r.Context(), "badge verified with stale trust material",
+				slog.String("subject", claims.Subject))
+		}
+	} else {
+		claims, err = p.verifier.Verify(r.Context(), token)
+		if err != nil {
+			p.logger.WarnContext(r.Context(), "badge verification failed", slog.String("error", err.Error()))
+			http.Error(w, "Invalid Trust Badge", http.StatusUnauthorized)
+			return
+		}
 	}
 
 	// Forward verified identity to upstream

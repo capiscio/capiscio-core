@@ -9,6 +9,7 @@ import (
 
 	"github.com/capiscio/capiscio-core/v2/pkg/badge"
 	"github.com/capiscio/capiscio-core/v2/pkg/did"
+	"github.com/capiscio/capiscio-core/v2/pkg/trust"
 	"github.com/go-jose/go-jose/v4"
 )
 
@@ -70,6 +71,18 @@ type VerifyOptions struct {
 	// SkipBadgeVerification skips badge verification steps.
 	// For testing only — never use in production.
 	SkipBadgeVerification bool
+
+	// TrustMaterial enables local-only verification using cached trust material.
+	// When set, badge verification uses LocalVerifier (RFC-001 §2.3) instead of
+	// making synchronous server calls. This is the recommended production path
+	// for runtime verification.
+	//
+	// If TrustMaterial is nil, falls back to BadgeVerifier (requires registry).
+	TrustMaterial *trust.MaterialManager
+
+	// AcceptSelfSigned controls whether self-signed badges (did:key issuers)
+	// are accepted during local verification. Default: false (secure default).
+	AcceptSelfSigned bool
 }
 
 func (o *VerifyOptions) now() time.Time {
@@ -226,12 +239,36 @@ func (v *Verifier) parseEnvelopeJWS(envelopeJWS string, maxSize int) (*jose.JSON
 }
 
 // verifyBadge verifies a badge JWS if badge verification is enabled.
+// When TrustMaterial is provided, uses LocalVerifier (RFC-001 §2.3 compliant).
+// Otherwise falls back to BadgeVerifier (may make network calls).
 func (v *Verifier) verifyBadge(ctx context.Context, badgeJWS string, opts VerifyOptions) (*badge.VerifyResult, error) {
 	if opts.SkipBadgeVerification || badgeJWS == "" {
 		return nil, nil
 	}
+
+	// Prefer local verification when trust material is available (RFC-001 §2.3)
+	if opts.TrustMaterial != nil {
+		localOpts := badge.LocalVerifyOptions{
+			TrustedIssuers:   opts.TrustedIssuers,
+			AcceptSelfSigned: opts.AcceptSelfSigned, // Respect caller's setting, don't force true
+			Now:              opts.Now,
+		}
+		localVerifier := badge.NewLocalVerifier(opts.TrustMaterial, localOpts)
+		localResult, err := localVerifier.Verify(ctx, badgeJWS)
+		if err != nil {
+			return nil, err
+		}
+		// Convert LocalVerifyResult to VerifyResult
+		return &badge.VerifyResult{
+			Claims:   localResult.Claims,
+			Mode:     badge.VerifyModeOffline,
+			Warnings: localResult.Warnings,
+		}, nil
+	}
+
+	// Fallback to registry-based verification
 	if v.BadgeVerifier == nil {
-		return nil, fmt.Errorf("badge verifier is required for badge verification")
+		return nil, fmt.Errorf("badge verifier is required for badge verification (no TrustMaterial provided)")
 	}
 	badgeOpts := badge.VerifyOptions{
 		TrustedIssuers:       opts.TrustedIssuers,
