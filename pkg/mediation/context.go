@@ -84,9 +84,11 @@ func NewContext(
 	if badgeClaims != nil {
 		ctx.SubjectDID = badgeClaims.Subject
 		ctx.IssuerDID = badgeClaims.Issuer
-		// Parse IAL string to trust level
-		if ial, err := strconv.Atoi(badgeClaims.IAL); err == nil {
-			ctx.TrustLevel = ial
+		// Use badge trust level (vc.credentialSubject.level), not IAL
+		if level := badgeClaims.TrustLevel(); level != "" {
+			if parsed, err := strconv.Atoi(level); err == nil {
+				ctx.TrustLevel = parsed
+			}
 		}
 	}
 

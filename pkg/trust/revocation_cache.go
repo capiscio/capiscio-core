@@ -142,6 +142,8 @@ func (c *RevocationCache) IsRevoked(jti string) (bool, FreshnessState, error) {
 		case StalePolicyWarnAndAllow:
 			c.logger.Warn("using stale revocation data (dev mode)",
 				"stale_since", metadata.SyncedAt.Add(c.policy.HardTTL))
+			// Still mark as degraded to indicate non-fresh data
+			freshness = FreshnessStateDegraded
 		}
 	}
 
@@ -193,9 +195,11 @@ func (c *RevocationCache) SetSyncMetadata(issuerDID, cursor string) {
 	}
 	c.mu.Unlock()
 
-	// Persist to disk
+	// Persist both metadata and revocations to disk
 	if c.dir != "" {
-		c.saveMetadataToDisk()
+		if err := c.SaveToDisk(); err != nil {
+			c.logger.Warn("failed to persist revocation cache", "error", err)
+		}
 	}
 }
 
@@ -293,7 +297,8 @@ func (c *RevocationCache) LoadFromDisk() error {
 
 	c.mu.Lock()
 	for jti, entry := range entries {
-		c.revoked[jti] = &entry
+		e := entry // Copy to avoid loop variable pointer issue
+		c.revoked[jti] = &e
 	}
 	c.mu.Unlock()
 
@@ -411,24 +416,6 @@ func (c *RevocationCache) triggerBackgroundSync() {
 			"new_entries", len(entries),
 			"cursor", newCursor)
 	}()
-}
-
-// saveMetadataToDisk persists only metadata (for cursor updates).
-func (c *RevocationCache) saveMetadataToDisk() {
-	c.mu.RLock()
-	metadata := *c.metadata
-	c.mu.RUnlock()
-
-	data, err := json.MarshalIndent(metadata, "", "  ")
-	if err != nil {
-		c.logger.Warn("failed to marshal revocation metadata", "error", err)
-		return
-	}
-
-	metaPath := filepath.Join(c.dir, "revocations_meta.json")
-	if err := os.WriteFile(metaPath, data, 0600); err != nil {
-		c.logger.Warn("failed to save revocation metadata", "error", err)
-	}
 }
 
 // StaleRevocationDataError indicates revocation data has exceeded HardTTL.

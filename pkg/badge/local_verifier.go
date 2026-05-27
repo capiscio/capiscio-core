@@ -86,8 +86,8 @@ func NewLocalVerifier(material *trust.MaterialManager, opts LocalVerifyOptions) 
 // - Badge is expired
 // - Badge is revoked (if revocation cache is available)
 func (v *LocalVerifier) Verify(ctx context.Context, token string) (*LocalVerifyResult, error) {
-	// Check bootstrap
-	if !v.material.IsBootstrapped() {
+	// Check material manager is present and bootstrapped
+	if v.material == nil || !v.material.IsBootstrapped() {
 		return nil, trust.ErrNoTrustMaterial
 	}
 
@@ -101,32 +101,14 @@ func (v *LocalVerifier) Verify(ctx context.Context, token string) (*LocalVerifyR
 		Freshness: trust.FreshnessStateFresh,
 	}
 
-	// Determine issuer type (same logic as main verifier)
-	var issuerDID *did.DID
-	var isSelfSigned bool
-
-	parsedDID, didErr := did.Parse(claims.Issuer)
-	if didErr == nil {
-		issuerDID = parsedDID
-		isSelfSigned = issuerDID.IsKeyDID()
-	} else if isHTTPSOrigin(claims.Issuer) {
-		isSelfSigned = false
-	} else {
-		return nil, WrapError(ErrCodeClaimsInvalid, "invalid issuer: must be a DID or HTTPS origin URL", didErr)
-	}
-
-	// Check self-signed acceptance
-	if isSelfSigned && !v.options.AcceptSelfSigned {
-		return nil, WrapError(ErrCodeIssuerUntrusted, "self-signed badges not accepted", nil)
-	}
-
-	// Check trusted issuers
-	if err := v.checkTrustedIssuer(claims.Issuer, isSelfSigned); err != nil {
+	// Determine issuer type and validate
+	issuerDID, isSelfSigned, err := v.parseAndValidateIssuer(claims)
+	if err != nil {
 		return nil, err
 	}
 
 	// Get public key from local material
-	pubKey, freshness, err := v.getPublicKeyLocal(claims, issuerDID, isSelfSigned)
+	pubKey, freshness, err := v.getPublicKeyLocal(jwsObj, claims, issuerDID, isSelfSigned)
 	if err != nil {
 		return nil, err
 	}
@@ -144,13 +126,54 @@ func (v *LocalVerifier) Verify(ctx context.Context, token string) (*LocalVerifyR
 		return nil, err
 	}
 
-	// Check revocation (local cache only)
-	revoked, revFreshness, err := v.checkRevocationLocal(verifiedClaims.JTI)
+	// Check revocation and handle errors
+	if err := v.handleRevocationCheck(verifiedClaims.JTI, result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// parseAndValidateIssuer parses the issuer claim and validates self-signed acceptance.
+func (v *LocalVerifier) parseAndValidateIssuer(claims *Claims) (*did.DID, bool, error) {
+	var issuerDID *did.DID
+	var isSelfSigned bool
+
+	parsedDID, didErr := did.Parse(claims.Issuer)
+	if didErr == nil {
+		issuerDID = parsedDID
+		isSelfSigned = issuerDID.IsKeyDID()
+	} else if isHTTPSOrigin(claims.Issuer) {
+		isSelfSigned = false
+	} else {
+		return nil, false, WrapError(ErrCodeClaimsInvalid, "invalid issuer: must be a DID or HTTPS origin URL", didErr)
+	}
+
+	// Check self-signed acceptance
+	if isSelfSigned && !v.options.AcceptSelfSigned {
+		return nil, false, WrapError(ErrCodeIssuerUntrusted, "self-signed badges not accepted", nil)
+	}
+
+	// Check trusted issuers
+	if err := v.checkTrustedIssuer(claims.Issuer, isSelfSigned); err != nil {
+		return nil, false, err
+	}
+
+	return issuerDID, isSelfSigned, nil
+}
+
+// handleRevocationCheck checks revocation status and updates result.
+func (v *LocalVerifier) handleRevocationCheck(jti string, result *LocalVerifyResult) error {
+	revoked, revFreshness, err := v.checkRevocationLocal(jti)
 	if err != nil {
-		// If revocation check fails, add warning but don't block
+		// Check if this is a stale data error from FailClosed policy
+		if _, isStaleErr := err.(*trust.StaleRevocationDataError); isStaleErr {
+			return WrapError(ErrCodeRevocationCheckFailed, "revocation data is stale (FailClosed policy)", err)
+		}
+		// For other errors, add warning but don't block
 		result.Warnings = append(result.Warnings, fmt.Sprintf("revocation check failed: %v", err))
 	} else if revoked {
-		return nil, WrapError(ErrCodeRevoked, "badge has been revoked", nil)
+		return WrapError(ErrCodeRevoked, "badge has been revoked", nil)
 	}
 
 	// Use worst freshness state
@@ -163,7 +186,7 @@ func (v *LocalVerifier) Verify(ctx context.Context, token string) (*LocalVerifyR
 		result.Warnings = append(result.Warnings, "verification used stale trust material")
 	}
 
-	return result, nil
+	return nil
 }
 
 // VerifyWithMaterial validates a badge using explicitly provided trust material.
@@ -202,7 +225,7 @@ func (v *LocalVerifier) parseJWSAndClaims(token string) (*jose.JSONWebSignature,
 }
 
 // getPublicKeyLocal retrieves the public key from local trust material.
-func (v *LocalVerifier) getPublicKeyLocal(claims *Claims, issuerDID *did.DID, isSelfSigned bool) (crypto.PublicKey, trust.FreshnessState, error) {
+func (v *LocalVerifier) getPublicKeyLocal(jwsObj *jose.JSONWebSignature, claims *Claims, issuerDID *did.DID, isSelfSigned bool) (crypto.PublicKey, trust.FreshnessState, error) {
 	if isSelfSigned {
 		// For self-signed, extract key from issuer DID
 		if issuerDID == nil {
@@ -215,14 +238,19 @@ func (v *LocalVerifier) getPublicKeyLocal(claims *Claims, issuerDID *did.DID, is
 		return pubKey, trust.FreshnessStateFresh, nil
 	}
 
-	// Get kid from claims if available
+	// Get kid from JWS header (issuer signing key), not from CNF (subject's PoP key)
 	kid := ""
-	if claims.CNF != nil && claims.CNF.KID != "" {
-		kid = claims.CNF.KID
+	if len(jwsObj.Signatures) > 0 {
+		kid = jwsObj.Signatures[0].Header.KeyID
 	}
 
-	// Get from local material
+	// Get from local material - try with kid first, fall back to empty kid (returns first key)
 	pubKey, freshness, err := v.material.GetPublicKey(claims.Issuer, kid)
+	if err != nil && kid != "" {
+		// Kid specified but not found - try without kid for backwards compatibility
+		// (some issuers may not include kid in JWS header, or cache may not have kid mapping)
+		pubKey, freshness, err = v.material.GetPublicKey(claims.Issuer, "")
+	}
 	if err != nil {
 		return nil, freshness, WrapError(ErrCodeIssuerUntrusted,
 			fmt.Sprintf("issuer key not found in local cache: %s", claims.Issuer), err)
@@ -245,7 +273,7 @@ func (v *LocalVerifier) verifySignature(jwsObj *jose.JSONWebSignature, pubKey cr
 	return &verifiedClaims, nil
 }
 
-// validateStandardClaims validates exp, nbf, and other standard claims.
+// validateStandardClaims validates exp, nbf, iat, and other standard claims.
 func (v *LocalVerifier) validateStandardClaims(claims *Claims) error {
 	now := time.Now()
 	if v.options.Now != nil {
@@ -260,6 +288,11 @@ func (v *LocalVerifier) validateStandardClaims(claims *Claims) error {
 	// Check not-before (nbf is Unix timestamp int64)
 	if claims.NotBefore > 0 && time.Unix(claims.NotBefore, 0).After(now) {
 		return WrapError(ErrCodeNotYetValid, "badge is not yet valid", nil)
+	}
+
+	// Check issued-at (iat) is not in the future
+	if claims.IssuedAt > 0 && time.Unix(claims.IssuedAt, 0).After(now) {
+		return WrapError(ErrCodeNotYetValid, "badge issued-at time is in the future", nil)
 	}
 
 	// Check audience if configured

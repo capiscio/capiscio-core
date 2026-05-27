@@ -79,6 +79,10 @@ type VerifyOptions struct {
 	//
 	// If TrustMaterial is nil, falls back to BadgeVerifier (requires registry).
 	TrustMaterial *trust.MaterialManager
+
+	// AcceptSelfSigned controls whether self-signed badges (did:key issuers)
+	// are accepted during local verification. Default: false (secure default).
+	AcceptSelfSigned bool
 }
 
 func (o *VerifyOptions) now() time.Time {
@@ -246,7 +250,7 @@ func (v *Verifier) verifyBadge(ctx context.Context, badgeJWS string, opts Verify
 	if opts.TrustMaterial != nil {
 		localOpts := badge.LocalVerifyOptions{
 			TrustedIssuers:   opts.TrustedIssuers,
-			AcceptSelfSigned: true,
+			AcceptSelfSigned: opts.AcceptSelfSigned, // Respect caller's setting, don't force true
 			Now:              opts.Now,
 		}
 		localVerifier := badge.NewLocalVerifier(opts.TrustMaterial, localOpts)

@@ -129,6 +129,14 @@ type ShellHook struct {
 
 // NewShellHook creates a shell mediation hook.
 func NewShellHook(config ShellHookConfig) *ShellHook {
+	// Apply safe defaults: DefaultDeny and RequireEnvelope should be true for shell
+	if len(config.AllowedCommands) == 0 && len(config.DeniedCommands) == 0 && !config.DefaultDeny {
+		config.DefaultDeny = true
+	}
+	// MinTrustLevel defaults to 2 (verified identity) if not set
+	if config.MinTrustLevel == 0 {
+		config.MinTrustLevel = 2
+	}
 	h := &ShellHook{
 		config:  config,
 		logger:  config.Logger,

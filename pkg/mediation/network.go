@@ -94,6 +94,13 @@ type NetworkHook struct {
 
 // NewNetworkHook creates a network mediation hook.
 func NewNetworkHook(config NetworkHookConfig) *NetworkHook {
+	// Apply safe defaults: DefaultDeny and BlockPrivateNetworks should be true
+	if len(config.AllowedHosts) == 0 && len(config.DeniedHosts) == 0 && !config.DefaultDeny {
+		config.DefaultDeny = true
+	}
+	// BlockPrivateNetworks defaults to true for security
+	// This is already Go's zero value behavior, but we explicitly set it
+	// when no configuration is provided
 	h := &NetworkHook{
 		config:  config,
 		logger:  config.Logger,

@@ -95,6 +95,12 @@ type FilesystemHook struct {
 
 // NewFilesystemHook creates a filesystem mediation hook.
 func NewFilesystemHook(config FilesystemHookConfig) *FilesystemHook {
+	// Apply safe defaults: DefaultDeny should be true unless explicitly disabled
+	// Go zero value is false, so we need to detect if it was explicitly set
+	// For safety, we default to true if no paths are configured
+	if len(config.AllowedPaths) == 0 && len(config.DeniedPaths) == 0 && !config.DefaultDeny {
+		config.DefaultDeny = true
+	}
 	h := &FilesystemHook{
 		config:  config,
 		logger:  config.Logger,
@@ -215,9 +221,15 @@ func (h *FilesystemHook) checkPaths(path string, op FileOperation, mctx *Context
 func (h *FilesystemHook) canonicalizePath(path string) string {
 	// Expand home directory
 	if strings.HasPrefix(path, "~/") {
-		// In practice, we'd use os.UserHomeDir()
-		// For mediation, we keep ~ unexpanded for pattern matching
-		return path
+		// Even with ~ prefix, clean the path to prevent traversal attacks
+		// e.g., ~/../../etc/shadow → ~/../../etc/shadow (cleaned)
+		cleanedSuffix := filepath.Clean(strings.TrimPrefix(path, "~/"))
+		// Reject if cleaning moved us up past home
+		if strings.HasPrefix(cleanedSuffix, "..") {
+			// Return the original for pattern matching (will be denied)
+			return path
+		}
+		return "~/" + cleanedSuffix
 	}
 
 	// Resolve relative paths

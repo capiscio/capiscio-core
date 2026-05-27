@@ -45,9 +45,15 @@ func NewMaterialManager(config BootstrapConfig, logger Logger) (*MaterialManager
 		logger = noopLogger{}
 	}
 
+	// Apply default freshness policy if not configured
+	freshnessPolicy := config.FreshnessPolicy
+	if freshnessPolicy.SoftTTL == 0 && freshnessPolicy.HardTTL == 0 {
+		freshnessPolicy = DefaultFreshnessPolicy()
+	}
+
 	// Create JWKS cache
 	jwksOpts := []JWKSCacheOption{
-		WithFreshnessPolicy(config.FreshnessPolicy),
+		WithFreshnessPolicy(freshnessPolicy),
 		WithLogger(logger),
 	}
 	if len(config.JWKSPaths) > 0 {

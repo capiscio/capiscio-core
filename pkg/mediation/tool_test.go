@@ -285,6 +285,11 @@ func TestContext_Helpers(t *testing.T) {
 			Subject: "did:web:agent.example.com",
 			Issuer:  "https://registry.capiscio.com",
 			IAL:     "2",
+			VC: badge.VerifiableCredential{
+				CredentialSubject: badge.CredentialSubject{
+					Level: "2", // Trust level for access control
+				},
+			},
 		}
 		ctx := NewContext(nil, claims, nil)
 
