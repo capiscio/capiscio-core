@@ -256,7 +256,7 @@ func (v *LocalVerifier) getPublicKeyLocal(jwsObj *jose.JSONWebSignature, claims 
 			fmt.Sprintf("issuer key not found in local cache: %s", claims.Issuer), err)
 	}
 
-	return pubKey.(crypto.PublicKey), freshness, nil
+	return pubKey, freshness, nil
 }
 
 // verifySignature verifies the JWS signature.
