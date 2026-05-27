@@ -165,6 +165,8 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	txnID := r.Header.Get(pip.TxnIDHeader)
 	if txnID == "" {
 		if u, err := uuid.NewV7(); err != nil {
+			p.logger.WarnContext(r.Context(), "UUIDv7 generation failed, falling back to v4",
+				slog.String("error", err.Error()))
 			txnID = uuid.New().String()
 		} else {
 			txnID = u.String()
@@ -241,8 +243,8 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 				)
 				chainErr := envelope.NewError(envelope.ErrCodeBadgeBindingFailed,
 					fmt.Sprintf("leaf envelope subject_did %q does not match authenticated caller %q", leafSubject, claims.Subject))
-				p.emitAuthorityDenied(traceID, txnID, claims.Subject, chainResult.LeafCapability, envelope.ErrCodeBadgeBindingFailed, chainErr.Message)
-				p.handleChainError(w, r, chainErr, traceID, txnID, claims.Subject, "")
+				// handleChainError emits authority.denied, so no explicit emit here
+				p.handleChainError(w, r, chainErr, traceID, txnID, claims.Subject, chainResult.LeafCapability)
 				return
 			}
 			// RFC-011 §5.2: Emit authority.granted after successful chain verification
@@ -444,7 +446,7 @@ func (p *pep) handleChainError(w http.ResponseWriter, r *http.Request, err error
 		)
 
 		// RFC-011 §5.2: Emit authority.denied on chain verification failure
-		p.emitAuthorityDenied(traceID, txnID, subjectDID, capability, envErr.Code, envErr.Message)
+		p.emitAuthorityDenied(traceID, txnID, subjectDID, capability)
 
 		// In EM-OBSERVE, log but allow the request through (RFC-005 §6.3)
 		if p.config.EnforcementMode == pip.EMObserve {
@@ -466,7 +468,7 @@ func (p *pep) handleChainError(w http.ResponseWriter, r *http.Request, err error
 
 	// Non-envelope error (e.g., network failure in key resolution)
 	// RFC-011 §5.2: Emit authority.denied for non-envelope errors too
-	p.emitAuthorityDenied(traceID, txnID, subjectDID, capability, "INTERNAL_ERROR", err.Error())
+	p.emitAuthorityDenied(traceID, txnID, subjectDID, capability)
 
 	if p.config.EnforcementMode == pip.EMObserve {
 		p.logger.WarnContext(r.Context(), "chain verification error in EM-OBSERVE (allowing)",
@@ -813,7 +815,8 @@ func emitPolicyEvent(callbacks []PolicyEventCallback, event PolicyEvent, req *pi
 
 // --- RFC-011 Event Emission Helpers ---
 
-// parseTrustLevel converts a trust level string to int (0-3).
+// parseTrustLevel converts a trust level string to int (0-4).
+// RFC-002 defines levels 0-4; unknown values default to 0.
 func parseTrustLevel(level string) int {
 	switch level {
 	case "0":
@@ -824,6 +827,8 @@ func parseTrustLevel(level string) int {
 		return 2
 	case "3":
 		return 3
+	case "4":
+		return 4
 	default:
 		return 0
 	}
@@ -885,7 +890,8 @@ func (p *pep) emitAuthorityGranted(traceID, txnID, subjectDID string, chainResul
 }
 
 // emitAuthorityDenied emits an authority.denied event when chain verification fails.
-func (p *pep) emitAuthorityDenied(traceID, txnID, subjectDID, capability, errorCode, reason string) {
+// Note: Error details are logged separately; this event only signals denial.
+func (p *pep) emitAuthorityDenied(traceID, txnID, subjectDID, capability string) {
 	if p.emitter == nil {
 		return
 	}
