@@ -2,6 +2,7 @@
 package gateway
 
 import (
+	"context"
 	"crypto"
 	"encoding/json"
 	"errors"
@@ -192,6 +193,30 @@ func NewPolicyMiddleware(verifier *badge.Verifier, config PEPConfig, next http.H
 	return http.HandlerFunc(p.serveHTTP)
 }
 
+// verifyBadge verifies the badge token using LocalVerifier or Verifier.
+// Returns claims if valid, or nil with an error message for failure.
+func (p *pep) verifyBadge(ctx context.Context, token string) (*badge.Claims, string) {
+	if p.localVerifier != nil {
+		result, err := p.localVerifier.Verify(ctx, token)
+		if err != nil {
+			p.logger.WarnContext(ctx, "local badge verification failed", slog.String("error", err.Error()))
+			return nil, err.Error()
+		}
+		// Log freshness warnings for stale material
+		if result.Freshness == trust.FreshnessStateStale {
+			p.logger.WarnContext(ctx, "badge verified with stale trust material",
+				slog.String("subject", result.Claims.Subject))
+		}
+		return result.Claims, ""
+	}
+	claims, err := p.verifier.Verify(ctx, token)
+	if err != nil {
+		p.logger.WarnContext(ctx, "badge verification failed", slog.String("error", err.Error()))
+		return nil, err.Error()
+	}
+	return claims, ""
+}
+
 // serveHTTP implements the PEP request flow: authenticate → break-glass → cache → PDP → enforce.
 // RFC-011 §7.1: Emits execution.started at entry and execution.completed or execution.aborted at exit.
 func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
@@ -234,33 +259,11 @@ func (p *pep) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// RFC-001 §2.3: Use LocalVerifier when available (no network calls).
-	// Falls back to network-dependent Verifier when TrustMaterial not bootstrapped.
-	var claims *badge.Claims
-	var err error
-	if p.localVerifier != nil {
-		result, verifyErr := p.localVerifier.Verify(r.Context(), token)
-		if verifyErr != nil {
-			p.logger.WarnContext(r.Context(), "local badge verification failed",
-				slog.String("error", verifyErr.Error()))
-			p.emitIdentityInvalid(traceID, txnID, "", "VERIFICATION_FAILED", verifyErr.Error())
-			http.Error(sw, "Invalid Trust Badge", http.StatusUnauthorized)
-			return
-		}
-		claims = result.Claims
-		// Log freshness warnings for stale material
-		if result.Freshness == trust.FreshnessStateStale {
-			p.logger.WarnContext(r.Context(), "badge verified with stale trust material",
-				slog.String("subject", claims.Subject))
-		}
-	} else {
-		claims, err = p.verifier.Verify(r.Context(), token)
-		if err != nil {
-			p.logger.WarnContext(r.Context(), "badge verification failed", slog.String("error", err.Error()))
-			p.emitIdentityInvalid(traceID, txnID, "", "VERIFICATION_FAILED", err.Error())
-			http.Error(sw, "Invalid Trust Badge", http.StatusUnauthorized)
-			return
-		}
+	claims, errMsg := p.verifyBadge(r.Context(), token)
+	if claims == nil {
+		p.emitIdentityInvalid(traceID, txnID, "", "VERIFICATION_FAILED", errMsg)
+		http.Error(sw, "Invalid Trust Badge", http.StatusUnauthorized)
+		return
 	}
 
 	// RFC-011 §5.1: Emit identity.verified event.
@@ -563,31 +566,6 @@ func ChainErrorHTTPStatus(code string) int {
 
 // handleBreakGlass checks for a valid break-glass override token.
 // Returns true if the request was handled (break-glass token was valid).
-func (p *pep) handleBreakGlass(w http.ResponseWriter, r *http.Request, pipReq *pip.DecisionRequest) bool {
-	if p.bgValidator == nil {
-		return false
-	}
-
-	bgToken := extractBreakGlass(r, p.bgValidator)
-	if bgToken == nil {
-		return false
-	}
-
-	p.logger.WarnContext(r.Context(), "break-glass override active",
-		slog.String(pip.TelemetryOverrideJTI, bgToken.JTI),
-		slog.String("operator", bgToken.SUB),
-		slog.String("reason", bgToken.Reason))
-
-	emitPolicyEvent(p.callbacks, PolicyEvent{
-		Decision:    pip.DecisionAllow,
-		DecisionID:  "breakglass:" + bgToken.JTI,
-		Override:    true,
-		OverrideJTI: bgToken.JTI,
-	}, pipReq)
-	p.next.ServeHTTP(w, r)
-	return true
-}
-
 // handleBreakGlassWithState handles break-glass override with execution state tracking.
 // RFC-011: Execution events are handled by the caller's defer, not here.
 func (p *pep) handleBreakGlassWithState(w http.ResponseWriter, r *http.Request, pipReq *pip.DecisionRequest, _ *executionState) bool {
@@ -614,73 +592,6 @@ func (p *pep) handleBreakGlassWithState(w http.ResponseWriter, r *http.Request, 
 	p.next.ServeHTTP(w, r)
 	// Break-glass is a successful path; defer will emit execution.completed
 	return true
-}
-
-// evaluatePolicy handles cache lookup, PDP query, decision enforcement, and obligations.
-func (p *pep) evaluatePolicy(w http.ResponseWriter, r *http.Request, claims *badge.Claims, pipReq *pip.DecisionRequest, traceID, txnID string) {
-	cacheKey := pip.CacheKeyComponents(claims.Subject, claims.JTI, pipReq.Action.Operation, pipReq.Resource.Identifier)
-	event := PolicyEvent{}
-
-	// --- 5. Check cache ---
-	if p.handleCachedDecision(w, r, cacheKey, &event, pipReq, traceID, txnID, claims.Subject) {
-		return
-	}
-
-	// --- 6. Query PDP ---
-	start := time.Now()
-	resp, pdpErr := p.config.PDPClient.Evaluate(r.Context(), pipReq)
-	event.PDPLatencyMs = time.Since(start).Milliseconds()
-
-	if pdpErr != nil {
-		p.logger.ErrorContext(r.Context(), "PDP unavailable",
-			slog.String(pip.TelemetryErrorCode, pip.ErrorCodePDPUnavailable),
-			slog.String("error", pdpErr.Error()),
-			slog.String("enforcement_mode", p.config.EnforcementMode.String()))
-		p.handlePDPUnavailable(w, r, &event, pipReq)
-		return
-	}
-
-	// Validate PDP response: Decision must be ALLOW or DENY, DecisionID must be non-empty.
-	// A non-compliant response is treated as PDP unavailability (fail-closed except EM-OBSERVE).
-	if !pip.ValidDecision(resp.Decision) || resp.DecisionID == "" {
-		p.logger.ErrorContext(r.Context(), "PDP returned non-compliant response",
-			slog.String("decision", resp.Decision),
-			slog.String("decision_id", resp.DecisionID))
-		p.handlePDPUnavailable(w, r, &event, pipReq)
-		return
-	}
-
-	event.Decision = resp.Decision
-	event.DecisionID = resp.DecisionID
-	event.Obligations = obligationTypes(resp.Obligations)
-
-	// --- 7. Cache the response ---
-	if p.config.DecisionCache != nil {
-		maxTTL := time.Until(time.Unix(claims.Expiry, 0))
-		if maxTTL > 0 {
-			p.config.DecisionCache.Put(cacheKey, resp, maxTTL)
-		}
-	}
-
-	// --- 8. Enforce decision ---
-	if resp.Decision == pip.DecisionDeny {
-		p.handlePDPDeny(w, r, resp, &event, pipReq)
-		return
-	}
-
-	// --- 9. Handle obligations ---
-	if p.enforceObligations(w, r, resp.Obligations, &event, pipReq) {
-		return
-	}
-
-	// RFC-011 §5.4: Emit execution lifecycle events for PDP mode
-	execStart := time.Now()
-	p.emitExecutionStarted(traceID, txnID, claims.Subject, nil)
-
-	emitPolicyEvent(p.callbacks, event, pipReq)
-	p.next.ServeHTTP(w, r)
-
-	p.emitExecutionCompleted(traceID, txnID, claims.Subject, "success", time.Since(execStart).Milliseconds())
 }
 
 // evaluatePolicyWithState handles policy evaluation with execution state tracking.
@@ -752,144 +663,6 @@ func (p *pep) evaluatePolicyWithState(w http.ResponseWriter, r *http.Request, cl
 	// RFC-011: execution.completed handled by defer with captured HTTP status
 	emitPolicyEvent(p.callbacks, event, pipReq)
 	p.next.ServeHTTP(w, r)
-}
-
-// handleCachedDecision serves a cached PDP decision if available.
-// Returns true if the request was handled from cache.
-func (p *pep) handleCachedDecision(w http.ResponseWriter, r *http.Request, cacheKey string, event *PolicyEvent, pipReq *pip.DecisionRequest, traceID, txnID, subjectDID string) bool {
-	if p.config.DecisionCache == nil {
-		return false
-	}
-
-	cached, ok := p.config.DecisionCache.Get(cacheKey)
-	if !ok {
-		return false
-	}
-
-	event.Decision = cached.Decision
-	event.DecisionID = cached.DecisionID
-	event.CacheHit = true
-	event.Obligations = obligationTypes(cached.Obligations)
-
-	if cached.Decision == pip.DecisionDeny {
-		if p.config.EnforcementMode == pip.EMObserve {
-			p.logger.InfoContext(r.Context(), "cached PDP DENY in EM-OBSERVE (allowing)",
-				slog.String(pip.TelemetryDecisionID, cached.DecisionID))
-			event.Decision = pip.DecisionObserve
-			emitPolicyEvent(p.callbacks, *event, pipReq)
-			// RFC-011: emit execution events for cached EM-OBSERVE
-			execStart := time.Now()
-			p.emitExecutionStarted(traceID, txnID, subjectDID, nil)
-			p.next.ServeHTTP(w, r)
-			p.emitExecutionCompleted(traceID, txnID, subjectDID, "success", time.Since(execStart).Milliseconds())
-			return true
-		}
-		reason := cached.Reason
-		if reason == "" {
-			reason = "Access denied by policy"
-		}
-		emitPolicyEvent(p.callbacks, *event, pipReq)
-		http.Error(w, reason, http.StatusForbidden)
-		return true
-	}
-
-	if p.config.ObligationReg != nil && len(cached.Obligations) > 0 {
-		oblResult := p.config.ObligationReg.Enforce(r.Context(), p.config.EnforcementMode, cached.Obligations)
-		if !oblResult.Proceed {
-			event.Decision = pip.DecisionDeny
-			emitPolicyEvent(p.callbacks, *event, pipReq)
-			http.Error(w, "Access denied: obligation enforcement failed", http.StatusForbidden)
-			return true
-		}
-	}
-
-	// RFC-011: emit execution events for cached ALLOW
-	execStart := time.Now()
-	p.emitExecutionStarted(traceID, txnID, subjectDID, nil)
-
-	emitPolicyEvent(p.callbacks, *event, pipReq)
-	p.next.ServeHTTP(w, r)
-
-	p.emitExecutionCompleted(traceID, txnID, subjectDID, "success", time.Since(execStart).Milliseconds())
-	return true
-}
-
-// handlePDPUnavailable handles PDP unreachability per enforcement mode (RFC-005 §7.4).
-func (p *pep) handlePDPUnavailable(w http.ResponseWriter, r *http.Request, event *PolicyEvent, pipReq *pip.DecisionRequest) {
-	event.ErrorCode = pip.ErrorCodePDPUnavailable
-
-	if p.config.EnforcementMode == pip.EMObserve {
-		event.Decision = pip.DecisionObserve
-		event.DecisionID = "pdp-unavailable"
-		emitPolicyEvent(p.callbacks, *event, pipReq)
-		p.next.ServeHTTP(w, r)
-		return
-	}
-
-	// EM-GUARD, EM-DELEGATE, EM-STRICT: fail-closed
-	event.Decision = pip.DecisionDeny
-	event.DecisionID = "pdp-unavailable"
-	emitPolicyEvent(p.callbacks, *event, pipReq)
-	http.Error(w, "Access denied: policy service unavailable", http.StatusForbidden)
-}
-
-// handlePDPDeny handles a DENY decision from the PDP per enforcement mode.
-func (p *pep) handlePDPDeny(w http.ResponseWriter, r *http.Request, resp *pip.DecisionResponse, event *PolicyEvent, pipReq *pip.DecisionRequest) {
-	switch p.config.EnforcementMode {
-	case pip.EMObserve:
-		p.logger.InfoContext(r.Context(), "PDP DENY in EM-OBSERVE (allowing)",
-			slog.String(pip.TelemetryDecisionID, resp.DecisionID))
-		event.Decision = pip.DecisionObserve
-		emitPolicyEvent(p.callbacks, *event, pipReq)
-		p.next.ServeHTTP(w, r)
-	default:
-		emitPolicyEvent(p.callbacks, *event, pipReq)
-
-		// RFC-008: SCOPE_INSUFFICIENT returns structured JSON 403
-		if resp.ErrorCode == pip.ErrorCodeScopeInsufficient {
-			var presentedCap, envelopeID string
-			if pipReq.Action.CapabilityClass != nil {
-				presentedCap = *pipReq.Action.CapabilityClass
-			}
-			if pipReq.Context.EnvelopeID != nil {
-				envelopeID = *pipReq.Context.EnvelopeID
-			}
-			body := envelope.NewScopeInsufficientRejection(
-				resp.RequestedCapability,
-				presentedCap,
-				envelopeID,
-				pipReq.Context.TxnID,
-			)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
-			_ = json.NewEncoder(w).Encode(body)
-			return
-		}
-
-		reason := "Access denied by policy"
-		if resp.Reason != "" {
-			reason = resp.Reason
-		}
-		http.Error(w, reason, http.StatusForbidden)
-	}
-}
-
-// enforceObligations attempts to enforce obligations from the PDP response.
-// Returns true if the request was denied due to obligation failure.
-func (p *pep) enforceObligations(w http.ResponseWriter, r *http.Request, obligations []pip.Obligation, event *PolicyEvent, pipReq *pip.DecisionRequest) bool {
-	if p.config.ObligationReg == nil || len(obligations) == 0 {
-		return false
-	}
-
-	oblResult := p.config.ObligationReg.Enforce(r.Context(), p.config.EnforcementMode, obligations)
-	if !oblResult.Proceed {
-		event.Decision = pip.DecisionDeny
-		emitPolicyEvent(p.callbacks, *event, pipReq)
-		http.Error(w, "Access denied: obligation enforcement failed", http.StatusForbidden)
-		return true
-	}
-
-	return false
 }
 
 // handleCachedDecisionWithState serves a cached PDP decision with execution state tracking.
