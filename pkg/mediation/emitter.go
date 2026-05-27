@@ -152,7 +152,9 @@ func (e *AsyncEmitter) emit(event *Event) {
 			e.droppedCount++
 			e.mu.Unlock()
 		} else {
-			// Synchronous fallback - deliver directly
+			// Synchronous fallback - deliver directly.
+			// WARNING: This CAN block the mediation path if sinks are slow.
+			// For strict RFC-011 §4.2 compliance, use DropOnFull=true.
 			e.deliverToSinks(event)
 		}
 	}
@@ -220,10 +222,10 @@ func (e *AsyncEmitter) EmitIdentityVerified(mctx *Context, badgeJTI string, trus
 	event := NewEvent(EventIdentityVerified, e.emitter)
 	if mctx != nil {
 		event.WithContext(mctx.TraceID, mctx.TxnID, mctx.HopID)
+		event.WithPayload("subject_did", mctx.SubjectDID)
 	}
 
 	event.WithPayload("badge_jti", badgeJTI)
-	event.WithPayload("subject_did", mctx.SubjectDID)
 	event.WithPayload("trust_level", trustLevel)
 	event.WithPayload("ial", ial)
 
@@ -472,7 +474,7 @@ func (e *AsyncEmitter) Close() error {
 	e.mu.RUnlock()
 
 	for _, sink := range sinks {
-		sink.Close()
+		_ = sink.Close() // Best-effort cleanup; errors logged by sinks
 	}
 
 	return nil

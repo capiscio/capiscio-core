@@ -6,6 +6,8 @@ package mediation
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -235,12 +237,15 @@ func (a *MemoryAggregator) matchesFilter(event *Event, filter EventFilter) bool 
 	}
 
 	if filter.SubjectDID != "" {
-		if did, ok := event.Payload["subject_did"].(string); ok {
-			if did != filter.SubjectDID {
-				return false
-			}
+		did, ok := event.Payload["subject_did"].(string)
+		if !ok || did != filter.SubjectDID {
+			return false // Missing or non-matching subject_did
 		}
 	}
+
+	// NOTE: OrganizationID filter is not yet implemented. Events with any
+	// organization will match. Add organization_id to event payloads and
+	// filter here when multi-tenancy is wired up.
 
 	return true
 }
@@ -261,10 +266,9 @@ func (a *MemoryAggregator) matchesContextQuery(event *Event, query EventQuery) b
 		return false
 	}
 	if query.SubjectDID != "" {
-		if did, ok := event.Payload["subject_did"].(string); ok {
-			if did != query.SubjectDID {
-				return false
-			}
+		did, ok := event.Payload["subject_did"].(string)
+		if !ok || did != query.SubjectDID {
+			return false // Missing or non-matching subject_did
 		}
 	}
 	return true
@@ -306,12 +310,13 @@ func (a *MemoryAggregator) matchesTimeQuery(event *Event, query EventQuery) bool
 // Per RFC-011 §4.2, forwarding is asynchronous and MUST NOT block mediation.
 // The HTTPSink buffers events and sends them in batches.
 type HTTPSink struct {
-	endpoint   string
-	client     *http.Client
-	batch      []*Event
-	batchSize  int
-	flushTimer *time.Timer
-	mu         sync.Mutex
+	endpoint      string
+	client        *http.Client
+	batch         []*Event
+	batchSize     int
+	flushInterval time.Duration
+	flushTimer    *time.Timer
+	mu            sync.Mutex
 }
 
 // HTTPSinkConfig configures the HTTP sink.
@@ -339,10 +344,11 @@ func NewHTTPSink(config HTTPSinkConfig) *HTTPSink {
 	}
 
 	s := &HTTPSink{
-		endpoint:  config.Endpoint,
-		client:    config.Client,
-		batch:     make([]*Event, 0, config.BatchSize),
-		batchSize: config.BatchSize,
+		endpoint:      config.Endpoint,
+		client:        config.Client,
+		batch:         make([]*Event, 0, config.BatchSize),
+		batchSize:     config.BatchSize,
+		flushInterval: config.FlushInterval,
 	}
 
 	// Start flush timer if interval specified
@@ -401,9 +407,9 @@ func (s *HTTPSink) flushAsync() {
 		go s.sendBatch(batch)
 	}
 
-	// Restart timer
-	if s.flushTimer != nil {
-		s.flushTimer.Reset(time.Minute)
+	// Restart timer with configured interval
+	if s.flushTimer != nil && s.flushInterval > 0 {
+		s.flushTimer.Reset(s.flushInterval)
 	}
 }
 
@@ -435,6 +441,11 @@ func (s *HTTPSink) sendBatchSync(ctx context.Context, batch []*Event) error {
 	}
 	defer resp.Body.Close()
 
+	// Check response status - non-2xx is an error
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("aggregator returned status %d", resp.StatusCode)
+	}
+
 	return nil
 }
 
@@ -446,7 +457,7 @@ type nopCloser struct {
 
 func (n *nopCloser) Read(p []byte) (int, error) {
 	if n.pos >= len(n.bytes) {
-		return 0, nil
+		return 0, io.EOF
 	}
 	copied := copy(p, n.bytes[n.pos:])
 	n.pos += copied
