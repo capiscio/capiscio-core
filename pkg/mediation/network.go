@@ -140,74 +140,18 @@ func (h *NetworkHook) Mediate(ctx context.Context, mctx *Context, request Reques
 		"subject", mctx.SubjectDID,
 	)
 
-	// 0. Check trust material availability
-	if !mctx.HasTrustMaterial() {
-		result := DenyResult("builtin:no_trust_material", "trust material not available")
+	// Check prerequisites (trust material, badge, envelope)
+	if result := h.checkPrerequisites(mctx); result != nil {
 		h.emitter.EmitDecision(mctx, result, request)
 		return result, nil
 	}
 
-	// 1. Check authentication
-	if !mctx.HasBadge() {
-		result := DenyResult("builtin:unauthenticated", "no valid badge presented")
-		h.emitter.EmitDecision(mctx, result, request)
+	// Check network-specific rules
+	if result := h.checkNetworkRules(host, protocol, mctx, request); result != nil {
 		return result, nil
 	}
 
-	// 2. Check RequireEnvelope
-	if h.config.RequireEnvelope && !mctx.HasEnvelope() {
-		result := DenyResult("builtin:envelope_required", "authority envelope required for network access")
-		h.emitter.EmitDecision(mctx, result, request)
-		return result, nil
-	}
-
-	// 3. Check protocol
-	if !h.isProtocolAllowed(protocol) {
-		result := DenyResult("builtin:protocol_denied",
-			fmt.Sprintf("protocol %q is not allowed", protocol))
-		h.emitter.EmitDecision(mctx, result, request)
-		return result, nil
-	}
-
-	// 4. Check private networks
-	if h.config.BlockPrivateNetworks && h.isPrivateNetwork(host) {
-		result := DenyResult("builtin:private_network",
-			fmt.Sprintf("access to private network address %q is denied", host))
-		h.emitter.EmitDecision(mctx, result, request)
-		return result, nil
-	}
-
-	// 5. Check DeniedHosts
-	for _, denied := range h.config.DeniedHosts {
-		if h.matchHost(host, denied) {
-			result := DenyResult("config:denied_host",
-				fmt.Sprintf("access to host %q is denied by configuration", host))
-			h.emitter.EmitDecision(mctx, result, request)
-			return result, nil
-		}
-	}
-
-	// 6. Check AllowedHosts
-	for _, allowed := range h.config.AllowedHosts {
-		if h.matchHost(host, allowed) {
-			result := AllowResult("config:allowed_host",
-				fmt.Sprintf("access to host %q is allowed by configuration", host))
-			h.emitter.EmitDecision(mctx, result, request)
-			return result, nil
-		}
-	}
-
-	// 7. Check envelope capabilities
-	if mctx.HasEnvelope() {
-		if mctx.CapabilitySatisfied("network.*") || mctx.CapabilitySatisfied("network.http") {
-			result := AllowResult("envelope:capability_grant",
-				fmt.Sprintf("capability granted for network access to %q", host))
-			h.emitter.EmitDecision(mctx, result, request)
-			return result, nil
-		}
-	}
-
-	// 8. Apply default policy
+	// Apply default policy
 	if h.config.DefaultDeny {
 		result := DenyResult("builtin:default_deny",
 			fmt.Sprintf("no explicit grant for network access to %q", host))
@@ -220,6 +164,71 @@ func (h *NetworkHook) Mediate(ctx context.Context, mctx *Context, request Reques
 		fmt.Sprintf("authenticated caller may access %q", host))
 	h.emitter.EmitDecision(mctx, result, request)
 	return result, nil
+}
+
+// checkPrerequisites verifies trust material, badge, and envelope requirements.
+func (h *NetworkHook) checkPrerequisites(mctx *Context) *Result {
+	if !mctx.HasTrustMaterial() {
+		return DenyResult("builtin:no_trust_material", "trust material not available")
+	}
+	if !mctx.HasBadge() {
+		return DenyResult("builtin:unauthenticated", "no valid badge presented")
+	}
+	if h.config.RequireEnvelope && !mctx.HasEnvelope() {
+		return DenyResult("builtin:envelope_required", "authority envelope required for network access")
+	}
+	return nil
+}
+
+// checkNetworkRules evaluates protocol, host, and capability rules.
+func (h *NetworkHook) checkNetworkRules(host, protocol string, mctx *Context, request Request) *Result {
+	// Check protocol
+	if !h.isProtocolAllowed(protocol) {
+		result := DenyResult("builtin:protocol_denied",
+			fmt.Sprintf("protocol %q is not allowed", protocol))
+		h.emitter.EmitDecision(mctx, result, request)
+		return result
+	}
+
+	// Check private networks
+	if h.config.BlockPrivateNetworks && h.isPrivateNetwork(host) {
+		result := DenyResult("builtin:private_network",
+			fmt.Sprintf("access to private network address %q is denied", host))
+		h.emitter.EmitDecision(mctx, result, request)
+		return result
+	}
+
+	// Check DeniedHosts
+	for _, denied := range h.config.DeniedHosts {
+		if h.matchHost(host, denied) {
+			result := DenyResult("config:denied_host",
+				fmt.Sprintf("access to host %q is denied by configuration", host))
+			h.emitter.EmitDecision(mctx, result, request)
+			return result
+		}
+	}
+
+	// Check AllowedHosts
+	for _, allowed := range h.config.AllowedHosts {
+		if h.matchHost(host, allowed) {
+			result := AllowResult("config:allowed_host",
+				fmt.Sprintf("access to host %q is allowed by configuration", host))
+			h.emitter.EmitDecision(mctx, result, request)
+			return result
+		}
+	}
+
+	// Check envelope capabilities
+	if mctx.HasEnvelope() {
+		if mctx.CapabilitySatisfied("network.*") || mctx.CapabilitySatisfied("network.http") {
+			result := AllowResult("envelope:capability_grant",
+				fmt.Sprintf("capability granted for network access to %q", host))
+			h.emitter.EmitDecision(mctx, result, request)
+			return result
+		}
+	}
+
+	return nil
 }
 
 // isProtocolAllowed checks if the protocol is in the allowed list.

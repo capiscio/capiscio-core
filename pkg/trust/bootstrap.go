@@ -50,7 +50,7 @@ func NewMaterialManager(config BootstrapConfig, logger Logger) (*MaterialManager
 		WithFreshnessPolicy(config.FreshnessPolicy),
 		WithLogger(logger),
 	}
-	if config.JWKSPaths != nil && len(config.JWKSPaths) > 0 {
+	if len(config.JWKSPaths) > 0 {
 		// Use first path's directory as cache dir
 		dir := filepath.Dir(config.JWKSPaths[0])
 		jwksOpts = append(jwksOpts, WithJWKSCacheDir(dir))
@@ -224,7 +224,7 @@ func (m *MaterialManager) Close() error {
 
 // loadJWKSFromFile loads a JWKS file into the cache.
 func (m *MaterialManager) loadJWKSFromFile(path string) error {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- path from BootstrapConfig, not user input
 	if err != nil {
 		return err
 	}
@@ -255,7 +255,7 @@ func (m *MaterialManager) loadDIDDocumentFromFile(path string) error {
 
 // loadRevocationsFromFile loads revocation data from a file.
 func (m *MaterialManager) loadRevocationsFromFile(path string) error {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- path from BootstrapConfig, not user input
 	if err != nil {
 		return err
 	}
@@ -330,7 +330,7 @@ func BootstrapFromBundle(bundle *TrustMaterial, policy FreshnessPolicy) (*Materi
 
 // LoadBundleFromFile loads a trust bundle from a JSON file.
 func LoadBundleFromFile(path string) (*TrustMaterial, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- caller provides path, validated before use
 	if err != nil {
 		return nil, err
 	}

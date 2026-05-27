@@ -381,7 +381,7 @@ func (c *JWKSCache) loadFromDisk(issuerDID string) (*jwksCacheEntry, error) {
 	}
 
 	path := c.cachePath(issuerDID)
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- path derived from cache dir + DID hash
 	if err != nil {
 		return nil, err
 	}

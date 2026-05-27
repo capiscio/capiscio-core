@@ -48,6 +48,8 @@ import (
 // TrustMaterial holds all cached trust data required for local-first verification.
 // A verifier initialized with TrustMaterial can perform all verification operations
 // without network access.
+//
+//nolint:revive // TrustMaterial is clearer than Material at call sites across packages
 type TrustMaterial struct {
 	// JWKS contains issuer key material, keyed by issuer DID.
 	JWKS map[string]*IssuerKeys

@@ -267,7 +267,7 @@ func (c *RevocationCache) LoadFromDisk() error {
 
 	// Load metadata
 	metaPath := filepath.Join(c.dir, "revocations_meta.json")
-	if data, err := os.ReadFile(metaPath); err == nil {
+	if data, err := os.ReadFile(metaPath); err == nil { // #nosec G304 -- path from cache dir config
 		var meta revocationMetadata
 		if err := json.Unmarshal(data, &meta); err == nil {
 			c.mu.Lock()
@@ -278,7 +278,7 @@ func (c *RevocationCache) LoadFromDisk() error {
 
 	// Load revocations
 	dataPath := filepath.Join(c.dir, "revocations.json")
-	data, err := os.ReadFile(dataPath)
+	data, err := os.ReadFile(dataPath) // #nosec G304 -- path from cache dir config
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil // No cache file yet

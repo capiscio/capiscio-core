@@ -125,69 +125,18 @@ func (h *FilesystemHook) Mediate(ctx context.Context, mctx *Context, request Req
 		"subject", mctx.SubjectDID,
 	)
 
-	// 0. Check trust material availability
-	if !mctx.HasTrustMaterial() {
-		result := DenyResult("builtin:no_trust_material", "trust material not available")
+	// Check prerequisites (trust material, badge, envelope)
+	if result := h.checkPrerequisites(mctx); result != nil {
 		h.emitter.EmitDecision(mctx, result, request)
 		return result, nil
 	}
 
-	// 1. Check authentication
-	if !mctx.HasBadge() {
-		result := DenyResult("builtin:unauthenticated", "no valid badge presented")
-		h.emitter.EmitDecision(mctx, result, request)
+	// Check path-based rules
+	if result := h.checkPaths(path, fileReq.Operation, mctx, request); result != nil {
 		return result, nil
 	}
 
-	// 2. Check RequireEnvelope
-	if h.config.RequireEnvelope && !mctx.HasEnvelope() {
-		result := DenyResult("builtin:envelope_required", "authority envelope required for filesystem access")
-		h.emitter.EmitDecision(mctx, result, request)
-		return result, nil
-	}
-
-	// 3. Check default denied paths (always enforced)
-	for _, denied := range defaultDeniedPaths {
-		if h.matchPath(path, denied) {
-			result := DenyResult("builtin:sensitive_path",
-				fmt.Sprintf("access to %q is always denied (sensitive path)", path))
-			h.emitter.EmitDecision(mctx, result, request)
-			return result, nil
-		}
-	}
-
-	// 4. Check configured DeniedPaths
-	for _, denied := range h.config.DeniedPaths {
-		if h.matchPath(path, denied) {
-			result := DenyResult("config:denied_path",
-				fmt.Sprintf("access to %q is denied by configuration", path))
-			h.emitter.EmitDecision(mctx, result, request)
-			return result, nil
-		}
-	}
-
-	// 5. Check AllowedPaths
-	for _, allowed := range h.config.AllowedPaths {
-		if h.matchPath(path, allowed) {
-			result := AllowResult("config:allowed_path",
-				fmt.Sprintf("access to %q is allowed by configuration", path))
-			h.emitter.EmitDecision(mctx, result, request)
-			return result, nil
-		}
-	}
-
-	// 6. Check envelope capabilities
-	if mctx.HasEnvelope() {
-		capabilityClass := fmt.Sprintf("file.%s", fileReq.Operation)
-		if mctx.CapabilitySatisfied(capabilityClass) || mctx.CapabilitySatisfied("file.*") {
-			result := AllowResult("envelope:capability_grant",
-				fmt.Sprintf("capability granted for %s on %q", fileReq.Operation, path))
-			h.emitter.EmitDecision(mctx, result, request)
-			return result, nil
-		}
-	}
-
-	// 7. Apply default policy (filesystem defaults to deny)
+	// Apply default policy (filesystem defaults to deny)
 	if h.config.DefaultDeny {
 		result := DenyResult("builtin:default_deny",
 			fmt.Sprintf("no explicit grant for %s on %q", fileReq.Operation, path))
@@ -200,6 +149,66 @@ func (h *FilesystemHook) Mediate(ctx context.Context, mctx *Context, request Req
 		fmt.Sprintf("authenticated caller may %s %q", fileReq.Operation, path))
 	h.emitter.EmitDecision(mctx, result, request)
 	return result, nil
+}
+
+// checkPrerequisites verifies trust material, badge, and envelope requirements.
+func (h *FilesystemHook) checkPrerequisites(mctx *Context) *Result {
+	if !mctx.HasTrustMaterial() {
+		return DenyResult("builtin:no_trust_material", "trust material not available")
+	}
+	if !mctx.HasBadge() {
+		return DenyResult("builtin:unauthenticated", "no valid badge presented")
+	}
+	if h.config.RequireEnvelope && !mctx.HasEnvelope() {
+		return DenyResult("builtin:envelope_required", "authority envelope required for filesystem access")
+	}
+	return nil
+}
+
+// checkPaths evaluates path-based access rules.
+func (h *FilesystemHook) checkPaths(path string, op FileOperation, mctx *Context, request Request) *Result {
+	// Check default denied paths (always enforced)
+	for _, denied := range defaultDeniedPaths {
+		if h.matchPath(path, denied) {
+			result := DenyResult("builtin:sensitive_path",
+				fmt.Sprintf("access to %q is always denied (sensitive path)", path))
+			h.emitter.EmitDecision(mctx, result, request)
+			return result
+		}
+	}
+
+	// Check configured DeniedPaths
+	for _, denied := range h.config.DeniedPaths {
+		if h.matchPath(path, denied) {
+			result := DenyResult("config:denied_path",
+				fmt.Sprintf("access to %q is denied by configuration", path))
+			h.emitter.EmitDecision(mctx, result, request)
+			return result
+		}
+	}
+
+	// Check AllowedPaths
+	for _, allowed := range h.config.AllowedPaths {
+		if h.matchPath(path, allowed) {
+			result := AllowResult("config:allowed_path",
+				fmt.Sprintf("access to %q is allowed by configuration", path))
+			h.emitter.EmitDecision(mctx, result, request)
+			return result
+		}
+	}
+
+	// Check envelope capabilities
+	if mctx.HasEnvelope() {
+		capabilityClass := fmt.Sprintf("file.%s", op)
+		if mctx.CapabilitySatisfied(capabilityClass) || mctx.CapabilitySatisfied("file.*") {
+			result := AllowResult("envelope:capability_grant",
+				fmt.Sprintf("capability granted for %s on %q", op, path))
+			h.emitter.EmitDecision(mctx, result, request)
+			return result
+		}
+	}
+
+	return nil
 }
 
 // canonicalizePath resolves relative paths and normalizes the path.

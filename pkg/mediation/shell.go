@@ -158,86 +158,18 @@ func (h *ShellHook) Mediate(ctx context.Context, mctx *Context, request Request)
 		"subject", mctx.SubjectDID,
 	)
 
-	// 0. Check trust material availability
-	if !mctx.HasTrustMaterial() {
-		result := DenyResult("builtin:no_trust_material", "trust material not available")
+	// Check prerequisites (trust material, badge, trust level, envelope)
+	if result := h.checkPrerequisites(mctx); result != nil {
 		h.emitter.EmitDecision(mctx, result, request)
 		return result, nil
 	}
 
-	// 1. Check authentication
-	if !mctx.HasBadge() {
-		result := DenyResult("builtin:unauthenticated", "no valid badge presented")
-		h.emitter.EmitDecision(mctx, result, request)
+	// Check command-based rules
+	if result := h.checkCommandRules(shellReq.Command, fullCmd, mctx, request); result != nil {
 		return result, nil
 	}
 
-	// 2. Check trust level
-	if mctx.TrustLevel < h.config.MinTrustLevel {
-		result := DenyResult("builtin:insufficient_trust_level",
-			fmt.Sprintf("trust level %d < required %d for shell access", mctx.TrustLevel, h.config.MinTrustLevel))
-		h.emitter.EmitDecision(mctx, result, request)
-		return result, nil
-	}
-
-	// 3. Check RequireEnvelope
-	if h.config.RequireEnvelope && !mctx.HasEnvelope() {
-		result := DenyResult("builtin:envelope_required", "authority envelope required for shell access")
-		h.emitter.EmitDecision(mctx, result, request)
-		return result, nil
-	}
-
-	// 4. Check default dangerous patterns (always enforced)
-	for _, pattern := range defaultDangerousPatterns {
-		if h.containsPattern(fullCmd, pattern) {
-			result := DenyResult("builtin:dangerous_pattern",
-				fmt.Sprintf("command matches dangerous pattern %q", pattern))
-			h.emitter.EmitDecision(mctx, result, request)
-			return result, nil
-		}
-	}
-
-	// 5. Check configured dangerous patterns
-	for _, pattern := range h.config.DangerousPatterns {
-		if h.containsPattern(fullCmd, pattern) {
-			result := DenyResult("config:dangerous_pattern",
-				fmt.Sprintf("command matches configured dangerous pattern %q", pattern))
-			h.emitter.EmitDecision(mctx, result, request)
-			return result, nil
-		}
-	}
-
-	// 6. Check DeniedCommands
-	for _, denied := range h.config.DeniedCommands {
-		if h.matchCommand(shellReq.Command, fullCmd, denied) {
-			result := DenyResult("config:denied_command",
-				fmt.Sprintf("command %q is denied by configuration", shellReq.Command))
-			h.emitter.EmitDecision(mctx, result, request)
-			return result, nil
-		}
-	}
-
-	// 7. Check AllowedCommands
-	for _, allowed := range h.config.AllowedCommands {
-		if h.matchCommand(shellReq.Command, fullCmd, allowed) {
-			result := AllowResult("config:allowed_command",
-				fmt.Sprintf("command %q is allowed by configuration", shellReq.Command))
-			h.emitter.EmitDecision(mctx, result, request)
-			return result, nil
-		}
-	}
-
-	// 8. Check envelope capabilities
-	if mctx.HasEnvelope() {
-		if mctx.CapabilitySatisfied("shell.*") || mctx.CapabilitySatisfied("shell.execute") {
-			result := AllowResult("envelope:capability_grant",
-				fmt.Sprintf("capability granted for shell command %q", shellReq.Command))
-			h.emitter.EmitDecision(mctx, result, request)
-			return result, nil
-		}
-	}
-
-	// 9. Apply default policy (shell defaults to deny)
+	// Apply default policy (shell defaults to deny)
 	if h.config.DefaultDeny {
 		result := DenyResult("builtin:default_deny",
 			fmt.Sprintf("no explicit grant for shell command %q", shellReq.Command))
@@ -250,6 +182,79 @@ func (h *ShellHook) Mediate(ctx context.Context, mctx *Context, request Request)
 		fmt.Sprintf("authenticated caller may execute %q", shellReq.Command))
 	h.emitter.EmitDecision(mctx, result, request)
 	return result, nil
+}
+
+// checkPrerequisites verifies trust material, badge, trust level, and envelope requirements.
+func (h *ShellHook) checkPrerequisites(mctx *Context) *Result {
+	if !mctx.HasTrustMaterial() {
+		return DenyResult("builtin:no_trust_material", "trust material not available")
+	}
+	if !mctx.HasBadge() {
+		return DenyResult("builtin:unauthenticated", "no valid badge presented")
+	}
+	if mctx.TrustLevel < h.config.MinTrustLevel {
+		return DenyResult("builtin:insufficient_trust_level",
+			fmt.Sprintf("trust level %d < required %d for shell access", mctx.TrustLevel, h.config.MinTrustLevel))
+	}
+	if h.config.RequireEnvelope && !mctx.HasEnvelope() {
+		return DenyResult("builtin:envelope_required", "authority envelope required for shell access")
+	}
+	return nil
+}
+
+// checkCommandRules evaluates dangerous patterns and command restrictions.
+func (h *ShellHook) checkCommandRules(cmd, fullCmd string, mctx *Context, request Request) *Result {
+	// Check default dangerous patterns (always enforced)
+	for _, pattern := range defaultDangerousPatterns {
+		if h.containsPattern(fullCmd, pattern) {
+			result := DenyResult("builtin:dangerous_pattern",
+				fmt.Sprintf("command matches dangerous pattern %q", pattern))
+			h.emitter.EmitDecision(mctx, result, request)
+			return result
+		}
+	}
+
+	// Check configured dangerous patterns
+	for _, pattern := range h.config.DangerousPatterns {
+		if h.containsPattern(fullCmd, pattern) {
+			result := DenyResult("config:dangerous_pattern",
+				fmt.Sprintf("command matches configured dangerous pattern %q", pattern))
+			h.emitter.EmitDecision(mctx, result, request)
+			return result
+		}
+	}
+
+	// Check DeniedCommands
+	for _, denied := range h.config.DeniedCommands {
+		if h.matchCommand(cmd, fullCmd, denied) {
+			result := DenyResult("config:denied_command",
+				fmt.Sprintf("command %q is denied by configuration", cmd))
+			h.emitter.EmitDecision(mctx, result, request)
+			return result
+		}
+	}
+
+	// Check AllowedCommands
+	for _, allowed := range h.config.AllowedCommands {
+		if h.matchCommand(cmd, fullCmd, allowed) {
+			result := AllowResult("config:allowed_command",
+				fmt.Sprintf("command %q is allowed by configuration", cmd))
+			h.emitter.EmitDecision(mctx, result, request)
+			return result
+		}
+	}
+
+	// Check envelope capabilities
+	if mctx.HasEnvelope() {
+		if mctx.CapabilitySatisfied("shell.*") || mctx.CapabilitySatisfied("shell.execute") {
+			result := AllowResult("envelope:capability_grant",
+				fmt.Sprintf("capability granted for shell command %q", cmd))
+			h.emitter.EmitDecision(mctx, result, request)
+			return result
+		}
+	}
+
+	return nil
 }
 
 // containsPattern checks if the command contains a dangerous pattern.
