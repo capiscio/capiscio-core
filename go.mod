@@ -5,6 +5,7 @@ go 1.25.10
 require (
 	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/google/uuid v1.6.0
+	github.com/gowebpki/jcs v1.0.1
 	github.com/open-policy-agent/opa v1.14.1
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1

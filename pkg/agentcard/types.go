@@ -1,6 +1,8 @@
 // Package agentcard defines the data structures for the A2A Agent Card.
 package agentcard
 
+import "encoding/json"
+
 // TransportProtocol defines the supported transport protocols for A2A agents.
 type TransportProtocol string
 
@@ -32,6 +34,10 @@ type AgentCard struct {
 	SupportsAuthenticatedExtendedCard bool                      `json:"supportsAuthenticatedExtendedCard,omitempty"`
 	Signatures                        []Signature               `json:"signatures,omitempty"`
 	Extensions                        []AgentExtension          `json:"extensions,omitempty"`
+
+	// raw holds the bytes this card was decoded from, when it was decoded
+	// rather than constructed. See UnmarshalJSON.
+	raw []byte
 }
 
 // AgentProvider contains information about the agent's provider.
@@ -84,4 +90,33 @@ type AgentExtension struct {
 	Name        string `json:"name"`
 	Version     string `json:"version"`
 	Description string `json:"description,omitempty"`
+}
+
+// UnmarshalJSON decodes an Agent Card and retains the exact bytes it was
+// decoded from.
+//
+// Signature verification canonicalizes the document that was signed, and the
+// Go struct cannot round-trip it faithfully: `omitempty` on a plain bool
+// cannot distinguish a field that was absent from one explicitly set to
+// false, and a field without `omitempty` is emitted even when the sender
+// omitted it. Either difference changes the canonical payload and fails an
+// otherwise valid signature. Keeping the original bytes lets the verifier
+// canonicalize what actually arrived.
+func (c *AgentCard) UnmarshalJSON(data []byte) error {
+	// Alias sheds the method set, so the nested decode does not recurse.
+	type alias AgentCard
+	var decoded alias
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+
+	*c = AgentCard(decoded)
+	c.raw = append([]byte(nil), data...)
+	return nil
+}
+
+// Raw returns the bytes this card was decoded from, or nil when the card was
+// constructed programmatically rather than parsed.
+func (c *AgentCard) Raw() []byte {
+	return c.raw
 }
