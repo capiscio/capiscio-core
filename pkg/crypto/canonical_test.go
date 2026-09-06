@@ -217,8 +217,18 @@ func TestRejectsNumbersOutsideIEEE754Range(t *testing.T) {
 // retained, so this is unreachable through AgentCard today; the guard holds
 // the guarantee in the function rather than in a caller's invariant.
 func TestRejectsTrailingDataAfterTheObject(t *testing.T) {
-	if _, err := stripSignatures([]byte(`{"name":"Example Agent"} trailing`)); err == nil {
-		t.Error("a document with trailing data must not canonicalize")
+	// The last two were raised in review. json.Decoder.More() reports whether
+	// another element follows inside an array or object, so at the top level
+	// it answers false for a stray closing bracket and waved these through.
+	for _, document := range []string{
+		`{"name":"Example Agent"} trailing`,
+		`{"name":"Example Agent"}{"name":"Other Agent"}`,
+		`{"name":"Example Agent"}}`,
+		`{"name":"Example Agent"}]`,
+	} {
+		if _, err := stripSignatures([]byte(document)); err == nil {
+			t.Errorf("a document with trailing data must not canonicalize: %s", document)
+		}
 	}
 
 	if _, err := stripSignatures([]byte(`{"name":"Example Agent"}  `)); err != nil {

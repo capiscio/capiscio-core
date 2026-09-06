@@ -4,7 +4,9 @@ package crypto
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 
 	"github.com/capiscio/capiscio-core/v2/pkg/agentcard"
 	"github.com/gowebpki/jcs"
@@ -99,7 +101,12 @@ func stripSignatures(document []byte) ([]byte, error) {
 	// path means a document could carry bytes the payload never covers.
 	// json.Unmarshal already rejects this before the raw bytes are retained,
 	// so this holds the guarantee here rather than in a caller's invariant.
-	if decoder.More() {
+	//
+	// Reading a token and requiring io.EOF, rather than asking More(). More()
+	// answers whether another element follows within an array or object, so
+	// at the top level it reports false for a stray '}' or ']' and lets
+	// `{"a":1}}` past.
+	if _, err := decoder.Token(); !errors.Is(err, io.EOF) {
 		return nil, fmt.Errorf("agent card has trailing data after the JSON object")
 	}
 
