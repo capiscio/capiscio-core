@@ -14,11 +14,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.24.0'
+          go-version-file: 'go.mod'
       - name: Set up Buf
         uses: bufbuild/buf-setup-action@v1
         with:
           version: 1.50.0
+          # Without a token the action resolves its download through the
+          # anonymous GitHub API and is rate limited by shared runner IP,
+          # which fails the job before any protobuf check runs.
+          github_token: ${{ github.token }}
       - name: Verify generated protobuf files are up to date
         run: |
           make proto

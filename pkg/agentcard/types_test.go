@@ -32,6 +32,92 @@ func TestAgentCard_JSONRoundTrip(t *testing.T) {
 	err = json.Unmarshal(data, &decoded)
 	assert.NoError(t, err)
 
-	// Compare
-	assert.Equal(t, original, &decoded)
+	// A decoded card also retains the bytes it came from, so it is not
+	// struct-identical to one built in code. Compare the content instead.
+	assert.Equal(t, *original, decoded.withoutRaw())
+}
+
+// A decoded card must keep its source document, because signature
+// verification canonicalizes what actually arrived rather than the struct's
+// rendering of it.
+func TestAgentCard_RetainsSourceDocument(t *testing.T) {
+	const document = `{"name":"Test Agent","capabilities":{"streaming":false}}`
+
+	var decoded AgentCard
+	assert.NoError(t, json.Unmarshal([]byte(document), &decoded))
+
+	assert.Equal(t, document, string(decoded.Raw()),
+		"the raw document must survive decoding byte for byte")
+}
+
+// A card built in code has no source document to retain.
+func TestAgentCard_ProgrammaticCardHasNoRaw(t *testing.T) {
+	card := &AgentCard{Name: "Test Agent"}
+
+	assert.Nil(t, card.Raw())
+}
+
+// Mutating the caller's buffer after decoding must not change what the card
+// retained, or a verifier could canonicalize something the signer never sent.
+func TestAgentCard_RawIsCopied(t *testing.T) {
+	document := []byte(`{"name":"Test Agent"}`)
+
+	var decoded AgentCard
+	assert.NoError(t, json.Unmarshal(document, &decoded))
+
+	document[2] = 'X'
+
+	assert.Equal(t, `{"name":"Test Agent"}`, string(decoded.Raw()))
+}
+
+// withoutRaw returns a copy with the retained document cleared, for tests that
+// compare card content rather than provenance.
+func (c AgentCard) withoutRaw() AgentCard {
+	c.raw = nil
+	return c
+}
+
+// Raw must not hand out the backing array. The retained document is what
+// signature verification canonicalizes, so a caller holding a reference to it
+// could change what a later verification runs against.
+func TestAgentCard_RawDoesNotAliasInternalBuffer(t *testing.T) {
+	var decoded AgentCard
+	assert.NoError(t, json.Unmarshal([]byte(`{"name":"Test Agent"}`), &decoded))
+
+	first := decoded.Raw()
+	first[2] = 'X'
+
+	assert.Equal(t, `{"name":"Test Agent"}`, string(decoded.Raw()),
+		"mutating the returned slice must not affect the retained document")
+}
+
+// A document that fails to decode must leave the card untouched. Decoding into
+// a reused variable must not leave the previous card's retained bytes attached
+// to a parse that failed, or a verifier could canonicalize one card's document
+// while holding another card's fields.
+//
+// The cases differ in where they fail. Malformed syntax is rejected by
+// encoding/json before UnmarshalJSON is called at all; a type mismatch is
+// syntactically valid, so UnmarshalJSON runs and its own decode fails. Both
+// must leave the card as it was.
+func TestAgentCard_FailedDecodeLeavesCardUntouched(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		document string
+	}{
+		{"malformed syntax", `{"name": `},
+		{"type mismatch", `{"name": 123}`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var card AgentCard
+			assert.NoError(t, json.Unmarshal([]byte(`{"name":"First Agent"}`), &card))
+
+			err := json.Unmarshal([]byte(tc.document), &card)
+
+			assert.Error(t, err, "the document must not decode")
+			assert.Equal(t, "First Agent", card.Name, "the previous card must be left intact")
+			assert.Equal(t, `{"name":"First Agent"}`, string(card.Raw()),
+				"a failed decode must not attach the rejected document")
+		})
+	}
 }
