@@ -35,6 +35,15 @@ import (
 // than the struct, and field presence is then only as faithful as the struct
 // tags allow.
 //
+// Because the received bytes win, this attests to the document that arrived
+// and not to the struct's current contents. A caller that decodes a card and
+// then mutates its fields gets the payload of the original document, so a
+// signature reported valid says the sender signed what was received, not that
+// it signed what the struct now holds. Treat a decoded AgentCard as immutable
+// up to the point of verification; a card that must be changed should be
+// re-encoded and re-decoded first, which is also what a relay forwarding it
+// would do.
+//
 // It returns an error rather than a payload for a document that cannot be
 // canonicalized: one that is not a JSON object, or one carrying a number
 // outside the IEEE 754 double range that RFC 8785 defines number formatting
