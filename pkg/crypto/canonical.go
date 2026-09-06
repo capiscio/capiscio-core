@@ -34,6 +34,11 @@ import (
 // When it was constructed programmatically there is nothing better available
 // than the struct, and field presence is then only as faithful as the struct
 // tags allow.
+//
+// It returns an error rather than a payload for a document that cannot be
+// canonicalized: one that is not a JSON object, or one carrying a number
+// outside the IEEE 754 double range that RFC 8785 defines number formatting
+// over. Neither can be signed or verified meaningfully.
 func CreateCanonicalJSON(card *agentcard.AgentCard) ([]byte, error) {
 	source := card.Raw()
 	if len(source) == 0 {
@@ -70,6 +75,14 @@ func stripSignatures(document []byte) ([]byte, error) {
 	var fields map[string]interface{}
 	if err := decoder.Decode(&fields); err != nil {
 		return nil, fmt.Errorf("failed to parse agent card: %w", err)
+	}
+
+	// A JSON `null` decodes into a nil map without error, and would go on to
+	// canonicalize as the four bytes "null". That is a signable payload for a
+	// document that is not an agent card, so reject it here rather than hand
+	// it to a signer or a verifier.
+	if fields == nil {
+		return nil, fmt.Errorf("agent card is not a JSON object")
 	}
 
 	delete(fields, "signatures")

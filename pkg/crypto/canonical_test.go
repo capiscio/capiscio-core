@@ -187,3 +187,26 @@ func TestNestedObjectsAreCanonicalized(t *testing.T) {
 		t.Errorf("nested object keys were not sorted, or array order was not preserved\n got: %s\nwant substring: %s", got, wantSkill)
 	}
 }
+
+// A JSON `null` satisfies encoding/json when decoded into an AgentCard, and
+// the retained document is then the four bytes "null". Canonicalizing that
+// produced a signable payload for something that is not an agent card, so it
+// must be refused instead.
+func TestRejectsDocumentThatIsNotAnObject(t *testing.T) {
+	card := decodeCard(t, `null`)
+
+	if _, err := CreateCanonicalJSON(card); err == nil {
+		t.Error("a document that is not a JSON object must not canonicalize")
+	}
+}
+
+// RFC 8785 defines number formatting over IEEE 754 doubles. A literal outside
+// that range has no canonical form, so canonicalization must fail rather than
+// return a payload a signer and a verifier could disagree about.
+func TestRejectsNumbersOutsideIEEE754Range(t *testing.T) {
+	card := decodeCard(t, `{"name":"Example Agent","extensionNumber":1e400}`)
+
+	if _, err := CreateCanonicalJSON(card); err == nil {
+		t.Error("a number outside the IEEE 754 double range must not canonicalize")
+	}
+}
