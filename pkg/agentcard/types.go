@@ -115,8 +115,15 @@ func (c *AgentCard) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Raw returns the bytes this card was decoded from, or nil when the card was
-// constructed programmatically rather than parsed.
+// Raw returns a copy of the bytes this card was decoded from, or nil when the
+// card was constructed programmatically rather than parsed.
+//
+// The copy is deliberate. This document is what signature verification
+// canonicalizes, so handing out the backing array would let any caller change
+// what a later verification runs against.
 func (c *AgentCard) Raw() []byte {
-	return c.raw
+	if c.raw == nil {
+		return nil
+	}
+	return append([]byte(nil), c.raw...)
 }

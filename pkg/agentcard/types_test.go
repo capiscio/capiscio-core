@@ -76,3 +76,17 @@ func (c AgentCard) withoutRaw() AgentCard {
 	c.raw = nil
 	return c
 }
+
+// Raw must not hand out the backing array. The retained document is what
+// signature verification canonicalizes, so a caller holding a reference to it
+// could change what a later verification runs against.
+func TestAgentCard_RawDoesNotAliasInternalBuffer(t *testing.T) {
+	var decoded AgentCard
+	assert.NoError(t, json.Unmarshal([]byte(`{"name":"Test Agent"}`), &decoded))
+
+	first := decoded.Raw()
+	first[2] = 'X'
+
+	assert.Equal(t, `{"name":"Test Agent"}`, string(decoded.Raw()),
+		"mutating the returned slice must not affect the retained document")
+}
