@@ -94,6 +94,15 @@ func stripSignatures(document []byte) ([]byte, error) {
 		return nil, fmt.Errorf("agent card is not a JSON object")
 	}
 
+	// One JSON value and nothing after it. Decode stops at the end of the
+	// first value and would ignore anything following, which on a signature
+	// path means a document could carry bytes the payload never covers.
+	// json.Unmarshal already rejects this before the raw bytes are retained,
+	// so this holds the guarantee here rather than in a caller's invariant.
+	if decoder.More() {
+		return nil, fmt.Errorf("agent card has trailing data after the JSON object")
+	}
+
 	delete(fields, "signatures")
 
 	remarshaled, err := json.Marshal(fields)

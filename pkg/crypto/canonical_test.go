@@ -210,3 +210,18 @@ func TestRejectsNumbersOutsideIEEE754Range(t *testing.T) {
 		t.Error("a number outside the IEEE 754 double range must not canonicalize")
 	}
 }
+
+// Decode stops at the end of the first JSON value. Anything after it would be
+// silently ignored, so a document could carry bytes the signed payload never
+// covers. json.Unmarshal rejects trailing data before the raw bytes are
+// retained, so this is unreachable through AgentCard today; the guard holds
+// the guarantee in the function rather than in a caller's invariant.
+func TestRejectsTrailingDataAfterTheObject(t *testing.T) {
+	if _, err := stripSignatures([]byte(`{"name":"Example Agent"} trailing`)); err == nil {
+		t.Error("a document with trailing data must not canonicalize")
+	}
+
+	if _, err := stripSignatures([]byte(`{"name":"Example Agent"}  `)); err != nil {
+		t.Errorf("trailing whitespace is not trailing data: %v", err)
+	}
+}
