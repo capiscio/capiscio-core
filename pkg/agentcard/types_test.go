@@ -90,3 +90,34 @@ func TestAgentCard_RawDoesNotAliasInternalBuffer(t *testing.T) {
 	assert.Equal(t, `{"name":"Test Agent"}`, string(decoded.Raw()),
 		"mutating the returned slice must not affect the retained document")
 }
+
+// A document that fails to decode must leave the card untouched. Decoding into
+// a reused variable must not leave the previous card's retained bytes attached
+// to a parse that failed, or a verifier could canonicalize one card's document
+// while holding another card's fields.
+//
+// The cases differ in where they fail. Malformed syntax is rejected by
+// encoding/json before UnmarshalJSON is called at all; a type mismatch is
+// syntactically valid, so UnmarshalJSON runs and its own decode fails. Both
+// must leave the card as it was.
+func TestAgentCard_FailedDecodeLeavesCardUntouched(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		document string
+	}{
+		{"malformed syntax", `{"name": `},
+		{"type mismatch", `{"name": 123}`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var card AgentCard
+			assert.NoError(t, json.Unmarshal([]byte(`{"name":"First Agent"}`), &card))
+
+			err := json.Unmarshal([]byte(tc.document), &card)
+
+			assert.Error(t, err, "the document must not decode")
+			assert.Equal(t, "First Agent", card.Name, "the previous card must be left intact")
+			assert.Equal(t, `{"name":"First Agent"}`, string(card.Raw()),
+				"a failed decode must not attach the rejected document")
+		})
+	}
+}
